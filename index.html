@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luxus - Gestão de Joias & Perfumes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #D4AF37;
+            --gold-light: #F9F6EE;
+            --dark: #1A1A1A;
+            --gray: #F4F4F4;
+        }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--gray);
+            color: var(--dark);
+        }
+        h1, h2, h3, .font-luxury {
+            font-family: 'Playfair Display', serif;
+        }
+        .tab-content { display: none; transition: all 0.3s ease; }
+        .tab-content.active { display: block; }
+        .nav-btn {
+            position: relative;
+            padding-bottom: 4px;
+        }
+        .nav-btn::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background-color: var(--gold);
+            transition: width 0.3s;
+        }
+        .nav-btn:hover::after, .nav-btn.active::after {
+            width: 100%;
+        }
+        .gold-gradient {
+            background: linear-gradient(135deg, #D4AF37 0%, #B8860B 100%);
+        }
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); display: none;
+            justify-content: center; align-items: center; z-index: 9999;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            border: 1px solid rgba(212, 175, 55, 0.1);
+        }
+        input, select, textarea {
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            padding: 12px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus {
+            border-color: var(--gold);
+        }
+        .btn-primary {
+            background-color: var(--dark);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #333;
+            transform: translateY(-1px);
+        }
+        .btn-gold {
+            background-color: var(--gold);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-gold:hover {
+            background-color: #B8860B;
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading" class="loading-overlay">
+        <div class="flex flex-col items-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-gold mb-4"></div>
+            <p class="text-white font-luxury italic">Processando com elegância...</p>
+        </div>
+    </div>
+
+    <!-- Header / Logo Area -->
+    <header class="bg-white py-6 shadow-sm">
+        <div class="container mx-auto px-6 flex flex-col items-center">
+            <div class="mb-2">
+                <span class="text-4xl font-luxury tracking-widest uppercase border-b-2 border-gold pb-1">Luxus</span>
+            </div>
+            <p class="text-xs tracking-[0.3em] uppercase text-gray-500 mb-6">Perfumes & Joias</p>
+            
+            <nav class="flex space-x-8 text-sm font-semibold uppercase tracking-wider">
+                <button onclick="showTab('config')" id="btn-config" class="nav-btn text-gray-600 hover:text-gold">Configuração</button>
+                <button onclick="showTab('inventario')" id="btn-inventario" class="nav-btn text-gray-600 hover:text-gold">Inventário</button>
+                <button onclick="showTab('distribuicao')" id="btn-distribuicao" class="nav-btn text-gray-600 hover:text-gold">Distribuição</button>
+                <button onclick="showTab('revendedores')" id="btn-revendedores" class="nav-btn text-gray-600 hover:text-gold">Revendedores</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-6 max-w-5xl">
+        
+        <!-- ABA: CONFIGURAÇÃO -->
+        <div id="config" class="tab-content active">
+            <div class="card p-8 text-center max-w-2xl mx-auto">
+                <h2 class="text-2xl font-luxury mb-6">Conectar ao Google Cloud</h2>
+                <p class="mb-8 text-gray-500 leading-relaxed">
+                    Para iniciar, insira a URL do seu Google Apps Script. Isso permitirá que o sistema Luxus salve todos os dados na sua planilha do Google Drive de forma segura.
+                </p>
+                <input type="text" id="apiUrl" class="w-full mb-6 text-center" placeholder="https://script.google.com/macros/s/.../exec">
+                <button onclick="salvarConfig()" class="btn-gold w-full uppercase tracking-widest">Ativar Sistema Luxus</button>
+            </div>
+        </div>
+
+        <!-- ABA: INVENTÁRIO -->
+        <div id="inventario" class="tab-content">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h2 class="text-3xl font-luxury">Gestão de Acervo</h2>
+                    <p class="text-gray-500">Adicione novas peças ao seu inventário de luxo.</p>
+                </div>
+                <div class="text-right">
+                    <span id="itemCount" class="text-xs font-bold bg-gold-light text-gold px-3 py-1 rounded-full border border-gold">0 ITENS</span>
+                </div>
+            </div>
+
+            <div class="card p-6 mb-8">
+                <div class="flex gap-4">
+                    <div class="relative flex-1">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                        <input type="text" id="codigoInput" placeholder="Escaneie o código da joia..." 
+                            class="w-full pl-12 bg-gray-50 border-none focus:ring-2 focus:ring-gold" autofocus>
+                    </div>
+                    <button onclick="adicionarAoInventario()" class="btn-primary uppercase text-xs tracking-widest">Adicionar</button>
+                </div>
+            </div>
+            
+            <div class="card overflow-hidden">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-dark text-white text-xs uppercase tracking-widest">
+                            <th class="p-4 font-normal">Código da Peça</th>
+                            <th class="p-4 font-normal">Data de Entrada</th>
+                            <th class="p-4 font-normal text-right">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaInventario" class="text-sm">
+                        <!-- Itens dinâmicos -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ABA: DISTRIBUIÇÃO -->
+        <div id="distribuicao" class="tab-content">
+            <h2 class="text-3xl font-luxury mb-2">Repasse de Coleção</h2>
+            <p class="text-gray-500 mb-8">Consigne itens para seus revendedores parceiros.</p>
+
+            <div class="card p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <div class="space-y-2">
+                        <label class="text-xs uppercase font-bold text-gray-400 tracking-tighter">Parceiro / Revendedor</label>
+                        <select id="selectRevendedor" class="w-full bg-gray-50">
+                            <option value="Revendedor A">Revendedor A</option>
+                            <option value="Revendedor B">Revendedor B</option>
+                            <option value="Revendedor C">Revendedor C</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs uppercase font-bold text-gray-400 tracking-tighter">Código da Joia</label>
+                        <input type="text" id="codigoRepasse" class="w-full bg-gray-50" placeholder="Bipe o item">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs uppercase font-bold text-gray-400 tracking-tighter">Valor de Custo (R$)</label>
+                        <input type="number" id="custoItem" class="w-full bg-gray-50" step="0.01" placeholder="0,00">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs uppercase font-bold text-gray-400 tracking-tighter">Valor de Venda (R$)</label>
+                        <input type="number" id="vendaItem" class="w-full bg-gray-50" step="0.01" placeholder="0,00">
+                    </div>
+                </div>
+                <button onclick="repassarItem()" class="btn-gold w-full uppercase tracking-widest py-4">Confirmar Entrega de Peças</button>
+            </div>
+        </div>
+
+        <!-- ABA: REVENDEDORES -->
+        <div id="revendedores" class="tab-content">
+            <h2 class="text-3xl font-luxury mb-8 text-center">Relatório de Parceiros</h2>
+            
+            <div class="max-w-md mx-auto mb-12">
+                <select id="filtroRevendedor" onchange="carregarDadosRevendedor()" class="w-full text-center font-semibold border-gold">
+                    <option value="">Selecione um Revendedor para Análise</option>
+                    <option value="Revendedor A">Revendedor A</option>
+                    <option value="Revendedor B">Revendedor B</option>
+                    <option value="Revendedor C">Revendedor C</option>
+                </select>
+            </div>
+
+            <div id="detalhesRevendedor" class="hidden animate-in fade-in duration-500">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                    <div class="card p-6 border-l-4 border-dark">
+                        <p class="text-xs uppercase text-gray-400 font-bold mb-1">Capital em Consignação</p>
+                        <p id="totalCusto" class="text-3xl font-luxury">R$ 0,00</p>
+                    </div>
+                    <div class="card p-6 border-l-4 border-gold">
+                        <p class="text-xs uppercase text-gray-400 font-bold mb-1">Expectativa de Retorno</p>
+                        <p id="totalVenda" class="text-3xl font-luxury text-gold">R$ 0,00</p>
+                    </div>
+                </div>
+
+                <div class="card overflow-hidden mb-10">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="bg-gray-50 text-xs uppercase tracking-widest text-gray-500">
+                                <th class="p-4">Peça</th>
+                                <th class="p-4">Custo</th>
+                                <th class="p-4">Venda</th>
+                                <th class="p-4 text-right">Situação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaItensRevendedor" class="text-sm">
+                            <!-- Itens -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card p-8 bg-dark text-white">
+                    <h3 class="font-luxury text-xl mb-4">Fechamento de Ciclo Mensal</h3>
+                    <p class="text-gray-400 text-sm mb-6">Registre as observações do acerto realizado com este parceiro.</p>
+                    <textarea id="obsFechamento" class="w-full bg-neutral-800 border-none text-white mb-6 h-32" placeholder="Notas sobre pagamentos, devoluções ou bônus..."></textarea>
+                    <button onclick="realizarFechamento()" class="btn-gold w-full uppercase tracking-widest">Finalizar Acerto Mensal</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        let API_URL = localStorage.getItem('apiUrl') || '';
+        document.getElementById('apiUrl').value = API_URL;
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active', 'text-gold'));
+            
+            document.getElementById(tabId).classList.add('active');
+            document.getElementById('btn-' + tabId).classList.add('active', 'text-gold');
+            
+            if(tabId === 'inventario') carregarInventario();
+        }
+
+        function salvarConfig() {
+            API_URL = document.getElementById('apiUrl').value;
+            if(!API_URL.includes('google.com')) return alert('URL Inválida');
+            localStorage.setItem('apiUrl', API_URL);
+            alert('Sistema Luxus Conectado com Sucesso!');
+            showTab('inventario');
+        }
+
+        async function apiPost(data) {
+            if(!API_URL) return alert('Configure a API primeiro!');
+            document.getElementById('loading').style.display = 'flex';
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                return true;
+            } catch (e) {
+                console.error(e);
+                alert('Erro na conexão com o servidor Luxus.');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        async function apiGet(action) {
+            if(!API_URL) return;
+            document.getElementById('loading').style.display = 'flex';
+            try {
+                const response = await fetch(`${API_URL}?action=${action}`);
+                return await response.json();
+            } catch (e) {
+                console.error(e);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        document.getElementById('codigoInput').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') adicionarAoInventario();
+        });
+
+        async function adicionarAoInventario() {
+            const input = document.getElementById('codigoInput');
+            const codigo = input.value.trim();
+            if(codigo) {
+                await apiPost({ action: 'addInventario', codigo });
+                input.value = '';
+                carregarInventario();
+            }
+        }
+
+        async function carregarInventario() {
+            const dados = await apiGet('getInventario');
+            if(!dados) return;
+            document.getElementById('itemCount').innerText = `${dados.length} ITENS`;
+            const lista = document.getElementById('listaInventario');
+            lista.innerHTML = dados.map(item => `
+                <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td class="p-4 font-semibold text-dark">${item.Codigo || item.codigo}</td>
+                    <td class="p-4 text-gray-500">${new Date(item.Data || item.data).toLocaleDateString('pt-BR')}</td>
+                    <td class="p-4 text-right">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${item.Status === 'Em Estoque' ? 'bg-green-50 text-green-600' : 'bg-gold-light text-gold'}">
+                            ${item.Status || item.status}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function repassarItem() {
+            const data = {
+                action: 'addRepasse',
+                revendedor: document.getElementById('selectRevendedor').value,
+                codigo: document.getElementById('codigoRepasse').value.trim(),
+                custo: parseFloat(document.getElementById('custoItem').value),
+                venda: parseFloat(document.getElementById('vendaItem').value)
+            };
+            if(!data.codigo || isNaN(data.custo)) return alert('Preencha os dados corretamente');
+            await apiPost(data);
+            alert('Item repassado para a coleção de ' + data.revendedor);
+            document.getElementById('codigoRepasse').value = '';
+            document.getElementById('custoItem').value = '';
+            document.getElementById('vendaItem').value = '';
+        }
+
+        async function carregarDadosRevendedor() {
+            const revendedor = document.getElementById('filtroRevendedor').value;
+            if(!revendedor) {
+                document.getElementById('detalhesRevendedor').classList.add('hidden');
+                return;
+            }
+            
+            const repasses = await apiGet('getRepasses');
+            const itens = repasses.filter(r => r.Revendedor === revendedor || r.revendedor === revendedor);
+            
+            let totalCusto = 0, totalVenda = 0;
+            const tabela = document.getElementById('tabelaItensRevendedor');
+            
+            tabela.innerHTML = itens.map(item => {
+                const custo = parseFloat(item.Custo || item.custo);
+                const venda = parseFloat(item.Venda || item.venda);
+                totalCusto += custo;
+                totalVenda += venda;
+                const status = item.Status || item.status;
+                return `
+                    <tr class="border-b border-gray-50">
+                        <td class="p-4 font-medium">${item.Codigo || item.codigo}</td>
+                        <td class="p-4 text-gray-500">R$ ${custo.toFixed(2)}</td>
+                        <td class="p-4 text-gold font-semibold">R$ ${venda.toFixed(2)}</td>
+                        <td class="p-4 text-right">
+                            <span class="text-[10px] font-bold uppercase tracking-widest ${status === 'Pago' ? 'text-green-600' : 'text-gray-400'}">
+                                ${status === 'Pago' ? '● Liquidado' : '○ Pendente'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('totalCusto').innerText = `R$ ${totalCusto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('totalVenda').innerText = `R$ ${totalVenda.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('detalhesRevendedor').classList.remove('hidden');
+        }
+
+        async function realizarFechamento() {
+            const revendedor = document.getElementById('filtroRevendedor').value;
+            const obs = document.getElementById('obsFechamento').value;
+            if(confirm('Deseja finalizar o acerto mensal de ' + revendedor + '? Todos os itens pendentes serão marcados como liquidados.')) {
+                await apiPost({ action: 'fechamento', revendedor, obs });
+                alert('Acerto mensal finalizado com sucesso!');
+                carregarDadosRevendedor();
+            }
+        }
+
+        // Init
+        if(API_URL) showTab('inventario');
+    </script>
+</body>
+</html>
