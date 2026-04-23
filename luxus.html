@@ -18,7 +18,6 @@
         .tab-content.active { display: block; animation: slideUp 0.4s ease-out; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* CORREÇÃO DEFINITIVA PARA O FUNDO BRANCO DOS SELECTS */
         select, input, textarea { 
             background-color: #1c2539 !important; 
             color: white !important; 
@@ -29,7 +28,6 @@
             outline: none !important;
             appearance: none !important;
             -webkit-appearance: none !important;
-            -moz-appearance: none !important;
         }
         
         select option { background-color: #1c2539 !important; color: white !important; }
@@ -52,7 +50,6 @@
         .modal-content { background: var(--navy-card); padding: 2rem; border-radius: 16px; width: 90%; max-width: 500px; border: 1px solid var(--gold); }
         .filter-pill { padding: 6px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 1px solid #2d3748; color: var(--text-muted); background: transparent; }
         .filter-pill.active { background: var(--navy-dark); color: white; border-color: var(--accent); }
-        .search-bar { background: #1c2539 !important; color: white !important; border-radius: 24px !important; padding: 10px 20px !important; border: 1px solid #2d3748 !important; }
         .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
         .status-estoque { background: rgba(34, 197, 94, 0.1); color: #4ade80; }
         .status-consignado { background: rgba(197, 160, 89, 0.1); color: var(--gold); }
@@ -61,12 +58,7 @@
 </head>
 <body>
 
-    <div id="loading" class="loading-overlay">
-        <div class="flex flex-col items-center">
-            <div class="w-10 h-10 border-3 border-accent border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p class="text-accent text-xs font-semibold uppercase">Luxus Cloud</p>
-        </div>
-    </div>
+    <div id="loading" class="loading-overlay"><div class="flex flex-col items-center"><div class="w-10 h-10 border-3 border-accent border-t-transparent rounded-full animate-spin mb-4"></div><p class="text-accent text-xs font-semibold uppercase">Luxus Cloud</p></div></div>
 
     <!-- Modais -->
     <div id="modalEdit" class="modal"><div class="modal-content"><h3 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Editar Joia</h3><div class="space-y-4"><div><label class="text-[10px] font-bold text-muted mb-1 block">CÓDIGO</label><input type="text" id="editCodigo" class="w-full opacity-50" readonly></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Custo (R$)</label><input type="number" id="editCusto" class="w-full" step="0.01"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Venda (R$)</label><input type="number" id="editVenda" class="w-full" step="0.01"></div></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">URL da Foto</label><input type="text" id="editFoto" class="w-full"></div><div class="flex gap-3 pt-4"><button onclick="fecharModal()" class="flex-1 p-3 bg-navy-dark text-white rounded-lg font-bold">Cancelar</button><button onclick="salvarEdicao()" class="flex-1 p-3 bg-gold text-navy-dark rounded-lg font-bold">Salvar</button></div></div></div></div>
@@ -94,7 +86,7 @@
 
         <div id="inventario" class="tab-content active">
             <div class="bg-navy-dark/30 p-4 rounded-xl mb-8 flex flex-wrap items-center gap-4">
-                <div class="flex-1 min-w-[300px] relative"><input type="text" id="searchInventario" onkeyup="filtrarTabela()" placeholder="Buscar..." class="search-bar w-full"></div>
+                <div class="flex-1 min-w-[300px] relative"><input type="text" id="searchInventario" onkeyup="filtrarTabela()" placeholder="Buscar código ou status..." class="w-full !rounded-full !pl-10 !pr-4"></div>
                 <div class="flex gap-2">
                     <button onclick="setFilter('Todos')" class="filter-pill active" data-filter="Todos">Todos</button>
                     <button onclick="setFilter('Em Estoque')" class="filter-pill" data-filter="Em Estoque">Estoque</button>
@@ -154,17 +146,14 @@
             if(tabId === 'distribuicao' || tabId === 'painel_revendedor') carregarRevendedores();
         }
 
-        function salvarConfig() { API_URL = document.getElementById('apiUrl').value; localStorage.setItem('apiUrl', API_URL); alert('Conectado!'); location.reload(); }
+        function salvarConfig() { API_URL = document.getElementById('apiUrl').value.trim(); localStorage.setItem('apiUrl', API_URL); alert('Conectado!'); location.reload(); }
 
         async function apiPost(data) {
+            if(!API_URL) return alert('Configure a URL primeiro!');
             document.getElementById('loading').style.display = 'flex';
-            try { 
-                const response = await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) }); 
-                return true; 
-            } catch (e) {
-                console.error("Erro no Post:", e);
-                return false;
-            } finally { document.getElementById('loading').style.display = 'none'; }
+            try { await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) }); return true; } 
+            catch (e) { console.error("Erro Post:", e); return false; }
+            finally { document.getElementById('loading').style.display = 'none'; }
         }
 
         async function apiGet(action) {
@@ -172,12 +161,11 @@
             document.getElementById('loading').style.display = 'flex';
             try { 
                 const r = await fetch(`${API_URL}?action=${action}`); 
-                const data = await r.json();
-                return data;
-            } catch(e) { 
-                console.error("Erro no Get:", e); 
-                return []; 
-            } finally { document.getElementById('loading').style.display = 'none'; }
+                const d = await r.json();
+                console.log(`Dados ${action}:`, d);
+                return d;
+            } catch(e) { console.error("Erro Get:", e); return []; }
+            finally { document.getElementById('loading').style.display = 'none'; }
         }
 
         async function carregarRevendedores() {
@@ -185,20 +173,9 @@
             const listaSimples = document.getElementById('listaRevendedoresSimples');
             if(listaSimples) {
                 listaSimples.innerHTML = globalRevendedores.map(r => {
-                    const nome = (r.Nome || r.nome || "").toString().trim();
-                    const contato = (r.Contato || r.contato || "Sem contato").toString().trim();
-                    return `
-                        <div class="flex justify-between items-center p-3 bg-navy-dark rounded-lg group">
-                            <div class="flex flex-col">
-                                <span class="text-xs font-bold text-white">${nome}</span>
-                                <span class="text-[9px] text-muted">${contato}</span>
-                            </div>
-                            <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onclick="abrirModalRev('${nome}')" class="text-accent p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                                <button onclick="delRevendedor('${nome}')" class="text-red-500 p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
-                            </div>
-                        </div>
-                    `;
+                    const n = (r.Nome || r.nome || "").toString().trim();
+                    const c = (r.Contato || r.contato || "").toString().trim();
+                    return `<div class="flex justify-between items-center p-3 bg-navy-dark rounded-lg group"><div class="flex flex-col"><span class="text-xs font-bold text-white">${n}</span><span class="text-[9px] text-muted">${c || 'Sem contato'}</span></div><div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity"><button onclick="abrirModalRev('${n}')" class="text-accent p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button><button onclick="delRevendedor('${n}')" class="text-red-500 p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button></div></div>`;
                 }).join('');
             }
             const options = '<option value="">SELECIONAR PARCEIRO</option>' + globalRevendedores.map(r => {
@@ -209,76 +186,49 @@
             if(document.getElementById('filtroRevendedor')) document.getElementById('filtroRevendedor').innerHTML = options;
         }
 
-        function abrirModalRev(nome) {
-            const r = globalRevendedores.find(rev => (rev.Nome || rev.nome || "").toString().trim() == nome.trim());
-            if(r) { 
-                document.getElementById('editRevNomeAntigo').value = nome; 
-                document.getElementById('editRevNovoNome').value = (r.Nome || r.nome || "").toString().trim(); 
-                document.getElementById('editRevNovoContato').value = (r.Contato || r.contato || "").toString().trim(); 
-                document.getElementById('modalEditRev').style.display = 'flex'; 
-            }
+        function abrirModalRev(n) {
+            const r = globalRevendedores.find(rev => (rev.Nome || rev.nome || "").toString().trim().toLowerCase() === n.trim().toLowerCase());
+            if(r) { document.getElementById('editRevNomeAntigo').value = n; document.getElementById('editRevNovoNome').value = (r.Nome || r.nome || "").toString().trim(); document.getElementById('editRevNovoContato').value = (r.Contato || r.contato || "").toString().trim(); document.getElementById('modalEditRev').style.display = 'flex'; }
         }
         function fecharModalRev() { document.getElementById('modalEditRev').style.display = 'none'; }
-        
-        async function salvarEdicaoRev() { 
-            const nAntigo = document.getElementById('editRevNomeAntigo').value;
-            const nNovo = document.getElementById('editRevNovoNome').value;
-            const cNovo = document.getElementById('editRevNovoContato').value;
-            await apiPost({ action: 'editRevendedor', nomeAntigo: nAntigo, novoNome: nNovo, novoContato: cNovo }); 
-            fecharModalRev(); 
-            setTimeout(carregarRevendedores, 1000); // Aguarda um pouco para o Google processar
-        }
-        
-        async function addRevendedor() { 
-            const nome = document.getElementById('novoRevendedor').value;
-            const contato = document.getElementById('contatoRevendedor').value;
-            if(nome) { 
-                await apiPost({ action: 'addRevendedor', nome: nome, contato: contato }); 
-                document.getElementById('novoRevendedor').value = ''; 
-                document.getElementById('contatoRevendedor').value = ''; 
-                setTimeout(carregarRevendedores, 1000);
-            } 
-        }
-        
-        async function delRevendedor(nome) { if(confirm('Excluir ' + nome + '?')) { await apiPost({ action: 'delRevendedor', nome: nome }); setTimeout(carregarRevendedores, 1000); } }
+        async function salvarEdicaoRev() { await apiPost({ action: 'editRevendedor', nomeAntigo: document.getElementById('editRevNomeAntigo').value, novoNome: document.getElementById('editRevNovoNome').value, novoContato: document.getElementById('editRevNovoContato').value }); fecharModalRev(); setTimeout(carregarRevendedores, 1500); }
+        async function addRevendedor() { const n = document.getElementById('novoRevendedor').value, c = document.getElementById('contatoRevendedor').value; if(n) { await apiPost({ action: 'addRevendedor', nome: n, contato: c }); document.getElementById('novoRevendedor').value = ''; document.getElementById('contatoRevendedor').value = ''; setTimeout(carregarRevendedores, 1500); } }
+        async function delRevendedor(n) { if(confirm('Excluir ' + n + '?')) { await apiPost({ action: 'delRevendedor', nome: n }); setTimeout(carregarRevendedores, 1500); } }
 
         async function carregarInventario() { globalInventario = await apiGet('getInventario'); renderInventario(globalInventario); }
         function renderInventario(dados) {
             document.getElementById('itemCount').innerText = `${dados.length} PEÇAS`;
             document.getElementById('listaInventario').innerHTML = dados.map(i => {
-                const status = (i.Status || i.status || "").toString();
-                let sClass = 'status-estoque';
-                if(status === 'Vendido') sClass = 'status-vendido'; else if(status !== 'Em Estoque') sClass = 'status-consignado';
-                return `<tr class="hover:bg-white/5"><td>${i.Foto ? `<img src="${i.Foto}" class="w-10 h-10 rounded object-cover">` : '<div class="w-10 h-10 bg-navy-dark rounded"></div>'}</td><td class="font-bold text-white">${i.Codigo || i.codigo}</td><td class="text-muted">R$ ${parseFloat(i.Custo || 0).toFixed(2)}</td><td class="text-gold font-bold">R$ ${parseFloat(i.Venda || 0).toFixed(2)}</td><td><span class="status-pill ${sClass}">${status}</span></td><td class="text-right"><button onclick="abrirModal('${i.Codigo || i.codigo}')" class="text-accent hover:underline">Editar</button></td></tr>`;
+                const s = (i.Status || i.status || "").toString();
+                let sc = 'status-estoque'; if(s === 'Vendido') sc = 'status-vendido'; else if(s !== 'Em Estoque') sc = 'status-consignado';
+                const cod = i.Codigo || i.codigo || '---';
+                return `<tr class="hover:bg-white/5"><td>${i.Foto ? `<img src="${i.Foto}" class="w-10 h-10 rounded object-cover">` : '<div class="w-10 h-10 bg-navy-dark rounded"></div>'}</td><td class="font-bold text-white">${cod}</td><td class="text-muted">R$ ${parseFloat(i.Custo || 0).toFixed(2)}</td><td class="text-gold font-bold">R$ ${parseFloat(i.Venda || 0).toFixed(2)}</td><td><span class="status-pill ${sc}">${s}</span></td><td class="text-right"><button onclick="abrirModal('${cod}')" class="text-accent hover:underline">Editar</button></td></tr>`;
             }).join('');
         }
 
-        function checkBipeConsignacaoInstant(v) { const item = globalInventario.find(i => (i.Codigo || i.codigo).toString().trim() == v.toString().trim()); if(item) { document.getElementById('custoItem').value = item.Custo || item.custo || ''; document.getElementById('vendaItem').value = item.Venda || item.venda || ''; } else { document.getElementById('custoItem').value = ''; document.getElementById('vendaItem').value = ''; } }
-        function abrirModal(c) { document.getElementById('editCodigo').value = c; const i = globalInventario.find(it => (it.Codigo || it.codigo) == c); if(i) { document.getElementById('editCusto').value = i.Custo || i.custo || ''; document.getElementById('editVenda').value = i.Venda || i.venda || ''; document.getElementById('editFoto').value = i.Foto || i.foto || ''; } document.getElementById('modalEdit').style.display = 'flex'; }
+        function checkBipeConsignacaoInstant(v) { const item = globalInventario.find(i => (i.Codigo || i.codigo || "").toString().trim().toLowerCase() === v.toString().trim().toLowerCase()); if(item) { document.getElementById('custoItem').value = item.Custo || item.custo || ''; document.getElementById('vendaItem').value = item.Venda || item.venda || ''; } }
+        function abrirModal(c) { document.getElementById('editCodigo').value = c; const i = globalInventario.find(it => (it.Codigo || it.codigo || "").toString().trim().toLowerCase() === c.trim().toLowerCase()); if(i) { document.getElementById('editCusto').value = i.Custo || i.custo || ''; document.getElementById('editVenda').value = i.Venda || i.venda || ''; document.getElementById('editFoto').value = i.Foto || i.foto || ''; } document.getElementById('modalEdit').style.display = 'flex'; }
         function fecharModal() { document.getElementById('modalEdit').style.display = 'none'; }
-        async function salvarEdicao() { await apiPost({ action: 'editInventario', codigo: document.getElementById('editCodigo').value, custo: document.getElementById('editCusto').value, venda: document.getElementById('editVenda').value, foto: document.getElementById('editFoto').value }); fecharModal(); setTimeout(carregarInventario, 1000); }
+        async function salvarEdicao() { await apiPost({ action: 'editInventario', codigo: document.getElementById('editCodigo').value, custo: document.getElementById('editCusto').value, venda: document.getElementById('editVenda').value, foto: document.getElementById('editFoto').value }); fecharModal(); setTimeout(carregarInventario, 1500); }
         async function adicionarAoInventario() { const c = document.getElementById('codigoInput').value; if(c) { await apiPost({ action: 'addInventario', codigo: c, data: document.getElementById('dataInventario').value }); document.getElementById('codigoInput').value = ''; await carregarInventario(); abrirModal(c); } }
-        async function repassarItem() { const d = { action: 'addRepasse', revendedor: document.getElementById('selectRevendedor').value, codigo: document.getElementById('codigoRepasse').value, custo: document.getElementById('custoItem').value, venda: document.getElementById('vendaItem').value, data: document.getElementById('dataRepasse').value }; if(d.codigo && d.revendedor) { await apiPost(d); document.getElementById('codigoRepasse').value = ''; setTimeout(carregarInventario, 1000); } }
+        async function repassarItem() { const r = document.getElementById('selectRevendedor').value, c = document.getElementById('codigoRepasse').value; if(r && c) { await apiPost({ action: 'addRepasse', revendedor: r, codigo: c, custo: document.getElementById('custoItem').value, venda: document.getElementById('vendaItem').value, data: document.getElementById('dataRepasse').value }); document.getElementById('codigoRepasse').value = ''; setTimeout(carregarInventario, 1500); } }
 
         async function carregarPainelIndividual() {
-            const rev = document.getElementById('filtroRevendedor').value.toString().trim();
+            const rev = document.getElementById('filtroRevendedor').value.toString().trim().toLowerCase();
             if(!rev) { document.getElementById('dadosPainel').classList.add('hidden'); document.getElementById('painelVazio').classList.remove('hidden'); return; }
             document.getElementById('painelVazio').classList.add('hidden');
             globalRepasses = await apiGet('getRepasses');
-            // Busca ignorando espaços e maiúsculas/minúsculas para garantir a listagem
-            const filtrados = globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev.toLowerCase());
+            const filtrados = globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev);
             renderPainel(filtrados);
         }
 
         function renderPainel(itens) {
             let c = 0, v = 0;
             document.getElementById('tabelaPainel').innerHTML = itens.map(i => {
-                const valVenda = parseFloat(i.Venda || 0);
-                const valCusto = parseFloat(i.Custo || 0);
-                const status = (i.Status || i.status || "Pendente").toString();
-                if (status === 'Pendente') { c += valCusto; v += valVenda; }
-                const sCol = status === 'Pago' ? 'text-green-400' : 'text-gold';
-                return `<tr><td>${new Date(i.Data || i.data).toLocaleDateString('pt-BR')}</td><td class="font-bold text-white">${i.Codigo || i.codigo}</td><td class="text-gold">R$ ${valVenda.toFixed(2)}</td><td class="text-right uppercase text-[10px] font-bold ${sCol}">${status}</td></tr>`;
+                const valVenda = parseFloat(i.Venda || 0), valCusto = parseFloat(i.Custo || 0), s = (i.Status || i.status || "Pendente").toString();
+                if (s === 'Pendente') { c += valCusto; v += valVenda; }
+                const sc = s === 'Pago' ? 'text-green-400' : 'text-gold';
+                return `<tr><td>${new Date(i.Data || i.data).toLocaleDateString('pt-BR')}</td><td class="font-bold text-white">${i.Codigo || i.codigo}</td><td class="text-gold">R$ ${valVenda.toFixed(2)}</td><td class="text-right uppercase text-[10px] font-bold ${sc}">${s}</td></tr>`;
             }).join('');
             totalVendaPainel = v;
             document.getElementById('totalCusto').innerText = `R$ ${c.toFixed(2)}`;
@@ -292,27 +242,14 @@
             if(p > 0) { const com = totalVendaPainel * (p / 100), liq = totalVendaPainel - com; document.getElementById('valorComissaoRev').innerText = `R$ ${com.toFixed(2)}`; document.getElementById('valorLiquidoLuxus').innerText = `R$ ${liq.toFixed(2)}`; card.classList.remove('hidden'); } else card.classList.add('hidden');
         }
 
-        async function realizarFechamento() { 
-            const rev = document.getElementById('filtroRevendedor').value; 
-            if(confirm('Liquidar peças pendentes?')) { 
-                await apiPost({ action: 'fechamento', revendedor: rev, obs: document.getElementById('obsFechamento').value }); 
-                setTimeout(carregarPainelIndividual, 1500); 
-            } 
-        }
+        async function realizarFechamento() { const rev = document.getElementById('filtroRevendedor').value; if(confirm('Liquidar peças pendentes?')) { await apiPost({ action: 'fechamento', revendedor: rev, obs: document.getElementById('obsFechamento').value }); setTimeout(carregarPainelIndividual, 1500); } }
 
         function setFilter(f) { document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active')); document.querySelector(`[data-filter="${f}"]`).classList.add('active'); let d = globalInventario; if(f === 'Em Estoque') d = globalInventario.filter(i => (i.Status || i.status) === 'Em Estoque'); else if(f === 'Consignado') d = globalInventario.filter(i => (i.Status || i.status) !== 'Em Estoque' && (i.Status || i.status) !== 'Vendido'); else if(f === 'Vendido') d = globalInventario.filter(i => (i.Status || i.status) === 'Vendido'); renderInventario(d); }
-        function setPainelFilter(f) { document.querySelectorAll('[data-pfilter]').forEach(b => b.classList.remove('active')); document.querySelector(`[data-pfilter="${f}"]`).classList.add('active'); const rev = document.getElementById('filtroRevendedor').value.toString().trim(); let d = globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev.toLowerCase()); if(f !== 'Todos') d = d.filter(i => (i.Status || i.status) === f); renderPainel(d); }
-        function filtrarTabela() { const q = document.getElementById('searchInventario').value.toLowerCase(); renderInventario(globalInventario.filter(i => (i.Codigo || i.codigo).toString().toLowerCase().includes(q) || (i.Status || i.status).toLowerCase().includes(q))); }
+        function setPainelFilter(f) { document.querySelectorAll('[data-pfilter]').forEach(b => b.classList.remove('active')); document.querySelector(`[data-pfilter="${f}"]`).classList.add('active'); const rev = document.getElementById('filtroRevendedor').value.toString().trim().toLowerCase(); let d = globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev); if(f !== 'Todos') d = d.filter(i => (i.Status || i.status) === f); renderPainel(d); }
+        function filtrarTabela() { const q = document.getElementById('searchInventario').value.toLowerCase(); renderInventario(globalInventario.filter(i => (i.Codigo || i.codigo || "").toString().toLowerCase().includes(q) || (i.Status || i.status || "").toString().toLowerCase().includes(q))); }
         
         document.getElementById('codigoInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') adicionarAoInventario(); });
-        
-        // Carregamento Inicial
-        window.onload = () => {
-            if(API_URL) { 
-                carregarInventario(); 
-                carregarRevendedores(); 
-            }
-        };
+        window.onload = () => { if(API_URL) { carregarInventario(); carregarRevendedores(); } };
     </script>
 </body>
 </html>
