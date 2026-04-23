@@ -17,8 +17,27 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: slideUp 0.4s ease-out; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        input, select, textarea { background: #1c2539 !important; border: 1px solid #2d3748 !important; color: white !important; border-radius: 8px !important; padding: 12px !important; font-size: 0.875rem !important; outline: none; }
-        input:focus { border-color: var(--accent) !important; }
+        
+        /* Estilo Dark para Inputs e Selects */
+        input, select, textarea { 
+            background: #1c2539 !important; 
+            border: 1px solid #2d3748 !important; 
+            color: white !important; 
+            border-radius: 8px !important; 
+            padding: 12px !important; 
+            font-size: 0.875rem !important; 
+            outline: none; 
+            appearance: none;
+        }
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 40px !important;
+        }
+        input:focus, select:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 2px rgba(76, 139, 245, 0.2); }
+        
         .btn-primary { background: var(--accent); color: white; font-weight: 600; padding: 12px 24px; border-radius: 8px; transition: all 0.2s; font-size: 0.875rem; border: none; cursor: pointer; }
         .btn-gold { background: var(--gold); color: #1a233a; font-weight: 700; padding: 12px 24px; border-radius: 8px; transition: all 0.2s; font-size: 0.875rem; border: none; cursor: pointer; }
         table { width: 100%; border-collapse: collapse; }
@@ -29,7 +48,7 @@
         .modal-content { background: var(--navy-card); padding: 2rem; border-radius: 16px; width: 90%; max-width: 500px; border: 1px solid var(--gold); }
         .filter-pill { padding: 6px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 1px solid #2d3748; color: var(--text-muted); background: transparent; }
         .filter-pill.active { background: var(--navy-dark); color: white; border-color: var(--accent); }
-        .search-bar { background: white !important; color: #1a233a !important; border-radius: 24px !important; padding: 10px 20px !important; border: none !important; }
+        .search-bar { background: #1c2539 !important; color: white !important; border-radius: 24px !important; padding: 10px 20px !important; border: 1px solid #2d3748 !important; }
         .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
         .status-estoque { background: rgba(34, 197, 94, 0.1); color: #4ade80; }
         .status-consignado { background: rgba(197, 160, 89, 0.1); color: var(--gold); }
@@ -173,7 +192,7 @@
 
         <div id="painel_revendedor" class="tab-content">
             <div class="bg-navy-dark/30 p-4 rounded-xl mb-8 flex flex-wrap items-center gap-4">
-                <div class="flex-1 min-w-[200px]"><select id="filtroRevendedor" onchange="carregarPainelIndividual()" class="w-full font-bold !bg-white !text-navy-dark rounded-full"></select></div>
+                <div class="flex-1 min-w-[200px]"><select id="filtroRevendedor" onchange="carregarPainelIndividual()" class="w-full font-bold !bg-navy-dark !text-white rounded-full"></select></div>
                 <div class="flex gap-2">
                     <button onclick="setPainelFilter('Todos')" class="filter-pill active" data-pfilter="Todos">Todos</button>
                     <button onclick="setPainelFilter('Pendente')" class="filter-pill" data-pfilter="Pendente">Pendentes</button>
@@ -198,6 +217,10 @@
                 <div class="card overflow-hidden"><table><thead><tr><th>Data</th><th>Peça</th><th>Venda</th><th class="text-right">Status</th></tr></thead><tbody id="tabelaPainel" class="text-sm"></tbody></table></div>
                 <div class="card p-8"><textarea id="obsFechamento" class="w-full h-24 mb-6" placeholder="Notas do fechamento..."></textarea><button onclick="realizarFechamento()" class="btn-primary w-full">Finalizar e Liquidar</button></div>
             </div>
+            
+            <div id="painelVazio" class="card p-20 text-center opacity-50">
+                <p class="text-muted uppercase tracking-widest text-xs">Selecione um parceiro para ver os dados</p>
+            </div>
         </div>
     </main>
 
@@ -217,9 +240,18 @@
             document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             document.getElementById('btn-' + tabId).classList.add('active');
+            
             if(tabId === 'inventario') carregarInventario();
-            if(tabId === 'distribuicao') { carregarRevendedores(); popularSelectsRevendedores(); carregarInventario(); }
-            if(tabId === 'painel_revendedor') popularSelectsRevendedores();
+            if(tabId === 'distribuicao') { 
+                carregarRevendedores(); 
+                popularSelectsRevendedores(); 
+                carregarInventario(); 
+            }
+            if(tabId === 'painel_revendedor') {
+                popularSelectsRevendedores();
+                document.getElementById('dadosPainel').classList.add('hidden');
+                document.getElementById('painelVazio').classList.remove('hidden');
+            }
         }
 
         function salvarConfig() {
@@ -239,6 +271,7 @@
             if(!API_URL) return [];
             document.getElementById('loading').style.display = 'flex';
             try { const r = await fetch(`${API_URL}?action=${action}`); return await r.json(); } 
+            catch(e) { console.error(e); return []; }
             finally { document.getElementById('loading').style.display = 'none'; }
         }
 
@@ -295,6 +328,7 @@
 
         async function popularSelectsRevendedores() {
             const revs = await apiGet('getRevendedores');
+            globalRevendedores = revs;
             const options = '<option value="">SELECIONAR PARCEIRO</option>' + revs.map(r => `<option value="${r.Nome || r.nome}">${r.Nome || r.nome}</option>`).join('');
             if(document.getElementById('selectRevendedor')) document.getElementById('selectRevendedor').innerHTML = options;
             if(document.getElementById('filtroRevendedor')) document.getElementById('filtroRevendedor').innerHTML = options;
@@ -337,16 +371,12 @@
         }
 
         function checkBipeConsignacaoInstant(codigo) {
-            // Se o código for vazio, limpa os campos
             if (!codigo) {
                 document.getElementById('custoItem').value = '';
                 document.getElementById('vendaItem').value = '';
                 return;
             }
-            
-            // Procura o item no inventário global (já carregado na abertura da aba)
             const item = globalInventario.find(i => (i.Codigo || i.codigo).toString().trim() === codigo.toString().trim());
-            
             if(item) {
                 document.getElementById('custoItem').value = item.Custo || item.custo || '';
                 document.getElementById('vendaItem').value = item.Venda || item.venda || '';
@@ -398,17 +428,32 @@
 
         async function carregarPainelIndividual() {
             const rev = document.getElementById('filtroRevendedor').value;
-            if(!rev) return document.getElementById('dadosPainel').classList.add('hidden');
+            if(!rev) {
+                document.getElementById('dadosPainel').classList.add('hidden');
+                document.getElementById('painelVazio').classList.remove('hidden');
+                return;
+            }
+            
+            document.getElementById('painelVazio').classList.add('hidden');
             globalRepasses = await apiGet('getRepasses');
-            renderPainel(globalRepasses.filter(r => (r.Revendedor || r.revendedor) === rev));
+            
+            // Resetar filtros ao trocar de revendedor
+            document.querySelectorAll('[data-pfilter]').forEach(b => b.classList.remove('active'));
+            document.querySelector('[data-pfilter="Todos"]').classList.add('active');
+            
+            const filtrados = globalRepasses.filter(r => (r.Revendedor || r.revendedor) === rev);
+            renderPainel(filtrados);
         }
 
         function renderPainel(itens) {
             let c = 0, v = 0;
             document.getElementById('tabelaPainel').innerHTML = itens.map(i => {
                 c += parseFloat(i.Custo || 0); v += parseFloat(i.Venda || 0);
-                return `<tr><td>${new Date(i.Data || i.data).toLocaleDateString('pt-BR')}</td><td class="font-bold text-white">${i.Codigo || i.codigo}</td><td class="text-gold">R$ ${parseFloat(i.Venda || 0).toFixed(2)}</td><td class="text-right uppercase text-[10px] font-bold">${i.Status || i.status}</td></tr>`;
+                const status = i.Status || i.status;
+                const statusColor = status === 'Pago' ? 'text-green-400' : 'text-gold';
+                return `<tr><td>${new Date(i.Data || i.data).toLocaleDateString('pt-BR')}</td><td class="font-bold text-white">${i.Codigo || i.codigo}</td><td class="text-gold">R$ ${parseFloat(i.Venda || 0).toFixed(2)}</td><td class="text-right uppercase text-[10px] font-bold ${statusColor}">${status}</td></tr>`;
             }).join('');
+            
             totalVendaPainel = v;
             document.getElementById('totalCusto').innerText = `R$ ${c.toFixed(2)}`;
             document.getElementById('totalVenda').innerText = `R$ ${v.toFixed(2)}`;
@@ -433,7 +478,11 @@
         async function realizarFechamento() {
             const rev = document.getElementById('filtroRevendedor').value;
             const obs = document.getElementById('obsFechamento').value;
-            if(confirm('Finalizar acerto?')) { await apiPost({ action: 'fechamento', revendedor: rev, obs }); carregarPainelIndividual(); }
+            if(confirm('Finalizar acerto? Todas as peças pendentes serão marcadas como pagas.')) { 
+                await apiPost({ action: 'fechamento', revendedor: rev, obs }); 
+                alert('Fechamento realizado com sucesso!');
+                await carregarPainelIndividual(); 
+            }
         }
 
         function setFilter(filter) {
