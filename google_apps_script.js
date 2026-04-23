@@ -1,6 +1,6 @@
 /**
- * LUXUS BACKEND v7.0 - LIQUIDAÇÃO PARCIAL POR BIPE
- * Suporte para conferência individual de peças durante o acerto mensal.
+ * LUXUS BACKEND v8.0 - EDIÇÃO MANUAL DE LOCALIZAÇÃO
+ * Permite alterar o status/localização de uma joia diretamente no inventário.
  */
 
 function doGet(e) {
@@ -30,6 +30,7 @@ function getSheetAsJSON(ss, sheetName) {
   const json = rows.map(row => {
     let obj = {};
     headers.forEach((h, i) => { if (h) obj[h] = row[i]; });
+    // Força mapeamento de campos críticos
     if (sheetName === 'Revendedores') { obj.Nome = row[0]; obj.Contato = row[1]; }
     if (sheetName === 'Inventario') { obj.Codigo = row[0]; obj.Status = row[2]; obj.Custo = row[3]; obj.Venda = row[4]; obj.Foto = row[5]; }
     if (sheetName === 'Repasses') { obj.Revendedor = row[0]; obj.Codigo = row[1]; obj.Custo = row[2]; obj.Venda = row[3]; obj.Data = row[4]; obj.Status = row[5]; }
@@ -92,6 +93,7 @@ function doPost(e) {
     const cod = params.codigo.toString().trim().toLowerCase();
     for (let i = 1; i < data.length; i++) {
       if (data[i][0].toString().trim().toLowerCase() === cod) {
+        sheet.getRange(i + 1, 3).setValue(params.status || data[i][2]); // Altera localização/status
         sheet.getRange(i + 1, 4).setValue(params.custo);
         sheet.getRange(i + 1, 5).setValue(params.venda);
         sheet.getRange(i + 1, 6).setValue(params.foto);
@@ -116,7 +118,6 @@ function doPost(e) {
     return ContentService.createTextOutput("Sucesso");
   }
 
-  // NOVA FUNÇÃO: FECHAMENTO PARCIAL (LÍQUIDA APENAS CÓDIGOS BIPADOS)
   if (action === 'fechamentoParcial') {
     const sheetRep = ss.getSheetByName('Repasses');
     const sheetInv = ss.getSheetByName('Inventario');
