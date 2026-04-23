@@ -1,6 +1,6 @@
 /**
- * LUXUS BACKEND v20.0 - TIPO DE JOIA & GESTÃO ROBUSTA
- * Versão com suporte ao campo 'Tipo' e melhorias de sincronização.
+ * LUXUS BACKEND v22.0 - GESTÃO DE TIPOS DE JOIA
+ * Suporte para lista de tipos cadastráveis e melhorias de sincronização.
  */
 
 function doGet(e) {
@@ -11,6 +11,7 @@ function doGet(e) {
     if (action === 'getInventario') return getSheetAsJSON(ss, 'Inventario');
     if (action === 'getRepasses') return getSheetAsJSON(ss, 'Repasses');
     if (action === 'getRevendedores') return getSheetAsJSON(ss, 'Revendedores');
+    if (action === 'getTipos') return getSheetAsJSON(ss, 'Tipos');
     return createResponse({ status: "online" });
   } catch (err) {
     return createResponse({ error: err.message });
@@ -34,15 +35,10 @@ function getSheetAsJSON(ss, sheetName) {
     // Normalização para garantir que o Frontend receba os campos esperados
     if (sheetName === 'Revendedores') { obj.Nome = row[0]; obj.Contato = row[1]; }
     if (sheetName === 'Inventario') { 
-      obj.Codigo = row[0]; 
-      obj.Data = row[1];
-      obj.Status = row[2]; 
-      obj.Custo = row[3]; 
-      obj.Venda = row[4]; 
-      obj.Foto = row[5]; 
-      obj.Tipo = row[6] || ""; 
+      obj.Codigo = row[0]; obj.Data = row[1]; obj.Status = row[2]; 
+      obj.Custo = row[3]; obj.Venda = row[4]; obj.Foto = row[5]; obj.Tipo = row[6] || ""; 
     }
-    if (sheetName === 'Repasses') { obj.Revendedor = row[0]; obj.Codigo = row[1]; obj.Custo = row[2]; obj.Venda = row[3]; obj.Data = row[4]; obj.Status = row[5]; }
+    if (sheetName === 'Tipos') { obj.Nome = row[0]; }
     return obj;
   });
   return createResponse(json);
@@ -59,12 +55,28 @@ function doPost(e) {
   
   const action = params.action;
 
+  // GESTÃO DE TIPOS
+  if (action === 'addTipo') {
+    const sheet = getSheet(ss, 'Tipos', ['Nome']);
+    sheet.appendRow([params.nome.toString().trim()]);
+    return ContentService.createTextOutput("Sucesso");
+  }
+  if (action === 'delTipo') {
+    const sheet = ss.getSheetByName('Tipos');
+    const data = sheet.getDataRange().getValues();
+    const n = params.nome.toString().trim().toLowerCase();
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0].toString().trim().toLowerCase() === n) { sheet.deleteRow(i + 1); break; }
+    }
+    return ContentService.createTextOutput("Sucesso");
+  }
+
+  // GESTÃO DE REVENDEDORES
   if (action === 'addRevendedor') {
     const sheet = getSheet(ss, 'Revendedores', ['Nome', 'Contato']);
     sheet.appendRow([params.nome.toString().trim(), params.contato ? params.contato.toString().trim() : ""]);
     return ContentService.createTextOutput("Sucesso");
   }
-
   if (action === 'editRevendedor') {
     const sheet = ss.getSheetByName('Revendedores');
     const data = sheet.getDataRange().getValues();
@@ -79,7 +91,6 @@ function doPost(e) {
     }
     return ContentService.createTextOutput("Erro");
   }
-
   if (action === 'delRevendedor') {
     const sheet = ss.getSheetByName('Revendedores');
     const data = sheet.getDataRange().getValues();
@@ -90,12 +101,12 @@ function doPost(e) {
     return ContentService.createTextOutput("Sucesso");
   }
 
+  // GESTÃO DE INVENTÁRIO
   if (action === 'addInventario') {
     const sheet = getSheet(ss, 'Inventario', ['Codigo', 'Data', 'Status', 'Custo', 'Venda', 'Foto', 'Tipo']);
     sheet.appendRow([params.codigo.toString().trim(), params.data || new Date(), 'Em Estoque', "", "", "", params.tipo || ""]);
     return ContentService.createTextOutput("Sucesso");
   }
-
   if (action === 'editInventario') {
     const sheet = ss.getSheetByName('Inventario');
     const rowId = params.rowId; 
@@ -110,16 +121,13 @@ function doPost(e) {
     }
     return ContentService.createTextOutput("Erro");
   }
-
   if (action === 'delInventario') {
     const sheet = ss.getSheetByName('Inventario');
-    if (params.rowId) {
-      sheet.deleteRow(params.rowId);
-      return ContentService.createTextOutput("Sucesso");
-    }
+    if (params.rowId) { sheet.deleteRow(params.rowId); return ContentService.createTextOutput("Sucesso"); }
     return ContentService.createTextOutput("Erro");
   }
 
+  // GESTÃO DE REPASSES
   if (action === 'addRepasse') {
     const sheetRep = getSheet(ss, 'Repasses', ['Revendedor', 'Codigo', 'Custo', 'Venda', 'Data', 'Status']);
     const sheetInv = ss.getSheetByName('Inventario');
@@ -130,14 +138,12 @@ function doPost(e) {
       const dInv = sheetInv.getDataRange().getValues();
       for (let i = 1; i < dInv.length; i++) {
         if (dInv[i][0].toString().trim().toLowerCase() === cod.toLowerCase() && dInv[i][2] === 'Em Estoque') { 
-          sheetInv.getRange(i + 1, 3).setValue(rev); 
-          break; 
+          sheetInv.getRange(i + 1, 3).setValue(rev); break; 
         }
       }
     }
     return ContentService.createTextOutput("Sucesso");
   }
-
   if (action === 'delRepasse') {
     const sheetRep = ss.getSheetByName('Repasses');
     const sheetInv = ss.getSheetByName('Inventario');
@@ -149,8 +155,7 @@ function doPost(e) {
         const dInv = sheetInv.getDataRange().getValues();
         for (let i = 1; i < dInv.length; i++) {
           if (dInv[i][0].toString().trim().toLowerCase() === cod && dInv[i][2] !== 'Em Estoque' && dInv[i][2] !== 'Vendido') {
-            sheetInv.getRange(i + 1, 3).setValue('Em Estoque');
-            break;
+            sheetInv.getRange(i + 1, 3).setValue('Em Estoque'); break;
           }
         }
       }
@@ -175,15 +180,13 @@ function doPost(e) {
             const dInv = sheetInv.getDataRange().getValues();
             for (let j = 1; j < dInv.length; j++) {
               if (dInv[j][0].toString().trim().toLowerCase() === codItem && dInv[j][2].toString().trim().toLowerCase() === rev) { 
-                sheetInv.getRange(j + 1, 3).setValue('Vendido'); 
-                break; 
+                sheetInv.getRange(j + 1, 3).setValue('Vendido'); break; 
               }
             }
           }
         }
       }
     }
-    
     const sheetFech = getSheet(ss, 'Fechamentos', ['Revendedor', 'Data', 'Observacoes']);
     sheetFech.appendRow([params.revendedor, new Date(), params.obs]);
     return ContentService.createTextOutput("Sucesso");
