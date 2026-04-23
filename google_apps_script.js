@@ -1,5 +1,5 @@
 /**
- * Script Luxus v3.2 - Suporte a Contatos e Localização
+ * Script Luxus v3.3 - Edição de Revendedores e Robustez
  */
 
 function doGet(e) {
@@ -89,7 +89,7 @@ function doPost(e) {
       const dataInv = sheetInv.getDataRange().getValues();
       for (let i = 1; i < dataInv.length; i++) {
         if (dataInv[i][0] == params.codigo && dataInv[i][2] == 'Em Estoque') {
-          sheetInv.getRange(i + 1, 3).setValue(params.revendedor); // Agora salva o nome do revendedor direto no status/localização
+          sheetInv.getRange(i + 1, 3).setValue(params.revendedor);
           break;
         }
       }
@@ -100,6 +100,22 @@ function doPost(e) {
   if (action === 'addRevendedor') {
     const sheet = getOrCreateSheet(ss, 'Revendedores', ['Nome', 'Contato']);
     sheet.appendRow([params.nome, params.contato || '']);
+    return ContentService.createTextOutput("Sucesso").setMimeType(ContentService.MimeType.TEXT);
+  }
+
+  if (action === 'editRevendedor') {
+    const sheet = ss.getSheetByName('Revendedores');
+    const data = sheet.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] == params.nomeAntigo) {
+        sheet.getRange(i + 1, 1).setValue(params.novoNome);
+        sheet.getRange(i + 1, 2).setValue(params.novoContato);
+        
+        // Atualizar nome nas outras abas se necessário
+        atualizarNomeRevendedorGlobal(ss, params.nomeAntigo, params.novoNome);
+        break;
+      }
+    }
     return ContentService.createTextOutput("Sucesso").setMimeType(ContentService.MimeType.TEXT);
   }
 
@@ -120,14 +136,9 @@ function doPost(e) {
     const sheetInv = ss.getSheetByName('Inventario');
     const dataRep = sheetRepasse.getDataRange().getValues();
     
-    // Marcar repasses como pagos
     for (let i = 1; i < dataRep.length; i++) {
       if (dataRep[i][0] == params.revendedor && dataRep[i][5] == 'Pendente') {
         sheetRepasse.getRange(i + 1, 6).setValue('Pago');
-        
-        // Se foi pago, volta para o estoque ou fica como vendido? 
-        // Geralmente fechamento de semi joia o item sai do controle.
-        // Vou manter como 'Vendido' no inventário para histórico.
         if (sheetInv) {
           const dataInv = sheetInv.getDataRange().getValues();
           for (let j = 1; j < dataInv.length; j++) {
@@ -145,17 +156,33 @@ function doPost(e) {
   }
 }
 
+function atualizarNomeRevendedorGlobal(ss, antigo, novo) {
+  // Atualizar na aba Inventario (Status)
+  const sheetInv = ss.getSheetByName('Inventario');
+  if (sheetInv) {
+    const data = sheetInv.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][2] == antigo) sheetInv.getRange(i + 1, 3).setValue(novo);
+    }
+  }
+  // Atualizar na aba Repasses
+  const sheetRep = ss.getSheetByName('Repasses');
+  if (sheetRep) {
+    const data = sheetRep.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] == antigo) sheetRep.getRange(i + 1, 1).setValue(novo);
+    }
+  }
+}
+
 function getOrCreateSheet(ss, name, headers) {
   let sheet = ss.getSheetByName(name);
   if (!sheet) {
     sheet = ss.insertSheet(name);
     sheet.appendRow(headers);
   } else {
-    // Garantir que cabeçalhos existam
     const data = sheet.getDataRange().getValues();
-    if (data.length === 0) {
-      sheet.appendRow(headers);
-    }
+    if (data.length === 0) sheet.appendRow(headers);
   }
   return sheet;
 }
