@@ -63,10 +63,10 @@
         .dash-card { padding: 1.5rem; display: flex; flex-direction: column; gap: 4px; }
         .dash-value { font-size: 1.5rem; font-weight: 700; color: white; }
         .dash-label { font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-        .col-toggle { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; color: var(--text-muted); cursor: pointer; padding: 8px 12px; border-radius: 8px; transition: all 0.2s; }
+        .col-toggle { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; color: var(--text-muted); cursor: pointer; padding: 8px 12px; border-radius: 8px; transition: all 0.2s; width: 100%; text-align: left; }
         .col-toggle:hover { background: rgba(255,255,255,0.05); color: white; }
-        .col-toggle input { width: 16px !important; height: 16px !important; cursor: pointer; margin: 0 !important; }
-        .dropdown-menu { position: absolute; right: 0; top: calc(100% + 8px); width: 220px; background: var(--navy-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); padding: 8px; z-index: 101; display: none; }
+        .col-toggle input { width: 16px !important; height: 16px !important; cursor: pointer; margin: 0 !important; flex-shrink: 0; }
+        .dropdown-menu { position: absolute; right: 0; top: calc(100% + 8px); width: 220px; background: var(--navy-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); padding: 8px; z-index: 101; display: none; }
         .group:hover .dropdown-menu { display: block; }
     </style>
 </head>
@@ -75,7 +75,7 @@
     <div id="loading" class="loading-overlay"><div class="flex flex-col items-center"><div class="w-10 h-10 border-3 border-accent border-t-transparent rounded-full animate-spin mb-4"></div><p class="text-accent text-xs font-semibold uppercase">Luxus Cloud</p></div></div>
 
     <!-- Modais -->
-    <div id="modalEdit" class="modal"><div class="modal-content"><h3 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Editar Joia</h3><div class="space-y-4"><input type="hidden" id="editRowId"><div><label class="text-[10px] font-bold text-muted mb-1 block">CÓDIGO</label><input type="text" id="editCodigo" class="w-full"></div><div><label class="text-[10px] font-bold text-muted mb-1 block">TIPO DE JOIA</label><input type="text" id="editTipo" class="w-full" placeholder="Ex: Pulseira Masculina"></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Custo (R$)</label><input type="number" id="editCusto" class="w-full" step="0.01"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Venda (R$)</label><input type="number" id="editVenda" class="w-full" step="0.01"></div></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Foto da Joia</label><div class="flex gap-2 items-center"><div class="upload-area flex-1" onclick="document.getElementById('fileUpload').click()"><p id="uploadStatus" class="text-xs text-muted">Clique para enviar imagem</p><input type="file" id="fileUpload" class="hidden" accept="image/*" onchange="handleFileUpload(this)"></div><button id="btnRemoverFoto" onclick="removerFoto()" class="p-3 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 hidden" title="Remover Foto">🗑️</button></div><input type="hidden" id="editFoto"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Localização</label><select id="editStatus" class="w-full"></select></div><div class="flex gap-3 pt-4"><button onclick="excluirItemNoModal()" class="p-3 bg-red-500/10 text-red-500 rounded-lg font-bold flex-none" title="Excluir Peça">🗑️</button><button onclick="fecharModal()" class="flex-1 p-3 bg-navy-dark text-white rounded-lg font-bold">Cancelar</button><button onclick="salvarEdicao()" class="flex-1 p-3 bg-gold text-navy-dark rounded-lg font-bold">Salvar</button></div></div></div></div>
+    <div id="modalEdit" class="modal"><div class="modal-content"><h3 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Editar Joia</h3><div class="space-y-4"><input type="hidden" id="editRowId"><div><label class="text-[10px] font-bold text-muted mb-1 block">CÓDIGO</label><input type="text" id="editCodigo" class="w-full"></div><div><label class="text-[10px] font-bold text-muted mb-1 block">TIPO DE JOIA</label><select id="editTipo" class="w-full"></select></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Custo (R$)</label><input type="number" id="editCusto" class="w-full" step="0.01"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Venda (R$)</label><input type="number" id="editVenda" class="w-full" step="0.01"></div></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Foto da Joia</label><div class="flex gap-2 items-center"><div class="upload-area flex-1" onclick="document.getElementById('fileUpload').click()"><p id="uploadStatus" class="text-xs text-muted">Clique para enviar imagem</p><input type="file" id="fileUpload" class="hidden" accept="image/*" onchange="handleFileUpload(this)"></div><button id="btnRemoverFoto" onclick="removerFoto()" class="p-3 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 hidden" title="Remover Foto">🗑️</button></div><input type="hidden" id="editFoto"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Localização</label><select id="editStatus" class="w-full"></select></div><div class="flex gap-3 pt-4"><button onclick="excluirItemNoModal()" class="p-3 bg-red-500/10 text-red-500 rounded-lg font-bold flex-none" title="Excluir Peça">🗑️</button><button onclick="fecharModal()" class="flex-1 p-3 bg-navy-dark text-white rounded-lg font-bold">Cancelar</button><button onclick="salvarEdicao()" class="flex-1 p-3 bg-gold text-navy-dark rounded-lg font-bold">Salvar</button></div></div></div></div>
     <div id="modalEditRev" class="modal"><div class="modal-content"><h3 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Editar Parceiro</h3><div class="space-y-4"><input type="hidden" id="editRevNomeAntigo"><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Nome</label><input type="text" id="editRevNovoNome" class="w-full"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Contato</label><input type="text" id="editRevNovoContato" class="w-full"></div><div class="flex gap-3 pt-4"><button onclick="fecharModalRev()" class="flex-1 p-3 bg-navy-dark text-white rounded-lg font-bold">Cancelar</button><button onclick="salvarEdicaoRev()" class="flex-1 p-3 bg-gold text-navy-dark rounded-lg font-bold">Salvar</button></div></div></div></div>
     <div id="modalPhoto" class="modal" onclick="fecharModalFoto()"><div class="modal-content !max-w-3xl !p-2 !bg-black border-none"><img id="photoView" src="" class="w-full h-auto rounded-lg shadow-2xl"></div></div>
 
@@ -91,12 +91,24 @@
     <main class="container mx-auto p-8 max-w-7xl">
         
         <div id="config" class="tab-content">
-            <div class="card p-10 max-w-lg mx-auto text-center">
-                <h2 class="text-lg font-bold mb-6 text-white">Configuração Cloud</h2>
-                <div class="space-y-4">
-                    <div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">URL do Google Script</label><input type="text" id="apiUrl" class="w-full text-center" placeholder="URL /exec"></div>
-                    <div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Chave API ImgBB (Obrigatória para Fotos)</label><input type="text" id="imgbbKey" class="w-full text-center" placeholder="Sua chave ImgBB"></div>
-                    <button onclick="salvarConfig()" class="btn-primary w-full">Salvar Configurações</button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="card p-8">
+                    <h2 class="text-lg font-bold mb-6 text-white uppercase tracking-widest">Configuração Cloud</h2>
+                    <div class="space-y-4">
+                        <div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">URL do Google Script</label><input type="text" id="apiUrl" class="w-full" placeholder="URL /exec"></div>
+                        <div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Chave API ImgBB</label><input type="text" id="imgbbKey" class="w-full" placeholder="Sua chave ImgBB"></div>
+                        <button onclick="salvarConfig()" class="btn-primary w-full">Salvar Configurações</button>
+                    </div>
+                </div>
+                <div class="card p-8">
+                    <h2 class="text-lg font-bold mb-6 text-white uppercase tracking-widest">Tipos de Joia</h2>
+                    <div class="flex gap-2 mb-6">
+                        <input type="text" id="novoTipoInput" class="flex-1" placeholder="Ex: Pulseira Masculina">
+                        <button onclick="adicionarTipo()" class="btn-gold !px-6">Adicionar</button>
+                    </div>
+                    <div class="max-h-[300px] overflow-y-auto space-y-2" id="listaTiposConfig">
+                        <!-- Lista de tipos aqui -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -135,8 +147,8 @@
                 </div>
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                <div class="lg:col-span-1"><div class="card p-6"><h3 class="text-sm font-bold text-white mb-6 uppercase">Entrada</h3><div class="space-y-5"><input type="date" id="dataInventario" class="w-full"><input type="text" id="tipoInput" placeholder="Tipo (Ex: Pulseira)" class="w-full"><input type="text" id="codigoInput" placeholder="Bipe aqui..." class="w-full" autofocus><button onclick="adicionarAoInventario()" class="btn-gold w-full">Salvar</button></div></div></div>
-                <div class="lg:col-span-3"><div class="card overflow-hidden"><div class="p-5 border-b border-white/5 flex justify-between items-center"><span class="text-sm font-bold text-white">Acervo Luxus</span><span id="itemCount" class="text-xs font-bold text-accent">0 PEÇAS</span></div><div class="overflow-x-auto"><table><thead><tr><th class="col-foto">Foto</th><th class="col-data">Data</th><th class="col-codigo">Código</th><th class="col-tipo">Tipo</th><th class="col-custo">Custo</th><th class="col-venda">Venda</th><th class="col-status">Localização</th><th class="text-right">Ação</th></tr></thead><tbody id="listaInventario" class="text-sm"></tbody></table></div></div></div>
+                <div class="lg:col-span-1"><div class="card p-6"><h3 class="text-sm font-bold text-white mb-6 uppercase">Entrada</h3><div class="space-y-5"><input type="date" id="dataInventario" class="w-full"><select id="tipoSelect" class="w-full"></select><input type="text" id="codigoInput" placeholder="Bipe aqui..." class="w-full" autofocus><button onclick="adicionarAoInventario()" class="btn-gold w-full">Salvar</button></div></div></div>
+                <div class="lg:col-span-3"><div class="card overflow-hidden"><div class="p-5 border-b border-white/5 flex justify-between items-center"><span class="text-sm font-bold text-white">Acervo Luxus</span><span id="itemCount" class="text-xs font-bold text-accent">0 PEÇAS</span></div><div class="overflow-x-auto"><table><thead><tr id="tableHeader"></tr></thead><tbody id="listaInventario" class="text-sm"></tbody></table></div></div></div>
             </div>
         </div>
 
@@ -226,7 +238,7 @@
     <script>
         let API_URL = localStorage.getItem('apiUrl') || '';
         let IMGBB_KEY = localStorage.getItem('imgbbKey') || '';
-        let globalInventario = [], globalRepasses = [], globalRevendedores = [], itensDevolvidos = [];
+        let globalInventario = [], globalRepasses = [], globalRevendedores = [], globalTipos = [], itensDevolvidos = [];
         let totalVendaVendida = 0;
         let visibleCols = JSON.parse(localStorage.getItem('visibleCols')) || ['foto', 'data', 'codigo', 'tipo', 'custo', 'venda', 'status'];
         
@@ -242,6 +254,7 @@
             document.getElementById('btn-' + tabId).classList.add('active');
             if(tabId === 'inventario') carregarInventario();
             if(tabId === 'central_revendedor') carregarRevendedores();
+            if(tabId === 'config') carregarTipos();
         }
 
         function toggleCol(input) {
@@ -249,16 +262,22 @@
             if(input.checked) { if(!visibleCols.includes(col)) visibleCols.push(col); }
             else { visibleCols = visibleCols.filter(c => c !== col); }
             localStorage.setItem('visibleCols', JSON.stringify(visibleCols));
-            applyColVisibility();
+            renderInventario(globalInventario);
         }
 
         function applyColVisibility() {
-            const cols = ['foto', 'data', 'codigo', 'tipo', 'custo', 'venda', 'status'];
-            cols.forEach(c => {
-                const isVisible = visibleCols.includes(c);
-                document.querySelectorAll('.col-' + c).forEach(el => el.style.display = isVisible ? '' : 'none');
+            const allCols = ['foto', 'data', 'codigo', 'tipo', 'custo', 'venda', 'status'];
+            const header = document.getElementById('tableHeader');
+            header.innerHTML = '';
+            
+            allCols.forEach(c => {
+                if(visibleCols.includes(c)) {
+                    const th = document.createElement('th');
+                    th.innerText = c === 'status' ? 'Localização' : c.charAt(0).toUpperCase() + c.slice(1);
+                    header.appendChild(th);
+                }
                 const checkbox = document.querySelector(`input[data-col="${c}"]`);
-                if(checkbox) checkbox.checked = isVisible;
+                if(checkbox) checkbox.checked = visibleCols.includes(c);
             });
         }
 
@@ -269,6 +288,44 @@
             localStorage.setItem('imgbbKey', IMGBB_KEY);
             alert('Configurações Salvas!'); 
             location.reload(); 
+        }
+
+        // GESTÃO DE TIPOS
+        async function carregarTipos() {
+            globalTipos = await apiGet('getTipos');
+            renderTiposConfig();
+            updateTipoSelects();
+        }
+
+        function renderTiposConfig() {
+            const lista = document.getElementById('listaTiposConfig');
+            lista.innerHTML = globalTipos.map(t => `
+                <div class="flex justify-between items-center p-3 bg-navy-dark/50 rounded-lg border border-white/5">
+                    <span class="text-sm font-medium">${t.Nome}</span>
+                    <button onclick="excluirTipo('${t.Nome}')" class="text-red-400 hover:text-red-300 text-xs font-bold uppercase">Excluir</button>
+                </div>
+            `).join('') || '<p class="text-center text-muted text-xs py-4">Nenhum tipo cadastrado</p>';
+        }
+
+        function updateTipoSelects() {
+            const options = '<option value="">SELECIONAR TIPO</option>' + globalTipos.map(t => `<option value="${t.Nome}">${t.Nome}</option>`).join('');
+            document.getElementById('tipoSelect').innerHTML = options;
+            document.getElementById('editTipo').innerHTML = options;
+        }
+
+        async function adicionarTipo() {
+            const nome = document.getElementById('novoTipoInput').value.trim();
+            if(!nome) return;
+            await apiPost({ action: 'addTipo', nome: nome });
+            document.getElementById('novoTipoInput').value = '';
+            setTimeout(carregarTipos, 1500);
+        }
+
+        async function excluirTipo(nome) {
+            if(confirm(`Deseja excluir o tipo "${nome}"?`)) {
+                await apiPost({ action: 'delTipo', nome: nome });
+                setTimeout(carregarTipos, 1500);
+            }
         }
 
         async function handleFileUpload(input) {
@@ -453,7 +510,6 @@
                 globalInventario = await apiGet('getInventario'); 
                 atualizarDashboard(globalInventario);
                 renderInventario(globalInventario); 
-                applyColVisibility();
             } catch (e) { console.error("Erro carregarInventario:", e); }
         }
 
@@ -484,6 +540,7 @@
         }
 
         function renderInventario(dados) {
+            applyColVisibility();
             document.getElementById('itemCount').innerText = `${dados.length} PEÇAS`;
             document.getElementById('listaInventario').innerHTML = dados.map(i => {
                 const s = (i.Status || i.status || "").toString();
@@ -494,25 +551,23 @@
                 const dataFormatada = dataRaw ? new Date(dataRaw).toLocaleDateString('pt-BR') : '---';
                 const rowId = i.rowId;
                 const fotoUrl = i.Foto || i.foto || '';
-                return `<tr class="hover:bg-white/5">
-                    <td class="col-foto">${fotoUrl ? `<img src="${fotoUrl}" class="img-preview" onclick="abrirModalFoto('${fotoUrl}')">` : '<div class="w-10 h-10 bg-navy-dark rounded"></div>'}</td>
-                    <td class="col-data text-muted text-xs">${dataFormatada}</td>
-                    <td class="col-codigo font-bold text-white">${cod}</td>
-                    <td class="col-tipo text-muted text-xs uppercase">${tipo}</td>
-                    <td class="col-custo text-muted">R$ ${parseFloat(i.Custo || 0).toFixed(2)}</td>
-                    <td class="col-venda text-gold font-bold">R$ ${parseFloat(i.Venda || 0).toFixed(2)}</td>
-                    <td class="col-status">
+                
+                let rowHtml = '<tr class="hover:bg-white/5">';
+                if(visibleCols.includes('foto')) rowHtml += `<td>${fotoUrl ? `<img src="${fotoUrl}" class="img-preview" onclick="abrirModalFoto('${fotoUrl}')">` : '<div class="w-10 h-10 bg-navy-dark rounded"></div>'}</td>`;
+                if(visibleCols.includes('data')) rowHtml += `<td class="text-muted text-xs">${dataFormatada}</td>`;
+                if(visibleCols.includes('codigo')) rowHtml += `<td class="font-bold text-white cursor-pointer hover:text-accent transition-colors" onclick="abrirModal(${rowId})">${cod}</td>`;
+                if(visibleCols.includes('tipo')) rowHtml += `<td class="text-muted text-xs uppercase">${tipo}</td>`;
+                if(visibleCols.includes('custo')) rowHtml += `<td class="text-muted">R$ ${parseFloat(i.Custo || 0).toFixed(2)}</td>`;
+                if(visibleCols.includes('venda')) rowHtml += `<td class="text-gold font-bold">R$ ${parseFloat(i.Venda || 0).toFixed(2)}</td>`;
+                if(visibleCols.includes('status')) rowHtml += `<td>
                         <span onclick="abrirModal(${rowId})" class="status-pill ${sc}">
                             ${s}
                             <svg class="w-2.5 h-2.5 opacity-50" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path></svg>
                         </span>
-                    </td>
-                    <td class="text-right">
-                        <button onclick="abrirModal(${rowId})" class="text-accent hover:underline font-bold text-xs uppercase">Editar</button>
-                    </td>
-                </tr>`;
+                    </td>`;
+                rowHtml += '</tr>';
+                return rowHtml;
             }).join('');
-            applyColVisibility();
         }
 
         async function excluirItemNoModal() {
@@ -593,11 +648,10 @@
         
         async function adicionarAoInventario() { 
             const c = document.getElementById('codigoInput').value; 
-            const t = document.getElementById('tipoInput').value; 
+            const t = document.getElementById('tipoSelect').value; 
             if(c) { 
                 await apiPost({ action: 'addInventario', codigo: c, tipo: t, data: document.getElementById('dataInventario').value }); 
                 document.getElementById('codigoInput').value = ''; 
-                document.getElementById('tipoInput').value = ''; 
                 setTimeout(carregarInventario, 1500); 
             } 
         }
@@ -654,7 +708,7 @@
         }
 
         document.getElementById('codigoInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') adicionarAoInventario(); });
-        window.onload = () => { if(API_URL) { carregarInventario(); carregarRevendedores(); applyColVisibility(); } };
+        window.onload = () => { if(API_URL) { carregarInventario(); carregarRevendedores(); carregarTipos(); } };
     </script>
 </body>
 </html>
