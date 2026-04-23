@@ -337,7 +337,16 @@
         }
 
         function checkBipeConsignacaoInstant(codigo) {
-            const item = globalInventario.find(i => (i.Codigo || i.codigo) == codigo);
+            // Se o código for vazio, limpa os campos
+            if (!codigo) {
+                document.getElementById('custoItem').value = '';
+                document.getElementById('vendaItem').value = '';
+                return;
+            }
+            
+            // Procura o item no inventário global (já carregado na abertura da aba)
+            const item = globalInventario.find(i => (i.Codigo || i.codigo).toString().trim() === codigo.toString().trim());
+            
             if(item) {
                 document.getElementById('custoItem').value = item.Custo || item.custo || '';
                 document.getElementById('vendaItem').value = item.Venda || item.venda || '';
