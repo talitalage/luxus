@@ -159,7 +159,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div><label class="text-[10px] font-bold text-muted mb-2 block uppercase">Revendedor</label><select id="selectRevendedor" class="w-full"></select></div>
                             <div><label class="text-[10px] font-bold text-muted mb-2 block uppercase">Data</label><input type="date" id="dataRepasse" class="w-full"></div>
-                            <div class="md:col-span-2"><label class="text-[10px] font-bold text-muted mb-2 block uppercase">Código</label><input type="text" id="codigoRepasse" onkeypress="checkBipeConsignacao(event)" class="w-full" placeholder="Bipe o código"></div>
+                            <div class="md:col-span-2"><label class="text-[10px] font-bold text-muted mb-2 block uppercase">Código</label><input type="text" id="codigoRepasse" oninput="checkBipeConsignacaoInstant(this.value)" class="w-full" placeholder="Bipe o código"></div>
                             <div class="grid grid-cols-2 gap-4 md:col-span-2">
                                 <input type="number" id="custoItem" placeholder="Custo" class="w-full" step="0.01">
                                 <input type="number" id="vendaItem" placeholder="Venda" class="w-full" step="0.01">
@@ -182,12 +182,21 @@
             </div>
 
             <div id="dadosPainel" class="hidden space-y-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="card p-8"><p class="text-[10px] font-bold text-muted mb-1 uppercase">Custo Total</p><p id="totalCusto" class="text-2xl font-bold text-white">R$ 0,00</p></div>
-                    <div class="card p-8"><p class="text-[10px] font-bold text-muted mb-1 uppercase">Venda Prevista</p><p id="totalVenda" class="text-2xl font-bold text-gold">R$ 0,00</p></div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="card p-6 text-center"><p class="text-[10px] font-bold text-muted mb-1 uppercase">Custo Total</p><p id="totalCusto" class="text-xl font-bold text-white">R$ 0,00</p></div>
+                    <div class="card p-6 text-center"><p class="text-[10px] font-bold text-muted mb-1 uppercase">Venda Total</p><p id="totalVenda" class="text-xl font-bold text-gold">R$ 0,00</p></div>
+                    <div class="card p-6 text-center bg-purple/10 border-purple/20"><p class="text-[10px] font-bold text-purple mb-1 uppercase">Comissão (%)</p><input type="number" id="percentualComissao" oninput="calcularComissao()" placeholder="Ex: 30" class="w-20 !p-1 text-center mx-auto block !bg-white/10 !border-purple/30"></div>
                 </div>
+                
+                <div id="cardComissao" class="card p-6 hidden border-purple/30 bg-purple/5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
+                        <div><p class="text-[10px] font-bold text-muted mb-1 uppercase">Comissão Revendedor</p><p id="valorComissaoRev" class="text-xl font-bold text-purple">R$ 0,00</p></div>
+                        <div><p class="text-[10px] font-bold text-muted mb-1 uppercase">Líquido Luxus</p><p id="valorLiquidoLuxus" class="text-xl font-bold text-accent">R$ 0,00</p></div>
+                    </div>
+                </div>
+
                 <div class="card overflow-hidden"><table><thead><tr><th>Data</th><th>Peça</th><th>Venda</th><th class="text-right">Status</th></tr></thead><tbody id="tabelaPainel" class="text-sm"></tbody></table></div>
-                <div class="card p-8"><textarea id="obsFechamento" class="w-full h-24 mb-6" placeholder="Notas..."></textarea><button onclick="realizarFechamento()" class="btn-primary w-full">Finalizar Acerto</button></div>
+                <div class="card p-8"><textarea id="obsFechamento" class="w-full h-24 mb-6" placeholder="Notas do fechamento..."></textarea><button onclick="realizarFechamento()" class="btn-primary w-full">Finalizar e Liquidar</button></div>
             </div>
         </div>
     </main>
@@ -197,6 +206,7 @@
         let globalInventario = [];
         let globalRepasses = [];
         let globalRevendedores = [];
+        let totalVendaPainel = 0;
         
         document.getElementById('apiUrl').value = API_URL;
         document.getElementById('dataInventario').valueAsDate = new Date();
@@ -326,17 +336,14 @@
             `}).join('');
         }
 
-        function checkBipeConsignacao(e) {
-            if(e.key === 'Enter') {
-                const codigo = document.getElementById('codigoRepasse').value;
-                const item = globalInventario.find(i => (i.Codigo || i.codigo) == codigo);
-                if(item) {
-                    document.getElementById('custoItem').value = item.Custo || item.custo || '';
-                    document.getElementById('vendaItem').value = item.Venda || item.venda || '';
-                    alert('Peça localizada: ' + (item.Status || item.status));
-                } else {
-                    if(confirm('Código não encontrado. Cadastrar agora?')) abrirModal(codigo);
-                }
+        function checkBipeConsignacaoInstant(codigo) {
+            const item = globalInventario.find(i => (i.Codigo || i.codigo) == codigo);
+            if(item) {
+                document.getElementById('custoItem').value = item.Custo || item.custo || '';
+                document.getElementById('vendaItem').value = item.Venda || item.venda || '';
+            } else {
+                document.getElementById('custoItem').value = '';
+                document.getElementById('vendaItem').value = '';
             }
         }
 
@@ -393,9 +400,25 @@
                 c += parseFloat(i.Custo || 0); v += parseFloat(i.Venda || 0);
                 return `<tr><td>${new Date(i.Data || i.data).toLocaleDateString('pt-BR')}</td><td class="font-bold text-white">${i.Codigo || i.codigo}</td><td class="text-gold">R$ ${parseFloat(i.Venda || 0).toFixed(2)}</td><td class="text-right uppercase text-[10px] font-bold">${i.Status || i.status}</td></tr>`;
             }).join('');
+            totalVendaPainel = v;
             document.getElementById('totalCusto').innerText = `R$ ${c.toFixed(2)}`;
             document.getElementById('totalVenda').innerText = `R$ ${v.toFixed(2)}`;
             document.getElementById('dadosPainel').classList.remove('hidden');
+            calcularComissao();
+        }
+
+        function calcularComissao() {
+            const perc = parseFloat(document.getElementById('percentualComissao').value) || 0;
+            const card = document.getElementById('cardComissao');
+            if(perc > 0) {
+                const comissao = totalVendaPainel * (perc / 100);
+                const liquido = totalVendaPainel - comissao;
+                document.getElementById('valorComissaoRev').innerText = `R$ ${comissao.toFixed(2)}`;
+                document.getElementById('valorLiquidoLuxus').innerText = `R$ ${liquido.toFixed(2)}`;
+                card.classList.remove('hidden');
+            } else {
+                card.classList.add('hidden');
+            }
         }
 
         async function realizarFechamento() {
