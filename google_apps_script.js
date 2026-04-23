@@ -1,6 +1,6 @@
 /**
- * LUXUS BACKEND v6.0 - SOLUÇÃO DEFINITIVA AGNOSTICA A COLUNAS
- * Este script busca dados em qualquer lugar da aba para evitar erros de estrutura.
+ * LUXUS BACKEND v7.0 - LIQUIDAÇÃO PARCIAL POR BIPE
+ * Suporte para conferência individual de peças durante o acerto mensal.
  */
 
 function doGet(e) {
@@ -29,51 +29,26 @@ function getSheetAsJSON(ss, sheetName) {
   
   const json = rows.map(row => {
     let obj = {};
-    headers.forEach((h, i) => {
-      if (h) obj[h] = row[i];
-    });
-    // Forçar campos por posição caso o cabeçalho esteja errado
-    if (sheetName === 'Revendedores') {
-      obj.Nome = row[0];
-      obj.Contato = row[1];
-    }
-    if (sheetName === 'Inventario') {
-      obj.Codigo = row[0];
-      obj.Status = row[2];
-      obj.Custo = row[3];
-      obj.Venda = row[4];
-      obj.Foto = row[5];
-    }
-    if (sheetName === 'Repasses') {
-      obj.Revendedor = row[0];
-      obj.Codigo = row[1];
-      obj.Custo = row[2];
-      obj.Venda = row[3];
-      obj.Data = row[4];
-      obj.Status = row[5];
-    }
+    headers.forEach((h, i) => { if (h) obj[h] = row[i]; });
+    if (sheetName === 'Revendedores') { obj.Nome = row[0]; obj.Contato = row[1]; }
+    if (sheetName === 'Inventario') { obj.Codigo = row[0]; obj.Status = row[2]; obj.Custo = row[3]; obj.Venda = row[4]; obj.Foto = row[5]; }
+    if (sheetName === 'Repasses') { obj.Revendedor = row[0]; obj.Codigo = row[1]; obj.Custo = row[2]; obj.Venda = row[3]; obj.Data = row[4]; obj.Status = row[5]; }
     return obj;
   });
   return createResponse(json);
 }
 
 function createResponse(data) {
-  return ContentService.createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
 }
 
 function doPost(e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let params;
-  try {
-    params = JSON.parse(e.postData.contents);
-  } catch (err) {
-    return ContentService.createTextOutput("Erro JSON");
-  }
+  try { params = JSON.parse(e.postData.contents); } catch (err) { return ContentService.createTextOutput("Erro JSON"); }
   
   const action = params.action;
 
-  // 1. REVENDEDORES
   if (action === 'addRevendedor') {
     const sheet = getSheet(ss, 'Revendedores', ['Nome', 'Contato']);
     sheet.appendRow([params.nome.toString().trim(), params.contato ? params.contato.toString().trim() : ""]);
@@ -82,35 +57,29 @@ function doPost(e) {
 
   if (action === 'editRevendedor') {
     const sheet = ss.getSheetByName('Revendedores');
-    if (!sheet) return ContentService.createTextOutput("Aba não encontrada");
     const data = sheet.getDataRange().getValues();
-    const nomeAntigo = params.nomeAntigo.toString().trim().toLowerCase();
-    
+    const a = params.nomeAntigo.toString().trim().toLowerCase();
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0].toString().trim().toLowerCase() === nomeAntigo) {
+      if (data[i][0].toString().trim().toLowerCase() === a) {
         sheet.getRange(i + 1, 1).setValue(params.novoNome.toString().trim());
         sheet.getRange(i + 1, 2).setValue(params.novoContato ? params.novoContato.toString().trim() : "");
         atualizarVinculos(ss, params.nomeAntigo.toString().trim(), params.novoNome.toString().trim());
         return ContentService.createTextOutput("Sucesso");
       }
     }
-    return ContentService.createTextOutput("Revendedor não localizado");
+    return ContentService.createTextOutput("Erro");
   }
 
   if (action === 'delRevendedor') {
     const sheet = ss.getSheetByName('Revendedores');
     const data = sheet.getDataRange().getValues();
-    const nome = params.nome.toString().trim().toLowerCase();
+    const n = params.nome.toString().trim().toLowerCase();
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0].toString().trim().toLowerCase() === nome) {
-        sheet.deleteRow(i + 1);
-        break;
-      }
+      if (data[i][0].toString().trim().toLowerCase() === n) { sheet.deleteRow(i + 1); break; }
     }
     return ContentService.createTextOutput("Sucesso");
   }
 
-  // 2. INVENTÁRIO
   if (action === 'addInventario') {
     const sheet = getSheet(ss, 'Inventario', ['Codigo', 'Data', 'Status', 'Custo', 'Venda', 'Foto']);
     sheet.appendRow([params.codigo.toString().trim(), params.data || new Date(), 'Em Estoque', "", "", ""]);
@@ -129,77 +98,69 @@ function doPost(e) {
         return ContentService.createTextOutput("Sucesso");
       }
     }
-    return ContentService.createTextOutput("Item não localizado");
+    return ContentService.createTextOutput("Erro");
   }
 
-  // 3. REPASSES
   if (action === 'addRepasse') {
     const sheetRep = getSheet(ss, 'Repasses', ['Revendedor', 'Codigo', 'Custo', 'Venda', 'Data', 'Status']);
     const sheetInv = ss.getSheetByName('Inventario');
     const rev = params.revendedor.toString().trim();
     const cod = params.codigo.toString().trim();
-
     sheetRep.appendRow([rev, cod, params.custo, params.venda, params.data || new Date(), 'Pendente']);
-    
     if (sheetInv) {
-      const dataInv = sheetInv.getDataRange().getValues();
-      for (let i = 1; i < dataInv.length; i++) {
-        if (dataInv[i][0].toString().trim().toLowerCase() === cod.toLowerCase()) {
-          sheetInv.getRange(i + 1, 3).setValue(rev);
-          break;
-        }
+      const dInv = sheetInv.getDataRange().getValues();
+      for (let i = 1; i < dInv.length; i++) {
+        if (dInv[i][0].toString().trim().toLowerCase() === cod.toLowerCase()) { sheetInv.getRange(i + 1, 3).setValue(rev); break; }
       }
     }
     return ContentService.createTextOutput("Sucesso");
   }
 
-  if (action === 'fechamento') {
+  // NOVA FUNÇÃO: FECHAMENTO PARCIAL (LÍQUIDA APENAS CÓDIGOS BIPADOS)
+  if (action === 'fechamentoParcial') {
     const sheetRep = ss.getSheetByName('Repasses');
     const sheetInv = ss.getSheetByName('Inventario');
     const rev = params.revendedor.toString().trim().toLowerCase();
+    const codigosBipados = params.codigos.map(c => c.toString().trim().toLowerCase());
     
-    const dataRep = sheetRep.getDataRange().getValues();
-    for (let i = 1; i < dataRep.length; i++) {
-      if (dataRep[i][0].toString().trim().toLowerCase() === rev && dataRep[i][5].toString().trim() === 'Pendente') {
-        sheetRep.getRange(i + 1, 6).setValue('Pago');
-        if (sheetInv) {
-          const dataInv = sheetInv.getDataRange().getValues();
-          const cod = dataRep[i][1].toString().trim().toLowerCase();
-          for (let j = 1; j < dataInv.length; j++) {
-            if (dataInv[j][0].toString().trim().toLowerCase() === cod) {
-              sheetInv.getRange(j + 1, 3).setValue('Vendido');
+    if (sheetRep) {
+      const dRep = sheetRep.getDataRange().getValues();
+      for (let i = 1; i < dRep.length; i++) {
+        const codItem = dRep[i][1].toString().trim().toLowerCase();
+        if (dRep[i][0].toString().trim().toLowerCase() === rev && codigosBipados.includes(codItem) && dRep[i][5] === 'Pendente') {
+          sheetRep.getRange(i + 1, 6).setValue('Pago');
+          if (sheetInv) {
+            const dInv = sheetInv.getDataRange().getValues();
+            for (let j = 1; j < dInv.length; j++) {
+              if (dInv[j][0].toString().trim().toLowerCase() === codItem) { sheetInv.getRange(j + 1, 3).setValue('Vendido'); break; }
             }
           }
         }
       }
     }
+    
+    const sheetFech = getSheet(ss, 'Fechamentos', ['Revendedor', 'Data', 'Observacoes']);
+    sheetFech.appendRow([params.revendedor, new Date(), params.obs]);
     return ContentService.createTextOutput("Sucesso");
   }
 }
 
 function atualizarVinculos(ss, antigo, novo) {
-  const sInv = ss.getSheetByName('Inventario');
   const a = antigo.toString().trim().toLowerCase();
+  const sInv = ss.getSheetByName('Inventario');
   if (sInv) {
     const d = sInv.getDataRange().getValues();
-    for (let i = 1; i < d.length; i++) {
-      if (d[i][2].toString().trim().toLowerCase() === a) sInv.getRange(i + 1, 3).setValue(novo);
-    }
+    for (let i = 1; i < d.length; i++) { if (d[i][2].toString().trim().toLowerCase() === a) sInv.getRange(i + 1, 3).setValue(novo); }
   }
   const sRep = ss.getSheetByName('Repasses');
   if (sRep) {
     const d = sRep.getDataRange().getValues();
-    for (let i = 1; i < d.length; i++) {
-      if (d[i][0].toString().trim().toLowerCase() === a) sRep.getRange(i + 1, 1).setValue(novo);
-    }
+    for (let i = 1; i < d.length; i++) { if (d[i][0].toString().trim().toLowerCase() === a) sRep.getRange(i + 1, 1).setValue(novo); }
   }
 }
 
 function getSheet(ss, name, headers) {
   let s = ss.getSheetByName(name);
-  if (!s) {
-    s = ss.insertSheet(name);
-    s.appendRow(headers);
-  }
+  if (!s) { s = ss.insertSheet(name); s.appendRow(headers); }
   return s;
 }

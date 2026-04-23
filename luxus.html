@@ -54,6 +54,7 @@
         .status-estoque { background: rgba(34, 197, 94, 0.1); color: #4ade80; }
         .status-consignado { background: rgba(197, 160, 89, 0.1); color: var(--gold); }
         .status-vendido { background: rgba(255, 255, 255, 0.05); color: #94a3b8; }
+        .conferido { background: rgba(76, 139, 245, 0.1) !important; color: var(--accent) !important; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -115,15 +116,37 @@
                 <div class="flex-1 min-w-[200px]"><select id="filtroRevendedor" onchange="carregarPainelIndividual()" class="w-full font-bold !bg-[#1c2539] !text-white rounded-full"></select></div>
                 <div class="flex gap-2"><button onclick="setPainelFilter('Todos')" class="filter-pill active" data-pfilter="Todos">Todos</button><button onclick="setPainelFilter('Pendente')" class="filter-pill" data-pfilter="Pendente">Pendentes</button><button onclick="setPainelFilter('Pago')" class="filter-pill" data-pfilter="Pago">Liquidados</button></div>
             </div>
+            
             <div id="dadosPainel" class="hidden space-y-8">
+                <!-- CONFERÊNCIA POR BIPE -->
+                <div class="card p-6 border-accent/30 bg-accent/5">
+                    <h3 class="text-xs font-bold text-accent mb-4 uppercase tracking-widest">Conferência de Vendas (Bipe aqui)</h3>
+                    <div class="flex gap-4">
+                        <input type="text" id="bipeConferencia" onkeypress="handleBipeConferencia(event)" placeholder="Bipe a peça vendida..." class="flex-1 !border-accent/50 !bg-navy-dark">
+                        <button onclick="limparConferencia()" class="px-4 py-2 text-xs font-bold text-muted hover:text-white transition-colors">Limpar</button>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="card p-6 text-center"><p class="text-[10px] font-bold text-muted mb-1 uppercase">Custo Total</p><p id="totalCusto" class="text-xl font-bold text-white">R$ 0,00</p></div>
-                    <div class="card p-6 text-center"><p class="text-[10px] font-bold text-muted mb-1 uppercase">Venda Total</p><p id="totalVenda" class="text-xl font-bold text-gold">R$ 0,00</p></div>
+                    <div class="card p-6 text-center"><p class="text-[10px] font-bold text-muted mb-1 uppercase">Custo Conferido</p><p id="totalCusto" class="text-xl font-bold text-white">R$ 0,00</p></div>
+                    <div class="card p-6 text-center"><p class="text-[10px] font-bold text-muted mb-1 uppercase">Venda Conferida</p><p id="totalVenda" class="text-xl font-bold text-gold">R$ 0,00</p></div>
                     <div class="card p-6 text-center bg-purple/10 border-purple/20"><p class="text-[10px] font-bold text-purple mb-1 uppercase">Comissão (%)</p><input type="number" id="percentualComissao" oninput="calcularComissao()" placeholder="Ex: 30" class="w-20 !p-1 text-center mx-auto block !bg-white/10 !border-purple/30"></div>
                 </div>
+                
                 <div id="cardComissao" class="card p-6 hidden border-purple/30 bg-purple/5"><div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-center"><div><p class="text-[10px] font-bold text-muted mb-1 uppercase">Comissão Revendedor</p><p id="valorComissaoRev" class="text-xl font-bold text-purple">R$ 0,00</p></div><div><p class="text-[10px] font-bold text-muted mb-1 uppercase">Líquido Luxus</p><p id="valorLiquidoLuxus" class="text-xl font-bold text-accent">R$ 0,00</p></div></div></div>
-                <div class="card overflow-hidden"><table><thead><tr><th>Data</th><th>Peça</th><th>Venda</th><th class="text-right">Status</th></tr></thead><tbody id="tabelaPainel" class="text-sm"></tbody></table></div>
-                <div class="card p-8"><textarea id="obsFechamento" class="w-full h-24 mb-6" placeholder="Notas..."></textarea><button onclick="realizarFechamento()" class="btn-primary w-full">Finalizar e Liquidar</button></div>
+                
+                <div class="card overflow-hidden">
+                    <div class="p-4 bg-navy-dark/50 flex justify-between items-center border-b border-white/5">
+                        <span class="text-[10px] font-bold text-muted uppercase">Lista de Peças</span>
+                        <span id="conferidosCount" class="text-[10px] font-bold text-accent uppercase">0 PEÇAS CONFERIDAS</span>
+                    </div>
+                    <table><thead><tr><th>Data</th><th>Peça</th><th>Venda</th><th class="text-right">Status</th></tr></thead><tbody id="tabelaPainel" class="text-sm"></tbody></table>
+                </div>
+                
+                <div class="card p-8">
+                    <textarea id="obsFechamento" class="w-full h-24 mb-6" placeholder="Notas do acerto..."></textarea>
+                    <button onclick="realizarFechamentoParcial()" id="btnFinalizar" class="btn-primary w-full opacity-50 cursor-not-allowed" disabled>Finalizar Acerto das Peças Conferidas</button>
+                </div>
             </div>
             <div id="painelVazio" class="card p-20 text-center opacity-50"><p class="text-muted uppercase tracking-widest text-xs">Selecione um parceiro para ver os dados</p></div>
         </div>
@@ -131,7 +154,8 @@
 
     <script>
         let API_URL = localStorage.getItem('apiUrl') || '';
-        let globalInventario = [], globalRepasses = [], globalRevendedores = [], totalVendaPainel = 0;
+        let globalInventario = [], globalRepasses = [], globalRevendedores = [], itensConferidos = [];
+        let totalVendaConferida = 0, totalCustoConferido = 0;
         
         document.getElementById('apiUrl').value = API_URL;
         document.getElementById('dataInventario').valueAsDate = new Date();
@@ -161,9 +185,7 @@
             document.getElementById('loading').style.display = 'flex';
             try { 
                 const r = await fetch(`${API_URL}?action=${action}`); 
-                const d = await r.json();
-                console.log(`Dados ${action}:`, d);
-                return d;
+                return await r.json();
             } catch(e) { console.error("Erro Get:", e); return []; }
             finally { document.getElementById('loading').style.display = 'none'; }
         }
@@ -218,31 +240,77 @@
             if(!rev) { document.getElementById('dadosPainel').classList.add('hidden'); document.getElementById('painelVazio').classList.remove('hidden'); return; }
             document.getElementById('painelVazio').classList.add('hidden');
             globalRepasses = await apiGet('getRepasses');
-            const filtrados = globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev);
-            renderPainel(filtrados);
+            limparConferencia();
+            renderPainel(globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev));
         }
 
+        function handleBipeConferencia(e) {
+            if(e.key === 'Enter') {
+                const cod = e.target.value.trim().toLowerCase();
+                const rev = document.getElementById('filtroRevendedor').value.toString().trim().toLowerCase();
+                const item = globalRepasses.find(r => 
+                    (r.Codigo || r.codigo || "").toString().trim().toLowerCase() === cod && 
+                    (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev &&
+                    (r.Status || r.status || "Pendente") === "Pendente"
+                );
+
+                if(item) {
+                    const codOriginal = (item.Codigo || item.codigo).toString();
+                    if(!itensConferidos.includes(codOriginal)) {
+                        itensConferidos.push(codOriginal);
+                        e.target.value = '';
+                        renderPainel(globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev));
+                    } else { alert('Peça já conferida!'); e.target.value = ''; }
+                } else { alert('Peça não encontrada nos pendentes deste revendedor!'); e.target.value = ''; }
+            }
+        }
+
+        function limparConferencia() { itensConferidos = []; totalVendaConferida = 0; totalCustoConferido = 0; document.getElementById('bipeConferencia').value = ''; atualizarTotais(); }
+
         function renderPainel(itens) {
-            let c = 0, v = 0;
+            totalCustoConferido = 0; totalVendaConferida = 0;
             document.getElementById('tabelaPainel').innerHTML = itens.map(i => {
+                const cod = (i.Codigo || i.codigo).toString();
                 const valVenda = parseFloat(i.Venda || 0), valCusto = parseFloat(i.Custo || 0), s = (i.Status || i.status || "Pendente").toString();
-                if (s === 'Pendente') { c += valCusto; v += valVenda; }
-                const sc = s === 'Pago' ? 'text-green-400' : 'text-gold';
-                return `<tr><td>${new Date(i.Data || i.data).toLocaleDateString('pt-BR')}</td><td class="font-bold text-white">${i.Codigo || i.codigo}</td><td class="text-gold">R$ ${valVenda.toFixed(2)}</td><td class="text-right uppercase text-[10px] font-bold ${sc}">${s}</td></tr>`;
+                const isConferido = itensConferidos.includes(cod);
+                
+                if (isConferido) { totalCustoConferido += valCusto; totalVendaConferida += valVenda; }
+                
+                const sCol = s === 'Pago' ? 'text-green-400' : (isConferido ? 'text-accent' : 'text-gold');
+                const rowClass = isConferido ? 'conferido' : 'hover:bg-white/5';
+                
+                return `<tr class="${rowClass}"><td>${new Date(i.Data || i.data).toLocaleDateString('pt-BR')}</td><td class="font-bold">${cod}</td><td class="${isConferido ? 'text-accent' : 'text-gold'}">R$ ${valVenda.toFixed(2)}</td><td class="text-right uppercase text-[10px] font-bold ${sCol}">${isConferido ? 'Conferido' : s}</td></tr>`;
             }).join('');
-            totalVendaPainel = v;
-            document.getElementById('totalCusto').innerText = `R$ ${c.toFixed(2)}`;
-            document.getElementById('totalVenda').innerText = `R$ ${v.toFixed(2)}`;
+            
+            atualizarTotais();
             document.getElementById('dadosPainel').classList.remove('hidden');
+        }
+
+        function atualizarTotais() {
+            document.getElementById('totalCusto').innerText = `R$ ${totalCustoConferido.toFixed(2)}`;
+            document.getElementById('totalVenda').innerText = `R$ ${totalVendaConferida.toFixed(2)}`;
+            document.getElementById('conferidosCount').innerText = `${itensConferidos.length} PEÇAS CONFERIDAS`;
+            
+            const btn = document.getElementById('btnFinalizar');
+            if(itensConferidos.length > 0) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+            else { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
+            
             calcularComissao();
         }
 
         function calcularComissao() {
             const p = parseFloat(document.getElementById('percentualComissao').value) || 0, card = document.getElementById('cardComissao');
-            if(p > 0) { const com = totalVendaPainel * (p / 100), liq = totalVendaPainel - com; document.getElementById('valorComissaoRev').innerText = `R$ ${com.toFixed(2)}`; document.getElementById('valorLiquidoLuxus').innerText = `R$ ${liq.toFixed(2)}`; card.classList.remove('hidden'); } else card.classList.add('hidden');
+            if(p > 0) { const com = totalVendaConferida * (p / 100), liq = totalVendaConferida - com; document.getElementById('valorComissaoRev').innerText = `R$ ${com.toFixed(2)}`; document.getElementById('valorLiquidoLuxus').innerText = `R$ ${liq.toFixed(2)}`; card.classList.remove('hidden'); } else card.classList.add('hidden');
         }
 
-        async function realizarFechamento() { const rev = document.getElementById('filtroRevendedor').value; if(confirm('Liquidar peças pendentes?')) { await apiPost({ action: 'fechamento', revendedor: rev, obs: document.getElementById('obsFechamento').value }); setTimeout(carregarPainelIndividual, 1500); } }
+        async function realizarFechamentoParcial() { 
+            const rev = document.getElementById('filtroRevendedor').value; 
+            if(confirm(`Liquidar as ${itensConferidos.length} peças conferidas?`)) { 
+                await apiPost({ action: 'fechamentoParcial', revendedor: rev, codigos: itensConferidos, obs: document.getElementById('obsFechamento').value }); 
+                limparConferencia();
+                setTimeout(carregarPainelIndividual, 1500); 
+            } 
+        }
 
         function setFilter(f) { document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active')); document.querySelector(`[data-filter="${f}"]`).classList.add('active'); let d = globalInventario; if(f === 'Em Estoque') d = globalInventario.filter(i => (i.Status || i.status) === 'Em Estoque'); else if(f === 'Consignado') d = globalInventario.filter(i => (i.Status || i.status) !== 'Em Estoque' && (i.Status || i.status) !== 'Vendido'); else if(f === 'Vendido') d = globalInventario.filter(i => (i.Status || i.status) === 'Vendido'); renderInventario(d); }
         function setPainelFilter(f) { document.querySelectorAll('[data-pfilter]').forEach(b => b.classList.remove('active')); document.querySelector(`[data-pfilter="${f}"]`).classList.add('active'); const rev = document.getElementById('filtroRevendedor').value.toString().trim().toLowerCase(); let d = globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev); if(f !== 'Todos') d = d.filter(i => (i.Status || i.status) === f); renderPainel(d); }
