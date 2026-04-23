@@ -72,7 +72,7 @@
     <div id="loading" class="loading-overlay"><div class="flex flex-col items-center"><div class="w-10 h-10 border-3 border-accent border-t-transparent rounded-full animate-spin mb-4"></div><p class="text-accent text-xs font-semibold uppercase">Luxus Cloud</p></div></div>
 
     <!-- Modais -->
-    <div id="modalEdit" class="modal"><div class="modal-content"><h3 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Editar Joia</h3><div class="space-y-4"><input type="hidden" id="editRowId"><div><label class="text-[10px] font-bold text-muted mb-1 block">CÓDIGO</label><input type="text" id="editCodigo" class="w-full"></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Custo (R$)</label><input type="number" id="editCusto" class="w-full" step="0.01"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Venda (R$)</label><input type="number" id="editVenda" class="w-full" step="0.01"></div></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Foto da Joia</label><div class="upload-area" onclick="document.getElementById('fileUpload').click()"><p id="uploadStatus" class="text-xs text-muted">Clique para enviar imagem</p><input type="file" id="fileUpload" class="hidden" accept="image/*" onchange="handleFileUpload(this)"></div><input type="hidden" id="editFoto"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Localização</label><select id="editStatus" class="w-full"></select></div><div class="flex gap-3 pt-4"><button onclick="fecharModal()" class="flex-1 p-3 bg-navy-dark text-white rounded-lg font-bold">Cancelar</button><button onclick="salvarEdicao()" class="flex-1 p-3 bg-gold text-navy-dark rounded-lg font-bold">Salvar</button></div></div></div></div>
+    <div id="modalEdit" class="modal"><div class="modal-content"><h3 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Editar Joia</h3><div class="space-y-4"><input type="hidden" id="editRowId"><div><label class="text-[10px] font-bold text-muted mb-1 block">CÓDIGO</label><input type="text" id="editCodigo" class="w-full"></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Custo (R$)</label><input type="number" id="editCusto" class="w-full" step="0.01"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Venda (R$)</label><input type="number" id="editVenda" class="w-full" step="0.01"></div></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Foto da Joia</label><div class="flex gap-2 items-center"><div class="upload-area flex-1" onclick="document.getElementById('fileUpload').click()"><p id="uploadStatus" class="text-xs text-muted">Clique para enviar imagem</p><input type="file" id="fileUpload" class="hidden" accept="image/*" onchange="handleFileUpload(this)"></div><button id="btnRemoverFoto" onclick="removerFoto()" class="p-3 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 hidden" title="Remover Foto">🗑️</button></div><input type="hidden" id="editFoto"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Localização</label><select id="editStatus" class="w-full"></select></div><div class="flex gap-3 pt-4"><button onclick="fecharModal()" class="flex-1 p-3 bg-navy-dark text-white rounded-lg font-bold">Cancelar</button><button onclick="salvarEdicao()" class="flex-1 p-3 bg-gold text-navy-dark rounded-lg font-bold">Salvar</button></div></div></div></div>
     <div id="modalEditRev" class="modal"><div class="modal-content"><h3 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Editar Parceiro</h3><div class="space-y-4"><input type="hidden" id="editRevNomeAntigo"><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Nome</label><input type="text" id="editRevNovoNome" class="w-full"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Contato</label><input type="text" id="editRevNovoContato" class="w-full"></div><div class="flex gap-3 pt-4"><button onclick="fecharModalRev()" class="flex-1 p-3 bg-navy-dark text-white rounded-lg font-bold">Cancelar</button><button onclick="salvarEdicaoRev()" class="flex-1 p-3 bg-gold text-navy-dark rounded-lg font-bold">Salvar</button></div></div></div></div>
     <div id="modalPhoto" class="modal" onclick="fecharModalFoto()"><div class="modal-content !max-w-3xl !p-2 !bg-black border-none"><img id="photoView" src="" class="w-full h-auto rounded-lg shadow-2xl"></div></div>
 
@@ -92,7 +92,7 @@
                 <h2 class="text-lg font-bold mb-6 text-white">Configuração Cloud</h2>
                 <div class="space-y-4">
                     <div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">URL do Google Script</label><input type="text" id="apiUrl" class="w-full text-center" placeholder="URL /exec"></div>
-                    <div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Chave API ImgBB (Opcional)</label><input type="text" id="imgbbKey" class="w-full text-center" placeholder="Sua chave ImgBB"></div>
+                    <div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Chave API ImgBB (Obrigatória para Fotos)</label><input type="text" id="imgbbKey" class="w-full text-center" placeholder="Sua chave ImgBB"></div>
                     <button onclick="salvarConfig()" class="btn-primary w-full">Salvar Configurações</button>
                 </div>
             </div>
@@ -282,11 +282,21 @@
                     document.getElementById('editFoto').value = result.data.url;
                     status.innerText = 'Foto enviada com sucesso!';
                     status.className = 'text-xs text-green-400';
+                    document.getElementById('btnRemoverFoto').classList.remove('hidden');
                 } else { throw new Error('Falha no upload'); }
             } catch (e) {
                 alert('Erro ao enviar imagem. Verifique sua chave API.');
                 status.innerText = 'Erro no envio. Tente novamente.';
                 status.className = 'text-xs text-red-400';
+            }
+        }
+
+        function removerFoto() {
+            if(confirm('Deseja remover a foto desta joia?')) {
+                document.getElementById('editFoto').value = '';
+                document.getElementById('uploadStatus').innerText = 'Foto removida';
+                document.getElementById('uploadStatus').className = 'text-xs text-red-400';
+                document.getElementById('btnRemoverFoto').classList.add('hidden');
             }
         }
 
@@ -539,8 +549,16 @@
                 document.getElementById('editVenda').value = i.Venda || i.venda || ''; 
                 document.getElementById('editFoto').value = i.Foto || i.foto || ''; 
                 document.getElementById('editStatus').value = (i.Status || i.status || "Em Estoque").toString().trim(); 
-                document.getElementById('uploadStatus').innerText = i.Foto ? 'Foto já cadastrada' : 'Clique para enviar imagem';
-                document.getElementById('uploadStatus').className = 'text-xs text-muted';
+                
+                if(i.Foto) {
+                    document.getElementById('uploadStatus').innerText = 'Foto já cadastrada';
+                    document.getElementById('uploadStatus').className = 'text-xs text-muted';
+                    document.getElementById('btnRemoverFoto').classList.remove('hidden');
+                } else {
+                    document.getElementById('uploadStatus').innerText = 'Clique para enviar imagem';
+                    document.getElementById('uploadStatus').className = 'text-xs text-muted';
+                    document.getElementById('btnRemoverFoto').classList.add('hidden');
+                }
             } 
             document.getElementById('modalEdit').style.display = 'flex'; 
         }
