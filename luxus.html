@@ -18,25 +18,35 @@
         .tab-content.active { display: block; animation: slideUp 0.4s ease-out; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Estilo Dark para Inputs e Selects */
-        input, select, textarea { 
-            background: #1c2539 !important; 
-            border: 1px solid #2d3748 !important; 
+        /* CORREÇÃO DEFINITIVA PARA O FUNDO BRANCO DOS SELECTS */
+        select, input, textarea { 
+            background-color: #1c2539 !important; 
             color: white !important; 
+            border: 1px solid #2d3748 !important; 
             border-radius: 8px !important; 
             padding: 12px !important; 
             font-size: 0.875rem !important; 
-            outline: none; 
-            appearance: none;
+            outline: none !important;
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
         }
+        
+        /* Garantir que as opções do select também tenham fundo escuro */
+        select option {
+            background-color: #1c2539 !important;
+            color: white !important;
+        }
+
         select {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            background-size: 16px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 12px center !important;
+            background-size: 16px !important;
             padding-right: 40px !important;
         }
-        input:focus, select:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 2px rgba(76, 139, 245, 0.2); }
+
+        input:focus, select:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 2px rgba(76, 139, 245, 0.2) !important; }
         
         .btn-primary { background: var(--accent); color: white; font-weight: 600; padding: 12px 24px; border-radius: 8px; transition: all 0.2s; font-size: 0.875rem; border: none; cursor: pointer; }
         .btn-gold { background: var(--gold); color: #1a233a; font-weight: 700; padding: 12px 24px; border-radius: 8px; transition: all 0.2s; font-size: 0.875rem; border: none; cursor: pointer; }
@@ -192,7 +202,7 @@
 
         <div id="painel_revendedor" class="tab-content">
             <div class="bg-navy-dark/30 p-4 rounded-xl mb-8 flex flex-wrap items-center gap-4">
-                <div class="flex-1 min-w-[200px]"><select id="filtroRevendedor" onchange="carregarPainelIndividual()" class="w-full font-bold !bg-navy-dark !text-white rounded-full"></select></div>
+                <div class="flex-1 min-w-[200px]"><select id="filtroRevendedor" onchange="carregarPainelIndividual()" class="w-full font-bold !bg-[#1c2539] !text-white rounded-full"></select></div>
                 <div class="flex gap-2">
                     <button onclick="setPainelFilter('Todos')" class="filter-pill active" data-pfilter="Todos">Todos</button>
                     <button onclick="setPainelFilter('Pendente')" class="filter-pill" data-pfilter="Pendente">Pendentes</button>
@@ -242,16 +252,8 @@
             document.getElementById('btn-' + tabId).classList.add('active');
             
             if(tabId === 'inventario') carregarInventario();
-            if(tabId === 'distribuicao') { 
-                carregarRevendedores(); 
-                popularSelectsRevendedores(); 
-                carregarInventario(); 
-            }
-            if(tabId === 'painel_revendedor') {
-                popularSelectsRevendedores();
-                document.getElementById('dadosPainel').classList.add('hidden');
-                document.getElementById('painelVazio').classList.remove('hidden');
-            }
+            if(tabId === 'distribuicao') carregarRevendedores();
+            if(tabId === 'painel_revendedor') carregarRevendedores();
         }
 
         function salvarConfig() {
@@ -277,18 +279,28 @@
 
         async function carregarRevendedores() {
             globalRevendedores = await apiGet('getRevendedores');
-            document.getElementById('listaRevendedoresSimples').innerHTML = globalRevendedores.map(r => `
-                <div class="flex justify-between items-center p-3 bg-navy-dark rounded-lg group">
-                    <div class="flex flex-col">
-                        <span class="text-xs font-bold text-white">${r.Nome || r.nome}</span>
-                        <span class="text-[9px] text-muted">${r.Contato || r.contato || 'Sem contato'}</span>
+            
+            // Atualizar lista na aba Gestão
+            const listaSimples = document.getElementById('listaRevendedoresSimples');
+            if(listaSimples) {
+                listaSimples.innerHTML = globalRevendedores.map(r => `
+                    <div class="flex justify-between items-center p-3 bg-navy-dark rounded-lg group">
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-white">${r.Nome || r.nome}</span>
+                            <span class="text-[9px] text-muted">${r.Contato || r.contato || 'Sem contato'}</span>
+                        </div>
+                        <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="abrirModalRev('${r.Nome || r.nome}')" class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                            <button onclick="delRevendedor('${r.Nome || r.nome}')" class="text-red-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                        </div>
                     </div>
-                    <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onclick="abrirModalRev('${r.Nome || r.nome}')" class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                        <button onclick="delRevendedor('${r.Nome || r.nome}')" class="text-red-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
-                    </div>
-                </div>
-            `).join('');
+                `).join('');
+            }
+            
+            // Popular Selects
+            const options = '<option value="">SELECIONAR PARCEIRO</option>' + globalRevendedores.map(r => `<option value="${r.Nome || r.nome}">${r.Nome || r.nome}</option>`).join('');
+            if(document.getElementById('selectRevendedor')) document.getElementById('selectRevendedor').innerHTML = options;
+            if(document.getElementById('filtroRevendedor')) document.getElementById('filtroRevendedor').innerHTML = options;
         }
 
         function abrirModalRev(nome) {
@@ -313,25 +325,16 @@
             await apiPost(data);
             fecharModalRev();
             await carregarRevendedores();
-            await popularSelectsRevendedores();
         }
 
         async function addRevendedor() {
             const nome = document.getElementById('novoRevendedor').value;
             const contato = document.getElementById('contatoRevendedor').value;
-            if(nome) { await apiPost({ action: 'addRevendedor', nome, contato }); document.getElementById('novoRevendedor').value = ''; document.getElementById('contatoRevendedor').value = ''; await carregarRevendedores(); await popularSelectsRevendedores(); }
+            if(nome) { await apiPost({ action: 'addRevendedor', nome, contato }); document.getElementById('novoRevendedor').value = ''; document.getElementById('contatoRevendedor').value = ''; await carregarRevendedores(); }
         }
 
         async function delRevendedor(nome) {
-            if(confirm('Excluir ' + nome + '?')) { await apiPost({ action: 'delRevendedor', nome }); await carregarRevendedores(); await popularSelectsRevendedores(); }
-        }
-
-        async function popularSelectsRevendedores() {
-            const revs = await apiGet('getRevendedores');
-            globalRevendedores = revs;
-            const options = '<option value="">SELECIONAR PARCEIRO</option>' + revs.map(r => `<option value="${r.Nome || r.nome}">${r.Nome || r.nome}</option>`).join('');
-            if(document.getElementById('selectRevendedor')) document.getElementById('selectRevendedor').innerHTML = options;
-            if(document.getElementById('filtroRevendedor')) document.getElementById('filtroRevendedor').innerHTML = options;
+            if(confirm('Excluir ' + nome + '?')) { await apiPost({ action: 'delRevendedor', nome }); await carregarRevendedores(); }
         }
 
         async function adicionarAoInventario() {
@@ -514,6 +517,12 @@
         }
         
         document.getElementById('codigoInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') adicionarAoInventario(); });
+        
+        // Carregamento inicial
+        if(API_URL) {
+            carregarInventario();
+            carregarRevendedores();
+        }
     </script>
 </body>
 </html>
