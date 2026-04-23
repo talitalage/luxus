@@ -27,12 +27,14 @@
         .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(20, 27, 45, 0.9); display: none; justify-content: center; align-items: center; z-index: 9999; }
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: var(--navy-card); padding: 2rem; border-radius: 16px; width: 90%; max-width: 500px; border: 1px solid var(--gold); }
-        
-        /* Filtros Rápidos Estilo Referência */
         .filter-pill { padding: 6px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 1px solid #2d3748; color: var(--text-muted); background: transparent; }
         .filter-pill.active { background: var(--navy-dark); color: white; border-color: var(--accent); }
         .filter-pill-purple.active { background: var(--purple); color: white; border-color: var(--purple); }
         .search-bar { background: white !important; color: #1a233a !important; border-radius: 24px !important; padding: 10px 20px !important; border: none !important; }
+        .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+        .status-estoque { background: rgba(34, 197, 94, 0.1); color: #4ade80; }
+        .status-consignado { background: rgba(197, 160, 89, 0.1); color: var(--gold); }
+        .status-vendido { background: rgba(255, 255, 255, 0.05); color: #94a3b8; }
     </style>
 </head>
 <body>
@@ -44,29 +46,16 @@
         </div>
     </div>
 
-    <!-- Modal de Edição -->
     <div id="modalEdit" class="modal">
         <div class="modal-content">
             <h3 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Editar Detalhes da Joia</h3>
             <div class="space-y-4">
-                <div>
-                    <label class="text-[10px] font-bold text-muted mb-1 block">CÓDIGO</label>
-                    <input type="text" id="editCodigo" class="w-full opacity-50" readonly>
-                </div>
+                <div><label class="text-[10px] font-bold text-muted mb-1 block">CÓDIGO</label><input type="text" id="editCodigo" class="w-full opacity-50" readonly></div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] font-bold text-muted mb-1 block uppercase">Custo (R$)</label>
-                        <input type="number" id="editCusto" class="w-full" step="0.01">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-muted mb-1 block uppercase">Venda (R$)</label>
-                        <input type="number" id="editVenda" class="w-full" step="0.01">
-                    </div>
+                    <div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Custo (R$)</label><input type="number" id="editCusto" class="w-full" step="0.01"></div>
+                    <div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Venda (R$)</label><input type="number" id="editVenda" class="w-full" step="0.01"></div>
                 </div>
-                <div>
-                    <label class="text-[10px] font-bold text-muted mb-1 block uppercase">URL da Foto</label>
-                    <input type="text" id="editFoto" class="w-full" placeholder="Link da imagem">
-                </div>
+                <div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">URL da Foto</label><input type="text" id="editFoto" class="w-full" placeholder="Link da imagem"></div>
                 <div class="flex gap-3 pt-4">
                     <button onclick="fecharModal()" class="flex-1 p-3 bg-navy-dark text-white rounded-lg font-bold">Cancelar</button>
                     <button onclick="salvarEdicao()" class="flex-1 p-3 bg-gold text-navy-dark rounded-lg font-bold">Salvar</button>
@@ -88,25 +77,21 @@
     <main class="container mx-auto p-8 max-w-6xl">
         
         <div id="config" class="tab-content">
-            <div class="card p-10 max-w-lg mx-auto">
-                <h2 class="text-lg font-bold mb-6 text-white">Configuração</h2>
-                <input type="text" id="apiUrl" class="w-full mb-4" placeholder="URL do Script">
+            <div class="card p-10 max-w-lg mx-auto text-center">
+                <h2 class="text-lg font-bold mb-6 text-white">Configuração Cloud</h2>
+                <input type="text" id="apiUrl" class="w-full mb-4 text-center" placeholder="URL do Google Script">
                 <button onclick="salvarConfig()" class="btn-primary w-full">Conectar</button>
             </div>
         </div>
 
-        <!-- ABA: INVENTÁRIO (CONSULTA) -->
         <div id="inventario" class="tab-content active">
-            <!-- Barra de Filtros Estilo Referência -->
             <div class="bg-navy-dark/30 p-4 rounded-xl mb-8 flex flex-wrap items-center gap-4">
-                <div class="flex-1 min-w-[300px] relative">
-                    <input type="text" id="searchInventario" onkeyup="filtrarTabela()" placeholder="Buscar código ou status..." class="search-bar w-full">
-                </div>
+                <div class="flex-1 min-w-[300px] relative"><input type="text" id="searchInventario" onkeyup="filtrarTabela()" placeholder="Buscar código, status ou revendedor..." class="search-bar w-full"></div>
                 <div class="flex gap-2">
                     <button onclick="setFilter('Todos')" class="filter-pill active" data-filter="Todos">Todos</button>
-                    <button onclick="setFilter('Em Estoque')" class="filter-pill" data-filter="Em Estoque">Em Estoque</button>
-                    <button onclick="setFilter('Com')" class="filter-pill" data-filter="Com">Consignado</button>
-                    <button onclick="setFilter('Venda')" class="filter-pill-purple filter-pill" data-filter="Venda">Com Valor</button>
+                    <button onclick="setFilter('Em Estoque')" class="filter-pill" data-filter="Em Estoque">Estoque</button>
+                    <button onclick="setFilter('Consignado')" class="filter-pill" data-filter="Consignado">Consignado</button>
+                    <button onclick="setFilter('Vendido')" class="filter-pill" data-filter="Vendido">Vendido</button>
                 </div>
             </div>
 
@@ -117,16 +102,16 @@
                         <div class="space-y-5">
                             <input type="date" id="dataInventario" class="w-full">
                             <input type="text" id="codigoInput" placeholder="Bipe aqui..." class="w-full" autofocus>
-                            <button onclick="adicionarAoInventario()" class="btn-gold w-full">Salvar no Acervo</button>
+                            <button onclick="adicionarAoInventario()" class="btn-gold w-full">Salvar</button>
                         </div>
                     </div>
                 </div>
                 <div class="lg:col-span-3">
                     <div class="card overflow-hidden">
-                        <div class="p-5 border-b border-white/5 flex justify-between items-center"><span class="text-sm font-bold text-white">Itens Cadastrados</span><span id="itemCount" class="text-xs font-bold text-accent">0 PEÇAS</span></div>
+                        <div class="p-5 border-b border-white/5 flex justify-between items-center"><span class="text-sm font-bold text-white">Acervo Luxus</span><span id="itemCount" class="text-xs font-bold text-accent">0 PEÇAS</span></div>
                         <div class="overflow-x-auto">
                             <table id="tabelaInventario">
-                                <thead><tr><th>Foto</th><th>Código</th><th>Custo</th><th>Venda</th><th>Status</th><th class="text-right">Ação</th></tr></thead>
+                                <thead><tr><th>Foto</th><th>Código</th><th>Custo</th><th>Venda</th><th>Localização</th><th class="text-right">Ação</th></tr></thead>
                                 <tbody id="listaInventario" class="text-sm"></tbody>
                             </table>
                         </div>
@@ -135,42 +120,33 @@
             </div>
         </div>
 
-        <!-- ABA: GESTÃO (UNIFICADA) -->
         <div id="distribuicao" class="tab-content">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="lg:col-span-1 space-y-8">
                     <div class="card p-6">
                         <h3 class="text-sm font-bold text-white mb-6 uppercase">Novo Parceiro</h3>
                         <div class="space-y-4">
-                            <input type="text" id="novoRevendedor" placeholder="Nome do parceiro" class="w-full">
+                            <input type="text" id="novoRevendedor" placeholder="Nome completo" class="w-full">
+                            <input type="text" id="contatoRevendedor" placeholder="Contato (WhatsApp)" class="w-full">
                             <button onclick="addRevendedor()" class="btn-primary w-full">Cadastrar</button>
                         </div>
                     </div>
                     <div class="card p-6">
-                        <h3 class="text-sm font-bold text-white mb-4 uppercase">Parceiros Ativos</h3>
+                        <h3 class="text-sm font-bold text-white mb-4 uppercase">Parceiros</h3>
                         <div id="listaRevendedoresSimples" class="space-y-2 max-h-60 overflow-y-auto"></div>
                     </div>
                 </div>
 
                 <div class="lg:col-span-2">
                     <div class="card p-8">
-                        <h3 class="text-sm font-bold text-white mb-8 uppercase text-center">Bipe para Consignar</h3>
+                        <h3 class="text-sm font-bold text-white mb-8 uppercase text-center">Consignação</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="text-[10px] font-bold text-muted mb-2 block uppercase">Revendedor</label>
-                                <select id="selectRevendedor" class="w-full"></select>
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-bold text-muted mb-2 block uppercase">Data</label>
-                                <input type="date" id="dataRepasse" class="w-full">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="text-[10px] font-bold text-muted mb-2 block uppercase">Código da Peça</label>
-                                <input type="text" id="codigoRepasse" onkeypress="checkBipeConsignacao(event)" class="w-full" placeholder="Bipe o código para carregar dados">
-                            </div>
+                            <div><label class="text-[10px] font-bold text-muted mb-2 block uppercase">Revendedor</label><select id="selectRevendedor" class="w-full"></select></div>
+                            <div><label class="text-[10px] font-bold text-muted mb-2 block uppercase">Data</label><input type="date" id="dataRepasse" class="w-full"></div>
+                            <div class="md:col-span-2"><label class="text-[10px] font-bold text-muted mb-2 block uppercase">Código</label><input type="text" id="codigoRepasse" onkeypress="checkBipeConsignacao(event)" class="w-full" placeholder="Bipe o código"></div>
                             <div class="grid grid-cols-2 gap-4 md:col-span-2">
-                                <input type="number" id="custoItem" placeholder="Custo (R$)" class="w-full" step="0.01">
-                                <input type="number" id="vendaItem" placeholder="Venda (R$)" class="w-full" step="0.01">
+                                <input type="number" id="custoItem" placeholder="Custo" class="w-full" step="0.01">
+                                <input type="number" id="vendaItem" placeholder="Venda" class="w-full" step="0.01">
                             </div>
                             <button onclick="repassarItem()" class="btn-gold md:col-span-2 mt-4">Confirmar Repasse</button>
                         </div>
@@ -179,13 +155,9 @@
             </div>
         </div>
 
-        <!-- ABA: PAINEL INDIVIDUAL -->
         <div id="painel_revendedor" class="tab-content">
-            <!-- Barra de Filtros Estilo Referência -->
             <div class="bg-navy-dark/30 p-4 rounded-xl mb-8 flex flex-wrap items-center gap-4">
-                <div class="flex-1 min-w-[200px]">
-                    <select id="filtroRevendedor" onchange="carregarPainelIndividual()" class="w-full font-bold !bg-white !text-navy-dark rounded-full"></select>
-                </div>
+                <div class="flex-1 min-w-[200px]"><select id="filtroRevendedor" onchange="carregarPainelIndividual()" class="w-full font-bold !bg-white !text-navy-dark rounded-full"></select></div>
                 <div class="flex gap-2">
                     <button onclick="setPainelFilter('Todos')" class="filter-pill active" data-pfilter="Todos">Todos</button>
                     <button onclick="setPainelFilter('Pendente')" class="filter-pill" data-pfilter="Pendente">Pendentes</button>
@@ -195,16 +167,11 @@
 
             <div id="dadosPainel" class="hidden space-y-8">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="card p-8"><p class="text-[10px] font-bold text-muted mb-1 uppercase">Custo Consignado</p><p id="totalCusto" class="text-2xl font-bold text-white">R$ 0,00</p></div>
+                    <div class="card p-8"><p class="text-[10px] font-bold text-muted mb-1 uppercase">Custo Total</p><p id="totalCusto" class="text-2xl font-bold text-white">R$ 0,00</p></div>
                     <div class="card p-8"><p class="text-[10px] font-bold text-muted mb-1 uppercase">Venda Prevista</p><p id="totalVenda" class="text-2xl font-bold text-gold">R$ 0,00</p></div>
                 </div>
-                <div class="card overflow-hidden">
-                    <table id="tabelaPainelItens">
-                        <thead><tr><th>Data</th><th>Peça</th><th>Venda</th><th class="text-right">Status</th></tr></thead>
-                        <tbody id="tabelaPainel" class="text-sm"></tbody>
-                    </table>
-                </div>
-                <div class="card p-8"><textarea id="obsFechamento" class="w-full h-24 mb-6" placeholder="Notas do acerto..."></textarea><button onclick="realizarFechamento()" class="btn-primary w-full">Finalizar e Liquidar</button></div>
+                <div class="card overflow-hidden"><table><thead><tr><th>Data</th><th>Peça</th><th>Venda</th><th class="text-right">Status</th></tr></thead><tbody id="tabelaPainel" class="text-sm"></tbody></table></div>
+                <div class="card p-8"><textarea id="obsFechamento" class="w-full h-24 mb-6" placeholder="Notas..."></textarea><button onclick="realizarFechamento()" class="btn-primary w-full">Finalizar Acerto</button></div>
             </div>
         </div>
     </main>
@@ -252,7 +219,10 @@
             const revs = await apiGet('getRevendedores');
             document.getElementById('listaRevendedoresSimples').innerHTML = revs.map(r => `
                 <div class="flex justify-between items-center p-3 bg-navy-dark rounded-lg group">
-                    <span class="text-xs font-medium text-white">${r.Nome || r.nome}</span>
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-white">${r.Nome || r.nome}</span>
+                        <span class="text-[9px] text-muted">${r.Contato || r.contato || 'Sem contato'}</span>
+                    </div>
                     <button onclick="delRevendedor('${r.Nome || r.nome}')" class="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                 </div>
             `).join('');
@@ -260,7 +230,8 @@
 
         async function addRevendedor() {
             const nome = document.getElementById('novoRevendedor').value;
-            if(nome) { await apiPost({ action: 'addRevendedor', nome }); document.getElementById('novoRevendedor').value = ''; await carregarRevendedores(); await popularSelectsRevendedores(); }
+            const contato = document.getElementById('contatoRevendedor').value;
+            if(nome) { await apiPost({ action: 'addRevendedor', nome, contato }); document.getElementById('novoRevendedor').value = ''; document.getElementById('contatoRevendedor').value = ''; await carregarRevendedores(); await popularSelectsRevendedores(); }
         }
 
         async function delRevendedor(nome) {
@@ -292,16 +263,22 @@
 
         function renderInventario(dados) {
             document.getElementById('itemCount').innerText = `${dados.length} PEÇAS`;
-            document.getElementById('listaInventario').innerHTML = dados.map(i => `
-                <tr>
+            document.getElementById('listaInventario').innerHTML = dados.map(i => {
+                const status = i.Status || i.status;
+                let statusClass = 'status-estoque';
+                if(status === 'Vendido') statusClass = 'status-vendido';
+                else if(status !== 'Em Estoque') statusClass = 'status-consignado';
+                
+                return `
+                <tr class="hover:bg-white/5 transition-colors">
                     <td>${i.Foto ? `<img src="${i.Foto}" class="w-10 h-10 rounded object-cover">` : '<div class="w-10 h-10 bg-navy-dark rounded"></div>'}</td>
-                    <td class="font-bold text-white">${i.Codigo || i.codigo}</td>
-                    <td>R$ ${parseFloat(i.Custo || 0).toFixed(2)}</td>
+                    <td class="font-bold text-white tracking-wider">${i.Codigo || i.codigo}</td>
+                    <td class="text-muted">R$ ${parseFloat(i.Custo || 0).toFixed(2)}</td>
                     <td class="text-gold font-bold">R$ ${parseFloat(i.Venda || 0).toFixed(2)}</td>
-                    <td><span class="text-[10px] font-bold uppercase">${i.Status || i.status}</span></td>
+                    <td><span class="status-pill ${statusClass}">${status}</span></td>
                     <td class="text-right"><button onclick="abrirModal('${i.Codigo || i.codigo}')" class="text-accent hover:underline">Editar</button></td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         function checkBipeConsignacao(e) {
@@ -311,11 +288,9 @@
                 if(item) {
                     document.getElementById('custoItem').value = item.Custo || item.custo || '';
                     document.getElementById('vendaItem').value = item.Venda || item.venda || '';
-                    alert('Dados carregados do inventário!');
+                    alert('Peça localizada: ' + (item.Status || item.status));
                 } else {
-                    if(confirm('Código não encontrado no inventário. Deseja cadastrar agora?')) {
-                        abrirModal(codigo);
-                    }
+                    if(confirm('Código não encontrado. Cadastrar agora?')) abrirModal(codigo);
                 }
             }
         }
@@ -328,9 +303,7 @@
                 document.getElementById('editVenda').value = item.Venda || item.venda || '';
                 document.getElementById('editFoto').value = item.Foto || item.foto || '';
             } else {
-                document.getElementById('editCusto').value = '';
-                document.getElementById('editVenda').value = '';
-                document.getElementById('editFoto').value = '';
+                document.getElementById('editCusto').value = ''; document.getElementById('editVenda').value = ''; document.getElementById('editFoto').value = '';
             }
             document.getElementById('modalEdit').style.display = 'flex';
         }
@@ -359,7 +332,7 @@
                 venda: document.getElementById('vendaItem').value,
                 data: document.getElementById('dataRepasse').value
             };
-            if(data.codigo && data.revendedor) { await apiPost(data); alert('Repasse concluído!'); document.getElementById('codigoRepasse').value = ''; }
+            if(data.codigo && data.revendedor) { await apiPost(data); alert('Repasse concluído!'); document.getElementById('codigoRepasse').value = ''; await carregarInventario(); }
         }
 
         async function carregarPainelIndividual() {
@@ -386,14 +359,13 @@
             if(confirm('Finalizar acerto?')) { await apiPost({ action: 'fechamento', revendedor: rev, obs }); carregarPainelIndividual(); }
         }
 
-        // Filtros Rápidos
         function setFilter(filter) {
             document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
             document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
             let filtered = globalInventario;
             if(filter === 'Em Estoque') filtered = globalInventario.filter(i => (i.Status || i.status) === 'Em Estoque');
-            else if(filter === 'Com') filtered = globalInventario.filter(i => (i.Status || i.status).startsWith('Com'));
-            else if(filter === 'Venda') filtered = globalInventario.filter(i => (i.Venda || i.venda) > 0);
+            else if(filter === 'Consignado') filtered = globalInventario.filter(i => (i.Status || i.status) !== 'Em Estoque' && (i.Status || i.status) !== 'Vendido');
+            else if(filter === 'Vendido') filtered = globalInventario.filter(i => (i.Status || i.status) === 'Vendido');
             renderInventario(filtered);
         }
 
