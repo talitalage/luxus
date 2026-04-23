@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luxus - Gestão de Inventário</title>
+    <link rel="icon" type="image/png" href="https://i.ibb.co/6R29d3Dj/luxus-logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Tenor+Sans&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --navy-dark: #0f172a;
+            --navy-light: #1e293b;
+            --gold: #c5a059;
+            --gold-light: #e2c28d;
+            --bg-dark: #020617;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 16px;
+        }
+        .btn-gold {
+            background: linear-gradient(135deg, #c5a059, #e2c28d);
+            color: #0f172a;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3);
+        }
+        .nav-link {
+            position: relative;
+            padding: 0.5rem 1rem;
+            color: #94a3b8;
+            cursor: pointer;
+        }
+        .nav-link.active {
+            color: #c5a059;
+        }
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 1rem;
+            right: 1rem;
+            height: 2px;
+            background: #c5a059;
+        }
+        input, select, textarea {
+            background: #0f172a !important;
+            border: 1px solid rgba(148, 163, 184, 0.2) !important;
+            color: white !important;
+            border-radius: 8px !important;
+            padding: 0.75rem !important;
+        }
+        input:focus, select:focus {
+            border-color: #c5a059 !important;
+            outline: none !important;
+        }
+        .status-pill {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+        .status-pill:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .status-estoque { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .status-consignado { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .status-vendido { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+        .sortable:hover { color: #c5a059; }
+        .sort-icon { font-size: 0.7rem; margin-left: 4px; opacity: 0.5; }
+        .sort-active { color: #c5a059; opacity: 1; }
+        
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+        }
+        .logo-link { cursor: pointer; }
+        .logo-link:hover { opacity: 0.8; }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #334155;
+            transition: 0.3s;
+            border-radius: 20px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider {
+            background-color: #c5a059;
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+        
+        .drop-zone {
+            border: 2px dashed rgba(197, 160, 89, 0.3);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: #c5a059;
+            background: rgba(197, 160, 89, 0.05);
+        }
+        
+        /* Estilos para arrastar colunas */
+        .column-drag-item {
+            cursor: grab;
+            transition: all 0.2s ease;
+        }
+        .column-drag-item:active {
+            cursor: grabbing;
+        }
+        .column-drag-item.dragging {
+            opacity: 0.5;
+        }
+        .column-drag-item.drag-over {
+            border-top: 2px solid #c5a059;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Modal de Login -->
+    <div id="modal-login" class="fixed inset-0 z-[100] flex items-center justify-center modal-overlay">
+        <div class="glass-card p-8 w-96">
+            <div class="text-center mb-6">
+                <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
+                    <img src="https://i.ibb.co/6R29d3Dj/luxus-logo.png" alt="Logo" class="w-16 h-16 object-contain">
+                </div>
+                <h2 class="text-2xl font-bold text-amber-500">LUXUS</h2>
+                <p class="text-xs text-slate-400">Sistema de Gestão</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Usuário</label>
+                    <input type="text" id="login-username" class="w-full" placeholder="admin" autocomplete="off">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Senha</label>
+                    <input type="password" id="login-password" class="w-full" placeholder="••••••" onkeypress="if(event.key==='Enter') doLogin()">
+                </div>
+                <button onclick="doLogin()" class="btn-gold w-full py-3 rounded-lg mt-4">Entrar</button>
+                <p id="login-error" class="text-red-400 text-sm text-center hidden">Usuário ou senha inválidos</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <nav class="sticky top-0 z-40 glass-card mx-4 mt-4 mb-6 hidden" id="main-nav">
+        <div class="max-w-[100%] mx-auto px-6 py-4 flex justify-between items-center flex-wrap gap-4">
+            <div class="flex items-center gap-4 logo-link" onclick="goHome()">
+                <div class="w-14 h-14 bg-white rounded-lg flex items-center justify-center p-1">
+                    <img src="https://i.ibb.co/6R29d3Dj/luxus-logo.png" alt="Logo" class="w-full h-full object-contain">
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white uppercase">LUXUS</h1>
+                    <p class="text-[10px] text-amber-500 tracking-[0.3em]">Joias & Perfumes</p>
+                </div>
+            </div>
+            <div class="flex gap-8">
+                <a href="#consulta" onclick="switchTab('consulta'); return false;" id="tab-consulta" class="nav-link active">
+                    <i class="fas fa-gem mr-2"></i>Consulta
+                </a>
+                <a href="#central" onclick="switchTab('central'); return false;" id="tab-central" class="nav-link">
+                    <i class="fas fa-users mr-2"></i>Central do Revendedor
+                </a>
+                <a href="#config" onclick="switchTab('config'); return false;" id="tab-config" class="nav-link">
+                    <i class="fas fa-cog mr-2"></i>Configurações
+                </a>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="user-name-display" class="text-sm text-amber-500"></span>
+                <button onclick="logout()" class="text-slate-400 hover:text-white text-sm">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="px-4 pb-12 hidden" id="main-content">
+        
+        <!-- Aba Consulta -->
+        <div id="content-consulta" class="tab-content space-y-6">
+            
+            <!-- Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="glass-card p-6 border-l-4 border-l-blue-500">
+                    <p class="text-slate-400 text-xs uppercase">Total de Peças</p>
+                    <h3 id="dash-total-pecas" class="text-3xl font-bold">0</h3>
+                </div>
+                <div class="glass-card p-6 border-l-4 border-l-green-500">
+                    <p class="text-slate-400 text-xs uppercase">Capital em Estoque</p>
+                    <h3 id="dash-capital-estoque" class="text-3xl font-bold">R$ 0,00</h3>
+                </div>
+                <div class="glass-card p-6 border-l-4 border-l-amber-500">
+                    <p class="text-slate-400 text-xs uppercase">Em Consignação</p>
+                    <h3 id="dash-em-consignacao" class="text-3xl font-bold">R$ 0,00</h3>
+                </div>
+                <div class="glass-card p-6 border-l-4 border-l-red-500">
+                    <p class="text-slate-400 text-xs uppercase">Total Vendido</p>
+                    <h3 id="dash-total-vendido" class="text-3xl font-bold">R$ 0,00</h3>
+                </div>
+            </div>
+
+            <!-- Campo de Código com verificação -->
+            <div class="glass-card p-6">
+                <h3 class="text-xl font-bold text-amber-500 mb-4"><i class="fas fa-barcode"></i> Leitor de Código</h3>
+                <div class="flex gap-4">
+                    <input type="text" id="code-reader" placeholder="Bipe ou digite o código..." class="flex-1 text-lg" onkeypress="checkExistingCode(event)">
+                    <button onclick="checkExistingCodeManual()" class="btn-gold px-6 py-3 rounded-lg">
+                        <i class="fas fa-search"></i> Verificar
+                    </button>
+                </div>
+                <p class="text-xs text-slate-400 mt-2">Ao bipar, se o código existir será aberto para edição. Se não existir, poderá cadastrar novo.</p>
+            </div>
+
+            <!-- Controles de Coluna e Ordenação -->
+            <div class="flex justify-between items-center flex-wrap gap-3">
+                <div class="flex gap-2">
+                    <button onclick="toggleColumnPanel()" class="bg-slate-800 px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+                        <i class="fas fa-columns mr-2 text-amber-500"></i> Gerenciar Colunas
+                    </button>
+                </div>
+                <div class="text-sm text-slate-400">
+                    <i class="fas fa-arrow-up-wide-short mr-1"></i> Clique nos cabeçalhos para ordenar
+                </div>
+            </div>
+
+            <!-- Painel de Colunas com ordenação arrastável -->
+            <div id="column-panel" class="glass-card p-4 hidden">
+                <h4 class="text-sm font-bold text-amber-500 mb-3">Organizar Colunas (Arraste para reordenar):</h4>
+                <div id="column-order-list" class="space-y-2 mb-4"></div>
+                <h4 class="text-sm font-bold text-amber-500 mb-3 mt-4">Mostrar/Ocultar Colunas:</h4>
+                <div class="flex flex-wrap gap-4" id="column-visibility-list"></div>
+                <button onclick="resetColumns()" class="mt-4 text-sm text-slate-400 hover:text-amber-500">
+                    <i class="fas fa-undo"></i> Restaurar ordem padrão
+                </button>
+            </div>
+
+            <!-- Tabela de Inventário -->
+            <div class="glass-card p-6 overflow-x-auto">
+                <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+                    <h2 class="text-2xl font-bold">Acervo Luxus</h2>
+                    <div class="flex gap-2">
+                        <input type="text" id="search-input" placeholder="Buscar..." class="w-64" oninput="renderInventory()">
+                        <button onclick="loadData()" class="bg-slate-800 px-4 py-2 rounded-lg"><i class="fas fa-sync-alt"></i> Atualizar</button>
+                    </div>
+                </div>
+                
+                <table class="w-full text-left" id="inventory-table">
+                    <thead class="text-slate-400 text-[10px] uppercase border-b border-slate-800">
+                        <tr id="table-header">
+                            <!-- Cabeçalhos dinâmicos -->
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-table-body" class="text-sm"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Aba Central do Revendedor -->
+        <div id="content-central" class="tab-content hidden space-y-6">
+            <div class="glass-card p-8">
+                <h2 class="text-2xl font-bold text-amber-500 mb-4">Central do Revendedor</h2>
+                
+                <div class="mb-4 p-3 bg-slate-800/50 rounded-lg">
+                    <p class="text-sm text-slate-400 mb-2">📋 Revendedores encontrados no sistema:</p>
+                    <div id="revendedores-list" class="flex flex-wrap gap-2"></div>
+                </div>
+                
+                <select id="select-revendedor" class="w-96" onchange="loadRevendedorData()">
+                    <option value="">Selecione um revendedor</option>
+                </select>
+                
+                <div id="central-info" class="mt-4"></div>
+            </div>
+        </div>
+
+        <!-- Aba Configurações -->
+        <div id="content-config" class="tab-content hidden max-w-5xl mx-auto">
+            <div class="glass-card p-8">
+                <h2 class="text-2xl font-bold text-amber-500 mb-6">Configurações do Sistema</h2>
+                
+                <!-- Conexão -->
+                <div class="mb-8 p-4 bg-slate-800/30 rounded-lg">
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <i class="fab fa-google text-blue-400"></i> Conexão Google Sheets
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm mb-2">URL do Google Apps Script</label>
+                            <input type="text" id="config-script-url" class="w-full" placeholder="https://script.google.com/macros/s/.../exec">
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-2">Chave API ImgBB</label>
+                            <input type="text" id="config-imgbb-key" class="w-full" placeholder="Sua chave API">
+                        </div>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="saveConfig()" class="btn-gold px-6 py-2 rounded-lg">Salvar</button>
+                        <button onclick="testConnection()" class="bg-slate-700 px-6 py-2 rounded-lg">Testar Conexão</button>
+                        <button onclick="loadData()" class="bg-amber-600 px-6 py-2 rounded-lg">Recarregar Dados</button>
+                    </div>
+                </div>
+
+                <!-- Gestão de Tipos -->
+                <div class="mb-8 p-4 bg-slate-800/30 rounded-lg">
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <i class="fas fa-tags text-amber-500"></i> Tipos de Joia
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-2">Adicionar Novo Tipo</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="new-type-name" placeholder="Ex: Pulseira, Colar, Anel..." class="flex-1">
+                                <button onclick="addTipo()" class="btn-gold px-4 rounded-lg">
+                                    <i class="fas fa-plus"></i> Adicionar
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-2">Tipos Cadastrados</label>
+                            <div id="tipos-list" class="max-h-60 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                                <p class="text-slate-500 text-sm">Carregando...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Importação/Exportação -->
+                <div class="mb-8 p-4 bg-slate-800/30 rounded-lg">
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <i class="fas fa-upload text-green-400"></i> Importar/Exportar Dados
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-amber-500 mb-2"></i>
+                                <p class="text-sm">Clique ou arraste um arquivo CSV</p>
+                                <input type="file" id="file-input" accept=".csv" class="hidden" onchange="handleFileImport(this)">
+                            </div>
+                        </div>
+                        <div>
+                            <textarea id="csv-textarea" rows="4" class="w-full font-mono text-xs" placeholder="codigo,tipo,status,custo,venda,data,foto&#10;123456,,Em Estoque,75,150,2024-01-15,"></textarea>
+                            <button onclick="importFromTextarea()" class="mt-2 bg-green-600 px-4 py-2 rounded-lg text-sm">Importar do texto</button>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="exportToCSV()" class="bg-blue-600 px-4 py-2 rounded-lg text-sm">Exportar CSV</button>
+                        <button onclick="exportToJSON()" class="bg-purple-600 px-4 py-2 rounded-lg text-sm">Exportar JSON</button>
+                        <button onclick="downloadTemplate()" class="bg-slate-600 px-4 py-2 rounded-lg text-sm">Download Template</button>
+                    </div>
+                </div>
+
+                <!-- Usuários -->
+                <div class="p-4 bg-slate-800/30 rounded-lg">
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <i class="fas fa-users text-blue-400"></i> Usuários do Sistema
+                    </h3>
+                    <p class="text-sm text-slate-400 mb-3">Os usuários são gerenciados na aba <strong>"Usuarios"</strong> da planilha.</p>
+                    <div id="usuarios-list" class="text-sm space-y-1">
+                        <p>Carregando...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal para código existente -->
+    <div id="modal-code-exists" class="fixed inset-0 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="glass-card p-6 w-[500px]">
+            <h3 class="text-xl font-bold text-amber-500 mb-4" id="code-exists-title">Código já existe!</h3>
+            <p id="code-exists-message" class="text-sm text-slate-300 mb-4"></p>
+            <div class="flex gap-3">
+                <button onclick="editExistingItem()" class="flex-1 bg-blue-600 py-2 rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-edit"></i> Alterar
+                </button>
+                <button onclick="duplicateExistingItem()" class="flex-1 bg-amber-600 py-2 rounded-lg hover:bg-amber-700">
+                    <i class="fas fa-copy"></i> Duplicar
+                </button>
+                <button onclick="deleteExistingItem()" class="flex-1 bg-red-600 py-2 rounded-lg hover:bg-red-700">
+                    <i class="fas fa-trash"></i> Excluir
+                </button>
+                <button onclick="closeCodeExistsModal()" class="flex-1 bg-slate-700 py-2 rounded-lg">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para novo código (não encontrado) -->
+    <div id="modal-code-new" class="fixed inset-0 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="glass-card p-6 w-[500px]">
+            <h3 class="text-xl font-bold text-green-500 mb-4">Código não encontrado</h3>
+            <p class="text-sm text-slate-300 mb-4">Deseja cadastrar um novo item com o código <strong id="new-code-display"></strong>?</p>
+            <div class="flex gap-3">
+                <button onclick="showNewItemForm()" class="flex-1 btn-gold py-2 rounded-lg">
+                    <i class="fas fa-plus"></i> Sim, cadastrar
+                </button>
+                <button onclick="closeNewCodeModal()" class="flex-1 bg-slate-700 py-2 rounded-lg">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de edição de item -->
+    <div id="modal-edit-item" class="fixed inset-0 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="glass-card p-6 w-[550px]">
+            <h3 class="text-xl font-bold text-amber-500 mb-4" id="edit-modal-title">Editar Item</h3>
+            <input type="hidden" id="edit-item-rowid">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Código</label>
+                    <input type="text" id="edit-codigo" class="w-full" readonly>
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Tipo</label>
+                    <select id="edit-tipo" class="w-full"></select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-1">Preço Custo</label>
+                        <input type="number" id="edit-custo" class="w-full">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-1">Preço Venda</label>
+                        <input type="number" id="edit-venda" class="w-full">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Localização</label>
+                    <select id="edit-status" class="w-full">
+                        <option value="Em Estoque">Em Estoque</option>
+                        <option value="Vendido">Vendido</option>
+                        <optgroup label="Revendedores" id="edit-revendedores-optgroup"></optgroup>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Foto URL</label>
+                    <input type="text" id="edit-foto" class="w-full" placeholder="https://...">
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeEditModal()" class="flex-1 bg-slate-700 py-2 rounded-lg">Cancelar</button>
+                <button onclick="saveEditItem()" class="flex-1 btn-gold py-2 rounded-lg">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmação -->
+    <div id="modal-confirm" class="fixed inset-0 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="glass-card p-6 w-96">
+            <h3 class="text-xl font-bold mb-4" id="confirm-title">Confirmar</h3>
+            <p id="confirm-message" class="mb-6">Tem certeza que deseja continuar?</p>
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal()" class="flex-1 bg-slate-700 py-2 rounded-lg">Não</button>
+                <button id="confirm-btn" class="flex-1 btn-gold py-2 rounded-lg">Sim</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-status-toast" class="fixed bottom-4 right-4 z-50 hidden">
+        <div class="glass-card p-3 text-sm">
+            <i class="fas fa-info-circle mr-2"></i> <span id="toast-message"></span>
+        </div>
+    </div>
+
+    <script>
+        // ==================== VARIÁVEIS GLOBAIS ====================
+        let inventory = [];
+        let revendedores = [];
+        let tipos = [];
+        let usuarios = [];
+        let currentUser = null;
+        let scriptUrl = localStorage.getItem('luxus_script_url') || '';
+        let imgbbKey = localStorage.getItem('luxus_imgbb_key') || '';
+        let currentSort = { field: 'codigo', direction: 'asc' };
+        let confirmCallback = null;
+        let pendingCode = null;
+        let pendingItem = null;
+        
+        // Configuração de colunas
+        let columnVisibility = {
+            codigo: true,
+            tipo: true,
+            status: true,
+            custo: true,
+            venda: true,
+            data: true,
+            foto: true
+        };
+        
+        let columnOrder = ['codigo', 'tipo', 'status', 'custo', 'venda', 'data', 'foto'];
+        
+        const columnLabels = {
+            codigo: 'Código',
+            tipo: 'Tipo',
+            status: 'Localização',
+            custo: 'Custo',
+            venda: 'Venda',
+            data: 'Data',
+            foto: 'Foto'
+        };
+        
+        let dragSourceIndex = null;
+
+        // ==================== LOGIN ====================
+        async function doLogin() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+            
+            if (!scriptUrl) {
+                alert('Configure a URL do Google Apps Script primeiro!\n\nClique em "Salvar" após inserir a URL.');
+                return;
+            }
+            
+            try {
+                const res = await fetch(scriptUrl + '?action=getUsuarios');
+                const usuariosData = await res.json();
+                
+                usuarios = Array.isArray(usuariosData) ? usuariosData.map(u => ({
+                    nome: u.Nome || u.nome || '',
+                    senha: u.Senha || u.senha || ''
+                })).filter(u => u.nome && u.senha) : [];
+                
+                if (usuarios.length === 0) {
+                    usuarios = [{ nome: 'admin', senha: 'admin' }];
+                }
+                
+                const found = usuarios.find(u => u.nome === username && u.senha === password);
+                
+                if (found) {
+                    currentUser = username;
+                    localStorage.setItem('luxus_logged_in', 'true');
+                    localStorage.setItem('luxus_user', username);
+                    document.getElementById('modal-login').classList.add('hidden');
+                    document.getElementById('main-nav').classList.remove('hidden');
+                    document.getElementById('main-content').classList.remove('hidden');
+                    document.getElementById('user-name-display').innerHTML = `<i class="fas fa-user-circle mr-1"></i> ${username}`;
+                    loadData();
+                } else {
+                    document.getElementById('login-error').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Erro no login:', error);
+                document.getElementById('login-error').classList.remove('hidden');
+                document.getElementById('login-error').textContent = 'Erro ao conectar com a planilha';
+            }
+        }
+        
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('luxus_logged_in');
+            localStorage.removeItem('luxus_user');
+            document.getElementById('modal-login').classList.remove('hidden');
+            document.getElementById('main-nav').classList.add('hidden');
+            document.getElementById('main-content').classList.add('hidden');
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+            document.getElementById('login-error').classList.add('hidden');
+        }
+        
+        function checkAutoLogin() {
+            const loggedIn = localStorage.getItem('luxus_logged_in');
+            const savedUser = localStorage.getItem('luxus_user');
+            if (loggedIn === 'true' && savedUser) {
+                currentUser = savedUser;
+                document.getElementById('modal-login').classList.add('hidden');
+                document.getElementById('main-nav').classList.remove('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+                document.getElementById('user-name-display').innerHTML = `<i class="fas fa-user-circle mr-1"></i> ${savedUser}`;
+                loadData();
+            }
+        }
+
+        // ==================== INICIALIZAÇÃO ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            loadColumnConfig();
+            
+            document.getElementById('config-script-url').value = scriptUrl;
+            document.getElementById('config-imgbb-key').value = imgbbKey;
+            
+            const hash = window.location.hash.substring(1);
+            if (hash === 'central') setTimeout(() => switchTabDirect('central'), 500);
+            else if (hash === 'config') setTimeout(() => switchTabDirect('config'), 500);
+            
+            checkAutoLogin();
+            
+            const dropZone = document.getElementById('drop-zone');
+            if (dropZone) {
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('drag-over');
+                });
+                dropZone.addEventListener('dragleave', () => {
+                    dropZone.classList.remove('drag-over');
+                });
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('drag-over');
+                    const file = e.dataTransfer.files[0];
+                    if (file) processImportFile(file);
+                });
+            }
+        });
+
+        function loadColumnConfig() {
+            const savedVisibility = localStorage.getItem('luxus_column_visibility');
+            if (savedVisibility) {
+                try {
+                    const parsed = JSON.parse(savedVisibility);
+                    columnVisibility = { ...columnVisibility, ...parsed };
+                } catch(e) {}
+            }
+            
+            const savedOrder = localStorage.getItem('luxus_column_order');
+            if (savedOrder) {
+                try {
+                    const newOrder = JSON.parse(savedOrder);
+                    if (Array.isArray(newOrder) && newOrder.length === columnOrder.length) {
+                        columnOrder = newOrder;
+                    }
+                } catch(e) {}
+            }
+        }
+        
+        function saveColumnConfig() {
+            localStorage.setItem('luxus_column_visibility', JSON.stringify(columnVisibility));
+            localStorage.setItem('luxus_column_order', JSON.stringify(columnOrder));
+        }
+        
+        function renderColumnManagement() {
+            const orderList = document.getElementById('column-order-list');
+            const visibilityList = document.getElementById('column-visibility-list');
+            
+            if (orderList) {
+                orderList.innerHTML = '';
+                columnOrder.forEach((col, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'column-drag-item flex items-center gap-3 p-2 bg-slate-800/50 rounded-lg';
+                    div.setAttribute('draggable', 'true');
+                    div.setAttribute('data-index', index);
+                    div.innerHTML = `
+                        <i class="fas fa-grip-vertical text-slate-500 cursor-grab"></i>
+                        <span class="flex-1 text-sm">${columnLabels[col]}</span>
+                        <i class="fas fa-eye text-green-500 text-xs"></i>
+                    `;
+                    div.addEventListener('dragstart', (e) => {
+                        dragSourceIndex = parseInt(e.target.closest('.column-drag-item').getAttribute('data-index'));
+                        e.target.closest('.column-drag-item').classList.add('dragging');
+                    });
+                    div.addEventListener('dragend', (e) => {
+                        e.target.closest('.column-drag-item').classList.remove('dragging');
+                        dragSourceIndex = null;
+                    });
+                    div.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        e.target.closest('.column-drag-item')?.classList.add('drag-over');
+                    });
+                    div.addEventListener('dragleave', (e) => {
+                        e.target.closest('.column-drag-item')?.classList.remove('drag-over');
+                    });
+                    div.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        const targetEl = e.target.closest('.column-drag-item');
+                        if (!targetEl) return;
+                        const targetIndex = parseInt(targetEl.getAttribute('data-index'));
+                        targetEl.classList.remove('drag-over');
+                        
+                        if (dragSourceIndex !== null && dragSourceIndex !== targetIndex) {
+                            const newOrder = [...columnOrder];
+                            const [movedItem] = newOrder.splice(dragSourceIndex, 1);
+                            newOrder.splice(targetIndex, 0, movedItem);
+                            columnOrder = newOrder;
+                            saveColumnConfig();
+                            renderColumnManagement();
+                            renderInventory();
+                        }
+                    });
+                    orderList.appendChild(div);
+                });
+            }
+            
+            if (visibilityList) {
+                visibilityList.innerHTML = '';
+                columnOrder.forEach(col => {
+                    const label = document.createElement('label');
+                    label.className = 'flex items-center gap-2 cursor-pointer';
+                    label.innerHTML = `
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="toggle-${col}" ${columnVisibility[col] ? 'checked' : ''} onchange="toggleColumn('${col}')">
+                            <span class="toggle-slider"></span>
+                        </div>
+                        <span class="text-sm">${columnLabels[col]}</span>
+                    `;
+                    visibilityList.appendChild(label);
+                });
+            }
+        }
+        
+        function toggleColumn(col) {
+            columnVisibility[col] = !columnVisibility[col];
+            saveColumnConfig();
+            renderInventory();
+        }
+        
+        function toggleColumnPanel() {
+            const panel = document.getElementById('column-panel');
+            panel.classList.toggle('hidden');
+            if (!panel.classList.contains('hidden')) {
+                renderColumnManagement();
+            }
+        }
+        
+        function resetColumns() {
+            columnOrder = ['codigo', 'tipo', 'status', 'custo', 'venda', 'data', 'foto'];
+            columnVisibility = {
+                codigo: true,
+                tipo: true,
+                status: true,
+                custo: true,
+                venda: true,
+                data: true,
+                foto: true
+            };
+            saveColumnConfig();
+            renderColumnManagement();
+            renderInventory();
+            showToast('Colunas resetadas para o padrão');
+        }
+
+        // ==================== VERIFICAÇÃO DE CÓDIGO ====================
+        function checkExistingCode(event) {
+            if (event.key === 'Enter') {
+                const codigo = document.getElementById('code-reader').value.trim();
+                if (codigo) {
+                    checkCode(codigo);
+                }
+            }
+        }
+        
+        function checkExistingCodeManual() {
+            const codigo = document.getElementById('code-reader').value.trim();
+            if (codigo) {
+                checkCode(codigo);
+            } else {
+                showToast('Digite um código primeiro!');
+            }
+        }
+        
+        function checkCode(codigo) {
+            const existing = inventory.find(item => item.codigo === codigo);
+            
+            if (existing) {
+                pendingCode = codigo;
+                pendingItem = existing;
+                document.getElementById('code-exists-message').innerHTML = `
+                    <strong>Código: ${escapeHtml(existing.codigo)}</strong><br>
+                    Tipo: ${escapeHtml(existing.tipo || 'Geral')}<br>
+                    Status: ${escapeHtml(existing.status)}<br>
+                    Custo: R$ ${formatMoney(existing.custo)}<br>
+                    Venda: R$ ${formatMoney(existing.venda)}
+                `;
+                document.getElementById('modal-code-exists').classList.remove('hidden');
+            } else {
+                pendingCode = codigo;
+                document.getElementById('new-code-display').textContent = codigo;
+                document.getElementById('modal-code-new').classList.remove('hidden');
+            }
+            document.getElementById('code-reader').value = '';
+        }
+        
+        function closeCodeExistsModal() {
+            document.getElementById('modal-code-exists').classList.add('hidden');
+            pendingCode = null;
+            pendingItem = null;
+        }
+        
+        function closeNewCodeModal() {
+            document.getElementById('modal-code-new').classList.add('hidden');
+            pendingCode = null;
+        }
+        
+        function editExistingItem() {
+            closeCodeExistsModal();
+            if (pendingItem) {
+                openEditModal(pendingItem);
+            }
+        }
+        
+        function duplicateExistingItem() {
+            closeCodeExistsModal();
+            if (pendingItem) {
+                const newCodigo = prompt('Digite o novo código para duplicar:', pendingItem.codigo + '_COPY');
+                if (newCodigo && newCodigo.trim()) {
+                    createNewItem({
+                        codigo: newCodigo.trim(),
+                        tipo: pendingItem.tipo,
+                        custo: pendingItem.custo,
+                        venda: pendingItem.venda,
+                        status: 'Em Estoque'
+                    });
+                }
+            }
+        }
+        
+        function deleteExistingItem() {
+            closeCodeExistsModal();
+            if (pendingItem) {
+                showConfirmModal('Excluir Item', `Tem certeza que deseja excluir o item ${pendingItem.codigo}?`, async () => {
+                    await callApi('deleteItem', { row: pendingItem.rowId });
+                    showToast(`Item ${pendingItem.codigo} excluído!`);
+                    loadData();
+                });
+            }
+        }
+        
+        function showNewItemForm() {
+            closeNewCodeModal();
+            openNewItemModal(pendingCode);
+        }
+        
+        function openNewItemModal(codigo) {
+            document.getElementById('edit-modal-title').textContent = 'Novo Item';
+            document.getElementById('edit-item-rowid').value = '';
+            document.getElementById('edit-codigo').value = codigo;
+            document.getElementById('edit-codigo').readOnly = false;
+            document.getElementById('edit-custo').value = '';
+            document.getElementById('edit-venda').value = '';
+            document.getElementById('edit-foto').value = '';
+            
+            updateEditFormSelects();
+            document.getElementById('edit-status').value = 'Em Estoque';
+            document.getElementById('modal-edit-item').classList.remove('hidden');
+        }
+        
+        function openEditModal(item) {
+            document.getElementById('edit-modal-title').textContent = 'Editar Item';
+            document.getElementById('edit-item-rowid').value = item.rowId;
+            document.getElementById('edit-codigo').value = item.codigo;
+            document.getElementById('edit-codigo').readOnly = true;
+            document.getElementById('edit-custo').value = item.custo;
+            document.getElementById('edit-venda').value = item.venda;
+            document.getElementById('edit-foto').value = item.foto;
+            
+            updateEditFormSelects();
+            document.getElementById('edit-status').value = item.status;
+            document.getElementById('edit-tipo').value = item.tipo;
+            
+            document.getElementById('modal-edit-item').classList.remove('hidden');
+        }
+        
+        function updateEditFormSelects() {
+            const tipoSelect = document.getElementById('edit-tipo');
+            tipoSelect.innerHTML = '<option value="">Geral</option>' + tipos.map(t => `<option value="${escapeHtml(t.nome)}">${escapeHtml(t.nome)}</option>`).join('');
+            
+            const statusSelect = document.getElementById('edit-status');
+            const revOptgroup = document.getElementById('edit-revendedores-optgroup');
+            revOptgroup.innerHTML = revendedores.map(r => `<option value="${escapeHtml(r.nome)}">${escapeHtml(r.nome)}</option>`).join('');
+        }
+        
+        function closeEditModal() {
+            document.getElementById('modal-edit-item').classList.add('hidden');
+        }
+        
+        async function saveEditItem() {
+            const rowId = document.getElementById('edit-item-rowid').value;
+            const codigo = document.getElementById('edit-codigo').value.trim();
+            const tipo = document.getElementById('edit-tipo').value;
+            const custo = document.getElementById('edit-custo').value;
+            const venda = document.getElementById('edit-venda').value;
+            const status = document.getElementById('edit-status').value;
+            const foto = document.getElementById('edit-foto').value;
+            
+            if (!codigo) {
+                showToast('Código é obrigatório!');
+                return;
+            }
+            
+            if (rowId) {
+                // Update
+                await callApi('updateItem', {
+                    row: parseInt(rowId),
+                    codigo: codigo,
+                    tipo: tipo,
+                    custo: custo,
+                    venda: venda,
+                    status: status,
+                    foto: foto
+                });
+                showToast('Item atualizado!');
+            } else {
+                // Create new
+                await createNewItem({ codigo, tipo, custo, venda, status, foto });
+            }
+            
+            closeEditModal();
+            loadData();
+        }
+        
+        async function createNewItem(data) {
+            await callApi('saveItem', {
+                codigo: data.codigo,
+                tipo: data.tipo || '',
+                custo: data.custo || 0,
+                venda: data.venda || 0,
+                status: data.status || 'Em Estoque',
+                foto: data.foto || ''
+            });
+            showToast(`Item ${data.codigo} criado!`);
+        }
+        
+        async function callApi(action, data) {
+            const actionMap = {
+                'saveItem': 'addInventario',
+                'updateItem': 'editInventario',
+                'deleteItem': 'delInventario'
+            };
+            const mappedAction = actionMap[action] || action;
+            
+            try {
+                await fetch(scriptUrl, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: mappedAction, ...data })
+                });
+                return true;
+            } catch (error) {
+                console.error('API Error:', error);
+                return false;
+            }
+        }
+
+        // ==================== NAVEGAÇÃO ====================
+        function goHome() {
+            window.location.hash = '';
+            switchTabDirect('consulta');
+        }
+
+        function switchTab(tab) {
+            window.location.hash = tab;
+            switchTabDirect(tab);
+        }
+
+        function switchTabDirect(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            if (tab === 'consulta') document.getElementById('code-reader')?.focus();
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('modal-status-toast');
+            const msgSpan = document.getElementById('toast-message');
+            msgSpan.innerHTML = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        function saveConfig() {
+            scriptUrl = document.getElementById('config-script-url').value.trim();
+            imgbbKey = document.getElementById('config-imgbb-key').value.trim();
+            localStorage.setItem('luxus_script_url', scriptUrl);
+            localStorage.setItem('luxus_imgbb_key', imgbbKey);
+            alert('Configurações salvas!');
+            if (currentUser) loadData();
+        }
+
+        // ==================== CARREGAMENTO DE DADOS ====================
+        async function loadData() {
+            if (!scriptUrl) return;
+            
+            try {
+                showToast('Carregando dados...');
+                
+                const [invRes, revRes, tipRes, userRes] = await Promise.all([
+                    fetch(scriptUrl + '?action=getInventario'),
+                    fetch(scriptUrl + '?action=getRevendedores'),
+                    fetch(scriptUrl + '?action=getTipos'),
+                    fetch(scriptUrl + '?action=getUsuarios')
+                ]);
+                
+                const invData = await invRes.json();
+                const revData = await revRes.json();
+                const tipData = await tipRes.json();
+                const userData = await userRes.json();
+                
+                inventory = (Array.isArray(invData) ? invData : []).map(item => ({
+                    rowId: item.rowId,
+                    codigo: String(item.Codigo || ''),
+                    data: item.Data ? new Date(item.Data).toLocaleDateString('pt-BR') : '',
+                    status: item.Status || 'Em Estoque',
+                    custo: parseFloat(item.Custo) || 0,
+                    venda: parseFloat(item.Venda) || 0,
+                    foto: item.Foto || '',
+                    tipo: item.Tipo || ''
+                }));
+                
+                let revendedoresDaAba = [];
+                if (Array.isArray(revData) && revData.length > 0) {
+                    revendedoresDaAba = revData.map(r => ({
+                        nome: r.Nome || r.nome || '',
+                        contato: r.Contato || r.contato || ''
+                    })).filter(r => r.nome);
+                }
+                
+                const revendedoresDoStatus = new Set();
+                inventory.forEach(item => {
+                    const status = item.status;
+                    if (status !== 'Em Estoque' && status !== 'Vendido' && status !== '') {
+                        revendedoresDoStatus.add(status);
+                    }
+                });
+                
+                const revMap = new Map();
+                revendedoresDaAba.forEach(rev => revMap.set(rev.nome, rev));
+                revendedoresDoStatus.forEach(nome => {
+                    if (!revMap.has(nome)) revMap.set(nome, { nome: nome, contato: '' });
+                });
+                revendedores = Array.from(revMap.values());
+                
+                tipos = (Array.isArray(tipData) ? tipData : []).map(t => ({ 
+                    nome: t.Nome || t.nome || '' 
+                })).filter(t => t.nome);
+                
+                usuarios = (Array.isArray(userData) ? userData : []).map(u => ({
+                    nome: u.Nome || u.nome || '',
+                    senha: u.Senha || u.senha || ''
+                })).filter(u => u.nome && u.senha);
+                
+                if (usuarios.length === 0) {
+                    usuarios = [{ nome: 'admin', senha: 'admin' }];
+                }
+                
+                renderInventory();
+                updateRevendedoresSelect();
+                updateDashboard();
+                renderTiposList();
+                renderUsuariosList();
+                
+                const revListDiv = document.getElementById('revendedores-list');
+                if (revListDiv) {
+                    revListDiv.innerHTML = revendedores.map(r => 
+                        `<span class="bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-sm">${escapeHtml(r.nome)}</span>`
+                    ).join('');
+                }
+                
+                showToast(`✅ ${inventory.length} itens carregados`);
+                
+            } catch (error) {
+                console.error('Erro ao carregar:', error);
+                showToast('❌ Erro ao carregar dados');
+            }
+        }
+        
+        function renderInventory() {
+            const tbody = document.getElementById('inventory-table-body');
+            const thead = document.getElementById('table-header');
+            if (!tbody || !thead) return;
+            
+            const searchTerm = document.getElementById('search-input')?.value.toLowerCase() || '';
+            
+            let filtered = inventory.filter(item => 
+                String(item.codigo).toLowerCase().includes(searchTerm) || 
+                item.tipo.toLowerCase().includes(searchTerm) || 
+                item.status.toLowerCase().includes(searchTerm)
+            );
+            
+            // Ordenação
+            filtered.sort((a, b) => {
+                let valA = a[currentSort.field];
+                let valB = b[currentSort.field];
+                
+                if (currentSort.field === 'custo' || currentSort.field === 'venda') {
+                    valA = parseFloat(valA) || 0;
+                    valB = parseFloat(valB) || 0;
+                    if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
+                    if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
+                    return 0;
+                }
+                
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+                
+                if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+            
+            // Cabeçalhos
+            thead.innerHTML = '';
+            const headerRow = document.createElement('tr');
+            headerRow.className = 'text-slate-400 text-[10px] uppercase border-b border-slate-800';
+            
+            for (const col of columnOrder) {
+                if (!columnVisibility[col]) continue;
+                
+                const th = document.createElement('th');
+                th.className = 'pb-4 sortable';
+                th.onclick = () => sortInventory(col);
+                
+                const currentIcon = currentSort.field === col ? 
+                    `fa-sort-${currentSort.direction === 'asc' ? 'up' : 'down'}` : 'fa-sort';
+                
+                th.innerHTML = `${columnLabels[col]} <i class="fas ${currentIcon} sort-icon ${currentSort.field === col ? 'sort-active' : ''}"></i>`;
+                headerRow.appendChild(th);
+            }
+            thead.appendChild(headerRow);
+            
+            // Corpo
+            tbody.innerHTML = '';
+            filtered.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-slate-800/50 hover:bg-slate-800/30';
+                
+                for (const col of columnOrder) {
+                    if (!columnVisibility[col]) continue;
+                    
+                    const td = document.createElement('td');
+                    td.className = 'py-3';
+                    
+                    if (col === 'codigo') {
+                        td.innerHTML = `<span class="font-bold cursor-pointer hover:text-amber-500" onclick="openEditModalFromItem(${item.rowId})">${escapeHtml(item.codigo)}</span>`;
+                    } 
+                    else if (col === 'tipo') {
+                        td.innerHTML = `<span class="bg-slate-800 px-2 py-1 rounded text-xs">${escapeHtml(item.tipo || 'Geral')}</span>`;
+                    }
+                    else if (col === 'status') {
+                        const statusClass = item.status === 'Em Estoque' ? 'status-estoque' : 
+                                           (item.status === 'Vendido' ? 'status-vendido' : 'status-consignado');
+                        td.innerHTML = `<span class="status-pill ${statusClass}" onclick="openStatusModal(${item.rowId}, '${escapeHtml(item.status)}', '${escapeHtml(item.codigo)}')">${escapeHtml(item.status)}</span>`;
+                    }
+                    else if (col === 'custo') {
+                        td.innerHTML = `R$ ${formatMoney(item.custo)}`;
+                    }
+                    else if (col === 'venda') {
+                        td.innerHTML = `<span class="text-amber-500 font-bold">R$ ${formatMoney(item.venda)}</span>`;
+                    }
+                    else if (col === 'data') {
+                        td.innerHTML = `<span class="text-slate-500 text-xs">${item.data}</span>`;
+                    }
+                    else if (col === 'foto') {
+                        td.innerHTML = `
+                            <div class="w-10 h-10 rounded bg-slate-800 overflow-hidden cursor-pointer flex items-center justify-center" onclick="viewFoto('${escapeHtml(item.foto)}')">
+                                ${item.foto ? `<img src="${escapeHtml(item.foto)}" class="w-full h-full object-cover">` : '<i class="fas fa-image text-slate-600"></i>'}
+                            </div>
+                        `;
+                    }
+                    
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function openEditModalFromItem(rowId) {
+            const item = inventory.find(i => i.rowId === rowId);
+            if (item) openEditModal(item);
+        }
+        
+        function openStatusModal(rowId, currentStatus, codigo) {
+            pendingStatusChange = { rowId: rowId, currentStatus: currentStatus };
+            document.getElementById('status-edit-item').innerHTML = `Item: <strong>${escapeHtml(codigo)}</strong>`;
+            
+            const select = document.getElementById('status-edit-select');
+            select.innerHTML = `
+                <option value="Em Estoque" ${currentStatus === 'Em Estoque' ? 'selected' : ''}>Em Estoque</option>
+                <option value="Vendido" ${currentStatus === 'Vendido' ? 'selected' : ''}>Vendido</option>
+                <optgroup label="Revendedores">
+                    ${revendedores.map(r => `<option value="${escapeHtml(r.nome)}" ${currentStatus === r.nome ? 'selected' : ''}>${escapeHtml(r.nome)}</option>`).join('')}
+                </optgroup>
+            `;
+            
+            document.getElementById('modal-status-edit').classList.remove('hidden');
+        }
+        
+        let pendingStatusChange = null;
+        
+        function closeStatusModal() {
+            document.getElementById('modal-status-edit').classList.add('hidden');
+            pendingStatusChange = null;
+        }
+        
+        async function confirmStatusChange() {
+            const newStatus = document.getElementById('status-edit-select').value;
+            const { rowId } = pendingStatusChange;
+            
+            if (newStatus === pendingStatusChange.currentStatus) {
+                closeStatusModal();
+                return;
+            }
+            
+            await callApi('updateItem', {
+                row: rowId,
+                status: newStatus
+            });
+            showToast(`Status alterado para: ${newStatus}`);
+            closeStatusModal();
+            loadData();
+        }
+        
+        function sortInventory(field) {
+            if (currentSort.field === field) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.field = field;
+                currentSort.direction = 'asc';
+            }
+            renderInventory();
+        }
+        
+        // ==================== FUNÇÕES AUXILIARES ====================
+        function formatMoney(value) {
+            return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        function updateDashboard() {
+            const totalPecas = inventory.length;
+            const capitalEstoque = inventory.filter(i => i.status === 'Em Estoque').reduce((acc, i) => acc + i.custo, 0);
+            const emConsignacao = inventory.filter(i => i.status !== 'Em Estoque' && i.status !== 'Vendido').reduce((acc, i) => acc + i.venda, 0);
+            const totalVendido = inventory.filter(i => i.status === 'Vendido').reduce((acc, i) => acc + i.venda, 0);
+            
+            document.getElementById('dash-total-pecas').textContent = totalPecas;
+            document.getElementById('dash-capital-estoque').textContent = `R$ ${formatMoney(capitalEstoque)}`;
+            document.getElementById('dash-em-consignacao').textContent = `R$ ${formatMoney(emConsignacao)}`;
+            document.getElementById('dash-total-vendido').textContent = `R$ ${formatMoney(totalVendido)}`;
+        }
+        
+        function updateRevendedoresSelect() {
+            const select = document.getElementById('select-revendedor');
+            if (!select) return;
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">Selecione um revendedor</option>';
+            revendedores.forEach(rev => {
+                const option = document.createElement('option');
+                option.value = rev.nome;
+                option.textContent = rev.nome;
+                if (rev.nome === currentVal) option.selected = true;
+                select.appendChild(option);
+            });
+        }
+        
+        function loadRevendedorData() {
+            const rev = document.getElementById('select-revendedor').value;
+            const infoDiv = document.getElementById('central-info');
+            if (!rev) {
+                infoDiv.innerHTML = '';
+                return;
+            }
+            const itens = inventory.filter(i => i.status === rev);
+            infoDiv.innerHTML = `
+                <div class="p-4 bg-slate-800 rounded-lg">
+                    <h3 class="font-bold text-amber-500">📦 Peças com ${escapeHtml(rev)}</h3>
+                    <p>Total: ${itens.length} peças</p>
+                    <p>Valor total: R$ ${formatMoney(itens.reduce((acc, i) => acc + i.venda, 0))}</p>
+                    ${itens.length > 0 ? `
+                        <div class="mt-3">
+                            <p class="text-xs text-slate-400 mb-2">Itens:</p>
+                            <div class="flex flex-wrap gap-2">
+                                ${itens.map(i => `<span class="bg-slate-700 px-2 py-1 rounded text-xs">${escapeHtml(i.codigo)}</span>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        function viewFoto(url) {
+            if (!url) return;
+            window.open(url, '_blank');
+        }
+        
+        async function testConnection() {
+            const url = document.getElementById('config-script-url').value.trim();
+            if (!url) { alert('Configure a URL primeiro'); return; }
+            try {
+                const response = await fetch(url + '?action=getInventario');
+                const data = await response.json();
+                showToast(`✅ Conexão OK! ${data.length} itens encontrados.`);
+            } catch(error) {
+                alert(`❌ Erro: ${error.message}`);
+            }
+        }
+        
+        // Gestão de Tipos
+        function renderTiposList() {
+            const container = document.getElementById('tipos-list');
+            if (!container) return;
+            
+            if (tipos.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-sm">Nenhum tipo cadastrado. Adicione acima.</p>';
+                return;
+            }
+            
+            container.innerHTML = tipos.map(t => `
+                <div class="type-item flex justify-between items-center p-2 bg-slate-800/50 rounded-lg">
+                    <span class="text-sm">${escapeHtml(t.nome)}</span>
+                    <button onclick="deleteTipo('${escapeHtml(t.nome)}')" class="text-red-400 hover:text-red-300 text-sm">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+        
+        function renderUsuariosList() {
+            const container = document.getElementById('usuarios-list');
+            if (!container) return;
+            container.innerHTML = usuarios.map(u => `
+                <div class="flex justify-between items-center p-1">
+                    <span><i class="fas fa-user-circle text-slate-400 mr-2"></i>${escapeHtml(u.nome)}</span>
+                    <span class="text-xs text-slate-500">••••••</span>
+                </div>
+            `).join('');
+        }
+        
+        async function addTipo() {
+            const nome = document.getElementById('new-type-name').value.trim();
+            if (!nome) {
+                showToast('Digite o nome do tipo!');
+                return;
+            }
+            
+            try {
+                await fetch(scriptUrl, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'addTipo', nome: nome })
+                });
+                document.getElementById('new-type-name').value = '';
+                showToast(`Tipo "${nome}" adicionado!`);
+                loadData();
+            } catch (error) {
+                alert('Erro ao adicionar tipo: ' + error.message);
+            }
+        }
+        
+        async function deleteTipo(nome) {
+            if (confirm(`Excluir tipo "${nome}"?`)) {
+                try {
+                    await fetch(scriptUrl, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'delTipo', nome: nome })
+                    });
+                    showToast(`Tipo "${nome}" excluído!`);
+                    loadData();
+                } catch (error) {
+                    alert('Erro ao excluir tipo: ' + error.message);
+                }
+            }
+        }
+        
+        // Exportação/Importação
+        function exportToCSV() {
+            if (inventory.length === 0) {
+                alert('Não há dados para exportar.');
+                return;
+            }
+            
+            const headers = ['Código', 'Tipo', 'Status', 'Custo', 'Venda', 'Data', 'Foto'];
+            const rows = inventory.map(item => [
+                item.codigo,
+                item.tipo,
+                item.status,
+                item.custo,
+                item.venda,
+                item.data,
+                item.foto
+            ]);
+            
+            const csvContent = [headers, ...rows]
+                .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+                .join('\n');
+            
+            downloadFile(csvContent, `luxus_inventario_${new Date().toISOString().slice(0,19)}.csv`, 'text/csv');
+            showToast('Exportação concluída!');
+        }
+        
+        function exportToJSON() {
+            const exportData = {
+                exportDate: new Date().toISOString(),
+                inventory: inventory,
+                revendedores: revendedores,
+                tipos: tipos
+            };
+            downloadFile(JSON.stringify(exportData, null, 2), `luxus_backup_${new Date().toISOString().slice(0,19)}.json`, 'application/json');
+            showToast('Backup exportado!');
+        }
+        
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+        
+        function downloadTemplate() {
+            const template = `"Código","Tipo","Status","Custo","Venda","Data","Foto"
+"123456","","Em Estoque","75","150","2024-01-15",""
+"654321","","Luana Dias","90","180","2024-01-20",""
+"BR-00590F","Tornozeleira","Em Estoque","60","120","2024-01-25",""`;
+            downloadFile(template, 'luxus_template.csv', 'text/csv');
+        }
+        
+        function handleFileImport(input) {
+            const file = input.files[0];
+            if (file) processImportFile(file);
+        }
+        
+        async function processImportFile(file) {
+            showConfirmModal('Importar Dados', `Importar "${file.name}"?`, async () => {
+                try {
+                    const text = await file.text();
+                    const data = parseCSV(text);
+                    for (const item of data) {
+                        await callApi('saveItem', {
+                            codigo: item.codigo,
+                            tipo: item.tipo,
+                            custo: item.custo,
+                            venda: item.venda,
+                            status: item.status,
+                            foto: item.foto || ''
+                        });
+                    }
+                    showToast(`✅ ${data.length} itens importados!`);
+                    loadData();
+                } catch (error) {
+                    alert('Erro na importação: ' + error.message);
+                }
+                document.getElementById('file-input').value = '';
+            });
+        }
+        
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n');
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                const values = [];
+                let inQuotes = false;
+                let current = '';
+                for (let j = 0; j < lines[i].length; j++) {
+                    const char = lines[i][j];
+                    if (char === '"') inQuotes = !inQuotes;
+                    else if (char === ',' && !inQuotes) {
+                        values.push(current);
+                        current = '';
+                    } else current += char;
+                }
+                values.push(current);
+                if (values.length >= 3) {
+                    data.push({
+                        codigo: values[0]?.replace(/"/g, '').trim() || '',
+                        tipo: values[1]?.replace(/"/g, '').trim() || '',
+                        status: values[2]?.replace(/"/g, '').trim() || 'Em Estoque',
+                        custo: parseFloat(values[3]?.replace(/"/g, '')) || 0,
+                        venda: parseFloat(values[4]?.replace(/"/g, '')) || 0,
+                        data: values[5]?.replace(/"/g, '').trim() || new Date().toISOString().split('T')[0],
+                        foto: values[6]?.replace(/"/g, '').trim() || ''
+                    });
+                }
+            }
+            return data;
+        }
+        
+        function importFromTextarea() {
+            const text = document.getElementById('csv-textarea').value;
+            if (!text.trim()) { alert('Cole os dados primeiro!'); return; }
+            showConfirmModal('Importar', 'Importar dados do texto?', async () => {
+                const data = parseCSV(text);
+                for (const item of data) {
+                    await callApi('saveItem', {
+                        codigo: item.codigo,
+                        tipo: item.tipo,
+                        custo: item.custo,
+                        venda: item.venda,
+                        status: item.status,
+                        foto: item.foto || ''
+                    });
+                }
+                showToast(`✅ ${data.length} itens importados!`);
+                loadData();
+                document.getElementById('csv-textarea').value = '';
+            });
+        }
+        
+        // Modais de confirmação
+        function showConfirmModal(title, message, onConfirm) {
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            confirmCallback = onConfirm;
+            document.getElementById('modal-confirm').classList.remove('hidden');
+            
+            const confirmBtn = document.getElementById('confirm-btn');
+            const newBtn = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+            newBtn.id = 'confirm-btn';
+            newBtn.onclick = () => {
+                if (confirmCallback) confirmCallback();
+                closeConfirmModal();
+            };
+        }
+        
+        function closeConfirmModal() {
+            document.getElementById('modal-confirm').classList.add('hidden');
+            confirmCallback = null;
+        }
+    </script>
+
+    <!-- Modal de edição de status (adicionado no final do body) -->
+    <div id="modal-status-edit" class="fixed inset-0 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="glass-card p-6 w-96">
+            <h3 class="text-xl font-bold text-amber-500 mb-4">Alterar Localização</h3>
+            <p class="text-sm text-slate-400 mb-3" id="status-edit-item">Item: </p>
+            <select id="status-edit-select" class="w-full mb-4"></select>
+            <div class="flex gap-3">
+                <button onclick="closeStatusModal()" class="flex-1 bg-slate-700 py-2 rounded-lg">Cancelar</button>
+                <button onclick="confirmStatusChange()" class="flex-1 btn-gold py-2 rounded-lg">Salvar</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
