@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luxus - Gestão de Inventário</title>
+    <link rel="icon" type="image/png" href="https://i.ibb.co/6R29d3Dj/luxus-logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Tenor+Sans&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --navy-dark: #0f172a;
+            --navy-light: #1e293b;
+            --gold: #c5a059;
+            --gold-light: #e2c28d;
+            --bg-dark: #020617;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 16px;
+        }
+        .btn-gold {
+            background: linear-gradient(135deg, #c5a059, #e2c28d);
+            color: #0f172a;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3);
+        }
+        .nav-link {
+            position: relative;
+            padding: 0.5rem 1rem;
+            color: #94a3b8;
+            cursor: pointer;
+        }
+        .nav-link.active {
+            color: #c5a059;
+        }
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 1rem;
+            right: 1rem;
+            height: 2px;
+            background: #c5a059;
+        }
+        input, select, textarea {
+            background: #0f172a !important;
+            border: 1px solid rgba(148, 163, 184, 0.2) !important;
+            color: white !important;
+            border-radius: 8px !important;
+            padding: 0.75rem !important;
+        }
+        input:focus, select:focus {
+            border-color: #c5a059 !important;
+            outline: none !important;
+        }
+        .status-pill {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .status-pill:hover {
+            transform: scale(1.05);
+        }
+        .status-estoque { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .status-consignado { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .status-vendido { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+        .sortable:hover { color: #c5a059; }
+        .sort-icon { font-size: 0.7rem; margin-left: 4px; opacity: 0.5; }
+        .sort-active { color: #c5a059; opacity: 1; }
+        
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+        }
+        .logo-link { cursor: pointer; }
+        .logo-link:hover { opacity: 0.8; }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #334155;
+            transition: 0.3s;
+            border-radius: 20px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider {
+            background-color: #c5a059;
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+        
+        .drop-zone {
+            border: 2px dashed rgba(197, 160, 89, 0.3);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: #c5a059;
+            background: rgba(197, 160, 89, 0.05);
+        }
+        .progress-bar {
+            height: 4px;
+            background: #c5a059;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        
+        /* Toast notification */
+        #modal-status {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <nav class="sticky top-0 z-40 glass-card mx-4 mt-4 mb-6">
+        <div class="max-w-[100%] mx-auto px-6 py-4 flex justify-between items-center flex-wrap gap-4">
+            <div class="flex items-center gap-4 logo-link" onclick="goHome()">
+                <div class="w-14 h-14 bg-white rounded-lg flex items-center justify-center p-1">
+                    <img src="https://i.ibb.co/6R29d3Dj/luxus-logo.png" alt="Logo" class="w-full h-full object-contain">
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white uppercase">LUXUS</h1>
+                    <p class="text-[10px] text-amber-500 tracking-[0.3em]">Joias & Perfumes</p>
+                </div>
+            </div>
+            <div class="flex gap-8">
+                <a href="#consulta" onclick="switchTab('consulta'); return false;" id="tab-consulta" class="nav-link active">
+                    <i class="fas fa-gem mr-2"></i>Consulta
+                </a>
+                <a href="#central" onclick="switchTab('central'); return false;" id="tab-central" class="nav-link">
+                    <i class="fas fa-users mr-2"></i>Central do Revendedor
+                </a>
+                <a href="#config" onclick="switchTab('config'); return false;" id="tab-config" class="nav-link">
+                    <i class="fas fa-cog mr-2"></i>Configurações
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="px-4 pb-12">
+        
+        <!-- Aba Consulta -->
+        <div id="content-consulta" class="tab-content space-y-6">
+            
+            <!-- Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="glass-card p-6 border-l-4 border-l-blue-500">
+                    <p class="text-slate-400 text-xs uppercase">Total de Peças</p>
+                    <h3 id="dash-total-pecas" class="text-3xl font-bold">0</h3>
+                </div>
+                <div class="glass-card p-6 border-l-4 border-l-green-500">
+                    <p class="text-slate-400 text-xs uppercase">Capital em Estoque</p>
+                    <h3 id="dash-capital-estoque" class="text-3xl font-bold">R$ 0,00</h3>
+                </div>
+                <div class="glass-card p-6 border-l-4 border-l-amber-500">
+                    <p class="text-slate-400 text-xs uppercase">Em Consignação</p>
+                    <h3 id="dash-em-consignacao" class="text-3xl font-bold">R$ 0,00</h3>
+                </div>
+                <div class="glass-card p-6 border-l-4 border-l-red-500">
+                    <p class="text-slate-400 text-xs uppercase">Total Vendido</p>
+                    <h3 id="dash-total-vendido" class="text-3xl font-bold">R$ 0,00</h3>
+                </div>
+            </div>
+
+            <!-- Novo Item -->
+            <div class="glass-card p-6">
+                <h3 class="text-xl font-bold text-amber-500 mb-4"><i class="fas fa-plus-circle"></i> Novo Item</h3>
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <input type="text" id="ent-codigo" placeholder="Código" class="w-full" onkeypress="if(event.key==='Enter') saveNewItem()">
+                    <select id="ent-tipo" class="w-full"></select>
+                    <input type="number" id="ent-custo" placeholder="Custo" class="w-full">
+                    <input type="number" id="ent-venda" placeholder="Venda" class="w-full">
+                    <button onclick="saveNewItem()" class="btn-gold py-3 rounded-lg">Cadastrar</button>
+                </div>
+            </div>
+
+            <!-- Controles de Coluna e Ordenação -->
+            <div class="flex justify-between items-center flex-wrap gap-3">
+                <div class="flex gap-2">
+                    <button onclick="toggleColumnPanel()" class="bg-slate-800 px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+                        <i class="fas fa-columns mr-2 text-amber-500"></i> Gerenciar Colunas
+                    </button>
+                    <button onclick="resetColumns()" class="bg-slate-800 px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+                        <i class="fas fa-undo mr-2"></i> Resetar Colunas
+                    </button>
+                </div>
+                <div class="text-sm text-slate-400">
+                    <i class="fas fa-arrow-up-wide-short mr-1"></i> Clique nos cabeçalhos para ordenar
+                </div>
+            </div>
+
+            <!-- Painel de Colunas -->
+            <div id="column-panel" class="glass-card p-4 hidden">
+                <h4 class="text-sm font-bold text-amber-500 mb-3">Mostrar/Ocultar Colunas:</h4>
+                <div class="flex flex-wrap gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="toggle-codigo" checked onchange="toggleColumn('codigo')">
+                            <span class="toggle-slider"></span>
+                        </div>
+                        <span class="text-sm">Código</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="toggle-tipo" checked onchange="toggleColumn('tipo')">
+                            <span class="toggle-slider"></span>
+                        </div>
+                        <span class="text-sm">Tipo</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="toggle-status" checked onchange="toggleColumn('status')">
+                            <span class="toggle-slider"></span>
+                        </div>
+                        <span class="text-sm">Localização</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="toggle-custo" checked onchange="toggleColumn('custo')">
+                            <span class="toggle-slider"></span>
+                        </div>
+                        <span class="text-sm">Custo</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="toggle-venda" checked onchange="toggleColumn('venda')">
+                            <span class="toggle-slider"></span>
+                        </div>
+                        <span class="text-sm">Venda</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="toggle-data" checked onchange="toggleColumn('data')">
+                            <span class="toggle-slider"></span>
+                        </div>
+                        <span class="text-sm">Data</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="toggle-foto" checked onchange="toggleColumn('foto')">
+                            <span class="toggle-slider"></span>
+                        </div>
+                        <span class="text-sm">Foto</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Tabela de Inventário -->
+            <div class="glass-card p-6 overflow-x-auto">
+                <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+                    <h2 class="text-2xl font-bold">Acervo Luxus</h2>
+                    <div class="flex gap-2">
+                        <input type="text" id="search-input" placeholder="Buscar..." class="w-64" oninput="renderInventory()">
+                        <button onclick="loadData()" class="bg-slate-800 px-4 py-2 rounded-lg"><i class="fas fa-sync-alt"></i> Atualizar</button>
+                    </div>
+                </div>
+                
+                <table class="w-full text-left" id="inventory-table">
+                    <thead class="text-slate-400 text-[10px] uppercase border-b border-slate-800">
+                        <tr id="table-header">
+                            <!-- Cabeçalhos dinâmicos -->
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-table-body" class="text-sm"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Aba Central do Revendedor -->
+        <div id="content-central" class="tab-content hidden space-y-6">
+            <div class="glass-card p-8">
+                <h2 class="text-2xl font-bold text-amber-500 mb-4">Central do Revendedor</h2>
+                
+                <div class="mb-4 p-3 bg-slate-800/50 rounded-lg">
+                    <p class="text-sm text-slate-400 mb-2">📋 Revendedores encontrados no sistema:</p>
+                    <div id="revendedores-list" class="flex flex-wrap gap-2"></div>
+                </div>
+                
+                <select id="select-revendedor" class="w-96" onchange="loadRevendedorData()">
+                    <option value="">Selecione um revendedor</option>
+                </select>
+                
+                <button onclick="addRevendedorManual()" class="bg-amber-600 px-4 py-2 rounded-lg text-sm mt-4 ml-2">
+                    <i class="fas fa-user-plus"></i> Adicionar Revendedor Manualmente
+                </button>
+                
+                <div id="central-info" class="mt-4"></div>
+            </div>
+        </div>
+
+        <!-- Aba Configurações -->
+        <div id="content-config" class="tab-content hidden max-w-5xl mx-auto">
+            <div class="glass-card p-8">
+                <h2 class="text-2xl font-bold text-amber-500 mb-6">Configurações do Sistema</h2>
+                
+                <!-- Conexão -->
+                <div class="mb-8 p-4 bg-slate-800/30 rounded-lg">
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <i class="fab fa-google text-blue-400"></i> Conexão Google Sheets
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm mb-2">URL do Google Apps Script</label>
+                            <input type="text" id="config-script-url" class="w-full" placeholder="https://script.google.com/macros/s/.../exec">
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-2">Chave API ImgBB</label>
+                            <input type="text" id="config-imgbb-key" class="w-full" placeholder="Sua chave API">
+                        </div>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="saveConfig()" class="btn-gold px-6 py-2 rounded-lg">Salvar</button>
+                        <button onclick="testConnection()" class="bg-slate-700 px-6 py-2 rounded-lg">Testar Conexão</button>
+                        <button onclick="forceLoadRevendedores()" class="bg-amber-600 px-6 py-2 rounded-lg">Recarregar Revendedores</button>
+                        <button onclick="diagnoseSheets()" class="bg-purple-600 px-6 py-2 rounded-lg">
+                            <i class="fas fa-stethoscope"></i> Diagnóstico
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Status das Abas -->
+                <div class="mb-8 p-4 bg-slate-800/30 rounded-lg">
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <i class="fas fa-database text-green-400"></i> Status das Abas da Planilha
+                    </h3>
+                    <div id="sheet-status" class="space-y-2 text-sm">
+                        <p>🔍 Aguardando carregamento...</p>
+                    </div>
+                </div>
+
+                <!-- Importação/Exportação -->
+                <div class="mb-8 p-4 bg-slate-800/30 rounded-lg">
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <i class="fas fa-upload text-green-400"></i> Importar/Exportar Dados
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-amber-500 mb-2"></i>
+                                <p class="text-sm">Clique ou arraste um arquivo CSV</p>
+                                <input type="file" id="file-input" accept=".csv" class="hidden" onchange="handleFileImport(this)">
+                            </div>
+                        </div>
+                        <div>
+                            <textarea id="csv-textarea" rows="4" class="w-full font-mono text-xs" placeholder="codigo,tipo,status,custo,venda,data,foto&#10;123456,,Em Estoque,75,150,2024-01-15,"></textarea>
+                            <button onclick="importFromTextarea()" class="mt-2 bg-green-600 px-4 py-2 rounded-lg text-sm">Importar do texto</button>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="exportToCSV()" class="bg-blue-600 px-4 py-2 rounded-lg text-sm">Exportar CSV</button>
+                        <button onclick="exportToJSON()" class="bg-purple-600 px-4 py-2 rounded-lg text-sm">Exportar JSON</button>
+                        <button onclick="downloadTemplate()" class="bg-slate-600 px-4 py-2 rounded-lg text-sm">Download Template</button>
+                    </div>
+                </div>
+
+                <!-- Segurança -->
+                <div class="p-4 bg-slate-800/30 rounded-lg">
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <i class="fas fa-lock text-red-400"></i> Segurança
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm mb-2">PIN Atual</label>
+                            <input type="password" id="pin-atual" class="w-full" maxlength="10" placeholder="1234">
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-2">Novo PIN</label>
+                            <input type="password" id="pin-novo" class="w-full" maxlength="10" placeholder="****">
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="changePin()" class="bg-red-600/80 px-6 py-2 rounded-lg w-full">Alterar PIN</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modais -->
+    <div id="modal-pin" class="fixed inset-0 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="glass-card p-8 text-center w-96">
+            <h3 class="text-xl mb-4">PIN de Segurança</h3>
+            <input type="password" id="pin-input" class="w-full text-center text-2xl" maxlength="10" onkeypress="if(event.key==='Enter') checkPin()" placeholder="1234">
+            <p id="pin-error" class="text-red-400 text-sm mt-2 hidden">PIN incorreto</p>
+            <button onclick="checkPin()" class="btn-gold mt-4 px-6 py-2 rounded-lg">Entrar</button>
+        </div>
+    </div>
+
+    <div id="modal-confirm" class="fixed inset-0 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="glass-card p-6 w-96">
+            <h3 class="text-xl font-bold mb-4" id="confirm-title">Confirmar</h3>
+            <p id="confirm-message" class="mb-6">Tem certeza que deseja continuar?</p>
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal()" class="flex-1 bg-slate-700 py-2 rounded-lg">Cancelar</button>
+                <button id="confirm-btn" class="flex-1 btn-gold py-2 rounded-lg">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-status" class="fixed bottom-4 right-4 z-50 hidden">
+        <div class="glass-card p-3 text-sm" id="status-toast">
+            <i class="fas fa-info-circle mr-2"></i> <span id="status-message"></span>
+        </div>
+    </div>
+
+    <script>
+        // ==================== VARIÁVEIS GLOBAIS ====================
+        let inventory = [];
+        let revendedores = [];
+        let tipos = [];
+        let scriptUrl = localStorage.getItem('luxus_script_url') || '';
+        let imgbbKey = localStorage.getItem('luxus_imgbb_key') || '';
+        let currentSort = { field: 'codigo', direction: 'asc' };
+        let pinUnlocked = false;
+        let confirmCallback = null;
+        
+        let visibleColumns = {
+            codigo: true,
+            tipo: true,
+            status: true,
+            custo: true,
+            venda: true,
+            data: true,
+            foto: true
+        };
+        
+        const columnOrder = ['codigo', 'tipo', 'status', 'custo', 'venda', 'data', 'foto'];
+        const columnNames = {
+            codigo: 'Código',
+            tipo: 'Tipo',
+            status: 'Localização',
+            custo: 'Custo',
+            venda: 'Venda',
+            data: 'Data',
+            foto: 'Foto'
+        };
+
+        // ==================== INICIALIZAÇÃO ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedColumns = localStorage.getItem('luxus_visible_columns');
+            if (savedColumns) {
+                try {
+                    const parsed = JSON.parse(savedColumns);
+                    visibleColumns = { ...visibleColumns, ...parsed };
+                } catch(e) {}
+            }
+            
+            updateColumnCheckboxes();
+            
+            document.getElementById('config-script-url').value = scriptUrl;
+            document.getElementById('config-imgbb-key').value = imgbbKey;
+            
+            const hash = window.location.hash.substring(1);
+            if (hash === 'central') switchTabDirect('central');
+            else if (hash === 'config') openPinModal();
+            else switchTabDirect('consulta');
+            
+            if (scriptUrl) {
+                loadData();
+                checkSheetStatus();
+            }
+            
+            const dropZone = document.getElementById('drop-zone');
+            if (dropZone) {
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('drag-over');
+                });
+                dropZone.addEventListener('dragleave', () => {
+                    dropZone.classList.remove('drag-over');
+                });
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('drag-over');
+                    const file = e.dataTransfer.files[0];
+                    if (file) processImportFile(file);
+                });
+            }
+        });
+
+        function updateColumnCheckboxes() {
+            for (const [col, visible] of Object.entries(visibleColumns)) {
+                const cb = document.getElementById(`toggle-${col}`);
+                if (cb) cb.checked = visible;
+            }
+        }
+
+        function toggleColumnPanel() {
+            const panel = document.getElementById('column-panel');
+            panel.classList.toggle('hidden');
+        }
+
+        function toggleColumn(col) {
+            visibleColumns[col] = !visibleColumns[col];
+            localStorage.setItem('luxus_visible_columns', JSON.stringify(visibleColumns));
+            renderInventory();
+        }
+
+        function resetColumns() {
+            visibleColumns = {
+                codigo: true,
+                tipo: true,
+                status: true,
+                custo: true,
+                venda: true,
+                data: true,
+                foto: true
+            };
+            localStorage.setItem('luxus_visible_columns', JSON.stringify(visibleColumns));
+            updateColumnCheckboxes();
+            renderInventory();
+            showToast('Colunas resetadas para o padrão');
+        }
+
+        // ==================== NAVEGAÇÃO ====================
+        function goHome() {
+            window.location.hash = '';
+            switchTabDirect('consulta');
+        }
+
+        function switchTab(tab) {
+            if (tab === 'config') { openPinModal(); return; }
+            window.location.hash = tab;
+            switchTabDirect(tab);
+        }
+
+        function switchTabDirect(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            if (tab === 'consulta') document.getElementById('ent-codigo')?.focus();
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('modal-status');
+            const msgSpan = document.getElementById('status-message');
+            msgSpan.innerHTML = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // ==================== PIN ====================
+        function openPinModal() {
+            if (pinUnlocked) { switchTabDirect('config'); return; }
+            document.getElementById('modal-pin').classList.remove('hidden');
+            document.getElementById('pin-input').focus();
+        }
+
+        function checkPin() {
+            const entered = document.getElementById('pin-input').value;
+            const stored = localStorage.getItem('luxus_config_pin') || '1234';
+            if (entered === stored) {
+                pinUnlocked = true;
+                document.getElementById('modal-pin').classList.add('hidden');
+                switchTabDirect('config');
+                setTimeout(() => { pinUnlocked = false; }, 5 * 60 * 1000);
+            } else {
+                document.getElementById('pin-error').classList.remove('hidden');
+                document.getElementById('pin-input').value = '';
+            }
+        }
+
+        function changePin() {
+            const atual = document.getElementById('pin-atual').value;
+            const novo = document.getElementById('pin-novo').value.trim();
+            const stored = localStorage.getItem('luxus_config_pin') || '1234';
+            if (atual !== stored) { alert('PIN atual incorreto!'); return; }
+            if (!novo || novo.length < 4) { alert('O novo PIN deve ter pelo menos 4 caracteres.'); return; }
+            localStorage.setItem('luxus_config_pin', novo);
+            document.getElementById('pin-atual').value = '';
+            document.getElementById('pin-novo').value = '';
+            alert('PIN alterado com sucesso!');
+        }
+
+        function saveConfig() {
+            scriptUrl = document.getElementById('config-script-url').value.trim();
+            imgbbKey = document.getElementById('config-imgbb-key').value.trim();
+            localStorage.setItem('luxus_script_url', scriptUrl);
+            localStorage.setItem('luxus_imgbb_key', imgbbKey);
+            loadData();
+            checkSheetStatus();
+            alert('Configurações salvas!');
+        }
+
+        // ==================== CARREGAMENTO DE DADOS (CORRIGIDO) ====================
+        async function loadData() {
+            if (!scriptUrl) {
+                console.warn('URL não configurada');
+                return;
+            }
+            
+            try {
+                showToast('Carregando dados...');
+                
+                const [invRes, repRes, revRes, tipRes] = await Promise.all([
+                    fetch(scriptUrl + '?action=getInventario'),
+                    fetch(scriptUrl + '?action=getRepasses'),
+                    fetch(scriptUrl + '?action=getRevendedores'),
+                    fetch(scriptUrl + '?action=getTipos')
+                ]);
+                
+                const invData = await invRes.json();
+                const repData = await repRes.json();
+                const revData = await revRes.json();
+                const tipData = await tipRes.json();
+                
+                console.log('📦 Dados recebidos:');
+                console.log('  - Inventário:', invData?.length || 0, 'itens');
+                console.log('  - Repasses:', repData?.length || 0);
+                console.log('  - Revendedores (aba):', revData);
+                console.log('  - Tipos:', tipData);
+                
+                inventory = (Array.isArray(invData) ? invData : []).map(item => ({
+                    rowId: item.rowId,
+                    codigo: String(item.Codigo || ''),
+                    data: item.Data ? new Date(item.Data).toLocaleDateString('pt-BR') : '',
+                    status: item.Status || 'Em Estoque',
+                    custo: parseFloat(item.Custo) || 0,
+                    venda: parseFloat(item.Venda) || 0,
+                    foto: item.Foto || '',
+                    tipo: item.Tipo || ''
+                }));
+                
+                // ========== PROCESSAR REVENDEDORES ==========
+                let revendedoresDaAba = [];
+                
+                if (Array.isArray(revData) && revData.length > 0) {
+                    revendedoresDaAba = revData.map(r => ({
+                        nome: r.Nome || r.nome || '',
+                        contato: r.Contato || r.contato || ''
+                    })).filter(r => r.nome);
+                    console.log('✅ Revendedores encontrados na ABA:', revendedoresDaAba);
+                } else {
+                    console.log('⚠️ Nenhum revendedor encontrado na aba Revendedores');
+                }
+                
+                // Extrair revendedores do Status do inventário
+                const revendedoresDoStatus = new Set();
+                inventory.forEach(item => {
+                    const status = item.status;
+                    if (status !== 'Em Estoque' && status !== 'Vendido' && status !== '') {
+                        revendedoresDoStatus.add(status);
+                    }
+                });
+                console.log('📌 Revendedores encontrados no STATUS:', Array.from(revendedoresDoStatus));
+                
+                // COMBINAR: priorizar os da aba, complementar com os do status
+                const revMap = new Map();
+                
+                revendedoresDaAba.forEach(rev => {
+                    revMap.set(rev.nome, rev);
+                });
+                
+                revendedoresDoStatus.forEach(nome => {
+                    if (!revMap.has(nome)) {
+                        revMap.set(nome, { nome: nome, contato: '' });
+                    }
+                });
+                
+                revendedores = Array.from(revMap.values());
+                console.log('🎯 Revendedores FINAL:', revendedores);
+                
+                const revListDiv = document.getElementById('revendedores-list');
+                if (revListDiv) {
+                    if (revendedores.length === 0) {
+                        revListDiv.innerHTML = '<span class="text-slate-500 text-sm">Nenhum revendedor encontrado</span>';
+                    } else {
+                        revListDiv.innerHTML = revendedores.map(r => 
+                            `<span class="bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-sm">${escapeHtml(r.nome)} ${r.contato ? `📞 ${r.contato}` : ''}</span>`
+                        ).join('');
+                    }
+                }
+                
+                // Processar tipos
+                tipos = (Array.isArray(tipData) ? tipData : []).map(t => ({ 
+                    nome: t.Nome || t.nome || '' 
+                })).filter(t => t.nome);
+                
+                renderInventory();
+                updateRevendedoresSelect();
+                updateDashboard();
+                updateTipoSelects();
+                
+                showToast(`✅ ${inventory.length} itens, ${revendedores.length} revendedores`);
+                
+            } catch (error) {
+                console.error('Erro ao carregar:', error);
+                showToast('❌ Erro ao carregar dados: ' + error.message, true);
+            }
+        }
+
+        async function checkSheetStatus() {
+            if (!scriptUrl) return;
+            try {
+                const res = await fetch(scriptUrl + '?action=getInventario');
+                const data = await res.json();
+                const statusDiv = document.getElementById('sheet-status');
+                if (statusDiv) {
+                    statusDiv.innerHTML = `
+                        <p>✅ Inventario: ${Array.isArray(data) ? data.length : '0'} registros</p>
+                        <p class="text-xs text-slate-400 mt-1">Revendedores identificados: ${revendedores.map(r => r.nome).join(', ') || 'Nenhum'}</p>
+                    `;
+                }
+            } catch(e) {
+                console.warn('Erro ao verificar status:', e);
+            }
+        }
+
+        function forceLoadRevendedores() {
+            loadData();
+            showToast('Recarregando dados...');
+        }
+
+        async function diagnoseSheets() {
+            if (!scriptUrl) {
+                alert('Configure a URL primeiro!');
+                return;
+            }
+            
+            try {
+                const [invRes, revRes] = await Promise.all([
+                    fetch(scriptUrl + '?action=getInventario'),
+                    fetch(scriptUrl + '?action=getRevendedores')
+                ]);
+                
+                const invData = await invRes.json();
+                const revData = await revRes.json();
+                
+                console.log('===== DIAGNÓSTICO =====');
+                console.log('URL:', scriptUrl);
+                console.log('Inventário (primeiro item):', invData?.[0]);
+                console.log('Revendedores (retorno bruto):', revData);
+                console.log('Revendedores (array?):', Array.isArray(revData));
+                
+                let msg = `📊 DIAGNÓSTICO:\n`;
+                msg += `Inventário: ${invData?.length || 0} itens\n`;
+                msg += `Revendedores: ${revData?.length || 0} registros\n`;
+                
+                if (Array.isArray(revData) && revData.length > 0) {
+                    msg += `\n📋 Revendedores encontrados:\n`;
+                    revData.forEach(r => {
+                        msg += `  - ${r.Nome || r.nome || '?'}`;
+                        if (r.Contato || r.contato) msg += ` (${r.Contato || r.contato})`;
+                        msg += `\n`;
+                    });
+                } else {
+                    msg += `\n⚠️ NENHUM revendedor encontrado na aba!\n`;
+                    msg += `Verifique se a aba se chama EXATAMENTE "Revendedores" (com R maiúsculo)`;
+                }
+                
+                alert(msg);
+                
+            } catch (error) {
+                alert('Erro no diagnóstico: ' + error.message);
+            }
+        }
+
+        // ==================== RENDERIZAÇÃO ====================
+        function renderInventory() {
+            const tbody = document.getElementById('inventory-table-body');
+            const thead = document.getElementById('table-header');
+            if (!tbody || !thead) return;
+            
+            const searchTerm = document.getElementById('search-input')?.value.toLowerCase() || '';
+            
+            let filtered = inventory.filter(item => 
+                String(item.codigo).toLowerCase().includes(searchTerm) || 
+                item.tipo.toLowerCase().includes(searchTerm) || 
+                item.status.toLowerCase().includes(searchTerm)
+            );
+            
+            filtered.sort((a, b) => {
+                let valA = a[currentSort.field];
+                let valB = b[currentSort.field];
+                
+                if (currentSort.field === 'custo' || currentSort.field === 'venda') {
+                    valA = parseFloat(valA) || 0;
+                    valB = parseFloat(valB) || 0;
+                    if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
+                    if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
+                    return 0;
+                }
+                
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+                
+                if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+            
+            // Cabeçalhos
+            thead.innerHTML = '';
+            const headerRow = document.createElement('tr');
+            headerRow.className = 'text-slate-400 text-[10px] uppercase border-b border-slate-800';
+            
+            for (const col of columnOrder) {
+                if (!visibleColumns[col]) continue;
+                
+                const th = document.createElement('th');
+                th.className = 'pb-4 sortable';
+                th.onclick = () => sortInventory(col);
+                
+                const currentIcon = currentSort.field === col ? 
+                    `fa-sort-${currentSort.direction === 'asc' ? 'up' : 'down'}` : 'fa-sort';
+                
+                th.innerHTML = `${columnNames[col]} <i class="fas ${currentIcon} sort-icon ${currentSort.field === col ? 'sort-active' : ''}"></i>`;
+                headerRow.appendChild(th);
+            }
+            thead.appendChild(headerRow);
+            
+            // Corpo
+            tbody.innerHTML = '';
+            filtered.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-slate-800/50 hover:bg-slate-800/30';
+                
+                for (const col of columnOrder) {
+                    if (!visibleColumns[col]) continue;
+                    
+                    const td = document.createElement('td');
+                    td.className = 'py-3';
+                    
+                    if (col === 'codigo') {
+                        td.innerHTML = `<span class="font-bold cursor-pointer hover:text-amber-500" onclick="editItem(${item.rowId})">${escapeHtml(item.codigo)}</span>`;
+                    } 
+                    else if (col === 'tipo') {
+                        td.innerHTML = `<span class="bg-slate-800 px-2 py-1 rounded text-xs">${escapeHtml(item.tipo || 'Geral')}</span>`;
+                    }
+                    else if (col === 'status') {
+                        const statusClass = item.status === 'Em Estoque' ? 'status-estoque' : 
+                                           (item.status === 'Vendido' ? 'status-vendido' : 'status-consignado');
+                        td.innerHTML = `<span class="status-pill ${statusClass}" onclick="editItem(${item.rowId})">${escapeHtml(item.status)}</span>`;
+                    }
+                    else if (col === 'custo') {
+                        td.innerHTML = `R$ ${formatMoney(item.custo)}`;
+                    }
+                    else if (col === 'venda') {
+                        td.innerHTML = `<span class="text-amber-500 font-bold">R$ ${formatMoney(item.venda)}</span>`;
+                    }
+                    else if (col === 'data') {
+                        td.innerHTML = `<span class="text-slate-500 text-xs">${item.data}</span>`;
+                    }
+                    else if (col === 'foto') {
+                        td.innerHTML = `
+                            <div class="w-10 h-10 rounded bg-slate-800 overflow-hidden cursor-pointer flex items-center justify-center" onclick="viewFoto('${escapeHtml(item.foto)}')">
+                                ${item.foto ? `<img src="${escapeHtml(item.foto)}" class="w-full h-full object-cover">` : '<i class="fas fa-image text-slate-600"></i>'}
+                            </div>
+                        `;
+                    }
+                    
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function sortInventory(field) {
+            if (currentSort.field === field) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.field = field;
+                currentSort.direction = 'asc';
+            }
+            renderInventory();
+        }
+        
+        // ==================== FUNÇÕES AUXILIARES ====================
+        function formatMoney(value) {
+            return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        function updateDashboard() {
+            const totalPecas = inventory.length;
+            const capitalEstoque = inventory.filter(i => i.status === 'Em Estoque').reduce((acc, i) => acc + i.custo, 0);
+            const emConsignacao = inventory.filter(i => i.status !== 'Em Estoque' && i.status !== 'Vendido').reduce((acc, i) => acc + i.venda, 0);
+            const totalVendido = inventory.filter(i => i.status === 'Vendido').reduce((acc, i) => acc + i.venda, 0);
+            
+            document.getElementById('dash-total-pecas').textContent = totalPecas;
+            document.getElementById('dash-capital-estoque').textContent = `R$ ${formatMoney(capitalEstoque)}`;
+            document.getElementById('dash-em-consignacao').textContent = `R$ ${formatMoney(emConsignacao)}`;
+            document.getElementById('dash-total-vendido').textContent = `R$ ${formatMoney(totalVendido)}`;
+        }
+        
+        function updateRevendedoresSelect() {
+            const select = document.getElementById('select-revendedor');
+            if (!select) return;
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">Selecione um revendedor</option>';
+            revendedores.forEach(rev => {
+                const option = document.createElement('option');
+                option.value = rev.nome;
+                option.textContent = rev.nome;
+                if (rev.nome === currentVal) option.selected = true;
+                select.appendChild(option);
+            });
+        }
+        
+        function updateTipoSelects() {
+            const selects = ['ent-tipo'];
+            selects.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.innerHTML = '<option value="">Geral</option>' + tipos.map(t => `<option value="${escapeHtml(t.nome)}">${escapeHtml(t.nome)}</option>`).join('');
+            });
+        }
+        
+        function loadRevendedorData() {
+            const rev = document.getElementById('select-revendedor').value;
+            const infoDiv = document.getElementById('central-info');
+            if (!rev) {
+                infoDiv.innerHTML = '';
+                return;
+            }
+            const itens = inventory.filter(i => i.status === rev);
+            infoDiv.innerHTML = `
+                <div class="p-4 bg-slate-800 rounded-lg">
+                    <h3 class="font-bold text-amber-500">📦 Peças com ${escapeHtml(rev)}</h3>
+                    <p>Total: ${itens.length} peças</p>
+                    <p>Valor total: R$ ${formatMoney(itens.reduce((acc, i) => acc + i.venda, 0))}</p>
+                    ${itens.length > 0 ? `
+                        <div class="mt-3">
+                            <p class="text-xs text-slate-400 mb-2">Itens:</p>
+                            <div class="flex flex-wrap gap-2">
+                                ${itens.map(i => `<span class="bg-slate-700 px-2 py-1 rounded text-xs">${escapeHtml(i.codigo)}</span>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        function addRevendedorManual() {
+            const nome = prompt('Digite o nome do revendedor:', 'Talita Lage');
+            if (nome && nome.trim() !== '') {
+                const nomeLimpo = nome.trim();
+                if (!revendedores.find(r => r.nome === nomeLimpo)) {
+                    revendedores.push({ nome: nomeLimpo, contato: '' });
+                    updateRevendedoresSelect();
+                    
+                    const revListDiv = document.getElementById('revendedores-list');
+                    if (revListDiv) {
+                        revListDiv.innerHTML = revendedores.map(r => 
+                            `<span class="bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-sm">${escapeHtml(r.nome)}</span>`
+                        ).join('');
+                    }
+                    
+                    showToast(`✅ Revendedor "${nomeLimpo}" adicionado manualmente`);
+                } else {
+                    showToast(`⚠️ Revendedor "${nomeLimpo}" já existe`);
+                }
+            }
+        }
+        
+        async function saveNewItem() {
+            const codigo = document.getElementById('ent-codigo').value.trim();
+            const tipo = document.getElementById('ent-tipo').value;
+            const custo = document.getElementById('ent-custo').value;
+            const venda = document.getElementById('ent-venda').value;
+            if (!codigo) return alert('Digite o código!');
+            
+            try {
+                await fetch(scriptUrl, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'addInventario',
+                        codigo: codigo,
+                        tipo: tipo,
+                        custo: custo,
+                        venda: venda,
+                        data: new Date().toISOString()
+                    })
+                });
+                showToast('Item cadastrado!');
+                document.getElementById('ent-codigo').value = '';
+                document.getElementById('ent-custo').value = '';
+                document.getElementById('ent-venda').value = '';
+                loadData();
+            } catch (error) {
+                alert('Erro ao cadastrar: ' + error.message);
+            }
+        }
+        
+        function editItem(rowId) {
+            const item = inventory.find(i => i.rowId === rowId);
+            if (!item) return;
+            
+            let statusOptions = 'Em Estoque, Vendido';
+            if (revendedores.length > 0) {
+                statusOptions += ', ' + revendedores.map(r => r.nome).join(', ');
+            }
+            
+            const newStatus = prompt(`Alterar status do item ${item.codigo}:\nOpções: ${statusOptions}`, item.status);
+            if (newStatus && newStatus !== item.status) {
+                updateItemStatus(rowId, newStatus);
+            }
+        }
+        
+        async function updateItemStatus(rowId, newStatus) {
+            try {
+                await fetch(scriptUrl, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'editInventario',
+                        rowId: rowId,
+                        status: newStatus
+                    })
+                });
+                showToast(`Status alterado para: ${newStatus}`);
+                loadData();
+            } catch (error) {
+                alert('Erro ao alterar status: ' + error.message);
+            }
+        }
+        
+        function viewFoto(url) {
+            if (!url) return;
+            window.open(url, '_blank');
+        }
+        
+        async function testConnection() {
+            const url = document.getElementById('config-script-url').value.trim();
+            if (!url) { alert('Configure a URL primeiro'); return; }
+            try {
+                const response = await fetch(url + '?action=getInventario');
+                const data = await response.json();
+                showToast(`✅ Conexão OK! ${data.length} itens encontrados.`);
+                loadData();
+            } catch(error) {
+                alert(`❌ Erro: ${error.message}`);
+            }
+        }
+
+        // ==================== EXPORTAÇÃO/IMPORTAÇÃO ====================
+        function exportToCSV() {
+            if (inventory.length === 0) {
+                alert('Não há dados para exportar.');
+                return;
+            }
+            
+            const headers = ['Código', 'Tipo', 'Status', 'Custo', 'Venda', 'Data', 'Foto'];
+            const rows = inventory.map(item => [
+                item.codigo,
+                item.tipo,
+                item.status,
+                item.custo,
+                item.venda,
+                item.data,
+                item.foto
+            ]);
+            
+            const csvContent = [headers, ...rows]
+                .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+                .join('\n');
+            
+            downloadFile(csvContent, `luxus_inventario_${new Date().toISOString().slice(0,19)}.csv`, 'text/csv');
+            showToast('Exportação concluída!');
+        }
+        
+        function exportToJSON() {
+            const exportData = {
+                exportDate: new Date().toISOString(),
+                inventory: inventory,
+                revendedores: revendedores,
+                tipos: tipos
+            };
+            downloadFile(JSON.stringify(exportData, null, 2), `luxus_backup_${new Date().toISOString().slice(0,19)}.json`, 'application/json');
+            showToast('Backup exportado!');
+        }
+        
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+        
+        function downloadTemplate() {
+            const template = `"Código","Tipo","Status","Custo","Venda","Data","Foto"
+"123456","","Em Estoque","75","150","2024-01-15",""
+"654321","","Luana Dias","90","180","2024-01-20",""
+"BR-00590F","Tornozeleira","Em Estoque","60","120","2024-01-25",""`;
+            downloadFile(template, 'luxus_template.csv', 'text/csv');
+        }
+        
+        function handleFileImport(input) {
+            const file = input.files[0];
+            if (file) processImportFile(file);
+        }
+        
+        async function processImportFile(file) {
+            showConfirmModal('Importar Dados', `Importar "${file.name}"?`, async () => {
+                try {
+                    const text = await file.text();
+                    const data = parseCSV(text);
+                    await importDataToSheet(data);
+                    showToast(`✅ ${data.length} itens importados!`);
+                    loadData();
+                } catch (error) {
+                    alert('Erro na importação: ' + error.message);
+                }
+                document.getElementById('file-input').value = '';
+            });
+        }
+        
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n');
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                const values = [];
+                let inQuotes = false;
+                let current = '';
+                for (let j = 0; j < lines[i].length; j++) {
+                    const char = lines[i][j];
+                    if (char === '"') inQuotes = !inQuotes;
+                    else if (char === ',' && !inQuotes) {
+                        values.push(current);
+                        current = '';
+                    } else current += char;
+                }
+                values.push(current);
+                if (values.length >= 3) {
+                    data.push({
+                        codigo: values[0]?.replace(/"/g, '').trim() || '',
+                        tipo: values[1]?.replace(/"/g, '').trim() || '',
+                        status: values[2]?.replace(/"/g, '').trim() || 'Em Estoque',
+                        custo: parseFloat(values[3]?.replace(/"/g, '')) || 0,
+                        venda: parseFloat(values[4]?.replace(/"/g, '')) || 0,
+                        data: values[5]?.replace(/"/g, '').trim() || new Date().toISOString().split('T')[0],
+                        foto: values[6]?.replace(/"/g, '').trim() || ''
+                    });
+                }
+            }
+            return data;
+        }
+        
+        function importFromTextarea() {
+            const text = document.getElementById('csv-textarea').value;
+            if (!text.trim()) { alert('Cole os dados primeiro!'); return; }
+            showConfirmModal('Importar', 'Importar dados do texto?', async () => {
+                const data = parseCSV(text);
+                await importDataToSheet(data);
+                showToast(`✅ ${data.length} itens importados!`);
+                loadData();
+                document.getElementById('csv-textarea').value = '';
+            });
+        }
+        
+        async function importDataToSheet(items) {
+            for (const item of items) {
+                try {
+                    await fetch(scriptUrl, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'addInventario',
+                            codigo: item.codigo,
+                            tipo: item.tipo,
+                            custo: item.custo,
+                            venda: item.venda,
+                            data: item.data,
+                            foto: item.foto || ''
+                        })
+                    });
+                } catch (error) {
+                    console.error(`Erro ao importar ${item.codigo}:`, error);
+                }
+            }
+        }
+        
+        // ==================== MODAL ====================
+        function showConfirmModal(title, message, onConfirm) {
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            confirmCallback = onConfirm;
+            document.getElementById('modal-confirm').classList.remove('hidden');
+            
+            const confirmBtn = document.getElementById('confirm-btn');
+            const newBtn = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+            newBtn.id = 'confirm-btn';
+            newBtn.onclick = () => {
+                if (confirmCallback) confirmCallback();
+                closeConfirmModal();
+            };
+        }
+        
+        function closeConfirmModal() {
+            document.getElementById('modal-confirm').classList.add('hidden');
+            confirmCallback = null;
+        }
+    </script>
+</body>
+</html>
