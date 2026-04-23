@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luxus - Configuração Inicial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Tenor+Sans&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --navy-dark: #0f172a;
+            --navy-light: #1e293b;
+            --gold: #c5a059;
+            --bg-dark: #020617;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 20px;
+        }
+        .btn-gold {
+            background: linear-gradient(135deg, #c5a059, #e2c28d);
+            color: #0f172a;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3);
+        }
+        input, select {
+            background: #0f172a !important;
+            border: 1px solid rgba(148, 163, 184, 0.2) !important;
+            color: white !important;
+            border-radius: 10px !important;
+            padding: 0.6rem 1rem !important;
+        }
+        input:focus, select:focus {
+            border-color: #c5a059 !important;
+            outline: none !important;
+            box-shadow: 0 0 0 2px rgba(197, 160, 89, 0.2) !important;
+        }
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            background: #1e293b;
+            border: 2px solid #334155;
+            color: #94a3b8;
+        }
+        .step-circle.active {
+            background: #c5a059;
+            border-color: #c5a059;
+            color: #0f172a;
+        }
+        .step-circle.completed {
+            background: #22c55e;
+            border-color: #22c55e;
+            color: white;
+        }
+        .step-label {
+            font-size: 0.7rem;
+            color: #94a3b8;
+        }
+        .step-label.active {
+            color: #c5a059;
+        }
+        .hidden-step {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PASSO 1: Configuração da URL do Google Apps Script -->
+    <div id="step1-container" class="min-h-screen flex items-center justify-center p-4">
+        <div class="glass-card p-8 w-full max-w-md">
+            <div class="text-center mb-6">
+                <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden shadow-lg">
+                    <img src="https://i.ibb.co/6R29d3Dj/luxus-logo.png" alt="Logo" class="w-full h-full object-contain">
+                </div>
+                <h1 class="text-3xl font-bold text-amber-500 brand-font">LUXUS</h1>
+                <p class="text-xs text-slate-400 mt-1">Sistema de Gestão de Joias</p>
+            </div>
+            
+            <div class="step-indicator">
+                <div class="step">
+                    <div class="step-circle active">1</div>
+                    <span class="step-label active">Conexão</span>
+                </div>
+                <div class="step">
+                    <div class="step-circle">2</div>
+                    <span class="step-label">Login</span>
+                </div>
+                <div class="step">
+                    <div class="step-circle">3</div>
+                    <span class="step-label">Sistema</span>
+                </div>
+            </div>
+            
+            <p class="text-center text-sm text-slate-300 mb-6">
+                Para começar, configure a URL do seu Google Apps Script.
+            </p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs uppercase text-slate-400 mb-2">URL do Google Apps Script</label>
+                    <input type="text" id="config-script-url" class="w-full" placeholder="https://script.google.com/macros/s/.../exec">
+                    <p class="text-[10px] text-slate-500 mt-1">⚠️ O script precisa estar publicado como "Qualquer pessoa" pode acessar</p>
+                </div>
+                <div>
+                    <label class="block text-xs uppercase text-slate-400 mb-2">Chave API ImgBB (opcional)</label>
+                    <input type="text" id="config-imgbb-key" class="w-full" placeholder="Sua chave API para upload de fotos">
+                </div>
+                <button onclick="testAndProceed()" class="btn-gold w-full py-3 rounded-lg font-bold mt-4">
+                    <i class="fas fa-plug mr-2"></i> Testar Conexão e Continuar
+                </button>
+            </div>
+            
+            <div id="step1-error" class="mt-4 text-red-400 text-sm text-center hidden"></div>
+            <div id="step1-loading" class="mt-4 text-amber-500 text-sm text-center hidden">
+                <i class="fas fa-spinner fa-spin mr-2"></i> Testando conexão...
+            </div>
+        </div>
+    </div>
+
+    <!-- PASSO 2: Tela de Login -->
+    <div id="step2-container" class="min-h-screen flex items-center justify-center p-4 hidden">
+        <div class="glass-card p-8 w-full max-w-md">
+            <div class="text-center mb-6">
+                <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden shadow-lg">
+                    <img src="https://i.ibb.co/6R29d3Dj/luxus-logo.png" alt="Logo" class="w-full h-full object-contain">
+                </div>
+                <h1 class="text-3xl font-bold text-amber-500 brand-font">LUXUS</h1>
+                <p class="text-xs text-slate-400 mt-1">Acesso ao Sistema</p>
+            </div>
+            
+            <div class="step-indicator">
+                <div class="step">
+                    <div class="step-circle completed">✓</div>
+                    <span class="step-label">Conexão</span>
+                </div>
+                <div class="step">
+                    <div class="step-circle active">2</div>
+                    <span class="step-label active">Login</span>
+                </div>
+                <div class="step">
+                    <div class="step-circle">3</div>
+                    <span class="step-label">Sistema</span>
+                </div>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs uppercase text-slate-400 mb-2">Usuário</label>
+                    <input type="text" id="login-username" class="w-full" placeholder="admin" autocomplete="off">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase text-slate-400 mb-2">Senha</label>
+                    <input type="password" id="login-password" class="w-full" placeholder="••••••" onkeypress="if(event.key==='Enter') doLogin()">
+                </div>
+                <button onclick="doLogin()" class="btn-gold w-full py-3 rounded-lg font-bold mt-4">
+                    <i class="fas fa-arrow-right-to-bracket mr-2"></i> Entrar
+                </button>
+                <button onclick="backToConfig()" class="w-full text-slate-400 hover:text-amber-500 text-sm mt-2">
+                    <i class="fas fa-arrow-left mr-1"></i> Voltar à configuração
+                </button>
+            </div>
+            
+            <div id="step2-error" class="mt-4 text-red-400 text-sm text-center hidden"></div>
+        </div>
+    </div>
+
+    <!-- PASSO 3: Sistema Principal (será carregado via iframe ou redirecionamento) -->
+    <div id="step3-container" class="hidden">
+        <!-- O conteúdo principal será carregado aqui -->
+    </div>
+
+    <script>
+        // Variáveis globais
+        let scriptUrl = localStorage.getItem('luxus_script_url') || '';
+        let imgbbKey = localStorage.getItem('luxus_imgbb_key') || '';
+        let usuarios = [];
+        
+        // Carregar configurações salvas ao iniciar
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedUrl = localStorage.getItem('luxus_script_url');
+            const savedImgbb = localStorage.getItem('luxus_imgbb_key');
+            
+            if (savedUrl) {
+                document.getElementById('config-script-url').value = savedUrl;
+            }
+            if (savedImgbb) {
+                document.getElementById('config-imgbb-key').value = savedImgbb;
+            }
+            
+            // Se já tiver URL salva e for válida, pular para o login
+            if (savedUrl && savedUrl.includes('script.google.com')) {
+                testAndProceed();
+            }
+        });
+        
+        // Testar conexão e avançar para o login
+        async function testAndProceed() {
+            const url = document.getElementById('config-script-url').value.trim();
+            const imgbb = document.getElementById('config-imgbb-key').value.trim();
+            
+            if (!url) {
+                showError('step1', 'Digite a URL do Google Apps Script!');
+                return;
+            }
+            
+            // Mostrar loading
+            document.getElementById('step1-loading').classList.remove('hidden');
+            document.getElementById('step1-error').classList.add('hidden');
+            
+            try {
+                // Testar a conexão
+                const response = await fetch(url + '?action=getInventario');
+                const data = await response.json();
+                
+                if (Array.isArray(data) || data.status === 'online') {
+                    // Salvar configurações
+                    localStorage.setItem('luxus_script_url', url);
+                    localStorage.setItem('luxus_imgbb_key', imgbb);
+                    scriptUrl = url;
+                    imgbbKey = imgbb;
+                    
+                    // Avançar para tela de login
+                    document.getElementById('step1-container').classList.add('hidden');
+                    document.getElementById('step2-container').classList.remove('hidden');
+                    document.getElementById('login-username').focus();
+                } else {
+                    throw new Error('Resposta inválida do servidor');
+                }
+            } catch (error) {
+                console.error('Erro no teste:', error);
+                showError('step1', 'Erro ao conectar: ' + error.message + '\n\nVerifique se a URL está correta e se o script está publicado como "Qualquer pessoa" pode acessar.');
+            } finally {
+                document.getElementById('step1-loading').classList.add('hidden');
+            }
+        }
+        
+        // Função de login
+        async function doLogin() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+            const url = localStorage.getItem('luxus_script_url');
+            
+            if (!url) {
+                showError('step2', 'URL não configurada. Volte à configuração.');
+                return;
+            }
+            
+            if (!username || !password) {
+                showError('step2', 'Digite usuário e senha!');
+                return;
+            }
+            
+            // Mostrar loading
+            document.getElementById('step1-loading').classList.remove('hidden');
+            document.getElementById('step2-error').classList.add('hidden');
+            
+            try {
+                const res = await fetch(url + '?action=getUsuarios');
+                const usuariosData = await res.json();
+                
+                usuarios = Array.isArray(usuariosData) ? usuariosData.map(u => ({ 
+                    nome: u.Nome || u.nome || '', 
+                    senha: u.Senha || u.senha || '' 
+                })).filter(u => u.nome && u.senha) : [];
+                
+                if (usuarios.length === 0) {
+                    usuarios = [{ nome: 'admin', senha: 'admin' }];
+                }
+                
+                const found = usuarios.find(u => u.nome === username && u.senha === password);
+                
+                if (found) {
+                    // Login bem-sucedido
+                    localStorage.setItem('luxus_logged_in', 'true');
+                    localStorage.setItem('luxus_user', username);
+                    
+                    // Redirecionar para o sistema principal
+                    window.location.href = window.location.pathname.replace('config.html', 'luxus.html') + '?autoLogin=true';
+                } else {
+                    showError('step2', 'Usuário ou senha inválidos!');
+                }
+            } catch (error) {
+                console.error('Erro no login:', error);
+                showError('step2', 'Erro ao conectar: ' + error.message);
+            } finally {
+                document.getElementById('step1-loading').classList.add('hidden');
+            }
+        }
+        
+        function backToConfig() {
+            document.getElementById('step2-container').classList.add('hidden');
+            document.getElementById('step1-container').classList.remove('hidden');
+        }
+        
+        function showError(step, message) {
+            const errorDiv = document.getElementById(`${step}-error`);
+            errorDiv.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i> ${message}`;
+            errorDiv.classList.remove('hidden');
+            setTimeout(() => {
+                errorDiv.classList.add('hidden');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
