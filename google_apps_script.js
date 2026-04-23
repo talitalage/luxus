@@ -1,6 +1,6 @@
 /**
- * LUXUS BACKEND v14.0 - GESTÃO POR ID ÚNICO (LINHA)
- * Resolve problemas de duplicidade permitindo excluir e editar por ID de linha.
+ * LUXUS BACKEND v16.0 - DASHBOARD & EXCLUSÃO CORRIGIDA
+ * Versão com correções críticas para exclusão de repasses e IDs únicos.
  */
 
 function doGet(e) {
@@ -28,10 +28,10 @@ function getSheetAsJSON(ss, sheetName) {
   const rows = data.slice(1);
   
   const json = rows.map((row, index) => {
-    let obj = { rowId: index + 2 }; // Adiciona o ID único da linha (base 1 + cabeçalho)
+    let obj = { rowId: index + 2 }; 
     headers.forEach((h, i) => { if (h) obj[h] = row[i]; });
     
-    // Força mapeamento de campos críticos
+    // Normalização para garantir que o Frontend receba os campos esperados
     if (sheetName === 'Revendedores') { obj.Nome = row[0]; obj.Contato = row[1]; }
     if (sheetName === 'Inventario') { obj.Codigo = row[0]; obj.Status = row[2]; obj.Custo = row[3]; obj.Venda = row[4]; obj.Foto = row[5]; }
     if (sheetName === 'Repasses') { obj.Revendedor = row[0]; obj.Codigo = row[1]; obj.Custo = row[2]; obj.Venda = row[3]; obj.Data = row[4]; obj.Status = row[5]; }
@@ -90,7 +90,7 @@ function doPost(e) {
 
   if (action === 'editInventario') {
     const sheet = ss.getSheetByName('Inventario');
-    const rowId = params.rowId; // Usa ID da linha para precisão
+    const rowId = params.rowId; 
     if (rowId) {
       sheet.getRange(rowId, 1).setValue(params.codigo.toString().trim());
       sheet.getRange(rowId, 3).setValue(params.status);
@@ -99,7 +99,7 @@ function doPost(e) {
       sheet.getRange(rowId, 6).setValue(params.foto);
       return ContentService.createTextOutput("Sucesso");
     }
-    return ContentService.createTextOutput("Erro: rowId ausente");
+    return ContentService.createTextOutput("Erro");
   }
 
   if (action === 'delInventario') {
@@ -139,6 +139,7 @@ function doPost(e) {
       if (sheetInv) {
         const dInv = sheetInv.getDataRange().getValues();
         for (let i = 1; i < dInv.length; i++) {
+          // Volta para estoque se a localização atual for o revendedor que devolveu
           if (dInv[i][0].toString().trim().toLowerCase() === cod && dInv[i][2] !== 'Em Estoque' && dInv[i][2] !== 'Vendido') {
             sheetInv.getRange(i + 1, 3).setValue('Em Estoque');
             break;
@@ -154,13 +155,13 @@ function doPost(e) {
     const sheetRep = ss.getSheetByName('Repasses');
     const sheetInv = ss.getSheetByName('Inventario');
     const rev = params.revendedor.toString().trim().toLowerCase();
-    const codigosBipados = params.codigos.map(c => c.toString().trim().toLowerCase());
+    const codigosVendas = params.codigos.map(c => c.toString().trim().toLowerCase());
     
     if (sheetRep) {
       const dRep = sheetRep.getDataRange().getValues();
       for (let i = 1; i < dRep.length; i++) {
         const codItem = dRep[i][1].toString().trim().toLowerCase();
-        if (dRep[i][0].toString().trim().toLowerCase() === rev && codigosBipados.includes(codItem) && dRep[i][5] === 'Pendente') {
+        if (dRep[i][0].toString().trim().toLowerCase() === rev && codigosVendas.includes(codItem) && dRep[i][5] === 'Pendente') {
           sheetRep.getRange(i + 1, 6).setValue('Pago');
           if (sheetInv) {
             const dInv = sheetInv.getDataRange().getValues();
