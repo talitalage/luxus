@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Luxus | Central do Revendedor</title>
+    <title>Luxus | Gestão de Joias</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -46,8 +46,8 @@
         th { background: rgba(0,0,0,0.1); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; padding: 1rem 1.5rem; text-align: left; }
         td { padding: 1rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.02); font-size: 0.875rem; }
         .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(20, 27, 45, 0.9); display: none; justify-content: center; align-items: center; z-index: 9999; }
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: var(--navy-card); padding: 2rem; border-radius: 16px; width: 90%; max-width: 500px; border: 1px solid var(--gold); }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--navy-card); padding: 2rem; border-radius: 16px; width: 90%; max-width: 500px; border: 1px solid var(--gold); position: relative; }
         .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
         .status-estoque { background: rgba(34, 197, 94, 0.1); color: #4ade80; }
         .status-consignado { background: rgba(197, 160, 89, 0.1); color: var(--gold); }
@@ -55,6 +55,8 @@
         .devolvido { background: rgba(34, 197, 94, 0.1) !important; border-left: 4px solid #4ade80 !important; opacity: 0.6; }
         .vendido-row { background: rgba(76, 139, 245, 0.1) !important; border-left: 4px solid var(--accent) !important; }
         .vendido-row td { color: var(--accent) !important; font-weight: 600; }
+        .img-preview { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; cursor: pointer; transition: transform 0.2s; }
+        .img-preview:hover { transform: scale(1.1); border: 1px solid var(--gold); }
     </style>
 </head>
 <body>
@@ -62,8 +64,9 @@
     <div id="loading" class="loading-overlay"><div class="flex flex-col items-center"><div class="w-10 h-10 border-3 border-accent border-t-transparent rounded-full animate-spin mb-4"></div><p class="text-accent text-xs font-semibold uppercase">Luxus Cloud</p></div></div>
 
     <!-- Modais -->
-    <div id="modalEdit" class="modal"><div class="modal-content"><h3 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Editar Joia</h3><div class="space-y-4"><div><label class="text-[10px] font-bold text-muted mb-1 block">CÓDIGO</label><input type="text" id="editCodigo" class="w-full opacity-50" readonly></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Custo (R$)</label><input type="number" id="editCusto" class="w-full" step="0.01"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Venda (R$)</label><input type="number" id="editVenda" class="w-full" step="0.01"></div></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">URL da Foto</label><input type="text" id="editFoto" class="w-full"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Localização</label><select id="editStatus" class="w-full"></select></div><div class="flex gap-3 pt-4"><button onclick="fecharModal()" class="flex-1 p-3 bg-navy-dark text-white rounded-lg font-bold">Cancelar</button><button onclick="salvarEdicao()" class="flex-1 p-3 bg-gold text-navy-dark rounded-lg font-bold">Salvar</button></div></div></div></div>
+    <div id="modalEdit" class="modal"><div class="modal-content"><h3 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Editar Joia</h3><div class="space-y-4"><input type="hidden" id="editRowId"><div><label class="text-[10px] font-bold text-muted mb-1 block">CÓDIGO</label><input type="text" id="editCodigo" class="w-full"></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Custo (R$)</label><input type="number" id="editCusto" class="w-full" step="0.01"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Venda (R$)</label><input type="number" id="editVenda" class="w-full" step="0.01"></div></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">URL da Foto</label><input type="text" id="editFoto" class="w-full"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Localização</label><select id="editStatus" class="w-full"></select></div><div class="flex gap-3 pt-4"><button onclick="fecharModal()" class="flex-1 p-3 bg-navy-dark text-white rounded-lg font-bold">Cancelar</button><button onclick="salvarEdicao()" class="flex-1 p-3 bg-gold text-navy-dark rounded-lg font-bold">Salvar</button></div></div></div></div>
     <div id="modalEditRev" class="modal"><div class="modal-content"><h3 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Editar Parceiro</h3><div class="space-y-4"><input type="hidden" id="editRevNomeAntigo"><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Nome</label><input type="text" id="editRevNovoNome" class="w-full"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Contato</label><input type="text" id="editRevNovoContato" class="w-full"></div><div class="flex gap-3 pt-4"><button onclick="fecharModalRev()" class="flex-1 p-3 bg-navy-dark text-white rounded-lg font-bold">Cancelar</button><button onclick="salvarEdicaoRev()" class="flex-1 p-3 bg-gold text-navy-dark rounded-lg font-bold">Salvar</button></div></div></div></div>
+    <div id="modalPhoto" class="modal" onclick="fecharModalFoto()"><div class="modal-content !max-w-3xl !p-2 !bg-black border-none"><img id="photoView" src="" class="w-full h-auto rounded-lg shadow-2xl"></div></div>
 
     <header class="top-nav">
         <div class="flex items-center gap-2 mr-10"><span class="text-xl font-bold tracking-tighter text-white">LUXUS</span><div class="w-1.5 h-1.5 bg-gold rounded-full mt-1"></div></div>
@@ -96,7 +99,7 @@
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 <div class="lg:col-span-1"><div class="card p-6"><h3 class="text-sm font-bold text-white mb-6 uppercase">Entrada</h3><div class="space-y-5"><input type="date" id="dataInventario" class="w-full"><input type="text" id="codigoInput" placeholder="Bipe aqui..." class="w-full" autofocus><button onclick="adicionarAoInventario()" class="btn-gold w-full">Salvar</button></div></div></div>
-                <div class="lg:col-span-3"><div class="card overflow-hidden"><div class="p-5 border-b border-white/5 flex justify-between items-center"><span class="text-sm font-bold text-white">Acervo Luxus</span><span id="itemCount" class="text-xs font-bold text-accent">0 PEÇAS</span></div><div class="overflow-x-auto"><table><thead><tr><th>Foto</th><th>Código</th><th>Custo</th><th>Venda</th><th>Localização</th><th class="text-right">Ação</th></tr></thead><tbody id="listaInventario" class="text-sm"></tbody></table></div></div></div>
+                <div class="lg:col-span-3"><div class="card overflow-hidden"><div class="p-5 border-b border-white/5 flex justify-between items-center"><span class="text-sm font-bold text-white">Acervo Luxus</span><span id="itemCount" class="text-xs font-bold text-accent">0 PEÇAS</span></div><div class="overflow-x-auto"><table><thead><tr><th>Foto</th><th>Código</th><th>Custo</th><th>Venda</th><th>Localização</th><th class="text-right">Ações</th></tr></thead><tbody id="listaInventario" class="text-sm"></tbody></table></div></div></div>
             </div>
         </div>
 
@@ -157,7 +160,7 @@
                             </div>
 
                             <div class="flex justify-between items-center px-4 mb-2">
-                                <span class="text-[10px] font-bold text-muted uppercase">Status da Conferência</span>
+                                <span class="text-[10px] font-bold text-muted uppercase">Peças Pendentes</span>
                                 <div class="flex gap-4">
                                     <span id="devolvidosCount" class="text-[10px] font-bold text-green-400 uppercase">0 DEVOLVIDOS</span>
                                     <span id="vendidosCount" class="text-[10px] font-bold text-accent uppercase">0 VENDIDOS (FALTANTES)</span>
@@ -165,7 +168,7 @@
                             </div>
 
                             <div class="card overflow-hidden bg-navy-dark/20 max-h-[400px] overflow-y-auto">
-                                <table><thead><tr><th>Peça</th><th>Venda</th><th class="text-right">Situação</th></tr></thead><tbody id="tabelaPainelCentral" class="text-sm"></tbody></table>
+                                <table><thead><tr><th>Peça</th><th>Venda</th><th class="text-right">Ação</th></tr></thead><tbody id="tabelaPainelCentral" class="text-sm"></tbody></table>
                             </div>
 
                             <div class="mt-6 space-y-4">
@@ -256,7 +259,7 @@
                 document.getElementById('parceiroContato').innerText = rev ? (rev.Contato || rev.contato || 'Sem contato') : 'Sem contato';
                 
                 globalRepasses = await apiGet('getRepasses');
-                limparConferencia(false); // Limpa sem recarregar tudo para evitar loop
+                itensDevolvidos = [];
                 
                 const itensDoRevendedor = globalRepasses.filter(r => 
                     (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === revNome.toLowerCase() && 
@@ -270,7 +273,6 @@
                 }, 500);
             } catch (e) { 
                 console.error("Erro carregarDadosCentral:", e);
-                alert("Erro ao carregar dados do revendedor. Verifique sua conexão.");
             }
         }
 
@@ -282,20 +284,18 @@
                 const item = globalRepasses.find(r => 
                     (r.Codigo || r.codigo || "").toString().trim().toLowerCase() === cod && 
                     (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev &&
-                    (r.Status || r.status || "Pendente") === "Pendente"
+                    (r.Status || r.status || "Pendente") === "Pendente" &&
+                    !itensDevolvidos.includes((r.Codigo || r.codigo).toString())
                 );
 
                 if(item) {
-                    const codOriginal = (item.Codigo || item.codigo).toString();
-                    if(!itensDevolvidos.includes(codOriginal)) {
-                        itensDevolvidos.push(codOriginal);
-                        e.target.value = '';
-                        renderPainelCentral(globalRepasses.filter(r => 
-                            (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev && 
-                            (r.Status || r.status || "Pendente") === "Pendente"
-                        ));
-                    } else { alert('Peça já bipada como devolvida!'); e.target.value = ''; }
-                } else { alert('Peça não encontrada nos pendentes deste revendedor!'); e.target.value = ''; }
+                    itensDevolvidos.push((item.Codigo || item.codigo).toString());
+                    e.target.value = '';
+                    renderPainelCentral(globalRepasses.filter(r => 
+                        (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev && 
+                        (r.Status || r.status || "Pendente") === "Pendente"
+                    ));
+                } else { alert('Peça não encontrada ou já bipada!'); e.target.value = ''; }
             }
         }
 
@@ -305,11 +305,18 @@
             
             document.getElementById('tabelaPainelCentral').innerHTML = itens.map(i => {
                 const cod = (i.Codigo || i.codigo || "").toString();
+                const rowId = i.rowId;
                 const valVenda = parseFloat(i.Venda || 0);
                 const isDevolvido = itensDevolvidos.includes(cod);
                 if (!isDevolvido) { totalVendaVendida += valVenda; }
                 const rowClass = isDevolvido ? 'devolvido' : 'vendido-row';
-                return `<tr class="${rowClass}"><td class="font-bold">${cod}</td><td class="${!isDevolvido ? 'text-accent' : 'text-muted'}">R$ ${valVenda.toFixed(2)}</td><td class="text-right uppercase text-[10px] font-bold ${!isDevolvido ? 'text-accent' : 'text-green-400'}">${isDevolvido ? 'Devolvido' : 'Vendido (Faltante)'}</td></tr>`;
+                return `<tr class="${rowClass}">
+                    <td class="font-bold">${cod}</td>
+                    <td class="${!isDevolvido ? 'text-accent' : 'text-muted'}">R$ ${valVenda.toFixed(2)}</td>
+                    <td class="text-right">
+                        <button onclick="excluirRepasse(${rowId})" class="text-red-400 text-[10px] font-bold hover:underline uppercase">Excluir</button>
+                    </td>
+                </tr>`;
             }).join('');
             
             document.getElementById('devolvidosCount').innerText = `${itensDevolvidos.length} DEVOLVIDOS`;
@@ -327,18 +334,32 @@
             calcularComissao();
         }
 
+        async function excluirRepasse(rowId) {
+            if(confirm('Deseja excluir este repasse? A peça voltará para o estoque.')) {
+                await apiPost({ action: 'deleteRepasse', rowId: rowId });
+                carregarDadosCentral();
+            }
+        }
+
         function calcularComissao() {
             const p = parseFloat(document.getElementById('percentualComissaoCentral').value) || 0;
             const com = totalVendaVendida * (p / 100), liq = totalVendaVendida - com;
             document.getElementById('valorLiquidoLuxusCentral').innerText = `R$ ${liq.toFixed(2)}`;
         }
 
-        function limparConferencia(recarregar = true) { 
+        function limparConferencia() { 
             itensDevolvidos = []; 
             totalVendaVendida = 0; 
             const bipeInput = document.getElementById('bipeConferenciaCentral');
             if(bipeInput) bipeInput.value = ''; 
-            if(recarregar && document.getElementById('selectRevendedorCentral').value) carregarDadosCentral(); 
+            const rev = document.getElementById('selectRevendedorCentral').value;
+            if(rev) {
+                const itensDoRevendedor = globalRepasses.filter(r => 
+                    (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev.toLowerCase() && 
+                    (r.Status || r.status || "Pendente") === "Pendente"
+                );
+                renderPainelCentral(itensDoRevendedor);
+            }
         }
 
         async function realizarFechamentoParcial() { 
@@ -348,7 +369,7 @@
             
             if(confirm(`Confirmar venda de ${codigosVendidos.length} peças faltantes?`)) { 
                 await apiPost({ action: 'fechamentoParcial', revendedor: rev, codigos: codigosVendidos, obs: document.getElementById('obsFechamentoCentral').value }); 
-                limparConferencia(true);
+                carregarDadosCentral();
             } 
         }
 
@@ -365,12 +386,43 @@
                 const s = (i.Status || i.status || "").toString();
                 let sc = 'status-estoque'; if(s === 'Vendido') sc = 'status-vendido'; else if(s !== 'Em Estoque') sc = 'status-consignado';
                 const cod = i.Codigo || i.codigo || '---';
-                return `<tr class="hover:bg-white/5"><td>${i.Foto ? `<img src="${i.Foto}" class="w-10 h-10 rounded object-cover">` : '<div class="w-10 h-10 bg-navy-dark rounded"></div>'}</td><td class="font-bold text-white">${cod}</td><td class="text-muted">R$ ${parseFloat(i.Custo || 0).toFixed(2)}</td><td class="text-gold font-bold">R$ ${parseFloat(i.Venda || 0).toFixed(2)}</td><td><span class="status-pill ${sc}">${s}</span></td><td class="text-right"><button onclick="abrirModal('${cod}')" class="text-accent hover:underline">Editar</button></td></tr>`;
+                const rowId = i.rowId;
+                const fotoUrl = i.Foto || i.foto || '';
+                return `<tr class="hover:bg-white/5">
+                    <td>
+                        ${fotoUrl ? `<img src="${fotoUrl}" class="img-preview" onclick="abrirModalFoto('${fotoUrl}')">` : '<div class="w-10 h-10 bg-navy-dark rounded"></div>'}
+                    </td>
+                    <td class="font-bold text-white">${cod}</td>
+                    <td class="text-muted">R$ ${parseFloat(i.Custo || 0).toFixed(2)}</td>
+                    <td class="text-gold font-bold">R$ ${parseFloat(i.Venda || 0).toFixed(2)}</td>
+                    <td><span class="status-pill ${sc}">${s}</span></td>
+                    <td class="text-right flex gap-3 justify-end">
+                        <button onclick="abrirModal(${rowId})" class="text-accent hover:underline">Editar</button>
+                        <button onclick="excluirItem(${rowId})" class="text-red-400 hover:underline">Excluir</button>
+                    </td>
+                </tr>`;
             }).join('');
         }
 
+        async function excluirItem(rowId) {
+            if(confirm('Deseja excluir permanentemente este item do inventário?')) {
+                await apiPost({ action: 'deleteInventario', rowId: rowId });
+                carregarInventario();
+            }
+        }
+
+        function abrirModalFoto(url) {
+            if(!url) return;
+            document.getElementById('photoView').src = url;
+            document.getElementById('modalPhoto').style.display = 'flex';
+        }
+
+        function fecharModalFoto() {
+            document.getElementById('modalPhoto').style.display = 'none';
+        }
+
         function checkBipeConsignacaoInstant(v) { 
-            const item = globalInventario.find(i => (i.Codigo || i.codigo || "").toString().trim().toLowerCase() === v.toString().trim().toLowerCase()); 
+            const item = globalInventario.find(i => (i.Codigo || i.codigo || "").toString().trim().toLowerCase() === v.toString().trim().toLowerCase() && (i.Status || i.status) === 'Em Estoque'); 
             if(item) { 
                 document.getElementById('custoItemCentral').value = item.Custo || item.custo || ''; 
                 document.getElementById('vendaItemCentral').value = item.Venda || item.venda || ''; 
@@ -389,10 +441,11 @@
             } 
         }
 
-        function abrirModal(c) { 
-            document.getElementById('editCodigo').value = c; 
-            const i = globalInventario.find(it => (it.Codigo || it.codigo || "").toString().trim().toLowerCase() === c.trim().toLowerCase()); 
+        function abrirModal(rowId) { 
+            const i = globalInventario.find(it => it.rowId === rowId); 
             if(i) { 
+                document.getElementById('editRowId').value = rowId;
+                document.getElementById('editCodigo').value = (i.Codigo || i.codigo || "").toString(); 
                 document.getElementById('editCusto').value = i.Custo || i.custo || ''; 
                 document.getElementById('editVenda').value = i.Venda || i.venda || ''; 
                 document.getElementById('editFoto').value = i.Foto || i.foto || ''; 
@@ -402,7 +455,15 @@
         }
         function fecharModal() { document.getElementById('modalEdit').style.display = 'none'; }
         async function salvarEdicao() { 
-            await apiPost({ action: 'editInventario', codigo: document.getElementById('editCodigo').value, custo: document.getElementById('editCusto').value, venda: document.getElementById('editVenda').value, foto: document.getElementById('editFoto').value, status: document.getElementById('editStatus').value }); 
+            await apiPost({ 
+                action: 'editInventario', 
+                rowId: document.getElementById('editRowId').value,
+                codigo: document.getElementById('editCodigo').value, 
+                custo: document.getElementById('editCusto').value, 
+                venda: document.getElementById('editVenda').value, 
+                foto: document.getElementById('editFoto').value, 
+                status: document.getElementById('editStatus').value 
+            }); 
             fecharModal(); 
             setTimeout(carregarInventario, 1500); 
         }
@@ -413,7 +474,11 @@
                 await apiPost({ action: 'addInventario', codigo: c, data: document.getElementById('dataInventario').value }); 
                 document.getElementById('codigoInput').value = ''; 
                 await carregarInventario(); 
-                abrirModal(c); 
+                // Busca o item recém adicionado para abrir edição (será o último com esse código)
+                setTimeout(() => {
+                    const novo = globalInventario.filter(i => (i.Codigo || i.codigo).toString() === c).pop();
+                    if(novo) abrirModal(novo.rowId);
+                }, 1500);
             } 
         }
 
@@ -425,14 +490,6 @@
             else if(f === 'Consignado') d = globalInventario.filter(i => (i.Status || i.status) !== 'Em Estoque' && (i.Status || i.status) !== 'Vendido'); 
             else if(f === 'Vendido') d = globalInventario.filter(i => (i.Status || i.status) === 'Vendido'); 
             renderInventario(d); 
-        }
-
-        function setPainelFilter(f) { 
-            document.querySelectorAll('[data-pfilter]').forEach(b => b.classList.remove('active')); 
-            document.querySelector(`[data-pfilter="${f}"]`).classList.add('active'); 
-            const rev = document.getElementById('selectRevendedorCentral').value.toString().trim().toLowerCase(); 
-            let d = globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev && (r.Status || r.status || "Pendente") === "Pendente"); 
-            renderPainelCentral(d); 
         }
 
         function filtrarTabela() { 

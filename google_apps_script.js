@@ -1,6 +1,6 @@
 /**
- * LUXUS BACKEND v8.0 - EDIÇÃO MANUAL DE LOCALIZAÇÃO
- * Permite alterar o status/localização de uma joia diretamente no inventário.
+ * LUXUS BACKEND v14.0 - GESTÃO POR ID ÚNICO (LINHA)
+ * Resolve problemas de duplicidade permitindo excluir e editar por ID de linha.
  */
 
 function doGet(e) {
@@ -27,9 +27,10 @@ function getSheetAsJSON(ss, sheetName) {
   const headers = data[0].map(h => h.toString().trim());
   const rows = data.slice(1);
   
-  const json = rows.map(row => {
-    let obj = {};
+  const json = rows.map((row, index) => {
+    let obj = { rowId: index + 2 }; // Adiciona o ID único da linha (base 1 + cabeçalho)
     headers.forEach((h, i) => { if (h) obj[h] = row[i]; });
+    
     // Força mapeamento de campos críticos
     if (sheetName === 'Revendedores') { obj.Nome = row[0]; obj.Contato = row[1]; }
     if (sheetName === 'Inventario') { obj.Codigo = row[0]; obj.Status = row[2]; obj.Custo = row[3]; obj.Venda = row[4]; obj.Foto = row[5]; }
@@ -89,16 +90,23 @@ function doPost(e) {
 
   if (action === 'editInventario') {
     const sheet = ss.getSheetByName('Inventario');
-    const data = sheet.getDataRange().getValues();
-    const cod = params.codigo.toString().trim().toLowerCase();
-    for (let i = 1; i < data.length; i++) {
-      if (data[i][0].toString().trim().toLowerCase() === cod) {
-        sheet.getRange(i + 1, 3).setValue(params.status || data[i][2]); // Altera localização/status
-        sheet.getRange(i + 1, 4).setValue(params.custo);
-        sheet.getRange(i + 1, 5).setValue(params.venda);
-        sheet.getRange(i + 1, 6).setValue(params.foto);
-        return ContentService.createTextOutput("Sucesso");
-      }
+    const rowId = params.rowId; // Usa ID da linha para precisão
+    if (rowId) {
+      sheet.getRange(rowId, 1).setValue(params.codigo.toString().trim());
+      sheet.getRange(rowId, 3).setValue(params.status);
+      sheet.getRange(rowId, 4).setValue(params.custo);
+      sheet.getRange(rowId, 5).setValue(params.venda);
+      sheet.getRange(rowId, 6).setValue(params.foto);
+      return ContentService.createTextOutput("Sucesso");
+    }
+    return ContentService.createTextOutput("Erro: rowId ausente");
+  }
+
+  if (action === 'delInventario') {
+    const sheet = ss.getSheetByName('Inventario');
+    if (params.rowId) {
+      sheet.deleteRow(params.rowId);
+      return ContentService.createTextOutput("Sucesso");
     }
     return ContentService.createTextOutput("Erro");
   }
@@ -112,10 +120,34 @@ function doPost(e) {
     if (sheetInv) {
       const dInv = sheetInv.getDataRange().getValues();
       for (let i = 1; i < dInv.length; i++) {
-        if (dInv[i][0].toString().trim().toLowerCase() === cod.toLowerCase()) { sheetInv.getRange(i + 1, 3).setValue(rev); break; }
+        if (dInv[i][0].toString().trim().toLowerCase() === cod.toLowerCase() && dInv[i][2] === 'Em Estoque') { 
+          sheetInv.getRange(i + 1, 3).setValue(rev); 
+          break; 
+        }
       }
     }
     return ContentService.createTextOutput("Sucesso");
+  }
+
+  if (action === 'delRepasse') {
+    const sheetRep = ss.getSheetByName('Repasses');
+    const sheetInv = ss.getSheetByName('Inventario');
+    if (params.rowId && sheetRep) {
+      const rowData = sheetRep.getRange(params.rowId, 1, 1, 2).getValues()[0];
+      const cod = rowData[1].toString().trim().toLowerCase();
+      sheetRep.deleteRow(params.rowId);
+      if (sheetInv) {
+        const dInv = sheetInv.getDataRange().getValues();
+        for (let i = 1; i < dInv.length; i++) {
+          if (dInv[i][0].toString().trim().toLowerCase() === cod && dInv[i][2] !== 'Em Estoque' && dInv[i][2] !== 'Vendido') {
+            sheetInv.getRange(i + 1, 3).setValue('Em Estoque');
+            break;
+          }
+        }
+      }
+      return ContentService.createTextOutput("Sucesso");
+    }
+    return ContentService.createTextOutput("Erro");
   }
 
   if (action === 'fechamentoParcial') {
@@ -133,7 +165,10 @@ function doPost(e) {
           if (sheetInv) {
             const dInv = sheetInv.getDataRange().getValues();
             for (let j = 1; j < dInv.length; j++) {
-              if (dInv[j][0].toString().trim().toLowerCase() === codItem) { sheetInv.getRange(j + 1, 3).setValue('Vendido'); break; }
+              if (dInv[j][0].toString().trim().toLowerCase() === codItem && dInv[j][2].toString().trim().toLowerCase() === rev) { 
+                sheetInv.getRange(j + 1, 3).setValue('Vendido'); 
+                break; 
+              }
             }
           }
         }
