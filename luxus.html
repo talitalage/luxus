@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luxus - Gestão de Inventário</title>
+    <link rel="icon" type="image/png" href="https://i.ibb.co/6R29d3Dj/luxus-logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Tenor+Sans&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --navy-dark: #0f172a;
+            --navy-light: #1e293b;
+            --gold: #c5a059;
+            --gold-light: #e2c28d;
+            --accent: #3b82f6;
+            --bg-dark: #020617;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, .brand-font {
+            font-family: 'Tenor Sans', serif;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 16px;
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--navy-dark);
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3);
+        }
+
+        .nav-link {
+            position: relative;
+            padding: 0.5rem 1rem;
+            color: #94a3b8;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .nav-link.active {
+            color: var(--gold);
+        }
+
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 1rem;
+            right: 1rem;
+            height: 2px;
+            background: var(--gold);
+            border-radius: 2px;
+        }
+
+        input, select, textarea {
+            background: var(--navy-dark) !important;
+            border: 1px solid rgba(148, 163, 184, 0.2) !important;
+            color: white !important;
+            border-radius: 8px !important;
+            padding: 0.75rem !important;
+            appearance: none !important;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--gold) !important;
+            outline: none !important;
+            box-shadow: 0 0 0 2px rgba(197, 160, 89, 0.2) !important;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: var(--navy-dark);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: var(--gold);
+            border-radius: 10px;
+        }
+
+        .status-pill {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-estoque { background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
+        .status-consignado { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
+        .status-vendido { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+
+        .sortable:hover {
+            color: var(--gold);
+            cursor: pointer;
+        }
+
+        .sort-icon {
+            font-size: 0.7rem;
+            margin-left: 4px;
+            opacity: 0.5;
+        }
+
+        .sort-active {
+            color: var(--gold);
+            opacity: 1;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            z-index: 50;
+            min-width: 180px;
+            background: var(--navy-light);
+            border: 1px solid var(--gold);
+            border-radius: 8px;
+            padding: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+        }
+
+        .logo-link {
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+        .logo-link:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body class="custom-scrollbar">
+
+    <!-- Header / Nav -->
+    <nav class="sticky top-0 z-40 glass-card mx-4 mt-4 mb-6 border-b-0">
+        <div class="max-w-[100%] mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4 logo-link" onclick="goHome()">
+                <div class="w-14 h-14 bg-white rounded-lg flex items-center justify-center shadow-lg overflow-hidden p-1">
+                    <img src="https://i.ibb.co/6R29d3Dj/luxus-logo.png" alt="Luxus Logo" class="w-full h-full object-contain">
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-widest text-white uppercase">LUXUS</h1>
+                    <p class="text-[10px] text-amber-500 tracking-[0.3em] uppercase">Joias & Perfumes</p>
+                </div>
+            </div>
+            
+            <div class="flex gap-8">
+                <a href="#consulta" onclick="switchTab('consulta'); return false;" id="tab-consulta" class="nav-link active">
+                    <i class="fas fa-gem mr-2"></i>Consulta
+                </a>
+                <a href="#central" onclick="switchTab('central'); return false;" id="tab-central" class="nav-link">
+                    <i class="fas fa-users mr-2"></i>Central do Revendedor
+                </a>
+                <a href="#config" onclick="switchTab('config'); return false;" id="tab-config" class="nav-link">
+                    <i class="fas fa-cog mr-2"></i>Configurações
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="px-4 pb-12">
+        
+        <!-- Tab: Consulta (TELA CHEIA) -->
+        <div id="content-consulta" class="tab-content space-y-6">
+            
+            <!-- Dashboard de Indicadores -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="glass-card p-6 border-l-4 border-l-blue-500">
+                    <p class="text-slate-400 text-xs uppercase tracking-wider mb-1">Total de Peças</p>
+                    <h3 id="dash-total-pecas" class="text-3xl font-bold">0</h3>
+                </div>
+                <div class="glass-card p-6 border-l-4 border-l-green-500">
+                    <p class="text-slate-400 text-xs uppercase tracking-wider mb-1">Capital em Estoque</p>
+                    <h3 id="dash-capital-estoque" class="text-3xl font-bold">R$ 0,00</h3>
+                </div>
+                <div class="glass-card p-6 border-l-4 border-l-amber-500">
+                    <p class="text-slate-400 text-xs uppercase tracking-wider mb-1">Em Consignação</p>
+                    <h3 id="dash-em-consignacao" class="text-3xl font-bold">R$ 0,00</h3>
+                </div>
+                <div class="glass-card p-6 border-l-4 border-l-red-500">
+                    <p class="text-slate-400 text-xs uppercase tracking-wider mb-1">Total Vendido</p>
+                    <h3 id="dash-total-vendido" class="text-3xl font-bold">R$ 0,00</h3>
+                </div>
+            </div>
+
+            <!-- Entrada de Joias (POSICIONADA NO TOPO) -->
+            <div class="glass-card p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold text-amber-500 flex items-center gap-2">
+                        <i class="fas fa-plus-circle"></i> Novo Item
+                    </h3>
+                    <p class="text-xs text-slate-400 italic">Bipe o código para cadastrar instantaneamente</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div class="md:col-span-1">
+                        <label class="block text-[10px] uppercase text-slate-400 mb-1 ml-1">Código</label>
+                        <input type="text" id="ent-codigo" placeholder="Bipe aqui..." class="w-full" onkeypress="if(event.key==='Enter') saveNewItem()">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-[10px] uppercase text-slate-400 mb-1 ml-1">Tipo de Joia</label>
+                        <select id="ent-tipo" class="w-full"></select>
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-[10px] uppercase text-slate-400 mb-1 ml-1">Preço Custo</label>
+                        <input type="number" id="ent-custo" placeholder="R$ 0.00" class="w-full">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-[10px] uppercase text-slate-400 mb-1 ml-1">Preço Venda</label>
+                        <input type="number" id="ent-venda" placeholder="R$ 0.00" class="w-full">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="saveNewItem()" class="btn-gold w-full py-3 rounded-lg flex items-center justify-center gap-2">
+                            <i class="fas fa-save"></i> Cadastrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acervo Luxus (TELA CHEIA) -->
+            <div class="glass-card p-6 overflow-hidden flex flex-col min-h-[500px]">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+                    <div class="flex items-center gap-4 w-full md:w-auto">
+                        <h2 class="text-2xl font-bold text-white brand-font whitespace-nowrap">Acervo Luxus</h2>
+                        <div class="relative w-full md:w-96">
+                            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                            <input type="text" id="search-input" placeholder="Buscar por código, tipo ou localização..." class="w-full pl-12 pr-4" oninput="renderInventory()">
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-2 w-full md:w-auto justify-end relative">
+                        <div class="dropdown">
+                            <button class="bg-navy-dark border border-slate-700 px-4 py-2 rounded-lg text-sm hover:border-amber-500 transition-all">
+                                <i class="fas fa-columns mr-2 text-amber-500"></i>Colunas ⚙️
+                            </button>
+                            <div class="dropdown-content">
+                                <label class="flex items-center gap-2 p-2 hover:bg-slate-800 rounded cursor-pointer">
+                                    <input type="checkbox" checked onchange="toggleCol('col-foto')" class="w-4 h-4"> <span class="text-sm">Foto</span>
+                                </label>
+                                <label class="flex items-center gap-2 p-2 hover:bg-slate-800 rounded cursor-pointer">
+                                    <input type="checkbox" checked onchange="toggleCol('col-data')" class="w-4 h-4"> <span class="text-sm">Data</span>
+                                </label>
+                                <label class="flex items-center gap-2 p-2 hover:bg-slate-800 rounded cursor-pointer">
+                                    <input type="checkbox" checked onchange="toggleCol('col-codigo')" class="w-4 h-4"> <span class="text-sm">Código</span>
+                                </label>
+                                <label class="flex items-center gap-2 p-2 hover:bg-slate-800 rounded cursor-pointer">
+                                    <input type="checkbox" checked onchange="toggleCol('col-tipo')" class="w-4 h-4"> <span class="text-sm">Tipo</span>
+                                </label>
+                                <label class="flex items-center gap-2 p-2 hover:bg-slate-800 rounded cursor-pointer">
+                                    <input type="checkbox" checked onchange="toggleCol('col-custo')" class="w-4 h-4"> <span class="text-sm">Custo</span>
+                                </label>
+                                <label class="flex items-center gap-2 p-2 hover:bg-slate-800 rounded cursor-pointer">
+                                    <input type="checkbox" checked onchange="toggleCol('col-venda')" class="w-4 h-4"> <span class="text-sm">Venda</span>
+                                </label>
+                                <label class="flex items-center gap-2 p-2 hover:bg-slate-800 rounded cursor-pointer">
+                                    <input type="checkbox" checked onchange="toggleCol('col-local')" class="w-4 h-4"> <span class="text-sm">Localização</span>
+                                </label>
+                            </div>
+                        </div>
+                        <button onclick="loadData()" class="bg-navy-dark border border-slate-700 px-4 py-2 rounded-lg text-sm hover:border-amber-500 transition-all">
+                            <i class="fas fa-sync-alt mr-2 text-blue-500"></i>Atualizar
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar flex-grow">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-slate-400 text-[10px] uppercase tracking-widest border-b border-slate-800">
+                                <th class="pb-4 col-foto">Foto</th>
+                                <th class="pb-4 col-data sortable" onclick="sortInventory('data')">Data <i class="fas fa-sort sort-icon" id="sort-data"></i></th>
+                                <th class="pb-4 col-codigo sortable" onclick="sortInventory('codigo')">Código <i class="fas fa-sort sort-icon" id="sort-codigo"></i></th>
+                                <th class="pb-4 col-tipo sortable" onclick="sortInventory('tipo')">Tipo <i class="fas fa-sort sort-icon" id="sort-tipo"></i></th>
+                                <th class="pb-4 col-custo sortable" onclick="sortInventory('custo')">Custo <i class="fas fa-sort sort-icon" id="sort-custo"></i></th>
+                                <th class="pb-4 col-venda sortable" onclick="sortInventory('venda')">Venda <i class="fas fa-sort sort-icon" id="sort-venda"></i></th>
+                                <th class="pb-4 col-local sortable" onclick="sortInventory('status')">Localização <i class="fas fa-sort sort-icon" id="sort-status"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-table-body" class="text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Central do Revendedor -->
+        <div id="content-central" class="tab-content hidden space-y-6">
+            <div class="glass-card p-8">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 border-b border-slate-800 pb-6">
+                    <div class="flex-grow w-full md:w-auto">
+                        <label class="block text-xs uppercase text-slate-400 mb-2 ml-1">Selecione o Revendedor</label>
+                        <div class="flex gap-3">
+                            <select id="select-revendedor" class="w-full md:w-96 text-lg font-semibold" onchange="loadRevendedorData()">
+                                <option value="">Escolha um parceiro...</option>
+                            </select>
+                            <div id="revendedor-contato-display" class="flex items-center text-amber-500 text-sm italic"></div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="openModal('modal-add-revendedor')" class="btn-gold px-6 py-3 rounded-lg text-sm">
+                            <i class="fas fa-user-plus mr-2"></i>Novo Parceiro
+                        </button>
+                    </div>
+                </div>
+
+                <div id="central-empty-state" class="py-20 text-center">
+                    <i class="fas fa-users text-6xl text-slate-800 mb-4"></i>
+                    <p class="text-slate-500">Selecione um revendedor para gerenciar consignações e acertos.</p>
+                </div>
+
+                <div id="central-content" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="space-y-6">
+                        <div class="p-6 bg-navy-dark rounded-xl border border-slate-800">
+                            <h3 class="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2">
+                                <i class="fas fa-paper-plane"></i> Enviar Novas Peças
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-[10px] uppercase text-slate-400 mb-1">Bipar Código</label>
+                                    <input type="text" id="rep-codigo" placeholder="Bipe aqui..." class="w-full" oninput="autoFetchItem()">
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-[10px] uppercase text-slate-400 mb-1">Custo (Ref)</label>
+                                        <input type="number" id="rep-custo" readonly class="w-full opacity-50 bg-slate-900">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] uppercase text-slate-400 mb-1">Venda (Ref)</label>
+                                        <input type="number" id="rep-venda" readonly class="w-full opacity-50 bg-slate-900">
+                                    </div>
+                                </div>
+                                <button onclick="saveRepasse()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-all">
+                                    Confirmar Envio
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="p-6 bg-navy-dark rounded-xl border border-amber-900/30">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-bold text-amber-500 flex items-center gap-2">
+                                    <i class="fas fa-check-double"></i> Acerto Mensal
+                                </h3>
+                                <div class="bg-amber-500/10 text-amber-500 text-[10px] px-2 py-1 rounded uppercase font-bold">Bipe o que SOBROU</div>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <label class="block text-[10px] uppercase text-slate-400 mb-1">Bipar Peças Devolvidas</label>
+                                <input type="text" id="conf-codigo" placeholder="Bipe aqui o que retornou..." class="w-full border-amber-500/50 focus:border-amber-500" onkeypress="if(event.key==='Enter') markAsDevolvido()">
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-2 mb-6">
+                                <div class="p-3 bg-slate-900 rounded text-center">
+                                    <p class="text-[9px] text-slate-500 uppercase">Com Parceiro</p>
+                                    <p id="acerto-total-pecas" class="text-lg font-bold">0</p>
+                                </div>
+                                <div class="p-3 bg-green-900/20 rounded text-center border border-green-900/30">
+                                    <p class="text-[9px] text-green-500 uppercase">Devolvido</p>
+                                    <p id="acerto-devolvidas" class="text-lg font-bold text-green-400">0</p>
+                                </div>
+                                <div class="p-3 bg-blue-900/20 rounded text-center border border-blue-900/30">
+                                    <p class="text-[9px] text-blue-500 uppercase">Vendido</p>
+                                    <p id="acerto-vendidas" class="text-lg font-bold text-blue-400">0</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-3 mb-6 p-4 bg-slate-900/50 rounded-lg border border-slate-800">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-slate-400">Subtotal Vendas:</span>
+                                    <span id="acerto-valor-venda" class="font-bold">R$ 0,00</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm text-slate-400">Comissão (%):</span>
+                                        <input type="number" id="acerto-comissao-perc" value="30" class="w-16 h-8 text-xs p-1 !bg-slate-800" oninput="calculateAcerto()">
+                                    </div>
+                                    <span id="acerto-valor-comissao" class="font-bold text-red-400">- R$ 0,00</span>
+                                </div>
+                                <div class="pt-2 border-t border-slate-800 flex justify-between items-center">
+                                    <span class="text-sm font-bold text-white">Líquido Luxus:</span>
+                                    <span id="acerto-valor-liquido" class="text-xl font-bold text-green-400">R$ 0,00</span>
+                                </div>
+                            </div>
+
+                            <button onclick="finalizeAcerto()" class="w-full py-4 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold shadow-lg transition-all flex items-center justify-center gap-2">
+                                <i class="fas fa-file-invoice-dollar"></i> Finalizar e Liquidar Vendas
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2 glass-card p-6">
+                        <h3 class="text-lg font-bold text-white mb-4">Peças em Consignação</h3>
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="text-slate-500 text-[10px] uppercase tracking-widest border-b border-slate-800">
+                                        <th class="pb-3">Código</th>
+                                        <th class="pb-3">Data</th>
+                                        <th class="pb-3 text-right">Custo</th>
+                                        <th class="pb-3 text-right">Venda</th>
+                                        <th class="pb-3 text-center">Status</th>
+                                        <th class="pb-3 text-center">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="central-table-body" class="text-sm"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Configurações -->
+        <div id="content-config" class="tab-content hidden max-w-4xl mx-auto space-y-6">
+            <div class="glass-card p-8">
+                <h2 class="text-2xl font-bold mb-6 text-amber-500 brand-font">Configurações do Sistema</h2>
+                
+                <div class="space-y-8">
+                    <div class="p-6 bg-navy-dark rounded-xl border border-slate-800">
+                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                            <i class="fab fa-google text-blue-400"></i> Conexão Google Sheets
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs uppercase text-slate-400 mb-2">URL do Google Apps Script</label>
+                                <input type="text" id="config-script-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full">
+                            </div>
+                            <div>
+                                <label class="block text-xs uppercase text-slate-400 mb-2">Chave API ImgBB (Upload de Fotos)</label>
+                                <input type="text" id="config-imgbb-key" placeholder="Sua chave API do ImgBB" class="w-full">
+                            </div>
+                            <button onclick="saveConfig()" class="btn-gold px-8 py-3 rounded-lg">Salvar Configurações</button>
+                        </div>
+                    </div>
+
+                    <div class="p-6 bg-navy-dark rounded-xl border border-slate-800">
+                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                            <i class="fas fa-tags text-amber-500"></i> Tipos de Joia
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <label class="block text-xs uppercase text-slate-400 mb-2">Cadastrar Novo Tipo</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="new-type-name" placeholder="Ex: Pulseira Masculina" class="flex-grow">
+                                    <button onclick="saveNewType()" class="btn-gold px-4 rounded-lg">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs uppercase text-slate-400 mb-2">Tipos Atuais</label>
+                                <div id="types-list" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6 bg-navy-dark rounded-xl border border-slate-800">
+                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                            <i class="fas fa-lock text-red-400"></i> Segurança
+                        </h3>
+                        <p class="text-xs text-slate-400 mb-4">O PIN padrão é <code class="bg-slate-700 px-1 rounded">1234</code>. Troque-o abaixo.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                            <div>
+                                <label class="block text-xs uppercase text-slate-400 mb-2">PIN Atual</label>
+                                <input type="password" id="pin-atual" placeholder="••••" class="w-full" maxlength="10">
+                            </div>
+                            <div>
+                                <label class="block text-xs uppercase text-slate-400 mb-2">Novo PIN</label>
+                                <input type="password" id="pin-novo" placeholder="••••" class="w-full" maxlength="10">
+                            </div>
+                            <button onclick="changePin()" class="bg-red-600/20 border border-red-600/30 text-red-400 hover:bg-red-600 hover:text-white px-6 py-3 rounded-lg transition-all font-semibold">
+                                <i class="fas fa-key mr-2"></i>Alterar PIN
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal PIN: Proteção de Configurações -->
+    <div id="modal-pin" class="fixed inset-0 z-[70] hidden flex items-center justify-center p-4 modal-overlay">
+        <div class="glass-card w-full max-w-sm shadow-2xl border border-amber-500/30">
+            <div class="p-8 text-center space-y-6">
+                <div class="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto">
+                    <i class="fas fa-lock text-amber-500 text-2xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-white brand-font">Área Restrita</h3>
+                    <p class="text-slate-400 text-sm mt-1">Insira o PIN para acessar as Configurações</p>
+                </div>
+                <div>
+                    <input type="password" id="pin-input" placeholder="••••" class="w-full text-center text-2xl tracking-widest" maxlength="10"
+                        onkeypress="if(event.key==='Enter') checkPin()">
+                    <p id="pin-error" class="text-red-400 text-xs mt-2 hidden"><i class="fas fa-exclamation-circle mr-1"></i>PIN incorreto. Tente novamente.</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="document.getElementById('modal-pin').classList.add('hidden')" class="flex-1 py-3 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 transition-all">Cancelar</button>
+                    <button onclick="checkPin()" class="flex-1 btn-gold py-3 rounded-lg">Entrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-edit-item" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 modal-overlay">
+        <div class="glass-card w-full max-w-2xl overflow-hidden shadow-2xl border-amber-500/30">
+            <div class="bg-navy-dark p-6 border-b border-slate-800 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-amber-500 brand-font">Editar Joia</h3>
+                <button onclick="closeModal('modal-edit-item')" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-8 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div id="edit-foto-container" class="w-full aspect-square bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-center overflow-hidden relative group">
+                            <img id="edit-foto-preview" src="" class="w-full h-full object-cover hidden">
+                            <div id="edit-foto-placeholder" class="text-slate-700 text-6xl"><i class="fas fa-image"></i></div>
+                            <button onclick="removeFoto()" id="btn-remove-foto" class="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full hidden group-hover:block transition-all">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        <div class="relative">
+                            <input type="file" id="file-upload" class="hidden" accept="image/*" onchange="handleFileUpload(this)">
+                            <button onclick="document.getElementById('file-upload').click()" class="w-full py-3 border-2 border-dashed border-slate-700 rounded-xl text-slate-400 hover:border-amber-500 hover:text-amber-500 transition-all">
+                                <i class="fas fa-cloud-upload-alt mr-2"></i>Clique para enviar foto
+                            </button>
+                            <div id="upload-status" class="text-[10px] text-center mt-2 hidden">Enviando...</div>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <input type="hidden" id="edit-id">
+                        <div>
+                            <label class="block text-[10px] uppercase text-slate-400 mb-1">Código</label>
+                            <input type="text" id="edit-codigo" class="w-full">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase text-slate-400 mb-1">Tipo de Joia</label>
+                            <select id="edit-tipo" class="w-full"></select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] uppercase text-slate-400 mb-1">Preço Custo</label>
+                                <input type="number" id="edit-custo" class="w-full">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] uppercase text-slate-400 mb-1">Preço Venda</label>
+                                <input type="number" id="edit-venda" class="w-full">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase text-slate-400 mb-1">Localização</label>
+                            <select id="edit-local" class="w-full"></select>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-3 pt-6 border-t border-slate-800">
+                    <button onclick="deleteItem()" class="px-6 py-3 bg-red-600/10 text-red-500 border border-red-600/20 rounded-lg hover:bg-red-600 hover:text-white transition-all">
+                        <i class="fas fa-trash mr-2"></i>Excluir
+                    </button>
+                    <div class="flex-grow"></div>
+                    <button onclick="closeModal('modal-edit-item')" class="px-6 py-3 bg-slate-800 text-slate-300 rounded-lg">Cancelar</button>
+                    <button onclick="saveEditItem()" class="btn-gold px-10 py-3 rounded-lg">Salvar Alterações</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-add-revendedor" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 modal-overlay">
+        <div class="glass-card w-full max-w-md shadow-2xl">
+            <div class="p-6 border-b border-slate-800 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-amber-500 brand-font">Novo Parceiro</h3>
+                <button onclick="closeModal('modal-add-revendedor')" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs uppercase text-slate-400 mb-2">Nome do Revendedor</label>
+                    <input type="text" id="new-rev-nome" placeholder="Nome completo" class="w-full">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase text-slate-400 mb-2">Contato (WhatsApp)</label>
+                    <input type="text" id="new-rev-contato" placeholder="(00) 00000-0000" class="w-full">
+                </div>
+                <button onclick="saveNewRevendedor()" class="btn-gold w-full py-3 rounded-lg mt-4">Cadastrar Parceiro</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-view-foto" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4 modal-overlay" onclick="closeModal('modal-view-foto')">
+        <div class="max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl shadow-2xl border-2 border-amber-500/20" onclick="event.stopPropagation()">
+            <img id="view-foto-img" src="" class="w-full h-full object-contain">
+        </div>
+    </div>
+
+    <script>
+        // --- State ---
+        let inventory = [];
+        let revendedores = [];
+        let repasses = [];
+        let tipos = [];
+        let scriptUrl = localStorage.getItem('luxus_script_url') || '';
+        let imgbbKey = localStorage.getItem('luxus_imgbb_key') || '';
+        let currentSort = { field: 'data', direction: 'desc' };
+        let visibleCols = JSON.parse(localStorage.getItem('luxus_visible_cols')) || {
+            'col-foto': true, 'col-data': true, 'col-codigo': true, 'col-tipo': true, 'col-custo': true, 'col-venda': true, 'col-local': true
+        };
+        let conferidos = new Set();
+
+        // --- Init ---
+        document.addEventListener('DOMContentLoaded', () => {
+            applyColVisibility();
+            
+            // Verificar hash na URL para abrir a aba correta
+            const hash = window.location.hash.substring(1);
+            if (hash === 'central') {
+                switchTabDirect('central');
+            } else if (hash === 'config') {
+                openPinModal();
+            } else {
+                switchTabDirect('consulta');
+            }
+            
+            if (scriptUrl) {
+                loadData();
+                document.getElementById('config-script-url').value = scriptUrl;
+                document.getElementById('config-imgbb-key').value = imgbbKey;
+            } else {
+                pinUnlocked = true;
+                switchTabDirect('config');
+            }
+            document.getElementById('ent-codigo').focus();
+        });
+
+        // --- Navegação com URL ---
+        function goHome() {
+            window.location.hash = '';
+            switchTabDirect('consulta');
+        }
+
+        function switchTab(tab) {
+            if (tab === 'config') { 
+                openPinModal(); 
+                return; 
+            }
+            
+            // Atualizar URL
+            window.location.hash = tab;
+            
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            if (tab === 'consulta') document.getElementById('ent-codigo').focus();
+        }
+
+        function switchTabDirect(tab) {
+            window.location.hash = tab;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            if (tab === 'consulta') document.getElementById('ent-codigo').focus();
+        }
+
+        // --- PIN / Senha de Configurações ---
+        const CONFIG_PIN = localStorage.getItem('luxus_config_pin') || '1234';
+        let pinUnlocked = false;
+
+        function openPinModal() {
+            if (pinUnlocked) { 
+                switchTabDirect('config'); 
+                return; 
+            }
+            document.getElementById('pin-input').value = '';
+            document.getElementById('pin-error').classList.add('hidden');
+            document.getElementById('modal-pin').classList.remove('hidden');
+            setTimeout(() => document.getElementById('pin-input').focus(), 100);
+        }
+
+        function checkPin() {
+            const entered = document.getElementById('pin-input').value;
+            const stored = localStorage.getItem('luxus_config_pin') || '1234';
+            if (entered === stored) {
+                pinUnlocked = true;
+                document.getElementById('modal-pin').classList.add('hidden');
+                switchTabDirect('config');
+                setTimeout(() => { pinUnlocked = false; }, 5 * 60 * 1000);
+            } else {
+                document.getElementById('pin-error').classList.remove('hidden');
+                document.getElementById('pin-input').value = '';
+                document.getElementById('pin-input').focus();
+            }
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // --- API Calls (CORRIGIDAS - sem mode: 'no-cors') ---
+        async function loadData() {
+            if (!scriptUrl) return;
+            try {
+                const [invRes, repRes, revRes, tipRes] = await Promise.all([
+                    fetch(scriptUrl + '?action=getInventario'),
+                    fetch(scriptUrl + '?action=getRepasses'),
+                    fetch(scriptUrl + '?action=getRevendedores'),
+                    fetch(scriptUrl + '?action=getTipos')
+                ]);
+                const [invData, repData, revData, tipData] = await Promise.all([
+                    invRes.json(), repRes.json(), revRes.json(), tipRes.json()
+                ]);
+
+                inventory = (Array.isArray(invData) ? invData : []).map(i => ({
+                    row:    i.rowId,
+                    codigo: i.Codigo || '',
+                    data:   i.Data   || '',
+                    status: i.Status || '',
+                    custo:  i.Custo  || 0,
+                    venda:  i.Venda  || 0,
+                    foto:   i.Foto   || '',
+                    tipo:   i.Tipo   || ''
+                }));
+
+                revendedores = (Array.isArray(revData) ? revData : []).map(r => ({
+                    row:     r.rowId,
+                    nome:    r.Nome    || '',
+                    contato: r.Contato || ''
+                }));
+
+                repasses = (Array.isArray(repData) ? repData : []).map(r => ({
+                    row:        r.rowId,
+                    revendedor: r.Revendedor || '',
+                    codigo:     r.Codigo     || '',
+                    custo:      r.Custo      || 0,
+                    venda:      r.Venda      || 0,
+                    data:       r.Data       || '',
+                    status:     r.Status     || ''
+                }));
+
+                tipos = (Array.isArray(tipData) ? tipData : []).map(t => ({
+                    row:  t.rowId,
+                    nome: t.Nome || ''
+                }));
+
+                renderInventory();
+                renderRevendedoresSelect();
+                renderTypesList();
+                updateDashboard();
+                updateEditTypeSelects();
+            } catch (error) { 
+                console.error('Erro ao carregar dados:', error);
+                alert('Erro ao carregar dados. Verifique a URL do Google Apps Script e se ele está publicado como "Qualquer pessoa" pode acessar.');
+            }
+        }
+
+        async function callApi(action, data) {
+            if (!scriptUrl) {
+                alert('Configure a URL do Google Apps Script nas Configurações primeiro!');
+                return false;
+            }
+            
+            const actionMap = {
+                'saveItem':       'addInventario',
+                'updateItem':     'editInventario',
+                'deleteItem':     'delInventario',
+                'saveRepasse':    'addRepasse',
+                'deleteRepasse':  'delRepasse',
+                'finalizeAcerto': 'fechamentoParcial',
+                'saveRevendedor': 'addRevendedor',
+                'editRevendedor': 'editRevendedor',
+                'deleteRevendedor':'delRevendedor',
+                'saveType':       'addTipo',
+                'deleteType':     'delTipo'
+            };
+            const mappedAction = actionMap[action] || action;
+
+            let payload = { action: mappedAction };
+            if (mappedAction === 'addInventario')    payload = { ...payload, codigo: data.codigo, tipo: data.tipo || '', data: data.data };
+            else if (mappedAction === 'editInventario') payload = { ...payload, rowId: data.row, codigo: data.codigo, tipo: data.tipo || '', custo: data.custo, venda: data.venda, status: data.status, foto: data.foto || '' };
+            else if (mappedAction === 'delInventario')  payload = { ...payload, rowId: data.row };
+            else if (mappedAction === 'addRepasse')     payload = { ...payload, revendedor: data.revendedor, codigo: data.codigo, custo: data.custo, venda: data.venda, data: data.data };
+            else if (mappedAction === 'delRepasse')     payload = { ...payload, rowId: data.row };
+            else if (mappedAction === 'fechamentoParcial') payload = { ...payload, revendedor: data.revendedor, codigos: data.codigosVendidos, obs: 'Acerto mensal' };
+            else if (mappedAction === 'addRevendedor')  payload = { ...payload, nome: data.nome, contato: data.contato || '' };
+            else if (mappedAction === 'editRevendedor') payload = { ...payload, nomeAntigo: data.nomeAntigo, novoNome: data.novoNome, novoContato: data.novoContato || '' };
+            else if (mappedAction === 'delRevendedor')  payload = { ...payload, nome: data.nome };
+            else if (mappedAction === 'addTipo')        payload = { ...payload, nome: data.nome };
+            else if (mappedAction === 'delTipo')        payload = { ...payload, nome: tipos.find(t => t.row === data.row)?.nome || '' };
+            else payload = { ...payload, ...data };
+
+            try {
+                const response = await fetch(scriptUrl, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.text();
+                if (result === 'Sucesso' || result === 'success') {
+                    setTimeout(loadData, 1000);
+                    return true;
+                }
+                return false;
+            } catch (error) { 
+                console.error('Erro na chamada API:', error);
+                return false; 
+            }
+        }
+
+        // --- Outras funções (renderInventory, sortInventory, etc) ---
+        function renderInventory() {
+            const tbody = document.getElementById('inventory-table-body');
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            
+            let filtered = inventory.filter(item => 
+                item.codigo.toLowerCase().includes(searchTerm) || 
+                item.tipo.toLowerCase().includes(searchTerm) || 
+                item.status.toLowerCase().includes(searchTerm)
+            );
+
+            filtered.sort((a, b) => {
+                let valA = a[currentSort.field];
+                let valB = b[currentSort.field];
+                if (currentSort.field === 'custo' || currentSort.field === 'venda') {
+                    valA = parseFloat(valA) || 0; valB = parseFloat(valB) || 0;
+                }
+                if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            tbody.innerHTML = '';
+            filtered.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-slate-800/50 hover:bg-slate-800/30 transition-all group';
+                const statusClass = item.status === 'Em Estoque' ? 'status-estoque' : (item.status === 'Vendido' ? 'status-vendido' : 'status-consignado');
+                
+                tr.innerHTML = `
+                    <td class="py-4 col-foto">
+                        <div class="w-12 h-12 rounded-lg bg-slate-900 border border-slate-700 overflow-hidden cursor-pointer hover:scale-110 transition-all" onclick="viewFoto('${item.foto}')">
+                            ${item.foto ? `<img src="${item.foto}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-slate-700"><i class="fas fa-image"></i></div>`}
+                        </div>
+                    </td>
+                    <td class="py-4 text-slate-500 text-xs col-data">${item.data}</td>
+                    <td class="py-4 font-bold text-white col-codigo">
+                        <span class="cursor-pointer hover:text-amber-500" onclick="editItem(${item.row})">${item.codigo}</span>
+                    </td>
+                    <td class="py-4 col-tipo"><span class="bg-slate-800 px-2 py-1 rounded text-[10px] text-slate-300">${item.tipo || 'Geral'}</span></td>
+                    <td class="py-4 font-mono text-slate-300 col-custo">R$ ${parseFloat(item.custo || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td class="py-4 font-mono text-amber-500 font-bold col-venda">R$ ${parseFloat(item.venda || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td class="py-4 col-local">
+                        <button onclick="editItem(${item.row})" class="status-pill ${statusClass}">${item.status}</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            applyColVisibility();
+        }
+
+        function sortInventory(field) {
+            if (currentSort.field === field) currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            else { currentSort.field = field; currentSort.direction = 'asc'; }
+            document.querySelectorAll('.sort-icon').forEach(i => i.className = 'fas fa-sort sort-icon');
+            const icon = document.getElementById(`sort-${field}`);
+            if (icon) icon.className = `fas fa-sort-${currentSort.direction === 'asc' ? 'up' : 'down'} sort-icon sort-active`;
+            renderInventory();
+        }
+
+        async function saveNewItem() {
+            const codigo = document.getElementById('ent-codigo').value.trim();
+            const tipo = document.getElementById('ent-tipo').value;
+            const custo = document.getElementById('ent-custo').value;
+            const venda = document.getElementById('ent-venda').value;
+            if (!codigo) return alert('Insira o código!');
+            await callApi('saveItem', { codigo, tipo, custo, venda, status: 'Em Estoque', data: new Date().toLocaleDateString('pt-BR') });
+            document.getElementById('ent-codigo').value = '';
+            document.getElementById('ent-cust').value = '';
+            document.getElementById('ent-venda').value = '';
+            document.getElementById('ent-codigo').focus();
+        }
+
+        function renderRevendedoresSelect() {
+            const select = document.getElementById('select-revendedor');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">Escolha um parceiro...</option>';
+            revendedores.forEach(rev => {
+                const opt = document.createElement('option');
+                opt.value = rev.nome; opt.textContent = rev.nome;
+                select.appendChild(opt);
+            });
+            select.value = currentVal;
+            const editLocal = document.getElementById('edit-local');
+            if (editLocal) {
+                editLocal.innerHTML = `<option value="Em Estoque">Em Estoque</option><option value="Vendido">Vendido</option><optgroup label="Revendedores">${revendedores.map(r => `<option value="${r.nome}">${r.nome}</option>`).join('')}</optgroup>`;
+            }
+        }
+
+        function loadRevendedorData() {
+            const nome = document.getElementById('select-revendedor').value;
+            const content = document.getElementById('central-content');
+            const empty = document.getElementById('central-empty-state');
+            const contatoDisplay = document.getElementById('revendedor-contato-display');
+            if (!nome) { content.classList.add('hidden'); empty.classList.remove('hidden'); contatoDisplay.innerHTML = ''; return; }
+            content.classList.remove('hidden'); empty.classList.add('hidden');
+            const rev = revendedores.find(r => r.nome === nome);
+            contatoDisplay.innerHTML = rev && rev.contato ? `<i class="fab fa-whatsapp mr-2"></i> ${rev.contato}` : '';
+            renderCentralTable(); conferidos.clear(); calculateAcerto();
+        }
+
+        function renderCentralTable() {
+            const nome = document.getElementById('select-revendedor').value;
+            const tbody = document.getElementById('central-table-body');
+            const items = repasses.filter(r => r.revendedor === nome);
+            tbody.innerHTML = '';
+            items.forEach(item => {
+                const isConferido = conferidos.has(item.codigo);
+                const tr = document.createElement('tr');
+                tr.className = `border-b border-slate-800/50 hover:bg-slate-800/30 transition-all ${isConferido ? 'bg-green-900/10' : ''}`;
+                tr.innerHTML = `<td class="py-3 font-bold ${isConferido ? 'text-green-400' : 'text-slate-300'}">${item.codigo}</td><td class="py-3 text-slate-500 text-xs">${item.data}</td><td class="py-3 text-right text-slate-400">R$ ${parseFloat(item.custo || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td><td class="py-3 text-right font-bold text-amber-500">R$ ${parseFloat(item.venda || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td><td class="py-3 text-center"><span class="status-pill ${isConferido ? 'status-estoque' : 'status-consignado'}">${isConferido ? 'Devolvido' : 'Pendente'}</span></td><td class="py-3 text-center"><button onclick="deleteRepasse(${item.row})" class="text-slate-600 hover:text-red-500"><i class="fas fa-trash"></i></button></td>`;
+                tbody.appendChild(tr);
+            });
+            document.getElementById('acerto-total-pecas').textContent = items.length;
+        }
+
+        function autoFetchItem() {
+            const codigo = document.getElementById('rep-codigo').value.trim();
+            const item = inventory.find(i => i.codigo === codigo && i.status === 'Em Estoque');
+            if (item) { document.getElementById('rep-custo').value = item.custo; document.getElementById('rep-venda').value = item.venda; }
+            else { document.getElementById('rep-custo').value = ''; document.getElementById('rep-venda').value = ''; }
+        }
+
+        async function saveRepasse() {
+            const revendedor = document.getElementById('select-revendedor').value;
+            const codigo = document.getElementById('rep-codigo').value.trim();
+            const custo = document.getElementById('rep-custo').value;
+            const venda = document.getElementById('rep-venda').value;
+            if (!revendedor || !codigo) return alert('Selecione o revendedor e o código!');
+            await callApi('saveRepasse', { revendedor, codigo, custo, venda, data: new Date().toLocaleDateString('pt-BR') });
+            document.getElementById('rep-codigo').value = ''; 
+            document.getElementById('rep-custo').value = '';
+            document.getElementById('rep-venda').value = '';
+            document.getElementById('rep-codigo').focus();
+        }
+
+        function markAsDevolvido() {
+            const input = document.getElementById('conf-codigo');
+            const codigo = input.value.trim();
+            const revendedor = document.getElementById('select-revendedor').value;
+            if (repasses.find(r => r.revendedor === revendedor && r.codigo === codigo)) { conferidos.add(codigo); renderCentralTable(); calculateAcerto(); }
+            else alert('Código não encontrado.');
+            input.value = ''; input.focus();
+        }
+
+        function calculateAcerto() {
+            const revendedor = document.getElementById('select-revendedor').value;
+            const items = repasses.filter(r => r.revendedor === revendedor);
+            const comissaoPerc = parseFloat(document.getElementById('acerto-comissao-perc').value) || 0;
+            const vendidas = items.filter(i => !conferidos.has(i.codigo));
+            const totalVenda = vendidas.reduce((acc, i) => acc + parseFloat(i.venda || 0), 0);
+            const valorComissao = totalVenda * (comissaoPerc / 100);
+            const liquido = totalVenda - valorComissao;
+            document.getElementById('acerto-devolvidas').textContent = conferidos.size;
+            document.getElementById('acerto-vendidas').textContent = vendidas.length;
+            document.getElementById('acerto-valor-venda').textContent = `R$ ${totalVenda.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('acerto-valor-comissao').textContent = `- R$ ${valorComissao.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('acerto-valor-liquido').textContent = `R$ ${liquido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        }
+
+        async function finalizeAcerto() {
+            const revendedor = document.getElementById('select-revendedor').value;
+            const items = repasses.filter(r => r.revendedor === revendedor);
+            const vendidas = items.filter(i => !conferidos.has(i.codigo));
+            if (!confirm('Deseja finalizar o acerto?')) return;
+            await callApi('finalizeAcerto', { revendedor, codigosVendidos: vendidas.map(v => v.codigo) });
+            conferidos.clear(); loadRevendedorData();
+        }
+
+        function changePin() {
+            const atual = document.getElementById('pin-atual').value;
+            const novo = document.getElementById('pin-novo').value.trim();
+            const stored = localStorage.getItem('luxus_config_pin') || '1234';
+            if (atual !== stored) { alert('PIN atual incorreto!'); return; }
+            if (!novo || novo.length < 4) { alert('O novo PIN deve ter pelo menos 4 caracteres.'); return; }
+            localStorage.setItem('luxus_config_pin', novo);
+            document.getElementById('pin-atual').value = '';
+            document.getElementById('pin-novo').value = '';
+            alert('PIN alterado com sucesso!');
+        }
+
+        function saveConfig() {
+            scriptUrl = document.getElementById('config-script-url').value.trim();
+            imgbbKey = document.getElementById('config-imgbb-key').value.trim();
+            localStorage.setItem('luxus_script_url', scriptUrl);
+            localStorage.setItem('luxus_imgbb_key', imgbbKey);
+            loadData(); alert('Configurações salvas!');
+        }
+
+        async function saveNewType() {
+            const nome = document.getElementById('new-type-name').value.trim();
+            if (!nome) return;
+            await callApi('saveType', { nome });
+            document.getElementById('new-type-name').value = '';
+        }
+
+        function renderTypesList() {
+            const list = document.getElementById('types-list'); 
+            if (!list) return;
+            list.innerHTML = '';
+            if (!tipos.length) {
+                list.innerHTML = '<p class="text-slate-500 text-xs italic">Nenhum tipo cadastrado.</p>';
+                return;
+            }
+            tipos.forEach(t => {
+                const div = document.createElement('div'); div.className = 'flex justify-between items-center p-2 bg-slate-800 rounded';
+                div.innerHTML = `<span class="text-sm">${t.nome}</span><button onclick="deleteType(${t.row})" class="text-red-500 hover:text-red-400"><i class="fas fa-trash-alt"></i></button>`;
+                list.appendChild(div);
+            });
+        }
+
+        function updateEditTypeSelects() {
+            const selects = ['ent-tipo', 'edit-tipo'];
+            selects.forEach(id => {
+                const el = document.getElementById(id); 
+                if (!el) return;
+                const currentVal = el.value;
+                el.innerHTML = '<option value="">Geral</option>' + tipos.map(t => `<option value="${t.nome}">${t.nome}</option>`).join('');
+                if (currentVal && tipos.some(t => t.nome === currentVal)) el.value = currentVal;
+            });
+        }
+
+        async function deleteType(row) { if (confirm('Excluir tipo?')) await callApi('deleteType', { row }); }
+
+        function editItem(row) {
+            const item = inventory.find(i => i.row == row); if (!item) return;
+            document.getElementById('edit-id').value = item.row;
+            document.getElementById('edit-codigo').value = item.codigo;
+            document.getElementById('edit-tipo').value = item.tipo;
+            document.getElementById('edit-custo').value = item.custo;
+            document.getElementById('edit-venda').value = item.venda;
+            document.getElementById('edit-local').value = item.status;
+            const preview = document.getElementById('edit-foto-preview');
+            const placeholder = document.getElementById('edit-foto-placeholder');
+            const btnRemove = document.getElementById('btn-remove-foto');
+            if (item.foto && item.foto !== '') { preview.src = item.foto; preview.classList.remove('hidden'); placeholder.classList.add('hidden'); btnRemove.classList.remove('hidden'); }
+            else { preview.classList.add('hidden'); placeholder.classList.remove('hidden'); btnRemove.classList.add('hidden'); }
+            openModal('modal-edit-item');
+        }
+
+        async function saveEditItem() {
+            const row = document.getElementById('edit-id').value;
+            const fotoElem = document.getElementById('edit-foto-preview');
+            const fotoUrl = (fotoElem.src && fotoElem.src.startsWith('http')) ? fotoElem.src : '';
+            const data = { 
+                row, 
+                codigo: document.getElementById('edit-codigo').value, 
+                tipo: document.getElementById('edit-tipo').value, 
+                custo: document.getElementById('edit-custo').value, 
+                venda: document.getElementById('edit-venda').value, 
+                status: document.getElementById('edit-local').value, 
+                foto: fotoUrl 
+            };
+            await callApi('updateItem', data); 
+            closeModal('modal-edit-item');
+        }
+
+        async function deleteItem() { 
+            if (confirm('Excluir permanentemente?')) { 
+                await callApi('deleteItem', { row: document.getElementById('edit-id').value }); 
+                closeModal('modal-edit-item'); 
+            } 
+        }
+
+        async function handleFileUpload(input) {
+            if (!imgbbKey) return alert('Configure a chave da API ImgBB nas Configurações!');
+            const file = input.files[0]; if (!file) return;
+            const status = document.getElementById('upload-status'); 
+            if (status) status.classList.remove('hidden');
+            const formData = new FormData(); formData.append('image', file);
+            try {
+                const response = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, { method: 'POST', body: formData });
+                const result = await response.json();
+                if (result.success) {
+                    const preview = document.getElementById('edit-foto-preview');
+                    const placeholder = document.getElementById('edit-foto-placeholder');
+                    const btnRemove = document.getElementById('btn-remove-foto');
+                    preview.src = result.data.url;
+                    preview.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+                    if (btnRemove) btnRemove.classList.remove('hidden');
+                } else {
+                    alert('Erro no upload: ' + (result.error?.message || 'Desconhecido'));
+                }
+            } catch (e) { alert('Erro no upload: ' + e.message); } 
+            finally { if (status) status.classList.add('hidden'); }
+        }
+
+        function removeFoto() { 
+            const preview = document.getElementById('edit-foto-preview');
+            const placeholder = document.getElementById('edit-foto-placeholder');
+            const btnRemove = document.getElementById('btn-remove-foto');
+            if (preview) preview.src = ''; 
+            if (preview) preview.classList.add('hidden'); 
+            if (placeholder) placeholder.classList.remove('hidden'); 
+            if (btnRemove) btnRemove.classList.add('hidden'); 
+        }
+        
+        function viewFoto(url) { 
+            if (!url || url === '') return; 
+            const img = document.getElementById('view-foto-img');
+            if (img) img.src = url; 
+            openModal('modal-view-foto'); 
+        }
+
+        function updateDashboard() {
+            const totalPecas = inventory.length;
+            const capitalEstoque = inventory.filter(i => i.status === 'Em Estoque').reduce((acc, i) => acc + (parseFloat(i.custo) || 0), 0);
+            const emConsignacao = inventory.filter(i => i.status !== 'Em Estoque' && i.status !== 'Vendido').reduce((acc, i) => acc + (parseFloat(i.venda) || 0), 0);
+            const totalVendido = inventory.filter(i => i.status === 'Vendido').reduce((acc, i) => acc + (parseFloat(i.venda) || 0), 0);
+            const dashTotal = document.getElementById('dash-total-pecas');
+            const dashCapital = document.getElementById('dash-capital-estoque');
+            const dashConsignacao = document.getElementById('dash-em-consignacao');
+            const dashVendido = document.getElementById('dash-total-vendido');
+            if (dashTotal) dashTotal.textContent = totalPecas;
+            if (dashCapital) dashCapital.textContent = `R$ ${capitalEstoque.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            if (dashConsignacao) dashConsignacao.textContent = `R$ ${emConsignacao.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            if (dashVendido) dashVendido.textContent = `R$ ${totalVendido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        }
+
+        function toggleCol(colId) { 
+            visibleCols[colId] = !visibleCols[colId]; 
+            localStorage.setItem('luxus_visible_cols', JSON.stringify(visibleCols)); 
+            applyColVisibility(); 
+        }
+        
+        function applyColVisibility() {
+            for (let col in visibleCols) {
+                document.querySelectorAll(`.${col}`).forEach(el => el.style.display = visibleCols[col] ? '' : 'none');
+                const cb = document.querySelector(`input[onchange="toggleCol('${col}')"]`); 
+                if (cb) cb.checked = visibleCols[col];
+            }
+        }
+
+        async function saveNewRevendedor() {
+            const nome = document.getElementById('new-rev-nome').value.trim();
+            const contato = document.getElementById('new-rev-contato').value.trim();
+            if (!nome) return; 
+            await callApi('saveRevendedor', { nome, contato }); 
+            closeModal('modal-add-revendedor');
+            document.getElementById('new-rev-nome').value = '';
+            document.getElementById('new-rev-contato').value = '';
+        }
+
+        async function deleteRepasse(row) { 
+            if (confirm('Cancelar repasse?')) await callApi('deleteRepasse', { row }); 
+        }
+
+    </script>
+</body>
+</html>
