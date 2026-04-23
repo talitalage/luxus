@@ -48,10 +48,11 @@
         .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(20, 27, 45, 0.9); display: none; justify-content: center; align-items: center; z-index: 9999; }
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: var(--navy-card); padding: 2rem; border-radius: 16px; width: 90%; max-width: 500px; border: 1px solid var(--gold); position: relative; }
-        .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
-        .status-estoque { background: rgba(34, 197, 94, 0.1); color: #4ade80; }
-        .status-consignado { background: rgba(197, 160, 89, 0.1); color: var(--gold); }
-        .status-vendido { background: rgba(255, 255, 255, 0.05); color: #94a3b8; }
+        .status-pill { padding: 6px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px; }
+        .status-pill:hover { filter: brightness(1.2); transform: translateY(-1px); }
+        .status-estoque { background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
+        .status-consignado { background: rgba(197, 160, 89, 0.1); color: var(--gold); border: 1px solid rgba(197, 160, 89, 0.2); }
+        .status-vendido { background: rgba(255, 255, 255, 0.05); color: #94a3b8; border: 1px solid rgba(255, 255, 255, 0.1); }
         .devolvido { background: rgba(34, 197, 94, 0.1) !important; border-left: 4px solid #4ade80 !important; opacity: 0.6; }
         .vendido-row { background: rgba(76, 139, 245, 0.1) !important; border-left: 4px solid var(--accent) !important; }
         .vendido-row td { color: var(--accent) !important; font-weight: 600; }
@@ -62,9 +63,11 @@
         .dash-card { padding: 1.5rem; display: flex; flex-direction: column; gap: 4px; }
         .dash-value { font-size: 1.5rem; font-weight: 700; color: white; }
         .dash-label { font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-        .col-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--text-muted); cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+        .col-toggle { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; color: var(--text-muted); cursor: pointer; padding: 8px 12px; border-radius: 8px; transition: all 0.2s; }
         .col-toggle:hover { background: rgba(255,255,255,0.05); color: white; }
-        .col-toggle input { width: 14px !important; height: 14px !important; cursor: pointer; }
+        .col-toggle input { width: 16px !important; height: 16px !important; cursor: pointer; margin: 0 !important; }
+        .dropdown-menu { position: absolute; right: 0; top: calc(100% + 8px); width: 220px; background: var(--navy-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); padding: 8px; z-index: 101; display: none; }
+        .group:hover .dropdown-menu { display: block; }
     </style>
 </head>
 <body>
@@ -72,7 +75,7 @@
     <div id="loading" class="loading-overlay"><div class="flex flex-col items-center"><div class="w-10 h-10 border-3 border-accent border-t-transparent rounded-full animate-spin mb-4"></div><p class="text-accent text-xs font-semibold uppercase">Luxus Cloud</p></div></div>
 
     <!-- Modais -->
-    <div id="modalEdit" class="modal"><div class="modal-content"><h3 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Editar Joia</h3><div class="space-y-4"><input type="hidden" id="editRowId"><div><label class="text-[10px] font-bold text-muted mb-1 block">CÓDIGO</label><input type="text" id="editCodigo" class="w-full"></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Custo (R$)</label><input type="number" id="editCusto" class="w-full" step="0.01"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Venda (R$)</label><input type="number" id="editVenda" class="w-full" step="0.01"></div></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Foto da Joia</label><div class="flex gap-2 items-center"><div class="upload-area flex-1" onclick="document.getElementById('fileUpload').click()"><p id="uploadStatus" class="text-xs text-muted">Clique para enviar imagem</p><input type="file" id="fileUpload" class="hidden" accept="image/*" onchange="handleFileUpload(this)"></div><button id="btnRemoverFoto" onclick="removerFoto()" class="p-3 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 hidden" title="Remover Foto">🗑️</button></div><input type="hidden" id="editFoto"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Localização</label><select id="editStatus" class="w-full"></select></div><div class="flex gap-3 pt-4"><button onclick="fecharModal()" class="flex-1 p-3 bg-navy-dark text-white rounded-lg font-bold">Cancelar</button><button onclick="salvarEdicao()" class="flex-1 p-3 bg-gold text-navy-dark rounded-lg font-bold">Salvar</button></div></div></div></div>
+    <div id="modalEdit" class="modal"><div class="modal-content"><h3 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Editar Joia</h3><div class="space-y-4"><input type="hidden" id="editRowId"><div><label class="text-[10px] font-bold text-muted mb-1 block">CÓDIGO</label><input type="text" id="editCodigo" class="w-full"></div><div><label class="text-[10px] font-bold text-muted mb-1 block">TIPO DE JOIA</label><input type="text" id="editTipo" class="w-full" placeholder="Ex: Pulseira Masculina"></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Custo (R$)</label><input type="number" id="editCusto" class="w-full" step="0.01"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Venda (R$)</label><input type="number" id="editVenda" class="w-full" step="0.01"></div></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Foto da Joia</label><div class="flex gap-2 items-center"><div class="upload-area flex-1" onclick="document.getElementById('fileUpload').click()"><p id="uploadStatus" class="text-xs text-muted">Clique para enviar imagem</p><input type="file" id="fileUpload" class="hidden" accept="image/*" onchange="handleFileUpload(this)"></div><button id="btnRemoverFoto" onclick="removerFoto()" class="p-3 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 hidden" title="Remover Foto">🗑️</button></div><input type="hidden" id="editFoto"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Localização</label><select id="editStatus" class="w-full"></select></div><div class="flex gap-3 pt-4"><button onclick="excluirItemNoModal()" class="p-3 bg-red-500/10 text-red-500 rounded-lg font-bold flex-none" title="Excluir Peça">🗑️</button><button onclick="fecharModal()" class="flex-1 p-3 bg-navy-dark text-white rounded-lg font-bold">Cancelar</button><button onclick="salvarEdicao()" class="flex-1 p-3 bg-gold text-navy-dark rounded-lg font-bold">Salvar</button></div></div></div></div>
     <div id="modalEditRev" class="modal"><div class="modal-content"><h3 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Editar Parceiro</h3><div class="space-y-4"><input type="hidden" id="editRevNomeAntigo"><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Nome</label><input type="text" id="editRevNovoNome" class="w-full"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Contato</label><input type="text" id="editRevNovoContato" class="w-full"></div><div class="flex gap-3 pt-4"><button onclick="fecharModalRev()" class="flex-1 p-3 bg-navy-dark text-white rounded-lg font-bold">Cancelar</button><button onclick="salvarEdicaoRev()" class="flex-1 p-3 bg-gold text-navy-dark rounded-lg font-bold">Salvar</button></div></div></div></div>
     <div id="modalPhoto" class="modal" onclick="fecharModalFoto()"><div class="modal-content !max-w-3xl !p-2 !bg-black border-none"><img id="photoView" src="" class="w-full h-auto rounded-lg shadow-2xl"></div></div>
 
@@ -108,7 +111,7 @@
             </div>
 
             <div class="bg-navy-dark/30 p-4 rounded-xl mb-8 flex flex-wrap items-center gap-4">
-                <div class="flex-1 min-w-[300px] relative"><input type="text" id="searchInventario" onkeyup="filtrarTabela()" placeholder="Buscar código ou status..." class="w-full !rounded-full !pl-10 !pr-4"></div>
+                <div class="flex-1 min-w-[300px] relative"><input type="text" id="searchInventario" onkeyup="filtrarTabela()" placeholder="Buscar código, tipo ou status..." class="w-full !rounded-full !pl-10 !pr-4"></div>
                 <div class="flex gap-2">
                     <button onclick="setFilter('Todos')" class="filter-pill p-2 px-4 rounded-full border border-white/10 active" data-filter="Todos">Todos</button>
                     <button onclick="setFilter('Em Estoque')" class="filter-pill p-2 px-4 rounded-full border border-white/10" data-filter="Em Estoque">Estoque</button>
@@ -116,13 +119,14 @@
                     <button onclick="setFilter('Vendido')" class="filter-pill p-2 px-4 rounded-full border border-white/10" data-filter="Vendido">Vendido</button>
                 </div>
                 <div class="relative group">
-                    <button class="px-4 py-2 bg-white/5 border border-white/10 rounded-full text-xs font-bold uppercase hover:bg-white/10">Colunas ⚙️</button>
-                    <div class="absolute right-0 top-full mt-2 w-48 bg-navy-card border border-white/10 rounded-xl shadow-2xl p-4 hidden group-hover:block z-[101]">
-                        <p class="text-[10px] font-bold text-muted mb-3 uppercase">Exibir Colunas</p>
-                        <div class="space-y-2" id="columnToggles">
+                    <button class="px-5 py-2.5 bg-white/5 border border-white/10 rounded-full text-xs font-bold uppercase hover:bg-white/10 flex items-center gap-2">Colunas ⚙️</button>
+                    <div class="dropdown-menu">
+                        <p class="text-[10px] font-bold text-muted p-2 uppercase tracking-widest border-b border-white/5 mb-2">Exibir Colunas</p>
+                        <div class="space-y-1" id="columnToggles">
                             <label class="col-toggle"><input type="checkbox" checked data-col="foto" onchange="toggleCol(this)"> Foto</label>
                             <label class="col-toggle"><input type="checkbox" checked data-col="data" onchange="toggleCol(this)"> Data Entrada</label>
                             <label class="col-toggle"><input type="checkbox" checked data-col="codigo" onchange="toggleCol(this)"> Código</label>
+                            <label class="col-toggle"><input type="checkbox" checked data-col="tipo" onchange="toggleCol(this)"> Tipo</label>
                             <label class="col-toggle"><input type="checkbox" checked data-col="custo" onchange="toggleCol(this)"> Custo</label>
                             <label class="col-toggle"><input type="checkbox" checked data-col="venda" onchange="toggleCol(this)"> Venda</label>
                             <label class="col-toggle"><input type="checkbox" checked data-col="status" onchange="toggleCol(this)"> Localização</label>
@@ -131,8 +135,8 @@
                 </div>
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                <div class="lg:col-span-1"><div class="card p-6"><h3 class="text-sm font-bold text-white mb-6 uppercase">Entrada</h3><div class="space-y-5"><input type="date" id="dataInventario" class="w-full"><input type="text" id="codigoInput" placeholder="Bipe aqui..." class="w-full" autofocus><button onclick="adicionarAoInventario()" class="btn-gold w-full">Salvar</button></div></div></div>
-                <div class="lg:col-span-3"><div class="card overflow-hidden"><div class="p-5 border-b border-white/5 flex justify-between items-center"><span class="text-sm font-bold text-white">Acervo Luxus</span><span id="itemCount" class="text-xs font-bold text-accent">0 PEÇAS</span></div><div class="overflow-x-auto"><table><thead><tr><th class="col-foto">Foto</th><th class="col-data">Data</th><th class="col-codigo">Código</th><th class="col-custo">Custo</th><th class="col-venda">Venda</th><th class="col-status">Localização</th><th class="text-right">Ações</th></tr></thead><tbody id="listaInventario" class="text-sm"></tbody></table></div></div></div>
+                <div class="lg:col-span-1"><div class="card p-6"><h3 class="text-sm font-bold text-white mb-6 uppercase">Entrada</h3><div class="space-y-5"><input type="date" id="dataInventario" class="w-full"><input type="text" id="tipoInput" placeholder="Tipo (Ex: Pulseira)" class="w-full"><input type="text" id="codigoInput" placeholder="Bipe aqui..." class="w-full" autofocus><button onclick="adicionarAoInventario()" class="btn-gold w-full">Salvar</button></div></div></div>
+                <div class="lg:col-span-3"><div class="card overflow-hidden"><div class="p-5 border-b border-white/5 flex justify-between items-center"><span class="text-sm font-bold text-white">Acervo Luxus</span><span id="itemCount" class="text-xs font-bold text-accent">0 PEÇAS</span></div><div class="overflow-x-auto"><table><thead><tr><th class="col-foto">Foto</th><th class="col-data">Data</th><th class="col-codigo">Código</th><th class="col-tipo">Tipo</th><th class="col-custo">Custo</th><th class="col-venda">Venda</th><th class="col-status">Localização</th><th class="text-right">Ação</th></tr></thead><tbody id="listaInventario" class="text-sm"></tbody></table></div></div></div>
             </div>
         </div>
 
@@ -224,7 +228,7 @@
         let IMGBB_KEY = localStorage.getItem('imgbbKey') || '';
         let globalInventario = [], globalRepasses = [], globalRevendedores = [], itensDevolvidos = [];
         let totalVendaVendida = 0;
-        let visibleCols = JSON.parse(localStorage.getItem('visibleCols')) || ['foto', 'data', 'codigo', 'custo', 'venda', 'status'];
+        let visibleCols = JSON.parse(localStorage.getItem('visibleCols')) || ['foto', 'data', 'codigo', 'tipo', 'custo', 'venda', 'status'];
         
         document.getElementById('apiUrl').value = API_URL;
         document.getElementById('imgbbKey').value = IMGBB_KEY;
@@ -249,7 +253,7 @@
         }
 
         function applyColVisibility() {
-            const cols = ['foto', 'data', 'codigo', 'custo', 'venda', 'status'];
+            const cols = ['foto', 'data', 'codigo', 'tipo', 'custo', 'venda', 'status'];
             cols.forEach(c => {
                 const isVisible = visibleCols.includes(c);
                 document.querySelectorAll('.col-' + c).forEach(el => el.style.display = isVisible ? '' : 'none');
@@ -485,6 +489,7 @@
                 const s = (i.Status || i.status || "").toString();
                 let sc = 'status-estoque'; if(s === 'Vendido') sc = 'status-vendido'; else if(s !== 'Em Estoque') sc = 'status-consignado';
                 const cod = i.Codigo || i.codigo || '---';
+                const tipo = i.Tipo || i.tipo || '---';
                 const dataRaw = i.Data || i.data || '';
                 const dataFormatada = dataRaw ? new Date(dataRaw).toLocaleDateString('pt-BR') : '---';
                 const rowId = i.rowId;
@@ -493,21 +498,28 @@
                     <td class="col-foto">${fotoUrl ? `<img src="${fotoUrl}" class="img-preview" onclick="abrirModalFoto('${fotoUrl}')">` : '<div class="w-10 h-10 bg-navy-dark rounded"></div>'}</td>
                     <td class="col-data text-muted text-xs">${dataFormatada}</td>
                     <td class="col-codigo font-bold text-white">${cod}</td>
+                    <td class="col-tipo text-muted text-xs uppercase">${tipo}</td>
                     <td class="col-custo text-muted">R$ ${parseFloat(i.Custo || 0).toFixed(2)}</td>
                     <td class="col-venda text-gold font-bold">R$ ${parseFloat(i.Venda || 0).toFixed(2)}</td>
-                    <td class="col-status"><span class="status-pill ${sc}">${s}</span></td>
-                    <td class="text-right flex gap-3 justify-end">
-                        <button onclick="abrirModal(${rowId})" class="text-accent hover:underline">Editar</button>
-                        <button onclick="excluirItem(${rowId})" class="text-red-400 hover:underline">Excluir</button>
+                    <td class="col-status">
+                        <span onclick="abrirModal(${rowId})" class="status-pill ${sc}">
+                            ${s}
+                            <svg class="w-2.5 h-2.5 opacity-50" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path></svg>
+                        </span>
+                    </td>
+                    <td class="text-right">
+                        <button onclick="abrirModal(${rowId})" class="text-accent hover:underline font-bold text-xs uppercase">Editar</button>
                     </td>
                 </tr>`;
             }).join('');
             applyColVisibility();
         }
 
-        async function excluirItem(rowId) {
-            if(confirm('Deseja excluir permanentemente este item do inventário?')) {
+        async function excluirItemNoModal() {
+            const rowId = document.getElementById('editRowId').value;
+            if(confirm('Deseja excluir permanentemente este item do inventário? Esta ação não pode ser desfeita.')) {
                 await apiPost({ action: 'delInventario', rowId: rowId });
+                fecharModal();
                 setTimeout(carregarInventario, 1500);
             }
         }
@@ -545,6 +557,7 @@
             if(i) { 
                 document.getElementById('editRowId').value = rowId;
                 document.getElementById('editCodigo').value = (i.Codigo || i.codigo || "").toString(); 
+                document.getElementById('editTipo').value = (i.Tipo || i.tipo || "").toString(); 
                 document.getElementById('editCusto').value = i.Custo || i.custo || ''; 
                 document.getElementById('editVenda').value = i.Venda || i.venda || ''; 
                 document.getElementById('editFoto').value = i.Foto || i.foto || ''; 
@@ -568,6 +581,7 @@
                 action: 'editInventario', 
                 rowId: document.getElementById('editRowId').value,
                 codigo: document.getElementById('editCodigo').value, 
+                tipo: document.getElementById('editTipo').value, 
                 custo: document.getElementById('editCusto').value, 
                 venda: document.getElementById('editVenda').value, 
                 foto: document.getElementById('editFoto').value, 
@@ -579,9 +593,11 @@
         
         async function adicionarAoInventario() { 
             const c = document.getElementById('codigoInput').value; 
+            const t = document.getElementById('tipoInput').value; 
             if(c) { 
-                await apiPost({ action: 'addInventario', codigo: c, data: document.getElementById('dataInventario').value }); 
+                await apiPost({ action: 'addInventario', codigo: c, tipo: t, data: document.getElementById('dataInventario').value }); 
                 document.getElementById('codigoInput').value = ''; 
+                document.getElementById('tipoInput').value = ''; 
                 setTimeout(carregarInventario, 1500); 
             } 
         }
@@ -599,7 +615,11 @@
 
         function filtrarTabela() { 
             const q = document.getElementById('searchInventario').value.toLowerCase(); 
-            renderInventario(globalInventario.filter(i => (i.Codigo || i.codigo || "").toString().toLowerCase().includes(q) || (i.Status || i.status || "").toString().toLowerCase().includes(q))); 
+            renderInventario(globalInventario.filter(i => 
+                (i.Codigo || i.codigo || "").toString().toLowerCase().includes(q) || 
+                (i.Tipo || i.tipo || "").toString().toLowerCase().includes(q) || 
+                (i.Status || i.status || "").toString().toLowerCase().includes(q)
+            )); 
         }
         
         function abrirModalNovoParceiro() { 

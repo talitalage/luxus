@@ -1,6 +1,6 @@
 /**
- * LUXUS BACKEND v16.0 - DASHBOARD & EXCLUSÃO CORRIGIDA
- * Versão com correções críticas para exclusão de repasses e IDs únicos.
+ * LUXUS BACKEND v20.0 - TIPO DE JOIA & GESTÃO ROBUSTA
+ * Versão com suporte ao campo 'Tipo' e melhorias de sincronização.
  */
 
 function doGet(e) {
@@ -33,7 +33,15 @@ function getSheetAsJSON(ss, sheetName) {
     
     // Normalização para garantir que o Frontend receba os campos esperados
     if (sheetName === 'Revendedores') { obj.Nome = row[0]; obj.Contato = row[1]; }
-    if (sheetName === 'Inventario') { obj.Codigo = row[0]; obj.Status = row[2]; obj.Custo = row[3]; obj.Venda = row[4]; obj.Foto = row[5]; }
+    if (sheetName === 'Inventario') { 
+      obj.Codigo = row[0]; 
+      obj.Data = row[1];
+      obj.Status = row[2]; 
+      obj.Custo = row[3]; 
+      obj.Venda = row[4]; 
+      obj.Foto = row[5]; 
+      obj.Tipo = row[6] || ""; 
+    }
     if (sheetName === 'Repasses') { obj.Revendedor = row[0]; obj.Codigo = row[1]; obj.Custo = row[2]; obj.Venda = row[3]; obj.Data = row[4]; obj.Status = row[5]; }
     return obj;
   });
@@ -83,8 +91,8 @@ function doPost(e) {
   }
 
   if (action === 'addInventario') {
-    const sheet = getSheet(ss, 'Inventario', ['Codigo', 'Data', 'Status', 'Custo', 'Venda', 'Foto']);
-    sheet.appendRow([params.codigo.toString().trim(), params.data || new Date(), 'Em Estoque', "", "", ""]);
+    const sheet = getSheet(ss, 'Inventario', ['Codigo', 'Data', 'Status', 'Custo', 'Venda', 'Foto', 'Tipo']);
+    sheet.appendRow([params.codigo.toString().trim(), params.data || new Date(), 'Em Estoque', "", "", "", params.tipo || ""]);
     return ContentService.createTextOutput("Sucesso");
   }
 
@@ -97,6 +105,7 @@ function doPost(e) {
       sheet.getRange(rowId, 4).setValue(params.custo);
       sheet.getRange(rowId, 5).setValue(params.venda);
       sheet.getRange(rowId, 6).setValue(params.foto);
+      sheet.getRange(rowId, 7).setValue(params.tipo || "");
       return ContentService.createTextOutput("Sucesso");
     }
     return ContentService.createTextOutput("Erro");
@@ -139,7 +148,6 @@ function doPost(e) {
       if (sheetInv) {
         const dInv = sheetInv.getDataRange().getValues();
         for (let i = 1; i < dInv.length; i++) {
-          // Volta para estoque se a localização atual for o revendedor que devolveu
           if (dInv[i][0].toString().trim().toLowerCase() === cod && dInv[i][2] !== 'Em Estoque' && dInv[i][2] !== 'Vendido') {
             sheetInv.getRange(i + 1, 3).setValue('Em Estoque');
             break;
