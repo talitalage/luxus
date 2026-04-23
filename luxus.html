@@ -52,8 +52,9 @@
         .status-estoque { background: rgba(34, 197, 94, 0.1); color: #4ade80; }
         .status-consignado { background: rgba(197, 160, 89, 0.1); color: var(--gold); }
         .status-vendido { background: rgba(255, 255, 255, 0.05); color: #94a3b8; }
-        .conferido { background: rgba(76, 139, 245, 0.15) !important; border-left: 4px solid var(--accent) !important; }
-        .conferido td { color: var(--accent) !important; font-weight: 600; }
+        .devolvido { background: rgba(34, 197, 94, 0.1) !important; border-left: 4px solid #4ade80 !important; opacity: 0.6; }
+        .vendido-row { background: rgba(76, 139, 245, 0.1) !important; border-left: 4px solid var(--accent) !important; }
+        .vendido-row td { color: var(--accent) !important; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -100,7 +101,6 @@
         </div>
 
         <div id="central_revendedor" class="tab-content">
-            <!-- SELEÇÃO DE REVENDEDOR - FIXO NO TOPO -->
             <div class="card p-6 mb-8 border-accent/20 bg-accent/5">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                     <div class="md:col-span-2">
@@ -115,14 +115,9 @@
 
             <div id="dadosCentral" class="hidden">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    
-                    <!-- COLUNA ESQUERDA: REPASSE (ENVIO) -->
                     <div class="lg:col-span-4 space-y-6">
                         <div class="card p-6 border-gold/20">
-                            <h3 class="text-xs font-bold text-gold mb-6 uppercase tracking-widest flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-                                Enviar Novas Peças
-                            </h3>
+                            <h3 class="text-xs font-bold text-gold mb-6 uppercase tracking-widest flex items-center gap-2">Enviar Novas Peças</h3>
                             <div class="space-y-4">
                                 <input type="date" id="dataRepasseCentral" class="w-full">
                                 <input type="text" id="codigoRepasseCentral" oninput="checkBipeConsignacaoInstant(this.value)" class="w-full" placeholder="Bipe o código">
@@ -133,7 +128,6 @@
                                 <button onclick="repassarItemCentral()" class="btn-gold w-full mt-2">Confirmar Envio</button>
                             </div>
                         </div>
-
                         <div class="card p-6">
                             <h3 class="text-xs font-bold text-muted mb-4 uppercase tracking-widest">Dados do Parceiro</h3>
                             <div id="infoParceiro" class="space-y-3">
@@ -144,38 +138,39 @@
                         </div>
                     </div>
 
-                    <!-- COLUNA DIREITA: ACERTO (CONFERÊNCIA) -->
                     <div class="lg:col-span-8 space-y-6">
                         <div class="card p-6 border-accent/30 bg-accent/5 shadow-[0_0_20px_rgba(76,139,245,0.1)]">
                             <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-xs font-bold text-accent uppercase tracking-widest flex items-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                                    Conferência de Vendas
-                                </h3>
-                                <div class="flex gap-2">
-                                    <button onclick="setPainelFilter('Todos')" class="filter-pill text-[10px] p-1 px-3 rounded-full border border-white/5 active" data-pfilter="Todos">Todos</button>
-                                    <button onclick="setPainelFilter('Pendente')" class="filter-pill text-[10px] p-1 px-3 rounded-full border border-white/5" data-pfilter="Pendente">Pendentes</button>
-                                </div>
+                                <h3 class="text-xs font-bold text-accent uppercase tracking-widest">Conferência de Estoque Devolvido</h3>
+                                <span class="text-[10px] font-bold text-muted uppercase">Bipe o que sobrou</span>
                             </div>
                             
                             <div class="flex gap-4 mb-8">
-                                <input type="text" id="bipeConferenciaCentral" onkeypress="handleBipeConferencia(event)" placeholder="Bipe o código vendido aqui..." class="flex-1 !text-lg !py-4 !border-accent !bg-navy-dark focus:!ring-2 focus:!ring-accent">
+                                <input type="text" id="bipeConferenciaCentral" onkeypress="handleBipeConferencia(event)" placeholder="Bipe as peças que o revendedor DEVOLVEU..." class="flex-1 !text-lg !py-4 !border-accent !bg-navy-dark focus:!ring-2 focus:!ring-accent">
                                 <button onclick="limparConferencia()" class="px-6 py-2 text-xs font-bold text-muted hover:text-white transition-colors border border-white/10 rounded-lg">Limpar</button>
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                                <div class="bg-navy-dark/50 p-4 rounded-lg text-center"><p class="text-[9px] font-bold text-muted mb-1 uppercase">Venda Conferida</p><p id="totalVendaCentral" class="text-lg font-bold text-gold">R$ 0,00</p></div>
+                                <div class="bg-navy-dark/50 p-4 rounded-lg text-center"><p class="text-[9px] font-bold text-muted mb-1 uppercase">Venda dos Faltantes (Vendido)</p><p id="totalVendaCentral" class="text-lg font-bold text-gold">R$ 0,00</p></div>
                                 <div class="bg-navy-dark/50 p-4 rounded-lg text-center"><p class="text-[9px] font-bold text-muted mb-1 uppercase">Comissão (%)</p><input type="number" id="percentualComissaoCentral" oninput="calcularComissao()" placeholder="30" class="w-16 !p-1 text-center mx-auto block !bg-white/5 !border-white/10"></div>
                                 <div class="bg-purple/10 p-4 rounded-lg text-center border border-purple/20"><p class="text-[9px] font-bold text-purple mb-1 uppercase">Líquido Luxus</p><p id="valorLiquidoLuxusCentral" class="text-lg font-bold text-white">R$ 0,00</p></div>
                             </div>
 
+                            <div class="flex justify-between items-center px-4 mb-2">
+                                <span class="text-[10px] font-bold text-muted uppercase">Status da Conferência</span>
+                                <div class="flex gap-4">
+                                    <span id="devolvidosCount" class="text-[10px] font-bold text-green-400 uppercase">0 DEVOLVIDOS</span>
+                                    <span id="vendidosCount" class="text-[10px] font-bold text-accent uppercase">0 VENDIDOS (FALTANTES)</span>
+                                </div>
+                            </div>
+
                             <div class="card overflow-hidden bg-navy-dark/20 max-h-[400px] overflow-y-auto">
-                                <table><thead><tr><th>Data</th><th>Peça</th><th>Venda</th><th class="text-right">Status</th></tr></thead><tbody id="tabelaPainelCentral" class="text-sm"></tbody></table>
+                                <table><thead><tr><th>Peça</th><th>Venda</th><th class="text-right">Situação</th></tr></thead><tbody id="tabelaPainelCentral" class="text-sm"></tbody></table>
                             </div>
 
                             <div class="mt-6 space-y-4">
                                 <textarea id="obsFechamentoCentral" class="w-full h-20" placeholder="Notas do acerto mensal..."></textarea>
-                                <button onclick="realizarFechamentoParcial()" id="btnFinalizarCentral" class="btn-primary w-full opacity-50 cursor-not-allowed" disabled>Finalizar Acerto das Peças Conferidas</button>
+                                <button onclick="realizarFechamentoParcial()" id="btnFinalizarCentral" class="btn-primary w-full opacity-50 cursor-not-allowed" disabled>Finalizar Acerto dos Itens Faltantes</button>
                             </div>
                         </div>
                     </div>
@@ -183,7 +178,6 @@
             </div>
 
             <div id="centralVazia" class="card p-32 text-center opacity-40">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                 <p class="text-muted uppercase tracking-widest text-xs font-bold">Selecione um parceiro no topo para gerenciar</p>
             </div>
         </div>
@@ -191,8 +185,8 @@
 
     <script>
         let API_URL = localStorage.getItem('apiUrl') || '';
-        let globalInventario = [], globalRepasses = [], globalRevendedores = [], itensConferidos = [];
-        let totalVendaConferida = 0, totalCustoConferido = 0;
+        let globalInventario = [], globalRepasses = [], globalRevendedores = [], itensDevolvidos = [];
+        let totalVendaVendida = 0;
         
         document.getElementById('apiUrl').value = API_URL;
         document.getElementById('dataInventario').valueAsDate = new Date();
@@ -220,10 +214,8 @@
         async function apiGet(action) {
             if(!API_URL) return [];
             document.getElementById('loading').style.display = 'flex';
-            try { 
-                const r = await fetch(`${API_URL}?action=${action}`); 
-                return await r.json();
-            } catch(e) { console.error("Erro Get:", e); return []; }
+            try { const r = await fetch(`${API_URL}?action=${action}`); return await r.json(); } 
+            catch(e) { console.error("Erro Get:", e); return []; }
             finally { document.getElementById('loading').style.display = 'none'; }
         }
 
@@ -234,7 +226,6 @@
                 return `<option value="${n}">${n}</option>`;
             }).join('');
             if(document.getElementById('selectRevendedorCentral')) document.getElementById('selectRevendedorCentral').innerHTML = options;
-            
             const statusOptions = '<option value="Em Estoque">Em Estoque</option><option value="Vendido">Vendido</option>' + globalRevendedores.map(r => {
                 const n = (r.Nome || r.nome || "").toString().trim();
                 return `<option value="${n}">${n}</option>`;
@@ -245,42 +236,74 @@
         async function carregarDadosCentral() {
             const revNome = document.getElementById('selectRevendedorCentral').value;
             if(!revNome) { document.getElementById('dadosCentral').classList.add('hidden'); document.getElementById('centralVazia').classList.remove('hidden'); return; }
-            
             document.getElementById('centralVazia').classList.add('hidden');
             document.getElementById('dadosCentral').classList.remove('hidden');
-            
             const rev = globalRevendedores.find(r => (r.Nome || r.nome).toString().trim() === revNome);
             document.getElementById('parceiroNome').innerText = revNome;
             document.getElementById('parceiroContato').innerText = rev ? (rev.Contato || rev.contato || 'Sem contato') : 'Sem contato';
-            
             globalRepasses = await apiGet('getRepasses');
             limparConferencia();
-            renderPainelCentral(globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === revNome.toLowerCase()));
+            renderPainelCentral(globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === revNome.toLowerCase() && (r.Status || r.status || "Pendente") === "Pendente"));
             setTimeout(() => document.getElementById('bipeConferenciaCentral').focus(), 500);
         }
 
-        function abrirModalNovoParceiro() {
-            const n = prompt("Nome do Novo Parceiro:");
-            const c = prompt("Contato (WhatsApp):");
-            if(n) { addRevendedorDireto(n, c); }
+        function handleBipeConferencia(e) {
+            if(e.key === 'Enter') {
+                const cod = e.target.value.trim().toLowerCase();
+                const rev = document.getElementById('selectRevendedorCentral').value.toString().trim().toLowerCase();
+                const item = globalRepasses.find(r => (r.Codigo || r.codigo || "").toString().trim().toLowerCase() === cod && (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev && (r.Status || r.status || "Pendente") === "Pendente");
+                if(item) {
+                    const codOriginal = (item.Codigo || item.codigo).toString();
+                    if(!itensDevolvidos.includes(codOriginal)) {
+                        itensDevolvidos.push(codOriginal);
+                        e.target.value = '';
+                        renderPainelCentral(globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev && (r.Status || r.status || "Pendente") === "Pendente"));
+                    } else { alert('Peça já bipada como devolvida!'); e.target.value = ''; }
+                } else { alert('Peça não encontrada nos pendentes deste revendedor!'); e.target.value = ''; }
+            }
         }
 
-        async function addRevendedorDireto(n, c) {
-            await apiPost({ action: 'addRevendedor', nome: n, contato: c });
-            setTimeout(async () => { await carregarRevendedores(); document.getElementById('selectRevendedorCentral').value = n; carregarDadosCentral(); }, 1500);
+        function renderPainelCentral(itens) {
+            totalVendaVendida = 0;
+            const itensVendidos = itens.filter(i => !itensDevolvidos.includes((i.Codigo || i.codigo).toString()));
+            
+            document.getElementById('tabelaPainelCentral').innerHTML = itens.map(i => {
+                const cod = (i.Codigo || i.codigo).toString();
+                const valVenda = parseFloat(i.Venda || 0);
+                const isDevolvido = itensDevolvidos.includes(cod);
+                if (!isDevolvido) { totalVendaVendida += valVenda; }
+                const rowClass = isDevolvido ? 'devolvido' : 'vendido-row';
+                return `<tr class="${rowClass}"><td class="font-bold">${cod}</td><td class="${!isDevolvido ? 'text-accent' : 'text-muted'}">R$ ${valVenda.toFixed(2)}</td><td class="text-right uppercase text-[10px] font-bold ${!isDevolvido ? 'text-accent' : 'text-green-400'}">${isDevolvido ? 'Devolvido' : 'Vendido (Faltante)'}</td></tr>`;
+            }).join('');
+            
+            document.getElementById('devolvidosCount').innerText = `${itensDevolvidos.length} DEVOLVIDOS`;
+            document.getElementById('vendidosCount').innerText = `${itensVendidos.length} VENDIDOS (FALTANTES)`;
+            document.getElementById('totalVendaCentral').innerText = `R$ ${totalVendaVendida.toFixed(2)}`;
+            
+            const btn = document.getElementById('btnFinalizarCentral');
+            if(itensVendidos.length > 0) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+            else { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
+            calcularComissao();
         }
 
-        function abrirModalEdicaoParceiroAtual() {
-            const n = document.getElementById('selectRevendedorCentral').value;
-            const r = globalRevendedores.find(rev => (rev.Nome || rev.nome || "").toString().trim().toLowerCase() === n.trim().toLowerCase());
-            if(r) { document.getElementById('editRevNomeAntigo').value = n; document.getElementById('editRevNovoNome').value = (r.Nome || r.nome || "").toString().trim(); document.getElementById('editRevNovoContato').value = (r.Contato || r.contato || "").toString().trim(); document.getElementById('modalEditRev').style.display = 'flex'; }
+        function calcularComissao() {
+            const p = parseFloat(document.getElementById('percentualComissaoCentral').value) || 0;
+            const com = totalVendaVendida * (p / 100), liq = totalVendaVendida - com;
+            document.getElementById('valorLiquidoLuxusCentral').innerText = `R$ ${liq.toFixed(2)}`;
         }
-        function fecharModalRev() { document.getElementById('modalEditRev').style.display = 'none'; }
-        async function salvarEdicaoRev() { 
-            const novoNome = document.getElementById('editRevNovoNome').value;
-            await apiPost({ action: 'editRevendedor', nomeAntigo: document.getElementById('editRevNomeAntigo').value, novoNome: novoNome, novoContato: document.getElementById('editRevNovoContato').value }); 
-            fecharModalRev(); 
-            setTimeout(async () => { await carregarRevendedores(); document.getElementById('selectRevendedorCentral').value = novoNome; carregarDadosCentral(); }, 1500); 
+
+        function limparConferencia() { itensDevolvidos = []; totalVendaVendida = 0; document.getElementById('bipeConferenciaCentral').value = ''; if(document.getElementById('selectRevendedorCentral').value) carregarDadosCentral(); }
+
+        async function realizarFechamentoParcial() { 
+            const rev = document.getElementById('selectRevendedorCentral').value;
+            const itensPendentes = globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev.toLowerCase() && (r.Status || r.status || "Pendente") === "Pendente");
+            const codigosVendidos = itensPendentes.filter(i => !itensDevolvidos.includes((i.Codigo || i.codigo).toString())).map(i => (i.Codigo || i.codigo).toString());
+            
+            if(confirm(`Confirmar venda de ${codigosVendidos.length} peças faltantes?`)) { 
+                await apiPost({ action: 'fechamentoParcial', revendedor: rev, codigos: codigosVendidos, obs: document.getElementById('obsFechamentoCentral').value }); 
+                limparConferencia();
+                setTimeout(carregarDadosCentral, 1500); 
+            } 
         }
 
         async function carregarInventario() { globalInventario = await apiGet('getInventario'); renderInventario(globalInventario); }
@@ -296,10 +319,7 @@
 
         function checkBipeConsignacaoInstant(v) { 
             const item = globalInventario.find(i => (i.Codigo || i.codigo || "").toString().trim().toLowerCase() === v.toString().trim().toLowerCase()); 
-            if(item) { 
-                document.getElementById('custoItemCentral').value = item.Custo || item.custo || ''; 
-                document.getElementById('vendaItemCentral').value = item.Venda || item.venda || ''; 
-            } 
+            if(item) { document.getElementById('custoItemCentral').value = item.Custo || item.custo || ''; document.getElementById('vendaItemCentral').value = item.Venda || item.venda || ''; } 
         }
         
         async function repassarItemCentral() { 
@@ -307,70 +327,7 @@
             const c = document.getElementById('codigoRepasseCentral').value; 
             if(r && c) { 
                 await apiPost({ action: 'addRepasse', revendedor: r, codigo: c, custo: document.getElementById('custoItemCentral').value, venda: document.getElementById('vendaItemCentral').value, data: document.getElementById('dataRepasseCentral').value }); 
-                document.getElementById('codigoRepasseCentral').value = ''; 
-                document.getElementById('custoItemCentral').value = '';
-                document.getElementById('vendaItemCentral').value = '';
-                setTimeout(carregarDadosCentral, 1500); 
-            } 
-        }
-
-        function handleBipeConferencia(e) {
-            if(e.key === 'Enter') {
-                const cod = e.target.value.trim().toLowerCase();
-                const rev = document.getElementById('selectRevendedorCentral').value.toString().trim().toLowerCase();
-                const item = globalRepasses.find(r => 
-                    (r.Codigo || r.codigo || "").toString().trim().toLowerCase() === cod && 
-                    (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev &&
-                    (r.Status || r.status || "Pendente") === "Pendente"
-                );
-
-                if(item) {
-                    const codOriginal = (item.Codigo || item.codigo).toString();
-                    if(!itensConferidos.includes(codOriginal)) {
-                        itensConferidos.push(codOriginal);
-                        e.target.value = '';
-                        renderPainelCentral(globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev));
-                    } else { alert('Peça já conferida!'); e.target.value = ''; }
-                } else { alert('Peça não encontrada nos pendentes!'); e.target.value = ''; }
-            }
-        }
-
-        function renderPainelCentral(itens) {
-            totalCustoConferido = 0; totalVendaConferida = 0;
-            document.getElementById('tabelaPainelCentral').innerHTML = itens.map(i => {
-                const cod = (i.Codigo || i.codigo).toString();
-                const valVenda = parseFloat(i.Venda || 0), valCusto = parseFloat(i.Custo || 0), s = (i.Status || i.status || "Pendente").toString();
-                const isConferido = itensConferidos.includes(cod);
-                if (isConferido) { totalCustoConferido += valCusto; totalVendaConferida += valVenda; }
-                const sCol = s === 'Pago' ? 'text-green-400' : (isConferido ? 'text-accent' : 'text-gold');
-                const rowClass = isConferido ? 'conferido' : 'hover:bg-white/5';
-                return `<tr class="${rowClass}"><td>${new Date(i.Data || i.data).toLocaleDateString('pt-BR')}</td><td class="font-bold">${cod}</td><td class="${isConferido ? 'text-accent' : 'text-gold'}">R$ ${valVenda.toFixed(2)}</td><td class="text-right uppercase text-[10px] font-bold ${sCol}">${isConferido ? 'Conferido' : s}</td></tr>`;
-            }).join('');
-            atualizarTotais();
-        }
-
-        function atualizarTotais() {
-            document.getElementById('totalVendaCentral').innerText = `R$ ${totalVendaConferida.toFixed(2)}`;
-            document.getElementById('conferidosCount').innerText = `${itensConferidos.length} PEÇAS CONFERIDAS`;
-            const btn = document.getElementById('btnFinalizarCentral');
-            if(itensConferidos.length > 0) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); }
-            else { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
-            calcularComissao();
-        }
-
-        function calcularComissao() {
-            const p = parseFloat(document.getElementById('percentualComissaoCentral').value) || 0;
-            const com = totalVendaConferida * (p / 100), liq = totalVendaConferida - com;
-            document.getElementById('valorLiquidoLuxusCentral').innerText = `R$ ${liq.toFixed(2)}`;
-        }
-
-        function limparConferencia() { itensConferidos = []; totalVendaConferida = 0; document.getElementById('bipeConferenciaCentral').value = ''; atualizarTotais(); }
-
-        async function realizarFechamentoParcial() { 
-            const rev = document.getElementById('selectRevendedorCentral').value; 
-            if(confirm(`Liquidar as ${itensConferidos.length} peças conferidas?`)) { 
-                await apiPost({ action: 'fechamentoParcial', revendedor: rev, codigos: itensConferidos, obs: document.getElementById('obsFechamentoCentral').value }); 
-                limparConferencia();
+                document.getElementById('codigoRepasseCentral').value = ''; document.getElementById('custoItemCentral').value = ''; document.getElementById('vendaItemCentral').value = '';
                 setTimeout(carregarDadosCentral, 1500); 
             } 
         }
@@ -378,12 +335,7 @@
         function abrirModal(c) { 
             document.getElementById('editCodigo').value = c; 
             const i = globalInventario.find(it => (it.Codigo || it.codigo || "").toString().trim().toLowerCase() === c.trim().toLowerCase()); 
-            if(i) { 
-                document.getElementById('editCusto').value = i.Custo || i.custo || ''; 
-                document.getElementById('editVenda').value = i.Venda || i.venda || ''; 
-                document.getElementById('editFoto').value = i.Foto || i.foto || ''; 
-                document.getElementById('editStatus').value = (i.Status || i.status || "Em Estoque").toString().trim();
-            } 
+            if(i) { document.getElementById('editCusto').value = i.Custo || i.custo || ''; document.getElementById('editVenda').value = i.Venda || i.venda || ''; document.getElementById('editFoto').value = i.Foto || i.foto || ''; document.getElementById('editStatus').value = (i.Status || i.status || "Em Estoque").toString().trim(); } 
             document.getElementById('modalEdit').style.display = 'flex'; 
         }
         function fecharModal() { document.getElementById('modalEdit').style.display = 'none'; }
@@ -393,11 +345,16 @@
         }
         
         async function adicionarAoInventario() { const c = document.getElementById('codigoInput').value; if(c) { await apiPost({ action: 'addInventario', codigo: c, data: document.getElementById('dataInventario').value }); document.getElementById('codigoInput').value = ''; await carregarInventario(); abrirModal(c); } }
-
         function setFilter(f) { document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active')); document.querySelector(`[data-filter="${f}"]`).classList.add('active'); let d = globalInventario; if(f === 'Em Estoque') d = globalInventario.filter(i => (i.Status || i.status) === 'Em Estoque'); else if(f === 'Consignado') d = globalInventario.filter(i => (i.Status || i.status) !== 'Em Estoque' && (i.Status || i.status) !== 'Vendido'); else if(f === 'Vendido') d = globalInventario.filter(i => (i.Status || i.status) === 'Vendido'); renderInventario(d); }
-        function setPainelFilter(f) { document.querySelectorAll('[data-pfilter]').forEach(b => b.classList.remove('active')); document.querySelector(`[data-pfilter="${f}"]`).classList.add('active'); const rev = document.getElementById('selectRevendedorCentral').value.toString().trim().toLowerCase(); let d = globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev); if(f !== 'Todos') d = d.filter(i => (i.Status || i.status) === f); renderPainelCentral(d); }
+        function setPainelFilter(f) { document.querySelectorAll('[data-pfilter]').forEach(b => b.classList.remove('active')); document.querySelector(`[data-pfilter="${f}"]`).classList.add('active'); const rev = document.getElementById('selectRevendedorCentral').value.toString().trim().toLowerCase(); let d = globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev && (r.Status || r.status || "Pendente") === "Pendente"); renderPainelCentral(d); }
         function filtrarTabela() { const q = document.getElementById('searchInventario').value.toLowerCase(); renderInventario(globalInventario.filter(i => (i.Codigo || i.codigo || "").toString().toLowerCase().includes(q) || (i.Status || i.status || "").toString().toLowerCase().includes(q))); }
         
+        function abrirModalNovoParceiro() { const n = prompt("Nome do Novo Parceiro:"); const c = prompt("Contato (WhatsApp):"); if(n) { addRevendedorDireto(n, c); } }
+        async function addRevendedorDireto(n, c) { await apiPost({ action: 'addRevendedor', nome: n, contato: c }); setTimeout(async () => { await carregarRevendedores(); document.getElementById('selectRevendedorCentral').value = n; carregarDadosCentral(); }, 1500); }
+        function abrirModalEdicaoParceiroAtual() { const n = document.getElementById('selectRevendedorCentral').value; const r = globalRevendedores.find(rev => (rev.Nome || rev.nome || "").toString().trim().toLowerCase() === n.trim().toLowerCase()); if(r) { document.getElementById('editRevNomeAntigo').value = n; document.getElementById('editRevNovoNome').value = (r.Nome || r.nome || "").toString().trim(); document.getElementById('editRevNovoContato').value = (r.Contato || r.contato || "").toString().trim(); document.getElementById('modalEditRev').style.display = 'flex'; } }
+        function fecharModalRev() { document.getElementById('modalEditRev').style.display = 'none'; }
+        async function salvarEdicaoRev() { const novoNome = document.getElementById('editRevNovoNome').value; await apiPost({ action: 'editRevendedor', nomeAntigo: document.getElementById('editRevNomeAntigo').value, novoNome: novoNome, novoContato: document.getElementById('editRevNovoContato').value }); fecharModalRev(); setTimeout(async () => { await carregarRevendedores(); document.getElementById('selectRevendedorCentral').value = novoNome; carregarDadosCentral(); }, 1500); }
+
         document.getElementById('codigoInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') adicionarAoInventario(); });
         window.onload = () => { if(API_URL) { carregarInventario(); carregarRevendedores(); } };
     </script>
