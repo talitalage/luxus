@@ -1,5 +1,5 @@
 /**
- * Script Luxus v3.3 - Edição de Revendedores e Robustez
+ * Script Luxus v3.5 - Correção Definitiva de Contatos e Painel
  */
 
 function doGet(e) {
@@ -20,14 +20,14 @@ function getSheetData(ss, sheetName) {
   if (!sheet) return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
   
   const range = sheet.getDataRange();
-  if (range.getNumRows() < 2) return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
+  if (range.getNumRows() < 1) return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
   
   const data = range.getValues();
-  const headers = data.shift();
+  const headers = data.shift().map(h => h.toString().trim());
   const json = data.map(row => {
     let obj = {};
     headers.forEach((h, i) => {
-      if (h) obj[h.toString().trim()] = row[i];
+      if (h) obj[h] = row[i];
     });
     return obj;
   });
@@ -46,12 +46,14 @@ function doPost(e) {
   
   const action = params.action;
 
+  // 1. ADICIONAR INVENTÁRIO
   if (action === 'addInventario') {
     const sheet = getOrCreateSheet(ss, 'Inventario', ['Codigo', 'Data', 'Status', 'Custo', 'Venda', 'Foto']);
     sheet.appendRow([params.codigo, params.data || new Date(), 'Em Estoque', '', '', '']);
     return ContentService.createTextOutput("Sucesso").setMimeType(ContentService.MimeType.TEXT);
   }
 
+  // 2. EDITAR INVENTÁRIO
   if (action === 'editInventario') {
     const sheet = ss.getSheetByName('Inventario');
     const data = sheet.getDataRange().getValues();
@@ -62,7 +64,7 @@ function doPost(e) {
     const colFoto = headers.indexOf('Foto') + 1;
 
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] == params.codigo) {
+      if (data[i][0].toString().trim() == params.codigo.toString().trim()) {
         if (colCusto > 0) sheet.getRange(i + 1, colCusto).setValue(params.custo);
         if (colVenda > 0) sheet.getRange(i + 1, colVenda).setValue(params.venda);
         if (colFoto > 0) sheet.getRange(i + 1, colFoto).setValue(params.foto);
@@ -72,6 +74,7 @@ function doPost(e) {
     return ContentService.createTextOutput("Sucesso").setMimeType(ContentService.MimeType.TEXT);
   }
 
+  // 3. ADICIONAR REPASSE
   if (action === 'addRepasse') {
     const sheetRepasse = getOrCreateSheet(ss, 'Repasses', ['Revendedor', 'Codigo', 'Custo', 'Venda', 'Data', 'Status']);
     const sheetInv = ss.getSheetByName('Inventario');
@@ -88,7 +91,7 @@ function doPost(e) {
     if (sheetInv) {
       const dataInv = sheetInv.getDataRange().getValues();
       for (let i = 1; i < dataInv.length; i++) {
-        if (dataInv[i][0] == params.codigo && dataInv[i][2] == 'Em Estoque') {
+        if (dataInv[i][0].toString().trim() == params.codigo.toString().trim()) {
           sheetInv.getRange(i + 1, 3).setValue(params.revendedor);
           break;
         }
@@ -97,33 +100,35 @@ function doPost(e) {
     return ContentService.createTextOutput("Sucesso").setMimeType(ContentService.MimeType.TEXT);
   }
 
+  // 4. ADICIONAR REVENDEDOR (COM CONTATO)
   if (action === 'addRevendedor') {
     const sheet = getOrCreateSheet(ss, 'Revendedores', ['Nome', 'Contato']);
-    sheet.appendRow([params.nome, params.contato || '']);
+    sheet.appendRow([params.nome.toString().trim(), params.contato ? params.contato.toString().trim() : '']);
     return ContentService.createTextOutput("Sucesso").setMimeType(ContentService.MimeType.TEXT);
   }
 
+  // 5. EDITAR REVENDEDOR
   if (action === 'editRevendedor') {
     const sheet = ss.getSheetByName('Revendedores');
     const data = sheet.getDataRange().getValues();
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] == params.nomeAntigo) {
-        sheet.getRange(i + 1, 1).setValue(params.novoNome);
-        sheet.getRange(i + 1, 2).setValue(params.novoContato);
+      if (data[i][0].toString().trim() == params.nomeAntigo.toString().trim()) {
+        sheet.getRange(i + 1, 1).setValue(params.novoNome.toString().trim());
+        sheet.getRange(i + 1, 2).setValue(params.novoContato ? params.novoContato.toString().trim() : '');
         
-        // Atualizar nome nas outras abas se necessário
-        atualizarNomeRevendedorGlobal(ss, params.nomeAntigo, params.novoNome);
+        atualizarNomeRevendedorGlobal(ss, params.nomeAntigo.toString().trim(), params.novoNome.toString().trim());
         break;
       }
     }
     return ContentService.createTextOutput("Sucesso").setMimeType(ContentService.MimeType.TEXT);
   }
 
+  // 6. EXCLUIR REVENDEDOR
   if (action === 'delRevendedor') {
     const sheet = ss.getSheetByName('Revendedores');
     const data = sheet.getDataRange().getValues();
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] == params.nome) {
+      if (data[i][0].toString().trim() == params.nome.toString().trim()) {
         sheet.deleteRow(i + 1);
         break;
       }
@@ -131,18 +136,19 @@ function doPost(e) {
     return ContentService.createTextOutput("Sucesso").setMimeType(ContentService.MimeType.TEXT);
   }
 
+  // 7. FECHAMENTO
   if (action === 'fechamento') {
     const sheetRepasse = ss.getSheetByName('Repasses');
     const sheetInv = ss.getSheetByName('Inventario');
     const dataRep = sheetRepasse.getDataRange().getValues();
     
     for (let i = 1; i < dataRep.length; i++) {
-      if (dataRep[i][0] == params.revendedor && dataRep[i][5] == 'Pendente') {
+      if (dataRep[i][0].toString().trim() == params.revendedor.toString().trim() && dataRep[i][5] == 'Pendente') {
         sheetRepasse.getRange(i + 1, 6).setValue('Pago');
         if (sheetInv) {
           const dataInv = sheetInv.getDataRange().getValues();
           for (let j = 1; j < dataInv.length; j++) {
-            if (dataInv[j][0] == dataRep[i][1] && dataInv[j][2] == params.revendedor) {
+            if (dataInv[j][0].toString().trim() == dataRep[i][1].toString().trim()) {
               sheetInv.getRange(j + 1, 3).setValue('Vendido');
             }
           }
@@ -157,20 +163,18 @@ function doPost(e) {
 }
 
 function atualizarNomeRevendedorGlobal(ss, antigo, novo) {
-  // Atualizar na aba Inventario (Status)
   const sheetInv = ss.getSheetByName('Inventario');
   if (sheetInv) {
     const data = sheetInv.getDataRange().getValues();
     for (let i = 1; i < data.length; i++) {
-      if (data[i][2] == antigo) sheetInv.getRange(i + 1, 3).setValue(novo);
+      if (data[i][2].toString().trim() == antigo) sheetInv.getRange(i + 1, 3).setValue(novo);
     }
   }
-  // Atualizar na aba Repasses
   const sheetRep = ss.getSheetByName('Repasses');
   if (sheetRep) {
     const data = sheetRep.getDataRange().getValues();
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] == antigo) sheetRep.getRange(i + 1, 1).setValue(novo);
+      if (data[i][0].toString().trim() == antigo) sheetRep.getRange(i + 1, 1).setValue(novo);
     }
   }
 }
@@ -180,9 +184,6 @@ function getOrCreateSheet(ss, name, headers) {
   if (!sheet) {
     sheet = ss.insertSheet(name);
     sheet.appendRow(headers);
-  } else {
-    const data = sheet.getDataRange().getValues();
-    if (data.length === 0) sheet.appendRow(headers);
   }
   return sheet;
 }

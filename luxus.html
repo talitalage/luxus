@@ -32,12 +32,7 @@
             -moz-appearance: none !important;
         }
         
-        /* Garantir que as opções do select também tenham fundo escuro */
-        select option {
-            background-color: #1c2539 !important;
-            color: white !important;
-        }
-
+        select option { background-color: #1c2539 !important; color: white !important; }
         select {
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
             background-repeat: no-repeat !important;
@@ -45,7 +40,6 @@
             background-size: 16px !important;
             padding-right: 40px !important;
         }
-
         input:focus, select:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 2px rgba(76, 139, 245, 0.2) !important; }
         
         .btn-primary { background: var(--accent); color: white; font-weight: 600; padding: 12px 24px; border-radius: 8px; transition: all 0.2s; font-size: 0.875rem; border: none; cursor: pointer; }
@@ -74,40 +68,9 @@
         </div>
     </div>
 
-    <!-- Modal Edição Joia -->
-    <div id="modalEdit" class="modal">
-        <div class="modal-content">
-            <h3 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Editar Detalhes da Joia</h3>
-            <div class="space-y-4">
-                <div><label class="text-[10px] font-bold text-muted mb-1 block">CÓDIGO</label><input type="text" id="editCodigo" class="w-full opacity-50" readonly></div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Custo (R$)</label><input type="number" id="editCusto" class="w-full" step="0.01"></div>
-                    <div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Venda (R$)</label><input type="number" id="editVenda" class="w-full" step="0.01"></div>
-                </div>
-                <div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">URL da Foto</label><input type="text" id="editFoto" class="w-full" placeholder="Link da imagem"></div>
-                <div class="flex gap-3 pt-4">
-                    <button onclick="fecharModal()" class="flex-1 p-3 bg-navy-dark text-white rounded-lg font-bold">Cancelar</button>
-                    <button onclick="salvarEdicao()" class="flex-1 p-3 bg-gold text-navy-dark rounded-lg font-bold">Salvar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Edição Revendedor -->
-    <div id="modalEditRev" class="modal">
-        <div class="modal-content">
-            <h3 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Editar Parceiro</h3>
-            <div class="space-y-4">
-                <input type="hidden" id="editRevNomeAntigo">
-                <div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Nome do Parceiro</label><input type="text" id="editRevNovoNome" class="w-full"></div>
-                <div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Contato (WhatsApp)</label><input type="text" id="editRevNovoContato" class="w-full"></div>
-                <div class="flex gap-3 pt-4">
-                    <button onclick="fecharModalRev()" class="flex-1 p-3 bg-navy-dark text-white rounded-lg font-bold">Cancelar</button>
-                    <button onclick="salvarEdicaoRev()" class="flex-1 p-3 bg-gold text-navy-dark rounded-lg font-bold">Salvar Alterações</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Modais -->
+    <div id="modalEdit" class="modal"><div class="modal-content"><h3 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Editar Joia</h3><div class="space-y-4"><div><label class="text-[10px] font-bold text-muted mb-1 block">CÓDIGO</label><input type="text" id="editCodigo" class="w-full opacity-50" readonly></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Custo (R$)</label><input type="number" id="editCusto" class="w-full" step="0.01"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Venda (R$)</label><input type="number" id="editVenda" class="w-full" step="0.01"></div></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">URL da Foto</label><input type="text" id="editFoto" class="w-full"></div><div class="flex gap-3 pt-4"><button onclick="fecharModal()" class="flex-1 p-3 bg-navy-dark text-white rounded-lg font-bold">Cancelar</button><button onclick="salvarEdicao()" class="flex-1 p-3 bg-gold text-navy-dark rounded-lg font-bold">Salvar</button></div></div></div></div>
+    <div id="modalEditRev" class="modal"><div class="modal-content"><h3 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Editar Parceiro</h3><div class="space-y-4"><input type="hidden" id="editRevNomeAntigo"><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Nome</label><input type="text" id="editRevNovoNome" class="w-full"></div><div><label class="text-[10px] font-bold text-muted mb-1 block uppercase">Contato</label><input type="text" id="editRevNovoContato" class="w-full"></div><div class="flex gap-3 pt-4"><button onclick="fecharModalRev()" class="flex-1 p-3 bg-navy-dark text-white rounded-lg font-bold">Cancelar</button><button onclick="salvarEdicaoRev()" class="flex-1 p-3 bg-gold text-navy-dark rounded-lg font-bold">Salvar</button></div></div></div></div>
 
     <header class="top-nav">
         <div class="flex items-center gap-2 mr-10"><span class="text-xl font-bold tracking-tighter text-white">LUXUS</span><div class="w-1.5 h-1.5 bg-gold rounded-full mt-1"></div></div>
@@ -131,7 +94,7 @@
 
         <div id="inventario" class="tab-content active">
             <div class="bg-navy-dark/30 p-4 rounded-xl mb-8 flex flex-wrap items-center gap-4">
-                <div class="flex-1 min-w-[300px] relative"><input type="text" id="searchInventario" onkeyup="filtrarTabela()" placeholder="Buscar código, status ou revendedor..." class="search-bar w-full"></div>
+                <div class="flex-1 min-w-[300px] relative"><input type="text" id="searchInventario" onkeyup="filtrarTabela()" placeholder="Buscar..." class="search-bar w-full"></div>
                 <div class="flex gap-2">
                     <button onclick="setFilter('Todos')" class="filter-pill active" data-filter="Todos">Todos</button>
                     <button onclick="setFilter('Em Estoque')" class="filter-pill" data-filter="Em Estoque">Estoque</button>
@@ -139,107 +102,44 @@
                     <button onclick="setFilter('Vendido')" class="filter-pill" data-filter="Vendido">Vendido</button>
                 </div>
             </div>
-
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                <div class="lg:col-span-1">
-                    <div class="card p-6">
-                        <h3 class="text-sm font-bold text-white mb-6 uppercase">Entrada Rápida</h3>
-                        <div class="space-y-5">
-                            <input type="date" id="dataInventario" class="w-full">
-                            <input type="text" id="codigoInput" placeholder="Bipe aqui..." class="w-full" autofocus>
-                            <button onclick="adicionarAoInventario()" class="btn-gold w-full">Salvar</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="lg:col-span-3">
-                    <div class="card overflow-hidden">
-                        <div class="p-5 border-b border-white/5 flex justify-between items-center"><span class="text-sm font-bold text-white">Acervo Luxus</span><span id="itemCount" class="text-xs font-bold text-accent">0 PEÇAS</span></div>
-                        <div class="overflow-x-auto">
-                            <table id="tabelaInventario">
-                                <thead><tr><th>Foto</th><th>Código</th><th>Custo</th><th>Venda</th><th>Localização</th><th class="text-right">Ação</th></tr></thead>
-                                <tbody id="listaInventario" class="text-sm"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+                <div class="lg:col-span-1"><div class="card p-6"><h3 class="text-sm font-bold text-white mb-6 uppercase">Entrada</h3><div class="space-y-5"><input type="date" id="dataInventario" class="w-full"><input type="text" id="codigoInput" placeholder="Bipe aqui..." class="w-full" autofocus><button onclick="adicionarAoInventario()" class="btn-gold w-full">Salvar</button></div></div></div>
+                <div class="lg:col-span-3"><div class="card overflow-hidden"><div class="p-5 border-b border-white/5 flex justify-between items-center"><span class="text-sm font-bold text-white">Acervo Luxus</span><span id="itemCount" class="text-xs font-bold text-accent">0 PEÇAS</span></div><div class="overflow-x-auto"><table><thead><tr><th>Foto</th><th>Código</th><th>Custo</th><th>Venda</th><th>Localização</th><th class="text-right">Ação</th></tr></thead><tbody id="listaInventario" class="text-sm"></tbody></table></div></div></div>
             </div>
         </div>
 
         <div id="distribuicao" class="tab-content">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="lg:col-span-1 space-y-8">
-                    <div class="card p-6">
-                        <h3 class="text-sm font-bold text-white mb-6 uppercase">Novo Parceiro</h3>
-                        <div class="space-y-4">
-                            <input type="text" id="novoRevendedor" placeholder="Nome completo" class="w-full">
-                            <input type="text" id="contatoRevendedor" placeholder="Contato (WhatsApp)" class="w-full">
-                            <button onclick="addRevendedor()" class="btn-primary w-full">Cadastrar</button>
-                        </div>
-                    </div>
-                    <div class="card p-6">
-                        <h3 class="text-sm font-bold text-white mb-4 uppercase">Parceiros</h3>
-                        <div id="listaRevendedoresSimples" class="space-y-2 max-h-60 overflow-y-auto"></div>
-                    </div>
+                    <div class="card p-6"><h3 class="text-sm font-bold text-white mb-6 uppercase">Novo Parceiro</h3><div class="space-y-4"><input type="text" id="novoRevendedor" placeholder="Nome completo" class="w-full"><input type="text" id="contatoRevendedor" placeholder="Contato" class="w-full"><button onclick="addRevendedor()" class="btn-primary w-full">Cadastrar</button></div></div>
+                    <div class="card p-6"><h3 class="text-sm font-bold text-white mb-4 uppercase">Parceiros</h3><div id="listaRevendedoresSimples" class="space-y-2 max-h-60 overflow-y-auto"></div></div>
                 </div>
-
-                <div class="lg:col-span-2">
-                    <div class="card p-8">
-                        <h3 class="text-sm font-bold text-white mb-8 uppercase text-center">Consignação</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div><label class="text-[10px] font-bold text-muted mb-2 block uppercase">Revendedor</label><select id="selectRevendedor" class="w-full"></select></div>
-                            <div><label class="text-[10px] font-bold text-muted mb-2 block uppercase">Data</label><input type="date" id="dataRepasse" class="w-full"></div>
-                            <div class="md:col-span-2"><label class="text-[10px] font-bold text-muted mb-2 block uppercase">Código</label><input type="text" id="codigoRepasse" oninput="checkBipeConsignacaoInstant(this.value)" class="w-full" placeholder="Bipe o código"></div>
-                            <div class="grid grid-cols-2 gap-4 md:col-span-2">
-                                <input type="number" id="custoItem" placeholder="Custo" class="w-full" step="0.01">
-                                <input type="number" id="vendaItem" placeholder="Venda" class="w-full" step="0.01">
-                            </div>
-                            <button onclick="repassarItem()" class="btn-gold md:col-span-2 mt-4">Confirmar Repasse</button>
-                        </div>
-                    </div>
-                </div>
+                <div class="lg:col-span-2"><div class="card p-8"><h3 class="text-sm font-bold text-white mb-8 uppercase text-center">Consignação</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label class="text-[10px] font-bold text-muted mb-2 block uppercase">Revendedor</label><select id="selectRevendedor" class="w-full"></select></div><div><label class="text-[10px] font-bold text-muted mb-2 block uppercase">Data</label><input type="date" id="dataRepasse" class="w-full"></div><div class="md:col-span-2"><label class="text-[10px] font-bold text-muted mb-2 block uppercase">Código</label><input type="text" id="codigoRepasse" oninput="checkBipeConsignacaoInstant(this.value)" class="w-full" placeholder="Bipe o código"></div><div class="grid grid-cols-2 gap-4 md:col-span-2"><input type="number" id="custoItem" placeholder="Custo" class="w-full" step="0.01"><input type="number" id="vendaItem" placeholder="Venda" class="w-full" step="0.01"></div><button onclick="repassarItem()" class="btn-gold md:col-span-2 mt-4">Confirmar Repasse</button></div></div></div>
             </div>
         </div>
 
         <div id="painel_revendedor" class="tab-content">
             <div class="bg-navy-dark/30 p-4 rounded-xl mb-8 flex flex-wrap items-center gap-4">
                 <div class="flex-1 min-w-[200px]"><select id="filtroRevendedor" onchange="carregarPainelIndividual()" class="w-full font-bold !bg-[#1c2539] !text-white rounded-full"></select></div>
-                <div class="flex gap-2">
-                    <button onclick="setPainelFilter('Todos')" class="filter-pill active" data-pfilter="Todos">Todos</button>
-                    <button onclick="setPainelFilter('Pendente')" class="filter-pill" data-pfilter="Pendente">Pendentes</button>
-                    <button onclick="setPainelFilter('Pago')" class="filter-pill" data-pfilter="Pago">Liquidados</button>
-                </div>
+                <div class="flex gap-2"><button onclick="setPainelFilter('Todos')" class="filter-pill active" data-pfilter="Todos">Todos</button><button onclick="setPainelFilter('Pendente')" class="filter-pill" data-pfilter="Pendente">Pendentes</button><button onclick="setPainelFilter('Pago')" class="filter-pill" data-pfilter="Pago">Liquidados</button></div>
             </div>
-
             <div id="dadosPainel" class="hidden space-y-8">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="card p-6 text-center"><p class="text-[10px] font-bold text-muted mb-1 uppercase">Custo Total</p><p id="totalCusto" class="text-xl font-bold text-white">R$ 0,00</p></div>
                     <div class="card p-6 text-center"><p class="text-[10px] font-bold text-muted mb-1 uppercase">Venda Total</p><p id="totalVenda" class="text-xl font-bold text-gold">R$ 0,00</p></div>
                     <div class="card p-6 text-center bg-purple/10 border-purple/20"><p class="text-[10px] font-bold text-purple mb-1 uppercase">Comissão (%)</p><input type="number" id="percentualComissao" oninput="calcularComissao()" placeholder="Ex: 30" class="w-20 !p-1 text-center mx-auto block !bg-white/10 !border-purple/30"></div>
                 </div>
-                
-                <div id="cardComissao" class="card p-6 hidden border-purple/30 bg-purple/5">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
-                        <div><p class="text-[10px] font-bold text-muted mb-1 uppercase">Comissão Revendedor</p><p id="valorComissaoRev" class="text-xl font-bold text-purple">R$ 0,00</p></div>
-                        <div><p class="text-[10px] font-bold text-muted mb-1 uppercase">Líquido Luxus</p><p id="valorLiquidoLuxus" class="text-xl font-bold text-accent">R$ 0,00</p></div>
-                    </div>
-                </div>
-
+                <div id="cardComissao" class="card p-6 hidden border-purple/30 bg-purple/5"><div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-center"><div><p class="text-[10px] font-bold text-muted mb-1 uppercase">Comissão Revendedor</p><p id="valorComissaoRev" class="text-xl font-bold text-purple">R$ 0,00</p></div><div><p class="text-[10px] font-bold text-muted mb-1 uppercase">Líquido Luxus</p><p id="valorLiquidoLuxus" class="text-xl font-bold text-accent">R$ 0,00</p></div></div></div>
                 <div class="card overflow-hidden"><table><thead><tr><th>Data</th><th>Peça</th><th>Venda</th><th class="text-right">Status</th></tr></thead><tbody id="tabelaPainel" class="text-sm"></tbody></table></div>
-                <div class="card p-8"><textarea id="obsFechamento" class="w-full h-24 mb-6" placeholder="Notas do fechamento..."></textarea><button onclick="realizarFechamento()" class="btn-primary w-full">Finalizar e Liquidar</button></div>
+                <div class="card p-8"><textarea id="obsFechamento" class="w-full h-24 mb-6" placeholder="Notas..."></textarea><button onclick="realizarFechamento()" class="btn-primary w-full">Finalizar e Liquidar</button></div>
             </div>
-            
-            <div id="painelVazio" class="card p-20 text-center opacity-50">
-                <p class="text-muted uppercase tracking-widest text-xs">Selecione um parceiro para ver os dados</p>
-            </div>
+            <div id="painelVazio" class="card p-20 text-center opacity-50"><p class="text-muted uppercase tracking-widest text-xs">Selecione um parceiro para ver os dados</p></div>
         </div>
     </main>
 
     <script>
         let API_URL = localStorage.getItem('apiUrl') || '';
-        let globalInventario = [];
-        let globalRepasses = [];
-        let globalRevendedores = [];
-        let totalVendaPainel = 0;
+        let globalInventario = [], globalRepasses = [], globalRevendedores = [], totalVendaPainel = 0;
         
         document.getElementById('apiUrl').value = API_URL;
         document.getElementById('dataInventario').valueAsDate = new Date();
@@ -250,18 +150,11 @@
             document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             document.getElementById('btn-' + tabId).classList.add('active');
-            
             if(tabId === 'inventario') carregarInventario();
-            if(tabId === 'distribuicao') carregarRevendedores();
-            if(tabId === 'painel_revendedor') carregarRevendedores();
+            if(tabId === 'distribuicao' || tabId === 'painel_revendedor') carregarRevendedores();
         }
 
-        function salvarConfig() {
-            API_URL = document.getElementById('apiUrl').value;
-            localStorage.setItem('apiUrl', API_URL);
-            alert('Conectado!');
-            showTab('inventario');
-        }
+        function salvarConfig() { API_URL = document.getElementById('apiUrl').value; localStorage.setItem('apiUrl', API_URL); alert('Conectado!'); showTab('inventario'); }
 
         async function apiPost(data) {
             document.getElementById('loading').style.display = 'flex';
@@ -279,8 +172,6 @@
 
         async function carregarRevendedores() {
             globalRevendedores = await apiGet('getRevendedores');
-            
-            // Atualizar lista na aba Gestão
             const listaSimples = document.getElementById('listaRevendedoresSimples');
             if(listaSimples) {
                 listaSimples.innerHTML = globalRevendedores.map(r => `
@@ -290,161 +181,50 @@
                             <span class="text-[9px] text-muted">${r.Contato || r.contato || 'Sem contato'}</span>
                         </div>
                         <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onclick="abrirModalRev('${r.Nome || r.nome}')" class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                            <button onclick="delRevendedor('${r.Nome || r.nome}')" class="text-red-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                            <button onclick="abrirModalRev('${r.Nome || r.nome}')" class="text-accent p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                            <button onclick="delRevendedor('${r.Nome || r.nome}')" class="text-red-500 p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                         </div>
                     </div>
                 `).join('');
             }
-            
-            // Popular Selects
             const options = '<option value="">SELECIONAR PARCEIRO</option>' + globalRevendedores.map(r => `<option value="${r.Nome || r.nome}">${r.Nome || r.nome}</option>`).join('');
             if(document.getElementById('selectRevendedor')) document.getElementById('selectRevendedor').innerHTML = options;
             if(document.getElementById('filtroRevendedor')) document.getElementById('filtroRevendedor').innerHTML = options;
         }
 
         function abrirModalRev(nome) {
-            const r = globalRevendedores.find(rev => (rev.Nome || rev.nome) === nome);
-            if(r) {
-                document.getElementById('editRevNomeAntigo').value = nome;
-                document.getElementById('editRevNovoNome').value = r.Nome || r.nome;
-                document.getElementById('editRevNovoContato').value = r.Contato || r.contato || '';
-                document.getElementById('modalEditRev').style.display = 'flex';
-            }
+            const r = globalRevendedores.find(rev => (rev.Nome || rev.nome) == nome);
+            if(r) { document.getElementById('editRevNomeAntigo').value = nome; document.getElementById('editRevNovoNome').value = r.Nome || r.nome; document.getElementById('editRevNovoContato').value = r.Contato || r.contato || ''; document.getElementById('modalEditRev').style.display = 'flex'; }
         }
-
         function fecharModalRev() { document.getElementById('modalEditRev').style.display = 'none'; }
+        async function salvarEdicaoRev() { await apiPost({ action: 'editRevendedor', nomeAntigo: document.getElementById('editRevNomeAntigo').value, novoNome: document.getElementById('editRevNovoNome').value, novoContato: document.getElementById('editRevNovoContato').value }); fecharModalRev(); carregarRevendedores(); }
+        async function addRevendedor() { const nome = document.getElementById('novoRevendedor').value, contato = document.getElementById('contatoRevendedor').value; if(nome) { await apiPost({ action: 'addRevendedor', nome, contato }); document.getElementById('novoRevendedor').value = ''; document.getElementById('contatoRevendedor').value = ''; carregarRevendedores(); } }
+        async function delRevendedor(nome) { if(confirm('Excluir ' + nome + '?')) { await apiPost({ action: 'delRevendedor', nome }); carregarRevendedores(); } }
 
-        async function salvarEdicaoRev() {
-            const data = {
-                action: 'editRevendedor',
-                nomeAntigo: document.getElementById('editRevNomeAntigo').value,
-                novoNome: document.getElementById('editRevNovoNome').value,
-                novoContato: document.getElementById('editRevNovoContato').value
-            };
-            await apiPost(data);
-            fecharModalRev();
-            await carregarRevendedores();
-        }
-
-        async function addRevendedor() {
-            const nome = document.getElementById('novoRevendedor').value;
-            const contato = document.getElementById('contatoRevendedor').value;
-            if(nome) { await apiPost({ action: 'addRevendedor', nome, contato }); document.getElementById('novoRevendedor').value = ''; document.getElementById('contatoRevendedor').value = ''; await carregarRevendedores(); }
-        }
-
-        async function delRevendedor(nome) {
-            if(confirm('Excluir ' + nome + '?')) { await apiPost({ action: 'delRevendedor', nome }); await carregarRevendedores(); }
-        }
-
-        async function adicionarAoInventario() {
-            const codigo = document.getElementById('codigoInput').value;
-            const data = document.getElementById('dataInventario').value;
-            if(codigo) {
-                await apiPost({ action: 'addInventario', codigo, data });
-                document.getElementById('codigoInput').value = '';
-                await carregarInventario();
-                abrirModal(codigo);
-            }
-        }
-
-        async function carregarInventario() {
-            globalInventario = await apiGet('getInventario');
-            renderInventario(globalInventario);
-        }
-
+        async function carregarInventario() { globalInventario = await apiGet('getInventario'); renderInventario(globalInventario); }
         function renderInventario(dados) {
             document.getElementById('itemCount').innerText = `${dados.length} PEÇAS`;
             document.getElementById('listaInventario').innerHTML = dados.map(i => {
                 const status = i.Status || i.status;
-                let statusClass = 'status-estoque';
-                if(status === 'Vendido') statusClass = 'status-vendido';
-                else if(status !== 'Em Estoque') statusClass = 'status-consignado';
-                
-                return `
-                <tr class="hover:bg-white/5 transition-colors">
-                    <td>${i.Foto ? `<img src="${i.Foto}" class="w-10 h-10 rounded object-cover">` : '<div class="w-10 h-10 bg-navy-dark rounded"></div>'}</td>
-                    <td class="font-bold text-white tracking-wider">${i.Codigo || i.codigo}</td>
-                    <td class="text-muted">R$ ${parseFloat(i.Custo || 0).toFixed(2)}</td>
-                    <td class="text-gold font-bold">R$ ${parseFloat(i.Venda || 0).toFixed(2)}</td>
-                    <td><span class="status-pill ${statusClass}">${status}</span></td>
-                    <td class="text-right"><button onclick="abrirModal('${i.Codigo || i.codigo}')" class="text-accent hover:underline">Editar</button></td>
-                </tr>
-            `}).join('');
+                let sClass = 'status-estoque';
+                if(status === 'Vendido') sClass = 'status-vendido'; else if(status !== 'Em Estoque') sClass = 'status-consignado';
+                return `<tr class="hover:bg-white/5"><td>${i.Foto ? `<img src="${i.Foto}" class="w-10 h-10 rounded object-cover">` : '<div class="w-10 h-10 bg-navy-dark rounded"></div>'}</td><td class="font-bold text-white">${i.Codigo || i.codigo}</td><td class="text-muted">R$ ${parseFloat(i.Custo || 0).toFixed(2)}</td><td class="text-gold font-bold">R$ ${parseFloat(i.Venda || 0).toFixed(2)}</td><td><span class="status-pill ${sClass}">${status}</span></td><td class="text-right"><button onclick="abrirModal('${i.Codigo || i.codigo}')" class="text-accent hover:underline">Editar</button></td></tr>`;
+            }).join('');
         }
 
-        function checkBipeConsignacaoInstant(codigo) {
-            if (!codigo) {
-                document.getElementById('custoItem').value = '';
-                document.getElementById('vendaItem').value = '';
-                return;
-            }
-            const item = globalInventario.find(i => (i.Codigo || i.codigo).toString().trim() === codigo.toString().trim());
-            if(item) {
-                document.getElementById('custoItem').value = item.Custo || item.custo || '';
-                document.getElementById('vendaItem').value = item.Venda || item.venda || '';
-            } else {
-                document.getElementById('custoItem').value = '';
-                document.getElementById('vendaItem').value = '';
-            }
-        }
-
-        function abrirModal(codigo) {
-            document.getElementById('editCodigo').value = codigo;
-            const item = globalInventario.find(i => (i.Codigo || i.codigo) == codigo);
-            if(item) {
-                document.getElementById('editCusto').value = item.Custo || item.custo || '';
-                document.getElementById('editVenda').value = item.Venda || item.venda || '';
-                document.getElementById('editFoto').value = item.Foto || item.foto || '';
-            } else {
-                document.getElementById('editCusto').value = ''; document.getElementById('editVenda').value = ''; document.getElementById('editFoto').value = '';
-            }
-            document.getElementById('modalEdit').style.display = 'flex';
-        }
-
+        function checkBipeConsignacaoInstant(v) { const item = globalInventario.find(i => (i.Codigo || i.codigo).toString().trim() == v.toString().trim()); if(item) { document.getElementById('custoItem').value = item.Custo || item.custo || ''; document.getElementById('vendaItem').value = item.Venda || item.venda || ''; } else { document.getElementById('custoItem').value = ''; document.getElementById('vendaItem').value = ''; } }
+        function abrirModal(c) { document.getElementById('editCodigo').value = c; const i = globalInventario.find(it => (it.Codigo || it.codigo) == c); if(i) { document.getElementById('editCusto').value = i.Custo || i.custo || ''; document.getElementById('editVenda').value = i.Venda || i.venda || ''; document.getElementById('editFoto').value = i.Foto || i.foto || ''; } document.getElementById('modalEdit').style.display = 'flex'; }
         function fecharModal() { document.getElementById('modalEdit').style.display = 'none'; }
-
-        async function salvarEdicao() {
-            const data = {
-                action: 'editInventario',
-                codigo: document.getElementById('editCodigo').value,
-                custo: document.getElementById('editCusto').value,
-                venda: document.getElementById('editVenda').value,
-                foto: document.getElementById('editFoto').value
-            };
-            await apiPost(data);
-            fecharModal();
-            await carregarInventario();
-        }
-
-        async function repassarItem() {
-            const data = {
-                action: 'addRepasse',
-                revendedor: document.getElementById('selectRevendedor').value,
-                codigo: document.getElementById('codigoRepasse').value,
-                custo: document.getElementById('custoItem').value,
-                venda: document.getElementById('vendaItem').value,
-                data: document.getElementById('dataRepasse').value
-            };
-            if(data.codigo && data.revendedor) { await apiPost(data); alert('Repasse concluído!'); document.getElementById('codigoRepasse').value = ''; await carregarInventario(); }
-        }
+        async function salvarEdicao() { await apiPost({ action: 'editInventario', codigo: document.getElementById('editCodigo').value, custo: document.getElementById('editCusto').value, venda: document.getElementById('editVenda').value, foto: document.getElementById('editFoto').value }); fecharModal(); carregarInventario(); }
+        async function adicionarAoInventario() { const c = document.getElementById('codigoInput').value; if(c) { await apiPost({ action: 'addInventario', codigo: c, data: document.getElementById('dataInventario').value }); document.getElementById('codigoInput').value = ''; await carregarInventario(); abrirModal(c); } }
+        async function repassarItem() { const d = { action: 'addRepasse', revendedor: document.getElementById('selectRevendedor').value, codigo: document.getElementById('codigoRepasse').value, custo: document.getElementById('custoItem').value, venda: document.getElementById('vendaItem').value, data: document.getElementById('dataRepasse').value }; if(d.codigo && d.revendedor) { await apiPost(d); document.getElementById('codigoRepasse').value = ''; carregarInventario(); } }
 
         async function carregarPainelIndividual() {
             const rev = document.getElementById('filtroRevendedor').value;
-            if(!rev) {
-                document.getElementById('dadosPainel').classList.add('hidden');
-                document.getElementById('painelVazio').classList.remove('hidden');
-                return;
-            }
-            
+            if(!rev) { document.getElementById('dadosPainel').classList.add('hidden'); document.getElementById('painelVazio').classList.remove('hidden'); return; }
             document.getElementById('painelVazio').classList.add('hidden');
             globalRepasses = await apiGet('getRepasses');
-            
-            // Resetar filtros ao trocar de revendedor
-            document.querySelectorAll('[data-pfilter]').forEach(b => b.classList.remove('active'));
-            document.querySelector('[data-pfilter="Todos"]').classList.add('active');
-            
-            const filtrados = globalRepasses.filter(r => (r.Revendedor || r.revendedor) === rev);
+            const filtrados = globalRepasses.filter(r => (r.Revendedor || r.revendedor).toString().trim() == rev.toString().trim());
             renderPainel(filtrados);
         }
 
@@ -452,11 +232,9 @@
             let c = 0, v = 0;
             document.getElementById('tabelaPainel').innerHTML = itens.map(i => {
                 c += parseFloat(i.Custo || 0); v += parseFloat(i.Venda || 0);
-                const status = i.Status || i.status;
-                const statusColor = status === 'Pago' ? 'text-green-400' : 'text-gold';
-                return `<tr><td>${new Date(i.Data || i.data).toLocaleDateString('pt-BR')}</td><td class="font-bold text-white">${i.Codigo || i.codigo}</td><td class="text-gold">R$ ${parseFloat(i.Venda || 0).toFixed(2)}</td><td class="text-right uppercase text-[10px] font-bold ${statusColor}">${status}</td></tr>`;
+                const s = i.Status || i.status, sCol = s === 'Pago' ? 'text-green-400' : 'text-gold';
+                return `<tr><td>${new Date(i.Data || i.data).toLocaleDateString('pt-BR')}</td><td class="font-bold text-white">${i.Codigo || i.codigo}</td><td class="text-gold">R$ ${parseFloat(i.Venda || 0).toFixed(2)}</td><td class="text-right uppercase text-[10px] font-bold ${sCol}">${s}</td></tr>`;
             }).join('');
-            
             totalVendaPainel = v;
             document.getElementById('totalCusto').innerText = `R$ ${c.toFixed(2)}`;
             document.getElementById('totalVenda').innerText = `R$ ${v.toFixed(2)}`;
@@ -465,64 +243,18 @@
         }
 
         function calcularComissao() {
-            const perc = parseFloat(document.getElementById('percentualComissao').value) || 0;
-            const card = document.getElementById('cardComissao');
-            if(perc > 0) {
-                const comissao = totalVendaPainel * (perc / 100);
-                const liquido = totalVendaPainel - comissao;
-                document.getElementById('valorComissaoRev').innerText = `R$ ${comissao.toFixed(2)}`;
-                document.getElementById('valorLiquidoLuxus').innerText = `R$ ${liquido.toFixed(2)}`;
-                card.classList.remove('hidden');
-            } else {
-                card.classList.add('hidden');
-            }
+            const p = parseFloat(document.getElementById('percentualComissao').value) || 0, card = document.getElementById('cardComissao');
+            if(p > 0) { const com = totalVendaPainel * (p / 100), liq = totalVendaPainel - com; document.getElementById('valorComissaoRev').innerText = `R$ ${com.toFixed(2)}`; document.getElementById('valorLiquidoLuxus').innerText = `R$ ${liq.toFixed(2)}`; card.classList.remove('hidden'); } else card.classList.add('hidden');
         }
 
-        async function realizarFechamento() {
-            const rev = document.getElementById('filtroRevendedor').value;
-            const obs = document.getElementById('obsFechamento').value;
-            if(confirm('Finalizar acerto? Todas as peças pendentes serão marcadas como pagas.')) { 
-                await apiPost({ action: 'fechamento', revendedor: rev, obs }); 
-                alert('Fechamento realizado com sucesso!');
-                await carregarPainelIndividual(); 
-            }
-        }
+        async function realizarFechamento() { const rev = document.getElementById('filtroRevendedor').value; if(confirm('Liquidar peças pendentes?')) { await apiPost({ action: 'fechamento', revendedor: rev, obs: document.getElementById('obsFechamento').value }); carregarPainelIndividual(); } }
 
-        function setFilter(filter) {
-            document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
-            document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
-            let filtered = globalInventario;
-            if(filter === 'Em Estoque') filtered = globalInventario.filter(i => (i.Status || i.status) === 'Em Estoque');
-            else if(filter === 'Consignado') filtered = globalInventario.filter(i => (i.Status || i.status) !== 'Em Estoque' && (i.Status || i.status) !== 'Vendido');
-            else if(filter === 'Vendido') filtered = globalInventario.filter(i => (i.Status || i.status) === 'Vendido');
-            renderInventario(filtered);
-        }
-
-        function setPainelFilter(filter) {
-            document.querySelectorAll('[data-pfilter]').forEach(b => b.classList.remove('active'));
-            document.querySelector(`[data-pfilter="${filter}"]`).classList.add('active');
-            const rev = document.getElementById('filtroRevendedor').value;
-            let filtered = globalRepasses.filter(r => (r.Revendedor || r.revendedor) === rev);
-            if(filter !== 'Todos') filtered = filtered.filter(i => (i.Status || i.status) === filter);
-            renderPainel(filtered);
-        }
-
-        function filtrarTabela() {
-            const query = document.getElementById('searchInventario').value.toLowerCase();
-            const filtered = globalInventario.filter(i => 
-                (i.Codigo || i.codigo).toString().toLowerCase().includes(query) || 
-                (i.Status || i.status).toLowerCase().includes(query)
-            );
-            renderInventario(filtered);
-        }
+        function setFilter(f) { document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active')); document.querySelector(`[data-filter="${f}"]`).classList.add('active'); let d = globalInventario; if(f === 'Em Estoque') d = globalInventario.filter(i => (i.Status || i.status) === 'Em Estoque'); else if(f === 'Consignado') d = globalInventario.filter(i => (i.Status || i.status) !== 'Em Estoque' && (i.Status || i.status) !== 'Vendido'); else if(f === 'Vendido') d = globalInventario.filter(i => (i.Status || i.status) === 'Vendido'); renderInventario(d); }
+        function setPainelFilter(f) { document.querySelectorAll('[data-pfilter]').forEach(b => b.classList.remove('active')); document.querySelector(`[data-pfilter="${f}"]`).classList.add('active'); const rev = document.getElementById('filtroRevendedor').value; let d = globalRepasses.filter(r => (r.Revendedor || r.revendedor).toString().trim() == rev.toString().trim()); if(f !== 'Todos') d = d.filter(i => (i.Status || i.status) === f); renderPainel(d); }
+        function filtrarTabela() { const q = document.getElementById('searchInventario').value.toLowerCase(); renderInventario(globalInventario.filter(i => (i.Codigo || i.codigo).toString().toLowerCase().includes(q) || (i.Status || i.status).toLowerCase().includes(q))); }
         
         document.getElementById('codigoInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') adicionarAoInventario(); });
-        
-        // Carregamento inicial
-        if(API_URL) {
-            carregarInventario();
-            carregarRevendedores();
-        }
+        if(API_URL) { carregarInventario(); carregarRevendedores(); }
     </script>
 </body>
 </html>
