@@ -214,50 +214,86 @@
         async function apiGet(action) {
             if(!API_URL) return [];
             document.getElementById('loading').style.display = 'flex';
-            try { const r = await fetch(`${API_URL}?action=${action}`); return await r.json(); } 
-            catch(e) { console.error("Erro Get:", e); return []; }
+            try { 
+                const r = await fetch(`${API_URL}?action=${action}`); 
+                const data = await r.json();
+                return Array.isArray(data) ? data : [];
+            } catch(e) { console.error("Erro Get:", e); return []; }
             finally { document.getElementById('loading').style.display = 'none'; }
         }
 
         async function carregarRevendedores() {
-            globalRevendedores = await apiGet('getRevendedores');
-            const options = '<option value="">SELECIONAR PARCEIRO</option>' + globalRevendedores.map(r => {
-                const n = (r.Nome || r.nome || "").toString().trim();
-                return `<option value="${n}">${n}</option>`;
-            }).join('');
-            if(document.getElementById('selectRevendedorCentral')) document.getElementById('selectRevendedorCentral').innerHTML = options;
-            const statusOptions = '<option value="Em Estoque">Em Estoque</option><option value="Vendido">Vendido</option>' + globalRevendedores.map(r => {
-                const n = (r.Nome || r.nome || "").toString().trim();
-                return `<option value="${n}">${n}</option>`;
-            }).join('');
-            if(document.getElementById('editStatus')) document.getElementById('editStatus').innerHTML = statusOptions;
+            try {
+                globalRevendedores = await apiGet('getRevendedores');
+                const options = '<option value="">SELECIONAR PARCEIRO</option>' + globalRevendedores.map(r => {
+                    const n = (r.Nome || r.nome || "").toString().trim();
+                    return n ? `<option value="${n}">${n}</option>` : '';
+                }).join('');
+                if(document.getElementById('selectRevendedorCentral')) document.getElementById('selectRevendedorCentral').innerHTML = options;
+                
+                const statusOptions = '<option value="Em Estoque">Em Estoque</option><option value="Vendido">Vendido</option>' + globalRevendedores.map(r => {
+                    const n = (r.Nome || r.nome || "").toString().trim();
+                    return n ? `<option value="${n}">${n}</option>` : '';
+                }).join('');
+                if(document.getElementById('editStatus')) document.getElementById('editStatus').innerHTML = statusOptions;
+            } catch (e) { console.error("Erro carregarRevendedores:", e); }
         }
 
         async function carregarDadosCentral() {
-            const revNome = document.getElementById('selectRevendedorCentral').value;
-            if(!revNome) { document.getElementById('dadosCentral').classList.add('hidden'); document.getElementById('centralVazia').classList.remove('hidden'); return; }
-            document.getElementById('centralVazia').classList.add('hidden');
-            document.getElementById('dadosCentral').classList.remove('hidden');
-            const rev = globalRevendedores.find(r => (r.Nome || r.nome).toString().trim() === revNome);
-            document.getElementById('parceiroNome').innerText = revNome;
-            document.getElementById('parceiroContato').innerText = rev ? (rev.Contato || rev.contato || 'Sem contato') : 'Sem contato';
-            globalRepasses = await apiGet('getRepasses');
-            limparConferencia();
-            renderPainelCentral(globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === revNome.toLowerCase() && (r.Status || r.status || "Pendente") === "Pendente"));
-            setTimeout(() => document.getElementById('bipeConferenciaCentral').focus(), 500);
+            try {
+                const revNome = document.getElementById('selectRevendedorCentral').value;
+                if(!revNome) { 
+                    document.getElementById('dadosCentral').classList.add('hidden'); 
+                    document.getElementById('centralVazia').classList.remove('hidden'); 
+                    return; 
+                }
+                
+                document.getElementById('centralVazia').classList.add('hidden');
+                document.getElementById('dadosCentral').classList.remove('hidden');
+                
+                const rev = globalRevendedores.find(r => (r.Nome || r.nome || "").toString().trim() === revNome);
+                document.getElementById('parceiroNome').innerText = revNome;
+                document.getElementById('parceiroContato').innerText = rev ? (rev.Contato || rev.contato || 'Sem contato') : 'Sem contato';
+                
+                globalRepasses = await apiGet('getRepasses');
+                limparConferencia(false); // Limpa sem recarregar tudo para evitar loop
+                
+                const itensDoRevendedor = globalRepasses.filter(r => 
+                    (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === revNome.toLowerCase() && 
+                    (r.Status || r.status || "Pendente") === "Pendente"
+                );
+                
+                renderPainelCentral(itensDoRevendedor);
+                setTimeout(() => {
+                    const bipeInput = document.getElementById('bipeConferenciaCentral');
+                    if(bipeInput) bipeInput.focus();
+                }, 500);
+            } catch (e) { 
+                console.error("Erro carregarDadosCentral:", e);
+                alert("Erro ao carregar dados do revendedor. Verifique sua conexão.");
+            }
         }
 
         function handleBipeConferencia(e) {
             if(e.key === 'Enter') {
                 const cod = e.target.value.trim().toLowerCase();
                 const rev = document.getElementById('selectRevendedorCentral').value.toString().trim().toLowerCase();
-                const item = globalRepasses.find(r => (r.Codigo || r.codigo || "").toString().trim().toLowerCase() === cod && (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev && (r.Status || r.status || "Pendente") === "Pendente");
+                
+                const item = globalRepasses.find(r => 
+                    (r.Codigo || r.codigo || "").toString().trim().toLowerCase() === cod && 
+                    (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev &&
+                    (r.Status || r.status || "Pendente") === "Pendente"
+                );
+
                 if(item) {
                     const codOriginal = (item.Codigo || item.codigo).toString();
                     if(!itensDevolvidos.includes(codOriginal)) {
                         itensDevolvidos.push(codOriginal);
                         e.target.value = '';
-                        renderPainelCentral(globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev && (r.Status || r.status || "Pendente") === "Pendente"));
+                        renderPainelCentral(globalRepasses.filter(r => 
+                            (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev && 
+                            (r.Status || r.status || "Pendente") === "Pendente"
+                        ));
                     } else { alert('Peça já bipada como devolvida!'); e.target.value = ''; }
                 } else { alert('Peça não encontrada nos pendentes deste revendedor!'); e.target.value = ''; }
             }
@@ -268,7 +304,7 @@
             const itensVendidos = itens.filter(i => !itensDevolvidos.includes((i.Codigo || i.codigo).toString()));
             
             document.getElementById('tabelaPainelCentral').innerHTML = itens.map(i => {
-                const cod = (i.Codigo || i.codigo).toString();
+                const cod = (i.Codigo || i.codigo || "").toString();
                 const valVenda = parseFloat(i.Venda || 0);
                 const isDevolvido = itensDevolvidos.includes(cod);
                 if (!isDevolvido) { totalVendaVendida += valVenda; }
@@ -281,8 +317,13 @@
             document.getElementById('totalVendaCentral').innerText = `R$ ${totalVendaVendida.toFixed(2)}`;
             
             const btn = document.getElementById('btnFinalizarCentral');
-            if(itensVendidos.length > 0) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); }
-            else { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
+            if(itensVendidos.length > 0) { 
+                btn.disabled = false; 
+                btn.classList.remove('opacity-50', 'cursor-not-allowed'); 
+            } else { 
+                btn.disabled = true; 
+                btn.classList.add('opacity-50', 'cursor-not-allowed'); 
+            }
             calcularComissao();
         }
 
@@ -292,7 +333,13 @@
             document.getElementById('valorLiquidoLuxusCentral').innerText = `R$ ${liq.toFixed(2)}`;
         }
 
-        function limparConferencia() { itensDevolvidos = []; totalVendaVendida = 0; document.getElementById('bipeConferenciaCentral').value = ''; if(document.getElementById('selectRevendedorCentral').value) carregarDadosCentral(); }
+        function limparConferencia(recarregar = true) { 
+            itensDevolvidos = []; 
+            totalVendaVendida = 0; 
+            const bipeInput = document.getElementById('bipeConferenciaCentral');
+            if(bipeInput) bipeInput.value = ''; 
+            if(recarregar && document.getElementById('selectRevendedorCentral').value) carregarDadosCentral(); 
+        }
 
         async function realizarFechamentoParcial() { 
             const rev = document.getElementById('selectRevendedorCentral').value;
@@ -301,12 +348,17 @@
             
             if(confirm(`Confirmar venda de ${codigosVendidos.length} peças faltantes?`)) { 
                 await apiPost({ action: 'fechamentoParcial', revendedor: rev, codigos: codigosVendidos, obs: document.getElementById('obsFechamentoCentral').value }); 
-                limparConferencia();
-                setTimeout(carregarDadosCentral, 1500); 
+                limparConferencia(true);
             } 
         }
 
-        async function carregarInventario() { globalInventario = await apiGet('getInventario'); renderInventario(globalInventario); }
+        async function carregarInventario() { 
+            try {
+                globalInventario = await apiGet('getInventario'); 
+                renderInventario(globalInventario); 
+            } catch (e) { console.error("Erro carregarInventario:", e); }
+        }
+
         function renderInventario(dados) {
             document.getElementById('itemCount').innerText = `${dados.length} PEÇAS`;
             document.getElementById('listaInventario').innerHTML = dados.map(i => {
@@ -319,7 +371,10 @@
 
         function checkBipeConsignacaoInstant(v) { 
             const item = globalInventario.find(i => (i.Codigo || i.codigo || "").toString().trim().toLowerCase() === v.toString().trim().toLowerCase()); 
-            if(item) { document.getElementById('custoItemCentral').value = item.Custo || item.custo || ''; document.getElementById('vendaItemCentral').value = item.Venda || item.venda || ''; } 
+            if(item) { 
+                document.getElementById('custoItemCentral').value = item.Custo || item.custo || ''; 
+                document.getElementById('vendaItemCentral').value = item.Venda || item.venda || ''; 
+            } 
         }
         
         async function repassarItemCentral() { 
@@ -327,7 +382,9 @@
             const c = document.getElementById('codigoRepasseCentral').value; 
             if(r && c) { 
                 await apiPost({ action: 'addRepasse', revendedor: r, codigo: c, custo: document.getElementById('custoItemCentral').value, venda: document.getElementById('vendaItemCentral').value, data: document.getElementById('dataRepasseCentral').value }); 
-                document.getElementById('codigoRepasseCentral').value = ''; document.getElementById('custoItemCentral').value = ''; document.getElementById('vendaItemCentral').value = '';
+                document.getElementById('codigoRepasseCentral').value = ''; 
+                document.getElementById('custoItemCentral').value = ''; 
+                document.getElementById('vendaItemCentral').value = '';
                 setTimeout(carregarDadosCentral, 1500); 
             } 
         }
@@ -335,28 +392,101 @@
         function abrirModal(c) { 
             document.getElementById('editCodigo').value = c; 
             const i = globalInventario.find(it => (it.Codigo || it.codigo || "").toString().trim().toLowerCase() === c.trim().toLowerCase()); 
-            if(i) { document.getElementById('editCusto').value = i.Custo || i.custo || ''; document.getElementById('editVenda').value = i.Venda || i.venda || ''; document.getElementById('editFoto').value = i.Foto || i.foto || ''; document.getElementById('editStatus').value = (i.Status || i.status || "Em Estoque").toString().trim(); } 
+            if(i) { 
+                document.getElementById('editCusto').value = i.Custo || i.custo || ''; 
+                document.getElementById('editVenda').value = i.Venda || i.venda || ''; 
+                document.getElementById('editFoto').value = i.Foto || i.foto || ''; 
+                document.getElementById('editStatus').value = (i.Status || i.status || "Em Estoque").toString().trim(); 
+            } 
             document.getElementById('modalEdit').style.display = 'flex'; 
         }
         function fecharModal() { document.getElementById('modalEdit').style.display = 'none'; }
         async function salvarEdicao() { 
             await apiPost({ action: 'editInventario', codigo: document.getElementById('editCodigo').value, custo: document.getElementById('editCusto').value, venda: document.getElementById('editVenda').value, foto: document.getElementById('editFoto').value, status: document.getElementById('editStatus').value }); 
-            fecharModal(); setTimeout(carregarInventario, 1500); 
+            fecharModal(); 
+            setTimeout(carregarInventario, 1500); 
         }
         
-        async function adicionarAoInventario() { const c = document.getElementById('codigoInput').value; if(c) { await apiPost({ action: 'addInventario', codigo: c, data: document.getElementById('dataInventario').value }); document.getElementById('codigoInput').value = ''; await carregarInventario(); abrirModal(c); } }
-        function setFilter(f) { document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active')); document.querySelector(`[data-filter="${f}"]`).classList.add('active'); let d = globalInventario; if(f === 'Em Estoque') d = globalInventario.filter(i => (i.Status || i.status) === 'Em Estoque'); else if(f === 'Consignado') d = globalInventario.filter(i => (i.Status || i.status) !== 'Em Estoque' && (i.Status || i.status) !== 'Vendido'); else if(f === 'Vendido') d = globalInventario.filter(i => (i.Status || i.status) === 'Vendido'); renderInventario(d); }
-        function setPainelFilter(f) { document.querySelectorAll('[data-pfilter]').forEach(b => b.classList.remove('active')); document.querySelector(`[data-pfilter="${f}"]`).classList.add('active'); const rev = document.getElementById('selectRevendedorCentral').value.toString().trim().toLowerCase(); let d = globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev && (r.Status || r.status || "Pendente") === "Pendente"); renderPainelCentral(d); }
-        function filtrarTabela() { const q = document.getElementById('searchInventario').value.toLowerCase(); renderInventario(globalInventario.filter(i => (i.Codigo || i.codigo || "").toString().toLowerCase().includes(q) || (i.Status || i.status || "").toString().toLowerCase().includes(q))); }
+        async function adicionarAoInventario() { 
+            const c = document.getElementById('codigoInput').value; 
+            if(c) { 
+                await apiPost({ action: 'addInventario', codigo: c, data: document.getElementById('dataInventario').value }); 
+                document.getElementById('codigoInput').value = ''; 
+                await carregarInventario(); 
+                abrirModal(c); 
+            } 
+        }
+
+        function setFilter(f) { 
+            document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active')); 
+            document.querySelector(`[data-filter="${f}"]`).classList.add('active'); 
+            let d = globalInventario; 
+            if(f === 'Em Estoque') d = globalInventario.filter(i => (i.Status || i.status) === 'Em Estoque'); 
+            else if(f === 'Consignado') d = globalInventario.filter(i => (i.Status || i.status) !== 'Em Estoque' && (i.Status || i.status) !== 'Vendido'); 
+            else if(f === 'Vendido') d = globalInventario.filter(i => (i.Status || i.status) === 'Vendido'); 
+            renderInventario(d); 
+        }
+
+        function setPainelFilter(f) { 
+            document.querySelectorAll('[data-pfilter]').forEach(b => b.classList.remove('active')); 
+            document.querySelector(`[data-pfilter="${f}"]`).classList.add('active'); 
+            const rev = document.getElementById('selectRevendedorCentral').value.toString().trim().toLowerCase(); 
+            let d = globalRepasses.filter(r => (r.Revendedor || r.revendedor || "").toString().trim().toLowerCase() === rev && (r.Status || r.status || "Pendente") === "Pendente"); 
+            renderPainelCentral(d); 
+        }
+
+        function filtrarTabela() { 
+            const q = document.getElementById('searchInventario').value.toLowerCase(); 
+            renderInventario(globalInventario.filter(i => (i.Codigo || i.codigo || "").toString().toLowerCase().includes(q) || (i.Status || i.status || "").toString().toLowerCase().includes(q))); 
+        }
         
-        function abrirModalNovoParceiro() { const n = prompt("Nome do Novo Parceiro:"); const c = prompt("Contato (WhatsApp):"); if(n) { addRevendedorDireto(n, c); } }
-        async function addRevendedorDireto(n, c) { await apiPost({ action: 'addRevendedor', nome: n, contato: c }); setTimeout(async () => { await carregarRevendedores(); document.getElementById('selectRevendedorCentral').value = n; carregarDadosCentral(); }, 1500); }
-        function abrirModalEdicaoParceiroAtual() { const n = document.getElementById('selectRevendedorCentral').value; const r = globalRevendedores.find(rev => (rev.Nome || rev.nome || "").toString().trim().toLowerCase() === n.trim().toLowerCase()); if(r) { document.getElementById('editRevNomeAntigo').value = n; document.getElementById('editRevNovoNome').value = (r.Nome || r.nome || "").toString().trim(); document.getElementById('editRevNovoContato').value = (r.Contato || r.contato || "").toString().trim(); document.getElementById('modalEditRev').style.display = 'flex'; } }
+        function abrirModalNovoParceiro() { 
+            const n = prompt("Nome do Novo Parceiro:"); 
+            const c = prompt("Contato (WhatsApp):"); 
+            if(n) { addRevendedorDireto(n, c); } 
+        }
+
+        async function addRevendedorDireto(n, c) { 
+            await apiPost({ action: 'addRevendedor', nome: n, contato: c }); 
+            setTimeout(async () => { 
+                await carregarRevendedores(); 
+                document.getElementById('selectRevendedorCentral').value = n; 
+                carregarDadosCentral(); 
+            }, 1500); 
+        }
+
+        function abrirModalEdicaoParceiroAtual() { 
+            const n = document.getElementById('selectRevendedorCentral').value; 
+            const r = globalRevendedores.find(rev => (rev.Nome || rev.nome || "").toString().trim().toLowerCase() === n.trim().toLowerCase()); 
+            if(r) { 
+                document.getElementById('editRevNomeAntigo').value = n; 
+                document.getElementById('editRevNovoNome').value = (r.Nome || r.nome || "").toString().trim(); 
+                document.getElementById('editRevNovoContato').value = (r.Contato || r.contato || "").toString().trim(); 
+                document.getElementById('modalEditRev').style.display = 'flex'; 
+            } 
+        }
+
         function fecharModalRev() { document.getElementById('modalEditRev').style.display = 'none'; }
-        async function salvarEdicaoRev() { const novoNome = document.getElementById('editRevNovoNome').value; await apiPost({ action: 'editRevendedor', nomeAntigo: document.getElementById('editRevNomeAntigo').value, novoNome: novoNome, novoContato: document.getElementById('editRevNovoContato').value }); fecharModalRev(); setTimeout(async () => { await carregarRevendedores(); document.getElementById('selectRevendedorCentral').value = novoNome; carregarDadosCentral(); }, 1500); }
+
+        async function salvarEdicaoRev() { 
+            const novoNome = document.getElementById('editRevNovoNome').value; 
+            await apiPost({ action: 'editRevendedor', nomeAntigo: document.getElementById('editRevNomeAntigo').value, novoNome: novoNome, novoContato: document.getElementById('editRevNovoContato').value }); 
+            fecharModalRev(); 
+            setTimeout(async () => { 
+                await carregarRevendedores(); 
+                document.getElementById('selectRevendedorCentral').value = novoNome; 
+                carregarDadosCentral(); 
+            }, 1500); 
+        }
 
         document.getElementById('codigoInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') adicionarAoInventario(); });
-        window.onload = () => { if(API_URL) { carregarInventario(); carregarRevendedores(); } };
+        
+        window.onload = () => { 
+            if(API_URL) { 
+                carregarInventario(); 
+                carregarRevendedores(); 
+            } 
+        };
     </script>
 </body>
 </html>
