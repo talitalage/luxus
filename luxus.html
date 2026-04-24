@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Luxus - Gestão de Inventário</title>
+    <link rel="icon" type="image/png" href="https://i.ibb.co/6R29d3Dj/luxus-logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(ellipse at 20% 30%, #0f172a, #020617);
+            color: #f1f5f9;
+        }
+        .glass-card { background: rgba(15,23,42,0.75); backdrop-filter: blur(12px); border: 1px solid rgba(212,175,55,0.15); border-radius: 24px; }
+        .btn-gold { background: linear-gradient(135deg, #d4af37, #b8960c); color: #0a0c10; font-weight: 600; }
+        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(212,175,55,0.35); }
+        .nav-link { padding: 0.5rem 1.2rem; color: #94a3b8; cursor: pointer; border-radius: 40px; font-weight: 500; }
+        .nav-link:hover { color: #d4af37; background: rgba(212,175,55,0.1); }
+        .nav-link.active { color: #d4af37; background: rgba(212,175,55,0.15); }
+        input, select { background: #0f172a !important; border: 1px solid #1e293b !important; color: white !important; border-radius: 12px !important; padding: 0.7rem 1rem !important; }
+        .status-pill { padding: 0.25rem 0.75rem; border-radius: 30px; font-size: 0.7rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .status-estoque { background: rgba(16,185,129,0.15); color: #34d399; }
+        .status-consignado { background: rgba(59,130,246,0.15); color: #60a5fa; }
+        .status-vendido { background: rgba(239,68,68,0.15); color: #f87171; }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th, .data-table td { padding: 1rem 0.75rem; border-bottom: 1px solid rgba(30,41,59,0.5); }
+        .code-link { color: #d4af37; cursor: pointer; font-weight: 500; }
+        .modal-overlay { background: rgba(0,0,0,0.95); backdrop-filter: blur(8px); }
+        .stat-card { background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(10,12,16,0.9)); border: 1px solid #1e293b; border-radius: 20px; padding: 1.2rem; }
+        .filter-chip { padding: 0.35rem 1rem; border-radius: 40px; font-size: 0.7rem; cursor: pointer; background: #1e293b; }
+        .filter-chip.active { background: #d4af37; color: #0a0c10; }
+        .animate-fade { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="p-4">
+        <!-- Header -->
+        <div class="glass-card p-4 flex justify-between items-center flex-wrap gap-3 mb-6">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="goHome()">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center"><i class="fas fa-gem text-white"></i></div>
+                <div><h1 class="text-xl font-bold text-amber-500">LUXUS</h1><p class="text-[8px] text-slate-400">JOIAS & PERFUMES</p></div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="switchTab('consulta')" id="tab-consulta" class="nav-link active">Resumo</button>
+                <button onclick="switchTab('revendedores')" id="tab-revendedores" class="nav-link">Revendedores</button>
+                <button onclick="switchTab('config')" id="tab-config" class="nav-link">Configurações</button>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="bg-black/30 px-3 py-1.5 rounded-full"><i class="fas fa-circle text-[8px] text-green-500"></i><span class="text-xs ml-2" id="status-time"></span></div>
+                <div class="bg-slate-800/50 px-3 py-1.5 rounded-full"><i class="fas fa-user-circle text-amber-500"></i><span id="user-name" class="text-xs ml-2">Admin</span></div>
+            </div>
+        </div>
+
+        <!-- Aba Consulta -->
+        <div id="content-consulta" class="space-y-5">
+            <div class="glass-card p-4 text-center"><h2 class="text-xl font-bold text-amber-500">Olá, Lu! ✨</h2><p class="text-xs text-slate-400">Bem-vinda ao seu painel de controle</p></div>
+            <div class="grid grid-cols-4 gap-4">
+                <div class="stat-card"><p class="text-slate-400 text-xs">Total Peças</p><h3 id="dash-total" class="text-2xl font-bold">0</h3></div>
+                <div class="stat-card"><p class="text-slate-400 text-xs">Capital Estoque</p><h3 id="dash-capital" class="text-xl font-bold text-green-400">R$ 0</h3></div>
+                <div class="stat-card"><p class="text-slate-400 text-xs">Em Consignação</p><h3 id="dash-consignado" class="text-xl font-bold text-blue-400">R$ 0</h3></div>
+                <div class="stat-card"><p class="text-slate-400 text-xs">Total Vendido</p><h3 id="dash-vendido" class="text-xl font-bold text-red-400">R$ 0</h3></div>
+            </div>
+
+            <div class="glass-card p-4">
+                <div class="flex gap-3">
+                    <div class="flex-1 relative"><i class="fas fa-search absolute left-4 top-1/2 text-slate-500"></i><input type="text" id="search" placeholder="Buscar..." class="w-full pl-10" oninput="renderTable()"></div>
+                    <button onclick="openNewItemModal()" class="bg-emerald-600 px-5 py-2 rounded-xl text-sm"><i class="fas fa-plus mr-1"></i>Novo Item</button>
+                    <button onclick="loadData()" class="bg-slate-700 px-4 py-2 rounded-xl"><i class="fas fa-sync-alt"></i></button>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button class="filter-chip active" onclick="setFilter('all')">Todos</button>
+                <button class="filter-chip" onclick="setFilter('estoque')">Em Estoque</button>
+                <button class="filter-chip" onclick="setFilter('consignado')">Em Consignação</button>
+                <button class="filter-chip" onclick="setFilter('vendido')">Vendidos</button>
+            </div>
+
+            <div class="glass-card overflow-auto">
+                <table class="data-table w-full">
+                    <thead><tr><th>Código</th><th>Descrição</th><th>Tipo</th><th>Status</th><th>Custo</th><th>Venda</th><th>Data</th><th>Foto</th></tr></thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Aba Revendedores -->
+        <div id="content-revendedores" class="hidden space-y-5">
+            <div class="glass-card p-6">
+                <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-amber-500">Revendedores</h2><button onclick="openAddRevendedorModal()" class="btn-gold px-4 py-2 rounded-xl text-sm">+ Novo Revendedor</button></div>
+                <div id="revendedores-list" class="space-y-2"></div>
+            </div>
+        </div>
+
+        <!-- Aba Configurações -->
+        <div id="content-config" class="hidden max-w-3xl mx-auto space-y-5">
+            <div class="glass-card p-6">
+                <h2 class="text-xl font-bold text-amber-500 mb-5">Configurações</h2>
+                <div class="mb-6"><label class="block text-sm mb-2">URL do Google Apps Script</label><input type="text" id="script-url" class="w-full mb-3"><button onclick="saveConfig()" class="btn-gold px-5 py-2 rounded-xl">Salvar</button></div>
+                <div><h3 class="font-bold mb-3">Tipos de Joia</h3><div class="flex gap-2 mb-3"><input type="text" id="new-tipo" class="flex-1"><button onclick="addTipo()" class="btn-gold px-4 rounded-lg">Adicionar</button></div><div id="tipos-list" class="space-y-1"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edição -->
+    <div id="editModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay">
+        <div class="glass-card p-6 w-[500px] max-w-[90%] animate-fade">
+            <h3 class="text-xl font-bold text-amber-500 mb-4">Editar Item</h3>
+            <input type="hidden" id="edit-rowid">
+            <div class="space-y-3">
+                <input type="text" id="edit-codigo" placeholder="Código" class="w-full" readonly>
+                <input type="text" id="edit-descricao" placeholder="Descrição" class="w-full">
+                <select id="edit-tipo" class="w-full"></select>
+                <div class="grid grid-cols-2 gap-3"><input type="number" id="edit-custo" placeholder="Custo"><input type="number" id="edit-venda" placeholder="Preço Venda"></div>
+                <select id="edit-status" class="w-full"></select>
+                <input type="text" id="edit-foto" placeholder="URL da Foto">
+            </div>
+            <div class="flex gap-3 mt-5"><button onclick="closeModal()" class="flex-1 bg-slate-700 py-2 rounded-lg">Cancelar</button><button onclick="saveItem()" class="flex-1 btn-gold py-2 rounded-lg font-bold">Salvar</button></div>
+        </div>
+    </div>
+
+    <!-- Modal Revendedor -->
+    <div id="revModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay">
+        <div class="glass-card p-6 w-[500px] max-w-[90%] animate-fade">
+            <h3 class="text-xl font-bold text-amber-500 mb-4" id="revModalTitle">Novo Revendedor</h3>
+            <input type="hidden" id="rev-rowid">
+            <div class="space-y-3">
+                <input type="text" id="rev-nome" placeholder="Nome" class="w-full">
+                <input type="text" id="rev-contato" placeholder="Contato (WhatsApp)" class="w-full">
+                <input type="text" id="rev-email" placeholder="E-mail" class="w-full">
+            </div>
+            <div class="flex gap-3 mt-5"><button onclick="closeRevModal()" class="flex-1 bg-slate-700 py-2 rounded-lg">Cancelar</button><button onclick="saveRevendedor()" class="flex-1 btn-gold py-2 rounded-lg font-bold">Salvar</button></div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden glass-card px-5 py-3 rounded-full shadow-xl"><span id="toast-msg"></span></div>
+
+    <script>
+        let inventory = [], revendedores = [], tipos = [];
+        let scriptUrl = localStorage.getItem('luxus_script_url') || '';
+        let currentFilter = 'all';
+
+        document.getElementById('script-url').value = scriptUrl;
+        if (scriptUrl) loadData();
+
+        async function loadData() {
+            if (!scriptUrl) return;
+            try {
+                const res = await fetch(`${scriptUrl}?action=getInventario`);
+                inventory = await res.json();
+                renderTable();
+                updateDashboard();
+                document.getElementById('status-time').innerHTML = new Date().toLocaleTimeString();
+            } catch(e) { showToast('Erro ao carregar'); }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            const search = document.getElementById('search').value.toLowerCase();
+            let filtered = inventory.filter(i => String(i.Codigo).toLowerCase().includes(search) || (i.Descricao || '').toLowerCase().includes(search));
+            if (currentFilter === 'estoque') filtered = filtered.filter(i => i.Status === 'Em Estoque');
+            else if (currentFilter === 'consignado') filtered = filtered.filter(i => i.Status !== 'Em Estoque' && i.Status !== 'Vendido');
+            else if (currentFilter === 'vendido') filtered = filtered.filter(i => i.Status === 'Vendido');
+            
+            tbody.innerHTML = '';
+            filtered.forEach(item => {
+                let statusClass = 'status-estoque', icon = '🏠';
+                if (item.Status === 'Vendido') { statusClass = 'status-vendido'; icon = '💰'; }
+                else if (item.Status !== 'Em Estoque') { statusClass = 'status-consignado'; icon = '🤝'; }
+                const row = tbody.insertRow();
+                row.insertCell(0).innerHTML = `<span class="code-link" onclick="openEditModal(${item.rowId})">${item.Codigo}</span>`;
+                row.insertCell(1).innerHTML = item.Descricao || '-';
+                row.insertCell(2).innerHTML = item.Tipo || 'Geral';
+                row.insertCell(3).innerHTML = `<span class="status-pill ${statusClass}" onclick="quickStatusChange(${item.rowId}, '${item.Status}', '${item.Codigo}')">${icon} ${item.Status}</span>`;
+                row.insertCell(4).innerHTML = `R$ ${(parseFloat(item.Custo) || 0).toFixed(2)}`;
+                row.insertCell(5).innerHTML = `<span class="text-amber-500 font-semibold">R$ ${(parseFloat(item.Venda) || 0).toFixed(2)}</span>`;
+                row.insertCell(6).innerHTML = item.Data ? new Date(item.Data).toLocaleDateString() : '-';
+                row.insertCell(7).innerHTML = `<div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center cursor-pointer" onclick="viewFoto('${item.Foto || ''}')">${item.Foto ? '<img src="'+item.Foto+'" class="w-full h-full object-cover rounded">' : '<i class="fas fa-image text-slate-600"></i>'}</div>`;
+            });
+        }
+
+        function openEditModal(rowId) {
+            const item = inventory.find(i => i.rowId === rowId);
+            document.getElementById('edit-rowid').value = rowId;
+            document.getElementById('edit-codigo').value = item.Codigo;
+            document.getElementById('edit-descricao').value = item.Descricao || '';
+            document.getElementById('edit-custo').value = item.Custo;
+            document.getElementById('edit-venda').value = item.Venda;
+            document.getElementById('edit-foto').value = item.Foto || '';
+            document.getElementById('edit-status').value = item.Status;
+            loadTiposToSelect(item.Tipo);
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('editModal').style.display = 'none'; }
+
+        async function saveItem() {
+            const data = {
+                action: 'editInventario',
+                rowId: parseInt(document.getElementById('edit-rowid').value),
+                codigo: document.getElementById('edit-codigo').value,
+                descricao: document.getElementById('edit-descricao').value,
+                tipo: document.getElementById('edit-tipo').value,
+                custo: parseFloat(document.getElementById('edit-custo').value) || 0,
+                venda: parseFloat(document.getElementById('edit-venda').value) || 0,
+                status: document.getElementById('edit-status').value,
+                foto: document.getElementById('edit-foto').value
+            };
+            try {
+                const res = await fetch(scriptUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                const result = await res.json();
+                if (result.success) { showToast('✅ Salvo!'); closeModal(); loadData(); }
+                else showToast('❌ Erro: ' + result.error);
+            } catch(e) { showToast('Erro de conexão'); }
+        }
+
+        async function quickStatusChange(rowId, currentStatus, codigo) {
+            const newStatus = prompt(`Alterar status de ${codigo}:\nOpções: Em Estoque, Vendido`, currentStatus);
+            if (newStatus && newStatus !== currentStatus) {
+                await fetch(scriptUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'editInventario', rowId, status: newStatus }) });
+                loadData();
+            }
+        }
+
+        function openNewItemModal() {
+            const codigo = prompt('Digite o código do novo item:');
+            if (!codigo) return;
+            document.getElementById('edit-rowid').value = '';
+            document.getElementById('edit-codigo').value = codigo;
+            document.getElementById('edit-descricao').value = '';
+            document.getElementById('edit-custo').value = '';
+            document.getElementById('edit-venda').value = '';
+            document.getElementById('edit-foto').value = '';
+            document.getElementById('edit-status').value = 'Em Estoque';
+            loadTiposToSelect('');
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        async function addTipo() { const nome = document.getElementById('new-tipo').value; if(!nome) return; await fetch(scriptUrl, { method: 'POST', body: JSON.stringify({ action: 'addTipo', nome }), headers: { 'Content-Type': 'application/json' } }); loadTipos(); document.getElementById('new-tipo').value = ''; }
+        async function loadTipos() { const res = await fetch(`${scriptUrl}?action=getTipos`); tipos = await res.json(); renderTiposList(); }
+        function renderTiposList() { const div = document.getElementById('tipos-list'); div.innerHTML = tipos.map(t => `<div class="flex justify-between p-2 bg-slate-800/30 rounded mb-1"><span>${t.Nome}</span><button onclick="deleteTipo('${t.Nome}')" class="text-red-400">Excluir</button></div>`).join(''); }
+        async function deleteTipo(nome) { if(confirm(`Excluir ${nome}?`)){ await fetch(scriptUrl, { method: 'POST', body: JSON.stringify({ action: 'delTipo', nome }), headers: { 'Content-Type': 'application/json' } }); loadTipos(); } }
+        
+        function loadTiposToSelect(selected) { const select = document.getElementById('edit-tipo'); select.innerHTML = '<option value="">Geral</option>' + tipos.map(t => `<option value="${t.Nome}" ${t.Nome === selected ? 'selected' : ''}>${t.Nome}</option>`).join(''); }
+        function updateDashboard() { const total = inventory.length; const capital = inventory.filter(i => i.Status === 'Em Estoque').reduce((a,i) => a + (parseFloat(i.Custo)||0),0); const consignado = inventory.filter(i => i.Status !== 'Em Estoque' && i.Status !== 'Vendido').reduce((a,i) => a + (parseFloat(i.Venda)||0),0); const vendido = inventory.filter(i => i.Status === 'Vendido').reduce((a,i) => a + (parseFloat(i.Venda)||0),0); document.getElementById('dash-total').innerHTML = total; document.getElementById('dash-capital').innerHTML = `R$ ${capital.toFixed(2)}`; document.getElementById('dash-consignado').innerHTML = `R$ ${consignado.toFixed(2)}`; document.getElementById('dash-vendido').innerHTML = `R$ ${vendido.toFixed(2)}`; }
+        function setFilter(filter) { currentFilter = filter; document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active')); event.target.classList.add('active'); renderTable(); }
+        function saveConfig() { scriptUrl = document.getElementById('script-url').value; localStorage.setItem('luxus_script_url', scriptUrl); loadData(); showToast('Configurações salvas'); }
+        function switchTab(tab) { document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden')); document.getElementById(`content-${tab}`).classList.remove('hidden'); document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active')); document.getElementById(`tab-${tab}`).classList.add('active'); if(tab === 'revendedores') loadRevendedores(); if(tab === 'config') loadTipos(); }
+        function goHome() { switchTab('consulta'); }
+        function showToast(msg) { const t=document.getElementById('toast'); document.getElementById('toast-msg').innerHTML=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),2500); }
+        function viewFoto(url) { if(url) window.open(url,'_blank'); }
+        
+        async function loadRevendedores() { const res = await fetch(`${scriptUrl}?action=getRevendedores`); revendedores = await res.json(); renderRevendedores(); }
+        function renderRevendedores() { const div = document.getElementById('revendedores-list'); if(revendedores.length===0){ div.innerHTML='<div class="text-center py-8 text-slate-500">Nenhum revendedor</div>'; return; } div.innerHTML = revendedores.map(r => `<div class="flex justify-between items-center p-3 bg-slate-800/30 rounded-xl"><div><div class="font-medium">${r.Nome}</div>${r.Contato ? `<div class="text-xs text-slate-400"><i class="fab fa-whatsapp"></i> ${r.Contato}</div>` : ''}</div><div class="flex gap-2"><button onclick="openEditRevModal(${r.rowId})" class="text-blue-400"><i class="fas fa-edit"></i></button><button onclick="deleteRevendedor(${r.rowId})" class="text-red-400"><i class="fas fa-trash"></i></button></div></div>`).join(''); }
+        function openAddRevendedorModal() { document.getElementById('revModalTitle').innerHTML='Novo Revendedor'; document.getElementById('rev-rowid').value=''; document.getElementById('rev-nome').value=''; document.getElementById('rev-contato').value=''; document.getElementById('rev-email').value=''; document.getElementById('revModal').style.display='flex'; }
+        function openEditRevModal(rowId) { const r = revendedores.find(rev => rev.rowId === rowId); document.getElementById('revModalTitle').innerHTML='Editar Revendedor'; document.getElementById('rev-rowid').value=rowId; document.getElementById('rev-nome').value=r.Nome; document.getElementById('rev-contato').value=r.Contato||''; document.getElementById('rev-email').value=r.Email||''; document.getElementById('revModal').style.display='flex'; }
+        function closeRevModal() { document.getElementById('revModal').style.display='none'; }
+        async function saveRevendedor() { const rowId = document.getElementById('rev-rowid').value; const data = { action: rowId ? 'editRevendedor' : 'addRevendedor', nome: document.getElementById('rev-nome').value, contato: document.getElementById('rev-contato').value, email: document.getElementById('rev-email').value }; if(rowId) data.rowId = parseInt(rowId); await fetch(scriptUrl, { method: 'POST', body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' } }); showToast(rowId ? 'Atualizado' : 'Adicionado'); closeRevModal(); loadRevendedores(); }
+        async function deleteRevendedor(rowId) { if(confirm('Excluir revendedor?')){ await fetch(scriptUrl, { method: 'POST', body: JSON.stringify({ action: 'delRevendedor', rowId }), headers: { 'Content-Type': 'application/json' } }); loadRevendedores(); } }
+    </script>
+</body>
+</html>
