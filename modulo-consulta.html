@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Módulo Consulta</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #0f172a; color: #fff; }
+        .glass-card { background: rgba(15,23,42,0.8); border: 1px solid #1e293b; border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem; }
+        .btn-gold { background: #d4af37; color: #000; padding: 8px 16px; border-radius: 10px; cursor: pointer; font-weight: 600; }
+        .status-pill { padding: 4px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+        .status-estoque { background: #064e3b; color: #34d399; }
+        .status-consignado { background: #1e3a5f; color: #60a5fa; }
+        .status-vendido { background: #7f1d1d; color: #f87171; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #1e293b; }
+        .code-link { color: #d4af37; cursor: pointer; }
+        input, select { background: #0f172a; border: 1px solid #1e293b; color: #fff; padding: 8px 12px; border-radius: 10px; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #1e293b; padding: 24px; border-radius: 16px; width: 500px; max-width: 90%; }
+    </style>
+</head>
+<body>
+
+<div class="p-4 max-w-7xl mx-auto">
+    <!-- Header Simplificado -->
+    <div class="glass-card flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center"><i class="fas fa-gem text-white"></i></div>
+            <div><h1 class="text-xl font-bold text-amber-500">LUXUS</h1><p class="text-[10px] text-slate-400">JOIAS & PERFUMES</p></div>
+        </div>
+        <div class="text-sm text-slate-400" id="status-time"></div>
+    </div>
+
+    <!-- Saudação -->
+    <div class="glass-card text-center">
+        <h2 class="text-xl font-bold text-amber-500">Olá, Lu! ✨</h2>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="grid grid-cols-4 gap-4">
+        <div class="glass-card text-center"><p class="text-slate-400 text-xs">Total Peças</p><h3 id="dash-total" class="text-2xl font-bold">0</h3></div>
+        <div class="glass-card text-center"><p class="text-slate-400 text-xs">Capital Estoque</p><h3 id="dash-capital" class="text-xl font-bold text-green-400">R$ 0</h3></div>
+        <div class="glass-card text-center"><p class="text-slate-400 text-xs">Em Consignação</p><h3 id="dash-consignado" class="text-xl font-bold text-blue-400">R$ 0</h3></div>
+        <div class="glass-card text-center"><p class="text-slate-400 text-xs">Total Vendido</p><h3 id="dash-vendido" class="text-xl font-bold text-red-400">R$ 0</h3></div>
+    </div>
+
+    <!-- Barra de Busca -->
+    <div class="glass-card">
+        <div class="flex gap-3">
+            <input type="text" id="search" placeholder="Buscar por código, descrição..." class="flex-1" oninput="renderTable()">
+            <button onclick="openNewItemModal()" class="bg-emerald-600 px-5 py-2 rounded-xl text-sm">+ Novo Item</button>
+            <button onclick="loadData()" class="bg-slate-700 px-4 py-2 rounded-xl">↻</button>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="flex gap-2">
+        <button class="filter-chip px-3 py-1 rounded-full bg-slate-800 active" data-filter="all" onclick="setFilter('all')">Todos</button>
+        <button class="filter-chip px-3 py-1 rounded-full bg-slate-800" data-filter="estoque" onclick="setFilter('estoque')">Em Estoque</button>
+        <button class="filter-chip px-3 py-1 rounded-full bg-slate-800" data-filter="consignado" onclick="setFilter('consignado')">Consignado</button>
+        <button class="filter-chip px-3 py-1 rounded-full bg-slate-800" data-filter="vendido" onclick="setFilter('vendido')">Vendido</button>
+    </div>
+
+    <!-- Tabela -->
+    <div class="glass-card overflow-auto">
+        <table class="w-full">
+            <thead class="text-slate-400 border-b border-slate-700">
+                <tr><th>Código</th><th>Descrição</th><th>Tipo</th><th>Status</th><th>Custo</th><th>Venda</th><th>Data</th><th>Foto</th></tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
+    </div>
+
+    <!-- Modal URL -->
+    <div class="glass-card">
+        <label class="block text-sm mb-2">URL do Google Apps Script</label>
+        <div class="flex gap-3"><input type="text" id="script-url" class="flex-1" placeholder="https://script.google.com/macros/s/.../exec"><button onclick="saveConfig()" class="btn-gold">Salvar</button></div>
+    </div>
+</div>
+
+<!-- Modal Edição -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3 class="text-xl font-bold text-amber-500 mb-4">Editar Item</h3>
+        <input type="hidden" id="edit-rowid">
+        <div class="space-y-3">
+            <input type="text" id="edit-codigo" placeholder="Código" class="w-full" readonly>
+            <input type="text" id="edit-descricao" placeholder="Descrição" class="w-full">
+            <select id="edit-tipo" class="w-full"></select>
+            <div class="grid grid-cols-2 gap-3"><input type="number" id="edit-custo" placeholder="Custo"><input type="number" id="edit-venda" placeholder="Preço Venda"></div>
+            <select id="edit-status" class="w-full"></select>
+            <input type="text" id="edit-foto" placeholder="URL da Foto">
+        </div>
+        <div class="flex gap-3 mt-5"><button onclick="closeModal()" class="flex-1 bg-slate-600 py-2 rounded-lg">Cancelar</button><button onclick="saveItem()" class="flex-1 btn-gold py-2 rounded-lg font-bold">Salvar</button></div>
+    </div>
+</div>
+
+<div id="toast" class="fixed bottom-6 right-6 z-50 hidden bg-slate-800 px-5 py-3 rounded-full shadow-xl"><span id="toast-msg"></span></div>
+
+<script>
+    let inventory = [], tipos = [];
+    let scriptUrl = localStorage.getItem('luxus_script_url') || '';
+    let currentFilter = 'all';
+
+    document.getElementById('script-url').value = scriptUrl;
+    if (scriptUrl) loadData();
+
+    async function loadData() {
+        if (!scriptUrl) return;
+        try {
+            const res = await fetch(`${scriptUrl}?action=getInventario`);
+            inventory = await res.json();
+            await loadTipos();
+            renderTable();
+            updateDashboard();
+            document.getElementById('status-time').innerHTML = new Date().toLocaleTimeString();
+            showToast(`✅ ${inventory.length} itens`);
+        } catch(e) { showToast('❌ Erro ao carregar'); }
+    }
+
+    async function loadTipos() {
+        try {
+            const res = await fetch(`${scriptUrl}?action=getTipos`);
+            tipos = await res.json();
+            updateTipoSelect();
+        } catch(e) {}
+    }
+
+    function updateTipoSelect() {
+        const select = document.getElementById('edit-tipo');
+        select.innerHTML = '<option value="">Geral</option>' + tipos.map(t => `<option value="${t.Nome}">${t.Nome}</option>`).join('');
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('table-body');
+        const search = document.getElementById('search').value.toLowerCase();
+        let filtered = inventory.filter(i => String(i.Codigo).toLowerCase().includes(search) || (i.Descricao || '').toLowerCase().includes(search));
+        if (currentFilter === 'estoque') filtered = filtered.filter(i => i.Status === 'Em Estoque');
+        else if (currentFilter === 'consignado') filtered = filtered.filter(i => i.Status !== 'Em Estoque' && i.Status !== 'Vendido');
+        else if (currentFilter === 'vendido') filtered = filtered.filter(i => i.Status === 'Vendido');
+        
+        tbody.innerHTML = '';
+        filtered.forEach(item => {
+            let statusClass = 'status-estoque', icon = '🏠';
+            if (item.Status === 'Vendido') { statusClass = 'status-vendido'; icon = '💰'; }
+            else if (item.Status !== 'Em Estoque') { statusClass = 'status-consignado'; icon = '🤝'; }
+            const row = tbody.insertRow();
+            row.insertCell(0).innerHTML = `<span class="code-link" onclick="openEditModal(${item.rowId})">${item.Codigo}</span>`;
+            row.insertCell(1).innerHTML = item.Descricao || '-';
+            row.insertCell(2).innerHTML = item.Tipo || 'Geral';
+            row.insertCell(3).innerHTML = `<span class="status-pill ${statusClass}" onclick="quickStatusChange(${item.rowId}, '${item.Status}', '${item.Codigo}')">${icon} ${item.Status}</span>`;
+            row.insertCell(4).innerHTML = `R$ ${(parseFloat(item.Custo) || 0).toFixed(2)}`;
+            row.insertCell(5).innerHTML = `<span class="text-amber-500 font-semibold">R$ ${(parseFloat(item.Venda) || 0).toFixed(2)}</span>`;
+            row.insertCell(6).innerHTML = item.Data ? new Date(item.Data).toLocaleDateString() : '-';
+            row.insertCell(7).innerHTML = `<div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center cursor-pointer" onclick="viewFoto('${item.Foto || ''}')">${item.Foto ? '<img src="'+item.Foto+'" class="w-full h-full object-cover rounded">' : '<i class="fas fa-image text-slate-600"></i>'}</div>`;
+        });
+    }
+
+    function openEditModal(rowId) {
+        const item = inventory.find(i => i.rowId === rowId);
+        document.getElementById('edit-rowid').value = rowId;
+        document.getElementById('edit-codigo').value = item.Codigo;
+        document.getElementById('edit-descricao').value = item.Descricao || '';
+        document.getElementById('edit-custo').value = item.Custo;
+        document.getElementById('edit-venda').value = item.Venda;
+        document.getElementById('edit-foto').value = item.Foto || '';
+        document.getElementById('edit-status').value = item.Status;
+        document.getElementById('edit-tipo').value = item.Tipo || '';
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeModal() { document.getElementById('editModal').style.display = 'none'; }
+
+    async function saveItem() {
+        const data = {
+            action: 'editInventario',
+            rowId: parseInt(document.getElementById('edit-rowid').value),
+            codigo: document.getElementById('edit-codigo').value,
+            descricao: document.getElementById('edit-descricao').value,
+            tipo: document.getElementById('edit-tipo').value,
+            custo: parseFloat(document.getElementById('edit-custo').value) || 0,
+            venda: parseFloat(document.getElementById('edit-venda').value) || 0,
+            status: document.getElementById('edit-status').value,
+            foto: document.getElementById('edit-foto').value
+        };
+        try {
+            const res = await fetch(scriptUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            const result = await res.json();
+            if (result.success) { showToast('✅ Salvo!'); closeModal(); loadData(); }
+            else showToast('❌ Erro: ' + result.error);
+        } catch(e) { showToast('❌ Erro de conexão'); }
+    }
+
+    async function quickStatusChange(rowId, currentStatus, codigo) {
+        const newStatus = prompt(`Alterar status de ${codigo}:\nOpções: Em Estoque, Vendido`, currentStatus);
+        if (newStatus && newStatus !== currentStatus) {
+            const res = await fetch(scriptUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'editInventario', rowId, status: newStatus }) });
+            if (res.ok) loadData();
+        }
+    }
+
+    function openNewItemModal() {
+        const codigo = prompt('Digite o código do novo item:');
+        if (!codigo) return;
+        document.getElementById('edit-rowid').value = '';
+        document.getElementById('edit-codigo').value = codigo;
+        document.getElementById('edit-descricao').value = '';
+        document.getElementById('edit-custo').value = '';
+        document.getElementById('edit-venda').value = '';
+        document.getElementById('edit-foto').value = '';
+        document.getElementById('edit-status').value = 'Em Estoque';
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function updateDashboard() {
+        const total = inventory.length;
+        const capital = inventory.filter(i => i.Status === 'Em Estoque').reduce((a,i) => a + (parseFloat(i.Custo)||0), 0);
+        const consignado = inventory.filter(i => i.Status !== 'Em Estoque' && i.Status !== 'Vendido').reduce((a,i) => a + (parseFloat(i.Venda)||0), 0);
+        const vendido = inventory.filter(i => i.Status === 'Vendido').reduce((a,i) => a + (parseFloat(i.Venda)||0), 0);
+        document.getElementById('dash-total').innerHTML = total;
+        document.getElementById('dash-capital').innerHTML = `R$ ${capital.toFixed(2)}`;
+        document.getElementById('dash-consignado').innerHTML = `R$ ${consignado.toFixed(2)}`;
+        document.getElementById('dash-vendido').innerHTML = `R$ ${vendido.toFixed(2)}`;
+    }
+
+    function setFilter(filter) {
+        currentFilter = filter;
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        event.target.classList.add('active');
+        renderTable();
+    }
+
+    function saveConfig() {
+        scriptUrl = document.getElementById('script-url').value;
+        localStorage.setItem('luxus_script_url', scriptUrl);
+        loadData();
+        showToast('Configurações salvas');
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        document.getElementById('toast-msg').innerHTML = msg;
+        t.classList.remove('hidden');
+        setTimeout(() => t.classList.add('hidden'), 2500);
+    }
+
+    function viewFoto(url) { if(url) window.open(url, '_blank'); }
+</script>
+</body>
+</html>
