@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Luxus - Gestão de Inventário</title>
+    <link rel="icon" type="image/png" href="https://i.ibb.co/6R29d3Dj/luxus-logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #0a0c10;
+            --bg-card: rgba(17, 22, 29, 0.85);
+            --gold: #d4af37;
+            --gold-dark: #b8960c;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --border: rgba(212, 175, 55, 0.15);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(ellipse at 20% 30%, #11161d, #0a0c10);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            transition: all 0.3s;
+        }
+        .glass-card:hover { border-color: rgba(212, 175, 55, 0.3); }
+        .btn-gold {
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color: #0a0c10;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(212, 175, 55, 0.35); }
+        .nav-link {
+            padding: 0.5rem 1.2rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+        .nav-link:hover { color: var(--gold); background: rgba(212, 175, 55, 0.1); }
+        .nav-link.active { color: var(--gold); background: rgba(212, 175, 55, 0.15); }
+        input, select {
+            background: rgba(15, 23, 42, 0.8) !important;
+            border: 1px solid var(--border) !important;
+            color: white !important;
+            border-radius: 14px !important;
+            padding: 0.7rem 1rem !important;
+            font-size: 0.85rem !important;
+        }
+        input:focus, select:focus { border-color: var(--gold) !important; outline: none !important; }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th {
+            padding: 1rem 0.75rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+        .data-table td {
+            padding: 0.9rem 0.75rem;
+            font-size: 0.8rem;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+        }
+        .data-table tr:hover { background: rgba(212, 175, 55, 0.04); }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .badge-estoque { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+        .badge-consignado { background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
+        .badge-vendido { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .stat-card {
+            background: linear-gradient(135deg, rgba(17, 22, 29, 0.9), rgba(10, 12, 16, 0.9));
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.2rem;
+        }
+        .filter-chip {
+            padding: 0.35rem 1rem;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            cursor: pointer;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border);
+        }
+        .filter-chip.active { background: var(--gold); color: #0a0c10; }
+        .code-link { color: var(--gold); cursor: pointer; font-weight: 500; }
+        .code-link:hover { text-decoration: underline; }
+        .modal-overlay { background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(12px); }
+        .connection-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.3rem 0.8rem;
+            background: rgba(17, 22, 29, 0.8);
+            border-radius: 40px;
+            font-size: 0.7rem;
+            border: 1px solid var(--border);
+        }
+        .user-menu { position: relative; }
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            background: rgba(17, 22, 29, 0.98);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 0.5rem;
+            min-width: 170px;
+            z-index: 50;
+            display: none;
+        }
+        .user-menu:hover .user-dropdown { display: block; }
+        .user-dropdown button {
+            width: 100%;
+            text-align: left;
+            padding: 0.6rem 0.9rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+        .user-dropdown button:hover { background: rgba(212, 175, 55, 0.12); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.3s ease-out; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <nav class="sticky top-4 z-40 glass-card mx-4 mb-6">
+        <div class="px-5 py-3 flex justify-between items-center flex-wrap gap-3">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="goHome()">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center">
+                    <i class="fas fa-gem text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide" style="color: var(--gold);">LUXUS</h1>
+                    <p class="text-[8px] text-slate-400 tracking-[0.25em] uppercase">JOIAS & PERFUMES</p>
+                </div>
+            </div>
+            <div class="flex gap-1">
+                <a href="#consulta" onclick="switchTab('consulta'); return false;" id="tab-consulta" class="nav-link active"><i class="fas fa-chart-line mr-1"></i>Resumo</a>
+                <a href="#central" onclick="switchTab('central'); return false;" id="tab-central" class="nav-link"><i class="fas fa-handshake mr-1"></i>Revendedores</a>
+                <a href="#config" onclick="switchTab('config'); return false;" id="tab-config" class="nav-link"><i class="fas fa-sliders-h mr-1"></i>Configurações</a>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="connection-badge">
+                    <i class="fas fa-circle text-[8px] text-green-500" id="connection-icon"></i>
+                    <span id="connection-text">Conectado</span>
+                    <span class="text-slate-500 text-[9px]" id="last-update">--/--/---- --:--</span>
+                </div>
+                <div class="user-menu">
+                    <div class="flex items-center gap-2 bg-slate-800/40 px-3 py-1.5 rounded-full cursor-pointer">
+                        <i class="fas fa-user-circle text-amber-500 text-sm"></i>
+                        <span id="user-name-display" class="text-xs font-semibold">Carregando...</span>
+                        <i class="fas fa-chevron-down text-[9px] text-slate-400"></i>
+                    </div>
+                    <div class="user-dropdown">
+                        <button onclick="openUserModal()" class="flex items-center gap-2"><i class="fas fa-exchange-alt text-amber-500 text-xs"></i> Trocar Usuário</button>
+                        <button onclick="logout()" class="flex items-center gap-2 text-red-400"><i class="fas fa-sign-out-alt text-xs"></i> Sair</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="px-4 pb-10">
+        
+        <!-- Aba Resumo Executivo -->
+        <div id="content-consulta" class="tab-content space-y-5">
+            <div class="mb-1">
+                <h2 class="text-2xl font-bold" style="background: linear-gradient(135deg, #d4af37 0%, #e8c95a 100%); -webkit-background-clip: text; background-clip: text; color: transparent;">Olá, Lu! ✨</h2>
+                <p class="text-xs text-slate-400 mt-1">Bem-vinda ao seu painel de controle</p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="stat-card"><p class="text-slate-400 text-[10px] uppercase">Total de Peças</p><h3 id="dash-total-pecas" class="text-2xl font-bold mt-1">0</h3></div>
+                <div class="stat-card"><p class="text-slate-400 text-[10px] uppercase">Capital em Estoque</p><h3 id="dash-capital-estoque" class="text-xl font-bold text-green-400 mt-1">R$ 0</h3></div>
+                <div class="stat-card"><p class="text-slate-400 text-[10px] uppercase">Em Consignação</p><h3 id="dash-em-consignacao" class="text-xl font-bold text-blue-400 mt-1">R$ 0</h3></div>
+                <div class="stat-card"><p class="text-slate-400 text-[10px] uppercase">Total Vendido</p><h3 id="dash-total-vendido" class="text-xl font-bold text-red-400 mt-1">R$ 0</h3></div>
+            </div>
+
+            <div class="glass-card p-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="flex-1 relative">
+                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                        <i class="fas fa-barcode absolute right-4 top-1/2 -translate-y-1/2 text-amber-500 text-sm"></i>
+                        <input type="text" id="search-input" placeholder="Buscar por código, descrição ou status..." class="w-full pl-11 pr-11 text-sm" onkeypress="handleSearchKeyPress(event)" oninput="renderInventory()">
+                    </div>
+                    <button onclick="checkCodeManually()" class="btn-gold px-5 py-2 rounded-xl text-sm font-semibold"><i class="fas fa-check mr-1"></i> Verificar</button>
+                    <button onclick="openNewItemModalDirect()" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-xl text-sm font-semibold"><i class="fas fa-plus-circle mr-1"></i> Novo Item</button>
+                    <button onclick="loadData()" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-xl text-sm"><i class="fas fa-sync-alt"></i></button>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+                <button class="filter-chip active" data-filter="all" onclick="setQuickFilter('all')">📋 Todos</button>
+                <button class="filter-chip" data-filter="estoque" onclick="setQuickFilter('estoque')">🏠 Em Estoque</button>
+                <button class="filter-chip" data-filter="consignado" onclick="setQuickFilter('consignado')">🤝 Em Consignação</button>
+                <button class="filter-chip" data-filter="vendido" onclick="setQuickFilter('vendido')">💰 Vendidos</button>
+            </div>
+
+            <div class="glass-card overflow-hidden">
+                <div class="px-5 py-3 border-b border-slate-800/50">
+                    <h2 class="text-base font-semibold"><i class="fas fa-crown text-amber-500 mr-2"></i> Acervo Luxus</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Descrição</th>
+                                <th>Tipo</th>
+                                <th>Status</th>
+                                <th>Custo</th>
+                                <th>Preço Sugerido</th>
+                                <th>Data</th>
+                                <th>Foto</th>
+                             </tr>
+                        </thead>
+                        <tbody id="inventory-table-body"></tbody>
+                     </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aba Revendedores (resumida) -->
+        <div id="content-central" class="tab-content hidden space-y-5">
+            <div class="glass-card p-6">
+                <div class="flex justify-between items-center mb-5">
+                    <h2 class="text-xl font-semibold text-amber-500">Central do Revendedor</h2>
+                    <button onclick="alert('Em desenvolvimento')" class="btn-gold px-4 py-2 rounded-xl text-sm">Novo Revendedor</button>
+                </div>
+                <select id="select-revendedor" class="w-full mb-4" onchange="loadRevendedorData()">
+                    <option value="">Selecione um revendedor...</option>
+                </select>
+                <div id="revendedores-list" class="text-center py-12 text-slate-500">
+                    <i class="fas fa-users text-4xl mb-3 block text-slate-600"></i>
+                    <p>Selecione um revendedor para ver os detalhes</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aba Configurações -->
+        <div id="content-config" class="tab-content hidden max-w-3xl mx-auto">
+            <div class="glass-card p-6">
+                <h2 class="text-xl font-semibold text-amber-500 mb-5">Configurações</h2>
+                <div class="mb-6 p-4 bg-slate-800/20 rounded-xl">
+                    <h3 class="font-semibold mb-3"><i class="fab fa-google text-blue-400"></i> Google Sheets</h3>
+                    <input type="text" id="config-script-url" class="w-full mb-2" placeholder="URL do Apps Script">
+                    <div class="flex gap-2">
+                        <button onclick="saveConfig()" class="btn-gold px-4 py-1.5 rounded-lg text-sm">Salvar</button>
+                        <button onclick="testConnection()" class="bg-slate-700 px-4 py-1.5 rounded-lg text-sm">Testar</button>
+                        <button onclick="loadData()" class="bg-slate-700 px-4 py-1.5 rounded-lg text-sm">Recarregar</button>
+                    </div>
+                </div>
+                <div class="p-4 bg-slate-800/20 rounded-xl">
+                    <h3 class="font-semibold mb-3"><i class="fas fa-tags text-amber-500"></i> Tipos de Joia</h3>
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="new-type-name" placeholder="Novo tipo" class="flex-1">
+                        <button onclick="addTipo()" class="btn-gold px-3 rounded-lg text-sm">Adicionar</button>
+                    </div>
+                    <div id="tipos-list" class="space-y-1 max-h-32 overflow-y-auto"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modais -->
+    <div id="modal-switch-user" class="fixed inset-0 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="glass-card p-6 w-[400px] animate-fade">
+            <h3 class="text-xl font-semibold text-amber-500 mb-4">Trocar Usuário</h3>
+            <input type="text" id="switch-username" class="w-full mb-3" placeholder="Usuário">
+            <input type="password" id="switch-password" class="w-full mb-4" placeholder="Senha" onkeypress="if(event.key==='Enter') confirmSwitchUser()">
+            <div class="flex gap-3"><button onclick="closeSwitchUserModal()" class="flex-1 bg-slate-700 py-2 rounded-xl">Cancelar</button><button onclick="confirmSwitchUser()" class="flex-1 btn-gold py-2 rounded-xl font-semibold">Confirmar</button></div>
+            <p id="switch-error" class="text-red-400 text-xs text-center mt-2 hidden"></p>
+        </div>
+    </div>
+
+    <div id="modal-edit-item" class="fixed inset-0 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="glass-card p-6 w-[550px] max-w-[90%] max-h-[85vh] overflow-y-auto animate-fade">
+            <h3 class="text-xl font-semibold text-amber-500 mb-5" id="edit-modal-title">Editar Item</h3>
+            <input type="hidden" id="edit-item-rowid">
+            <div class="space-y-4">
+                <div><label class="text-sm text-slate-400 mb-1 block">Código</label><input type="text" id="edit-codigo" class="w-full" readonly></div>
+                <div><label class="text-sm text-slate-400 mb-1 block">Descrição</label><input type="text" id="edit-descricao" class="w-full" placeholder="Descrição do produto"></div>
+                <div><label class="text-sm text-slate-400 mb-1 block">Tipo</label><select id="edit-tipo" class="w-full"></select></div>
+                <div class="grid grid-cols-2 gap-4"><div><label class="text-sm text-slate-400 mb-1 block">Custo (R$)</label><input type="number" id="edit-custo" class="w-full" step="0.01"></div><div><label class="text-sm text-slate-400 mb-1 block">Preço Sugerido (R$)</label><input type="number" id="edit-venda" class="w-full" step="0.01"></div></div>
+                <div><label class="text-sm text-slate-400 mb-1 block">Status</label><select id="edit-status" class="w-full"></select></div>
+                <div><label class="text-sm text-slate-400 mb-1 block">Foto URL</label><input type="text" id="edit-foto" class="w-full" placeholder="https://..."></div>
+            </div>
+            <div class="flex gap-3 mt-6"><button onclick="closeEditModal()" class="flex-1 bg-slate-700 py-2.5 rounded-xl">Cancelar</button><button onclick="saveEditItem()" class="flex-1 btn-gold py-2.5 rounded-xl font-semibold">Salvar</button></div>
+        </div>
+    </div>
+
+    <div id="modal-code-exists" class="fixed inset-0 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="glass-card p-5 w-[480px] animate-fade">
+            <div class="flex items-center gap-2 mb-3"><i class="fas fa-exclamation-triangle text-amber-500 text-xl"></i><h3 class="text-lg font-semibold text-amber-500">Código já existe!</h3></div>
+            <div id="code-exists-message" class="bg-slate-800/50 p-3 rounded-lg text-sm mb-4"></div>
+            <div class="flex gap-2"><button onclick="editExistingItem()" class="flex-1 bg-blue-600 py-2 rounded-lg text-sm">Editar</button><button onclick="duplicateExistingItem()" class="flex-1 bg-amber-600 py-2 rounded-lg text-sm">Duplicar</button><button onclick="deleteExistingItem()" class="flex-1 bg-red-600 py-2 rounded-lg text-sm">Excluir</button><button onclick="closeCodeExistsModal()" class="flex-1 bg-slate-700 py-2 rounded-lg text-sm">Cancelar</button></div>
+        </div>
+    </div>
+
+    <div id="modal-code-new" class="fixed inset-0 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="glass-card p-5 w-[380px] text-center animate-fade">
+            <i class="fas fa-plus-circle text-green-500 text-4xl mb-3"></i>
+            <h3 class="text-lg font-semibold text-green-400 mb-1">Código não encontrado</h3>
+            <p class="text-sm text-slate-300 mb-3">Cadastrar <strong id="new-code-display" class="text-amber-500"></strong>?</p>
+            <div class="flex gap-2"><button onclick="showNewItemForm()" class="flex-1 btn-gold py-2 rounded-lg font-semibold">Sim</button><button onclick="closeNewCodeModal()" class="flex-1 bg-slate-700 py-2 rounded-lg">Cancelar</button></div>
+        </div>
+    </div>
+
+    <div id="modal-toast" class="fixed bottom-6 right-6 z-50 hidden"><div class="glass-card px-5 py-3 rounded-full shadow-xl"><span id="toast-message" class="text-sm"></span></div></div>
+
+    <script>
+        // ==================== VARIÁVEIS ====================
+        let inventory = [];
+        let revendedores = [];
+        let tipos = [];
+        let usuarios = [];
+        let scriptUrl = localStorage.getItem('luxus_script_url') || '';
+        let currentQuickFilter = 'all';
+        let pendingItem = null;
+        let currentUser = localStorage.getItem('luxus_user') || '';
+
+        // ==================== INICIALIZAÇÃO ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('config-script-url').value = scriptUrl;
+            if (scriptUrl) loadData();
+            else showToast('⚠️ Configure a URL do Google Apps Script');
+            
+            const hash = window.location.hash.substring(1);
+            if (hash === 'central') switchTabDirect('central');
+            else if (hash === 'config') switchTabDirect('config');
+            else switchTabDirect('consulta');
+        });
+
+        function goHome() { window.location.hash = ''; switchTabDirect('consulta'); setQuickFilter('all'); document.getElementById('search-input').value = ''; }
+        function switchTab(tab) { window.location.hash = tab; switchTabDirect(tab); }
+        function switchTabDirect(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            document.querySelector(`#tab-${tab}`).classList.add('active');
+        }
+        function showToast(msg) { const t = document.getElementById('modal-toast'); document.getElementById('toast-message').innerHTML = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 2500); }
+        function updateLastUpdateTime() { document.getElementById('last-update').innerHTML = new Date().toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
+        function updateConnectionStatus(isConnected) { const icon = document.getElementById('connection-icon'); const text = document.getElementById('connection-text'); if (isConnected) { icon.className = 'fas fa-circle text-[8px] text-green-500'; text.innerHTML = 'Conectado'; } else { icon.className = 'fas fa-circle text-[8px] text-red-500'; text.innerHTML = 'Offline'; } }
+
+        // ==================== CONFIG ====================
+        function saveConfig() { scriptUrl = document.getElementById('config-script-url').value.trim(); localStorage.setItem('luxus_script_url', scriptUrl); showToast('Configurações salvas'); if (scriptUrl) loadData(); }
+        async function testConnection() { if (!scriptUrl) { alert('Configure a URL primeiro'); return; } try { const r = await fetch(scriptUrl + '?action=getInventario'); const d = await r.json(); showToast(`✅ OK! ${d.length} itens`); updateConnectionStatus(true); } catch(e) { alert('❌ Erro: ' + e.message); updateConnectionStatus(false); } }
+
+        // ==================== FILTROS ====================
+        function setQuickFilter(filter) { currentQuickFilter = filter; document.querySelectorAll('.filter-chip').forEach(chip => chip.classList.remove('active')); document.querySelector(`.filter-chip[data-filter="${filter}"]`).classList.add('active'); renderInventory(); }
+
+        // ==================== CARREGAMENTO ====================
+        async function loadData() {
+            if (!scriptUrl) return;
+            try {
+                updateConnectionStatus(true);
+                showToast('Carregando...');
+                const invRes = await fetch(scriptUrl + '?action=getInventario');
+                const invData = await invRes.json();
+                console.log('Dados recebidos:', invData);
+                
+                inventory = (Array.isArray(invData) ? invData : []).map(item => ({
+                    rowId: item.rowId,
+                    codigo: String(item.Codigo || ''),
+                    descricao: item.Descricao || '',
+                    data: item.Data ? new Date(item.Data).toLocaleDateString('pt-BR') : '',
+                    status: item.Status || 'Em Estoque',
+                    custo: parseFloat(item.Custo) || 0,
+                    venda: parseFloat(item.Venda) || 0,
+                    foto: item.Foto || '',
+                    tipo: item.Tipo || ''
+                }));
+                
+                // Extrair revendedores únicos do campo Status
+                const revSet = new Set();
+                inventory.forEach(item => {
+                    if (item.status !== 'Em Estoque' && item.status !== 'Vendido' && item.status !== '') {
+                        revSet.add(item.status);
+                    }
+                });
+                revendedores = Array.from(revSet).map(nome => ({ nome, contato: '' }));
+                
+                // Carregar tipos
+                try {
+                    const tipRes = await fetch(scriptUrl + '?action=getTipos');
+                    const tipData = await tipRes.json();
+                    tipos = (Array.isArray(tipData) ? tipData : []).map(t => ({ nome: t.Nome || t.nome || '' })).filter(t => t.nome);
+                } catch(e) { console.log('Tipos:', e); }
+                
+                renderInventory();
+                updateDashboard();
+                updateRevendedoresSelect();
+                updateEditFormSelects();
+                renderTiposList();
+                updateLastUpdateTime();
+                
+                document.getElementById('user-name-display').innerHTML = currentUser || 'Admin';
+                showToast(`✅ ${inventory.length} itens`);
+            } catch(e) { updateConnectionStatus(false); showToast('❌ Erro ao carregar dados: ' + e.message); console.error(e); }
+        }
+
+        function renderInventory() {
+            const tbody = document.getElementById('inventory-table-body');
+            if (!tbody) return;
+            
+            const searchTerm = document.getElementById('search-input')?.value.toLowerCase() || '';
+            let filtered = inventory.filter(item => 
+                String(item.codigo).toLowerCase().includes(searchTerm) || 
+                (item.descricao || '').toLowerCase().includes(searchTerm) || 
+                item.tipo.toLowerCase().includes(searchTerm) || 
+                item.status.toLowerCase().includes(searchTerm));
+            
+            if (currentQuickFilter === 'estoque') filtered = filtered.filter(i => i.status === 'Em Estoque');
+            else if (currentQuickFilter === 'consignado') filtered = filtered.filter(i => i.status !== 'Em Estoque' && i.status !== 'Vendido');
+            else if (currentQuickFilter === 'vendido') filtered = filtered.filter(i => i.status === 'Vendido');
+            
+            tbody.innerHTML = '';
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-12 text-slate-500"><i class="fas fa-box-open text-4xl mb-3 block"></i>Nenhum item encontrado</td></tr>';
+            } else {
+                filtered.forEach(item => {
+                    const statusClass = item.status === 'Em Estoque' ? 'badge-estoque' : (item.status === 'Vendido' ? 'badge-vendido' : 'badge-consignado');
+                    const statusIcon = item.status === 'Em Estoque' ? '🏠' : (item.status === 'Vendido' ? '💰' : '🤝');
+                    tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="py-3"><span class="code-link" onclick="openEditModalFromItem(${item.rowId})">${escapeHtml(item.codigo)}</span></td>
+                        <td class="py-3">${escapeHtml(item.descricao || '-')}</td>
+                        <td class="py-3"><span class="bg-slate-800/50 px-2 py-0.5 rounded-full text-xs">${escapeHtml(item.tipo || 'Geral')}</span></td>
+                        <td class="py-3"><span class="badge ${statusClass}" onclick="openStatusModalFromItem(${item.rowId}, '${escapeHtml(item.status)}', '${escapeHtml(item.codigo)}')">${statusIcon} ${escapeHtml(item.status)}</span></td>
+                        <td class="py-3">R$ ${item.custo.toFixed(2)}</td>
+                        <td class="py-3"><span class="font-semibold text-amber-500">R$ ${item.venda.toFixed(2)}</span></td>
+                        <td class="py-3 text-slate-500 text-xs">${item.data}</td>
+                        <td class="py-3"><div class="w-8 h-8 rounded-lg bg-slate-800 overflow-hidden cursor-pointer flex items-center justify-center" onclick="viewFoto('${escapeHtml(item.foto)}')">${item.foto ? `<img src="${escapeHtml(item.foto)}" class="w-full h-full object-cover">` : '<i class="fas fa-image text-slate-600 text-sm"></i>'}</div></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        function openEditModalFromItem(rowId) { const item = inventory.find(i => i.rowId === rowId); if (item) openEditModal(item); }
+        
+        function openEditModal(item) {
+            document.getElementById('edit-item-rowid').value = item.rowId;
+            document.getElementById('edit-codigo').value = item.codigo;
+            document.getElementById('edit-descricao').value = item.descricao || '';
+            document.getElementById('edit-custo').value = item.custo;
+            document.getElementById('edit-venda').value = item.venda;
+            document.getElementById('edit-foto').value = item.foto || '';
+            document.getElementById('edit-status').value = item.status;
+            const tipoSelect = document.getElementById('edit-tipo');
+            if (tipoSelect) tipoSelect.value = item.tipo;
+            document.getElementById('modal-edit-item').classList.remove('hidden');
+        }
+        
+        function closeEditModal() { document.getElementById('modal-edit-item').classList.add('hidden'); }
+
+        async function saveEditItem() {
+            const rowId = document.getElementById('edit-item-rowid').value;
+            const data = {
+                rowId: parseInt(rowId),
+                codigo: document.getElementById('edit-codigo').value.trim(),
+                descricao: document.getElementById('edit-descricao').value.trim(),
+                tipo: document.getElementById('edit-tipo').value,
+                custo: document.getElementById('edit-custo').value,
+                venda: document.getElementById('edit-venda').value,
+                status: document.getElementById('edit-status').value,
+                foto: document.getElementById('edit-foto').value
+            };
+            if (!data.codigo) { showToast('Código obrigatório'); return; }
+            try {
+                const response = await fetch(scriptUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'editInventario', ...data }) });
+                const result = await response.json();
+                if (result.success) { showToast('✅ Item salvo!'); closeEditModal(); loadData(); }
+                else showToast('❌ Erro: ' + (result.error || 'Falha ao salvar'));
+            } catch (error) { showToast('❌ Erro ao salvar'); }
+        }
+
+        function openStatusModalFromItem(rowId, currentStatus, codigo) {
+            const newStatus = prompt(`Alterar status do item ${codigo}:\nOpções: Em Estoque, Vendido, ou nome do revendedor\n\nAtual: ${currentStatus}`, currentStatus);
+            if (newStatus && newStatus !== currentStatus) updateItemStatus(rowId, newStatus);
+        }
+        
+        async function updateItemStatus(rowId, newStatus) {
+            await fetch(scriptUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'editInventario', rowId: parseInt(rowId), status: newStatus }) });
+            showToast(`Status alterado para: ${newStatus}`);
+            loadData();
+        }
+
+        function updateDashboard() {
+            const total = inventory.length;
+            const capital = inventory.filter(i => i.status === 'Em Estoque').reduce((a, i) => a + i.custo, 0);
+            const consignado = inventory.filter(i => i.status !== 'Em Estoque' && i.status !== 'Vendido').reduce((a, i) => a + i.venda, 0);
+            const vendido = inventory.filter(i => i.status === 'Vendido').reduce((a, i) => a + i.venda, 0);
+            document.getElementById('dash-total-pecas').textContent = total;
+            document.getElementById('dash-capital-estoque').textContent = `R$ ${capital.toFixed(2)}`;
+            document.getElementById('dash-em-consignacao').textContent = `R$ ${consignado.toFixed(2)}`;
+            document.getElementById('dash-total-vendido').textContent = `R$ ${vendido.toFixed(2)}`;
+        }
+
+        function viewFoto(url) { if (url) window.open(url, '_blank'); }
+
+        // ==================== VERIFICAÇÃO DE CÓDIGO ====================
+        function handleSearchKeyPress(event) { if (event.key === 'Enter') { const codigo = document.getElementById('search-input').value.trim(); if (codigo) checkCode(codigo); } }
+        function checkCodeManually() { const codigo = document.getElementById('search-input').value.trim(); if (codigo) checkCode(codigo); else showToast('Digite um código'); }
+        
+        function checkCode(codigo) {
+            const existing = inventory.find(item => item.codigo === codigo);
+            if (existing) {
+                pendingItem = existing;
+                document.getElementById('code-exists-message').innerHTML = `<div class="space-y-1 text-sm"><div><span class="text-slate-400">Código:</span> <strong class="text-amber-500">${escapeHtml(existing.codigo)}</strong></div><div><span class="text-slate-400">Descrição:</span> ${escapeHtml(existing.descricao || '-')}</div><div><span class="text-slate-400">Status:</span> ${escapeHtml(existing.status)}</div><div><span class="text-slate-400">Preço:</span> R$ ${existing.venda.toFixed(2)}</div></div>`;
+                document.getElementById('modal-code-exists').classList.remove('hidden');
+            } else {
+                pendingCode = codigo;
+                document.getElementById('new-code-display').textContent = codigo;
+                document.getElementById('modal-code-new').classList.remove('hidden');
+            }
+            document.getElementById('search-input').value = '';
+        }
+        
+        function editExistingItem() { closeCodeExistsModal(); if (pendingItem) openEditModal(pendingItem); }
+        function duplicateExistingItem() { closeCodeExistsModal(); if (pendingItem) { const novo = prompt('Novo código:', pendingItem.codigo + '_COPY'); if (novo) createNewItem({ codigo: novo.trim(), descricao: pendingItem.descricao, tipo: pendingItem.tipo, custo: pendingItem.custo, venda: pendingItem.venda, status: 'Em Estoque' }); } }
+        function deleteExistingItem() { closeCodeExistsModal(); if (pendingItem && confirm(`Excluir ${pendingItem.codigo}?`)) deleteItem(pendingItem.rowId); }
+        async function deleteItem(rowId) { await fetch(scriptUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delInventario', rowId: parseInt(rowId) }) }); showToast('Item excluído'); loadData(); }
+        function showNewItemForm() { closeNewCodeModal(); openNewItemModal(pendingCode); }
+        function openNewItemModal(codigo) {
+            document.getElementById('edit-modal-title').textContent = 'Novo Item';
+            document.getElementById('edit-item-rowid').value = '';
+            document.getElementById('edit-codigo').value = codigo;
+            document.getElementById('edit-codigo').readOnly = false;
+            document.getElementById('edit-descricao').value = '';
+            document.getElementById('edit-custo').value = '';
+            document.getElementById('edit-venda').value = '';
+            document.getElementById('edit-foto').value = '';
+            updateEditFormSelects();
+            document.getElementById('edit-status').value = 'Em Estoque';
+            document.getElementById('modal-edit-item').classList.remove('hidden');
+        }
+        async function createNewItem(data) {
+            await fetch(scriptUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'addInventario', ...data, data: new Date().toISOString() }) });
+            showToast('Item criado!');
+            loadData();
+        }
+        function closeCodeExistsModal() { document.getElementById('modal-code-exists').classList.add('hidden'); }
+        function closeNewCodeModal() { document.getElementById('modal-code-new').classList.add('hidden'); }
+
+        // ==================== REVENDEDORES ====================
+        function updateRevendedoresSelect() {
+            const select = document.getElementById('select-revendedor');
+            if (!select) return;
+            select.innerHTML = '<option value="">Selecione um revendedor...</option>';
+            revendedores.forEach(rev => { const opt = document.createElement('option'); opt.value = rev.nome; opt.textContent = rev.nome; select.appendChild(opt); });
+        }
+        
+        function loadRevendedorData() {
+            const rev = document.getElementById('select-revendedor').value;
+            const infoDiv = document.getElementById('revendedores-list');
+            if (!rev) { infoDiv.innerHTML = '<div class="text-center py-12"><i class="fas fa-users text-4xl mb-3 block text-slate-600"></i><p>Selecione um revendedor para ver os detalhes</p></div>'; return; }
+            const itens = inventory.filter(i => i.status === rev);
+            infoDiv.innerHTML = `
+                <div class="p-4 bg-slate-800/30 rounded-xl">
+                    <h3 class="font-bold text-amber-500 text-lg">📦 ${escapeHtml(rev)}</h3>
+                    <p class="mt-2">Total de peças: <strong>${itens.length}</strong></p>
+                    <p>Valor total: <strong class="text-green-400">R$ ${itens.reduce((a, i) => a + i.venda, 0).toFixed(2)}</strong></p>
+                    ${itens.length > 0 ? `<div class="mt-3 flex flex-wrap gap-2">${itens.map(i => `<span class="bg-slate-700 px-2 py-1 rounded text-xs">${escapeHtml(i.codigo)}</span>`).join('')}</div>` : ''}
+                </div>
+            `;
+        }
+
+        // ==================== TIPOS ====================
+        function updateEditFormSelects() {
+            const tipoSelect = document.getElementById('edit-tipo');
+            if (tipoSelect) tipoSelect.innerHTML = '<option value="">📌 Geral</option>' + tipos.map(t => `<option value="${escapeHtml(t.nome)}">${escapeHtml(t.nome)}</option>`).join('');
+            const statusSelect = document.getElementById('edit-status');
+            if (statusSelect) statusSelect.innerHTML = `<option value="Em Estoque">🏠 Em Estoque</option><option value="Vendido">💰 Vendido</option><optgroup label="👥 Revendedores">${revendedores.map(r => `<option value="${escapeHtml(r.nome)}">${escapeHtml(r.nome)}</option>`).join('')}</optgroup>`;
+        }
+        
+        function renderTiposList() { const c = document.getElementById('tipos-list'); if (!c) return; if (!tipos.length) { c.innerHTML = '<p class="text-slate-500 text-sm">Nenhum tipo cadastrado</p>'; return; } c.innerHTML = tipos.map(t => `<div class="flex justify-between items-center p-2 bg-slate-800/30 rounded-lg"><span class="text-sm">${escapeHtml(t.nome)}</span><button onclick="deleteTipo('${escapeHtml(t.nome)}')" class="text-red-400"><i class="fas fa-trash"></i></button></div>`).join(''); }
+        async function addTipo() { const nome = document.getElementById('new-type-name').value.trim(); if (!nome) { showToast('Digite o nome'); return; } await fetch(scriptUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'addTipo', nome }) }); document.getElementById('new-type-name').value = ''; showToast(`Tipo "${nome}" adicionado`); loadData(); }
+        async function deleteTipo(nome) { if (confirm(`Excluir tipo "${nome}"?`)) { await fetch(scriptUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delTipo', nome }) }); showToast('Tipo excluído'); loadData(); } }
+
+        // ==================== LOGIN ====================
+        function openUserModal() { document.getElementById('switch-username').value = ''; document.getElementById('switch-password').value = ''; document.getElementById('switch-error').classList.add('hidden'); document.getElementById('modal-switch-user').classList.remove('hidden'); }
+        function closeSwitchUserModal() { document.getElementById('modal-switch-user').classList.add('hidden'); }
+        async function confirmSwitchUser() {
+            const username = document.getElementById('switch-username').value.trim();
+            const password = document.getElementById('switch-password').value;
+            if (!username || !password) { showError('Preencha usuário e senha'); return; }
+            try {
+                const userRes = await fetch(scriptUrl + '?action=getUsuarios');
+                const userList = await userRes.json();
+                const found = (Array.isArray(userList) ? userList : []).find(u => (u.Nome || u.nome) === username && (u.Senha || u.senha) === password);
+                if (found) { currentUser = username; localStorage.setItem('luxus_user', username); document.getElementById('user-name-display').innerHTML = username; closeSwitchUserModal(); showToast(`Bem-vindo(a), ${username}!`); }
+                else { showError('Usuário ou senha inválidos'); }
+            } catch(error) { showError('Erro ao validar'); }
+        }
+        function showError(msg) { const errorEl = document.getElementById('switch-error'); errorEl.innerHTML = msg; errorEl.classList.remove('hidden'); setTimeout(() => errorEl.classList.add('hidden'), 3000); }
+        function logout() { localStorage.removeItem('luxus_user'); window.location.reload(); }
+        function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
+    </script>
+</body>
+</html>
