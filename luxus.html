@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Luxus - Gestão de Inventário</title>
+    <link rel="icon" type="image/png" href="https://i.ibb.co/6R29d3Dj/luxus-logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(ellipse at 20% 30%, #0f172a, #020617);
+            color: #f1f5f9;
+            min-height: 100vh;
+        }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(212, 175, 55, 0.15);
+            border-radius: 24px;
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            border-color: rgba(212, 175, 55, 0.3);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        .btn-gold {
+            background: linear-gradient(135deg, #d4af37, #b8960c);
+            color: #0a0c10;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.35);
+        }
+        .nav-link {
+            padding: 0.5rem 1.2rem;
+            color: #94a3b8;
+            cursor: pointer;
+            border-radius: 40px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .nav-link:hover { color: #d4af37; background: rgba(212,175,55,0.1); }
+        .nav-link.active { color: #d4af37; background: rgba(212,175,55,0.15); }
+        input, select, textarea {
+            background: #0f172a !important;
+            border: 1px solid #1e293b !important;
+            color: white !important;
+            border-radius: 12px !important;
+            padding: 0.7rem 1rem !important;
+            font-size: 0.85rem !important;
+        }
+        input:focus, select:focus {
+            border-color: #d4af37 !important;
+            outline: none !important;
+            box-shadow: 0 0 0 2px rgba(212,175,55,0.15) !important;
+        }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th {
+            padding: 1rem 0.75rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #94a3b8;
+            border-bottom: 1px solid #1e293b;
+        }
+        .data-table td {
+            padding: 0.8rem 0.75rem;
+            border-bottom: 1px solid rgba(30,41,59,0.5);
+        }
+        .data-table tr:hover { background: rgba(212,175,55,0.04); }
+        .status-pill {
+            padding: 0.25rem 0.75rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .status-estoque { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+        .status-consignado { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
+        .status-vendido { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+        .stat-card {
+            background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(10,12,16,0.9));
+            border: 1px solid #1e293b;
+            border-radius: 20px;
+            padding: 1.2rem;
+            transition: all 0.3s;
+        }
+        .stat-card:hover { transform: translateY(-2px); border-color: #d4af37; }
+        .filter-chip {
+            padding: 0.35rem 1rem;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            background: #1e293b;
+            transition: all 0.2s;
+        }
+        .filter-chip.active { background: #d4af37; color: #0a0c10; }
+        .modal-overlay {
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(8px);
+        }
+        .code-link { color: #d4af37; cursor: pointer; font-weight: 500; }
+        .code-link:hover { text-decoration: underline; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 10px; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade { animation: fadeIn 0.3s ease-out; }
+        .connection-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.3rem 0.8rem;
+            background: rgba(0,0,0,0.5);
+            border-radius: 40px;
+            font-size: 0.7rem;
+        }
+        .drop-zone {
+            border: 2px dashed rgba(212,175,55,0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .drop-zone:hover { border-color: #d4af37; background: rgba(212,175,55,0.05); }
+        .progress-bar { height: 4px; background: #d4af37; border-radius: 2px; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <nav class="sticky top-4 z-40 glass-card mx-4 mb-6">
+        <div class="px-5 py-3 flex justify-between items-center flex-wrap gap-3">
+            <div class="flex items-center gap-3 logo cursor-pointer" onclick="goHome()">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center">
+                    <i class="fas fa-gem text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide text-amber-500">LUXUS</h1>
+                    <p class="text-[8px] text-slate-400 tracking-[0.25em] uppercase">JOIAS & PERFUMES</p>
+                </div>
+            </div>
+            <div class="flex gap-1">
+                <button onclick="switchTab('consulta')" id="tab-consulta" class="nav-link active"><i class="fas fa-chart-line mr-1"></i>Resumo</button>
+                <button onclick="switchTab('revendedores')" id="tab-revendedores" class="nav-link"><i class="fas fa-users mr-1"></i>Revendedores</button>
+                <button onclick="switchTab('config')" id="tab-config" class="nav-link"><i class="fas fa-cog mr-1"></i>Configurações</button>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="connection-badge">
+                    <i class="fas fa-circle text-[8px] text-green-500" id="conn-icon"></i>
+                    <span id="conn-text">Conectado</span>
+                </div>
+                <div class="flex items-center gap-2 bg-slate-800/50 px-3 py-1.5 rounded-full">
+                    <i class="fas fa-user-circle text-amber-500"></i>
+                    <span id="user-name" class="text-xs font-semibold">Admin</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="px-4 pb-10">
+        
+        <!-- ==================== ABA CONSULTA ==================== -->
+        <div id="content-consulta" class="tab-content space-y-5">
+            <!-- Saudação -->
+            <div class="glass-card p-4 text-center">
+                <h2 class="text-xl font-bold" style="background:linear-gradient(135deg,#d4af37,#e8c95a); -webkit-background-clip:text; background-clip:text; color:transparent">Olá, Lu! ✨</h2>
+                <p class="text-xs text-slate-400">Bem-vinda ao seu painel de controle</p>
+            </div>
+
+            <!-- Dashboard Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="stat-card"><p class="text-slate-400 text-[10px] uppercase">Total de Peças</p><h3 id="dash-total" class="text-2xl font-bold">0</h3></div>
+                <div class="stat-card"><p class="text-slate-400 text-[10px] uppercase">Capital Estoque</p><h3 id="dash-capital" class="text-xl font-bold text-green-400">R$ 0</h3></div>
+                <div class="stat-card"><p class="text-slate-400 text-[10px] uppercase">Em Consignação</p><h3 id="dash-consignado" class="text-xl font-bold text-blue-400">R$ 0</h3></div>
+                <div class="stat-card"><p class="text-slate-400 text-[10px] uppercase">Total Vendido</p><h3 id="dash-vendido" class="text-xl font-bold text-red-400">R$ 0</h3></div>
+            </div>
+
+            <!-- Busca e Ações -->
+            <div class="glass-card p-4">
+                <div class="flex flex-wrap gap-3">
+                    <div class="flex-1 relative">
+                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                        <input type="text" id="search-input" placeholder="Buscar por código, descrição ou tipo..." class="w-full pl-10" oninput="renderInventory()">
+                    </div>
+                    <button onclick="openNewItemModal()" class="bg-emerald-600 hover:bg-emerald-700 px-5 py-2 rounded-xl text-sm font-semibold"><i class="fas fa-plus mr-1"></i>Novo Item</button>
+                    <button onclick="loadData()" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-xl"><i class="fas fa-sync-alt"></i></button>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="flex flex-wrap gap-2">
+                <button class="filter-chip active" data-filter="all" onclick="setFilter('all')">📋 Todos</button>
+                <button class="filter-chip" data-filter="estoque" onclick="setFilter('estoque')">🏠 Em Estoque</button>
+                <button class="filter-chip" data-filter="consignado" onclick="setFilter('consignado')">🤝 Em Consignação</button>
+                <button class="filter-chip" data-filter="vendido" onclick="setFilter('vendido')">💰 Vendidos</button>
+            </div>
+
+            <!-- Tabela de Inventário -->
+            <div class="glass-card overflow-hidden">
+                <div class="px-5 py-3 border-b border-slate-800"><h2 class="font-semibold"><i class="fas fa-crown text-amber-500 mr-2"></i>Acervo Luxus</h2></div>
+                <div class="overflow-x-auto">
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>Código</th><th>Descrição</th><th>Tipo</th><th>Status</th><th>Custo</th><th>Preço Sugerido</th><th>Data</th><th>Foto</th></tr>
+                        </thead>
+                        <tbody id="inventory-table"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== ABA REVENDEDORES ==================== -->
+        <div id="content-revendedores" class="tab-content hidden space-y-5">
+            <div class="glass-card p-6">
+                <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
+                    <div>
+                        <h2 class="text-xl font-semibold text-amber-500">Revendedores</h2>
+                        <p class="text-xs text-slate-400 mt-1">Gerencie seus parceiros e consignações</p>
+                    </div>
+                    <button onclick="openAddRevendedorModal()" class="btn-gold px-4 py-2 rounded-xl text-sm font-bold"><i class="fas fa-user-plus mr-2"></i> Novo Revendedor</button>
+                </div>
+
+                <!-- Lista de Revendedores -->
+                <div class="mb-6">
+                    <p class="text-sm text-slate-400 mb-3">📋 Revendedores cadastrados:</p>
+                    <div id="revendedores-list" class="space-y-2 max-h-80 overflow-y-auto"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== ABA CONFIGURAÇÕES ==================== -->
+        <div id="content-config" class="tab-content hidden max-w-4xl mx-auto space-y-5">
+            <div class="glass-card p-6">
+                <h2 class="text-xl font-bold text-amber-500 mb-5">Configurações do Sistema</h2>
+                
+                <!-- Conexão -->
+                <div class="mb-6 p-4 bg-slate-800/30 rounded-xl">
+                    <h3 class="text-md font-bold mb-3"><i class="fab fa-google text-blue-400"></i> Conexão</h3>
+                    <input type="text" id="script-url" class="w-full mb-3" placeholder="URL do Google Apps Script">
+                    <button onclick="saveConfig()" class="btn-gold px-5 py-2 rounded-xl">Salvar</button>
+                </div>
+
+                <!-- Tipos de Joia -->
+                <div class="mb-6 p-4 bg-slate-800/30 rounded-xl">
+                    <h3 class="text-md font-bold mb-3"><i class="fas fa-tags text-amber-500"></i> Tipos de Joia</h3>
+                    <div class="flex gap-2 mb-3"><input type="text" id="new-tipo" class="flex-1" placeholder="Novo tipo"><button onclick="addTipo()" class="btn-gold px-4 rounded-lg">Adicionar</button></div>
+                    <div id="tipos-list" class="space-y-1 max-h-40 overflow-y-auto"></div>
+                </div>
+
+                <!-- Importação/Exportação -->
+                <div class="mb-6 p-4 bg-slate-800/30 rounded-xl">
+                    <h3 class="text-md font-bold mb-3"><i class="fas fa-exchange-alt text-green-400"></i> Importar / Exportar</h3>
+                    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                        <i class="fas fa-cloud-upload-alt text-3xl text-amber-500 mb-2"></i>
+                        <p class="text-sm">Clique ou arraste um arquivo CSV/JSON</p>
+                        <input type="file" id="file-input" accept=".csv,.json" class="hidden" onchange="handleImport()">
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="exportData('csv')" class="bg-blue-600 px-4 py-2 rounded-lg text-sm">Exportar CSV</button>
+                        <button onclick="exportData('json')" class="bg-purple-600 px-4 py-2 rounded-lg text-sm">Exportar JSON</button>
+                        <button onclick="downloadTemplate()" class="bg-slate-600 px-4 py-2 rounded-lg text-sm">Download Template</button>
+                    </div>
+                </div>
+
+                <!-- Usuários -->
+                <div class="p-4 bg-slate-800/30 rounded-xl">
+                    <h3 class="text-md font-bold mb-3"><i class="fas fa-users text-blue-400"></i> Usuários</h3>
+                    <div id="usuarios-list" class="text-sm space-y-1"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ==================== MODAIS ==================== -->
+    
+    <!-- Modal de Edição de Item -->
+    <div id="modal-item" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay">
+        <div class="glass-card p-6 w-[550px] max-w-[90%] max-h-[85vh] overflow-y-auto animate-fade">
+            <h3 class="text-xl font-bold text-amber-500 mb-5" id="modal-item-title">Editar Item</h3>
+            <input type="hidden" id="edit-rowid">
+            <div class="space-y-4">
+                <div><label class="block text-sm font-medium text-slate-400 mb-1">Código</label><input type="text" id="edit-codigo" class="w-full" readonly></div>
+                <div><label class="block text-sm font-medium text-slate-400 mb-1">Descrição</label><input type="text" id="edit-descricao" class="w-full" placeholder="Descrição do produto"></div>
+                <div><label class="block text-sm font-medium text-slate-400 mb-1">Tipo de Joia</label><select id="edit-tipo" class="w-full"></select></div>
+                <div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium text-slate-400 mb-1">Custo (R$)</label><input type="number" id="edit-custo" class="w-full" step="0.01"></div><div><label class="block text-sm font-medium text-slate-400 mb-1">Preço Sugerido (R$)</label><input type="number" id="edit-venda" class="w-full" step="0.01"></div></div>
+                <div><label class="block text-sm font-medium text-slate-400 mb-1">Status</label><select id="edit-status" class="w-full"></select></div>
+                <div><label class="block text-sm font-medium text-slate-400 mb-1">URL da Foto</label><input type="text" id="edit-foto" class="w-full" placeholder="https://..."></div>
+            </div>
+            <div class="flex gap-3 mt-6"><button onclick="closeModal('modal-item')" class="flex-1 bg-slate-700 py-2.5 rounded-xl">Cancelar</button><button onclick="saveItem()" class="flex-1 btn-gold py-2.5 rounded-xl font-semibold">Salvar</button></div>
+        </div>
+    </div>
+
+    <!-- Modal de Revendedor -->
+    <div id="modal-revendedor" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay">
+        <div class="glass-card p-6 w-[500px] max-w-[90%] animate-fade">
+            <h3 class="text-xl font-bold text-amber-500 mb-5" id="modal-rev-title">Novo Revendedor</h3>
+            <input type="hidden" id="edit-rev-rowid">
+            <div class="space-y-3">
+                <input type="text" id="rev-nome" placeholder="Nome do Revendedor" class="w-full">
+                <div class="grid grid-cols-2 gap-3"><input type="text" id="rev-contato" placeholder="Contato (WhatsApp)"><input type="text" id="rev-email" placeholder="E-mail"></div>
+                <input type="text" id="rev-endereco" placeholder="Endereço" class="w-full">
+                <div class="grid grid-cols-2 gap-3"><input type="text" id="rev-cpf" placeholder="CPF/CNPJ"><input type="text" id="rev-observacoes" placeholder="Observações"></div>
+            </div>
+            <div class="flex gap-3 mt-6"><button onclick="closeModal('modal-revendedor')" class="flex-1 bg-slate-700 py-2.5 rounded-xl">Cancelar</button><button onclick="saveRevendedor()" class="flex-1 btn-gold py-2.5 rounded-xl font-semibold">Salvar</button></div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden"><div class="glass-card px-5 py-3 rounded-full shadow-xl"><span id="toast-msg"></span></div></div>
+
+    <script>
+        // ==================== VARIÁVEIS GLOBAIS ====================
+        let inventory = [];
+        let revendedores = [];
+        let tipos = [];
+        let scriptUrl = localStorage.getItem('luxus_script_url') || '';
+        let currentFilter = 'all';
+
+        // ==================== INICIALIZAÇÃO ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('script-url').value = scriptUrl;
+            if (scriptUrl) loadData();
+            else showToast('⚠️ Configure a URL do Google Apps Script');
+            
+            // Drag & drop para importação
+            const dropZone = document.getElementById('drop-zone');
+            if (dropZone) {
+                dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-amber-500'); });
+                dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('border-amber-500'); });
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('border-amber-500');
+                    const file = e.dataTransfer.files[0];
+                    if (file) processImport(file);
+                });
+            }
+            
+            switchTab('consulta');
+        });
+
+        // ==================== NAVEGAÇÃO ====================
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            
+            if (tab === 'consulta') {
+                document.getElementById('content-consulta').classList.remove('hidden');
+                document.getElementById('tab-consulta').classList.add('active');
+            } else if (tab === 'revendedores') {
+                document.getElementById('content-revendedores').classList.remove('hidden');
+                document.getElementById('tab-revendedores').classList.add('active');
+                loadRevendedores();
+            } else if (tab === 'config') {
+                document.getElementById('content-config').classList.remove('hidden');
+                document.getElementById('tab-config').classList.add('active');
+                loadTipos();
+                loadUsuarios();
+            }
+        }
+        
+        function goHome() { switchTab('consulta'); setFilter('all'); document.getElementById('search-input').value = ''; }
+        function showToast(msg) { const t = document.getElementById('toast'); document.getElementById('toast-msg').innerHTML = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 2500); }
+        function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
+
+        // ==================== CONFIGURAÇÃO ====================
+        function saveConfig() {
+            scriptUrl = document.getElementById('script-url').value.trim();
+            localStorage.setItem('luxus_script_url', scriptUrl);
+            showToast('Configurações salvas');
+            if (scriptUrl) loadData();
+        }
+
+        // ==================== CARREGAMENTO DE DADOS ====================
+        async function loadData() {
+            if (!scriptUrl) return;
+            try {
+                showToast('Carregando...');
+                const res = await fetch(`${scriptUrl}?action=getInventario`);
+                inventory = await res.json();
+                renderInventory();
+                updateDashboard();
+                document.getElementById('conn-icon').className = 'fas fa-circle text-[8px] text-green-500';
+                showToast(`✅ ${inventory.length} itens carregados`);
+            } catch(e) {
+                document.getElementById('conn-icon').className = 'fas fa-circle text-[8px] text-red-500';
+                showToast('❌ Erro ao carregar dados');
+                console.error(e);
+            }
+        }
+
+        async function loadRevendedores() {
+            if (!scriptUrl) return;
+            try {
+                const res = await fetch(`${scriptUrl}?action=getRevendedores`);
+                revendedores = await res.json();
+                renderRevendedoresList();
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadTipos() {
+            if (!scriptUrl) return;
+            try {
+                const res = await fetch(`${scriptUrl}?action=getTipos`);
+                tipos = await res.json();
+                renderTiposList();
+                updateTipoSelects();
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadUsuarios() {
+            if (!scriptUrl) return;
+            try {
+                const res = await fetch(`${scriptUrl}?action=getUsuarios`);
+                const usuarios = await res.json();
+                const container = document.getElementById('usuarios-list');
+                if (container) container.innerHTML = usuarios.map(u => `<div class="flex justify-between p-2 border-b border-slate-700"><span>👤 ${u.Usuario}</span><span class="text-slate-500">${u.Nivel || 'user'}</span></div>`).join('');
+            } catch(e) { console.error(e); }
+        }
+
+        // ==================== RENDERIZAÇÃO DA TABELA ====================
+        function renderInventory() {
+            const tbody = document.getElementById('inventory-table');
+            if (!tbody) return;
+            
+            const search = document.getElementById('search-input')?.value.toLowerCase() || '';
+            let filtered = inventory.filter(i => 
+                String(i.Codigo || '').toLowerCase().includes(search) || 
+                (i.Descricao || '').toLowerCase().includes(search) || 
+                (i.Tipo || '').toLowerCase().includes(search));
+            
+            if (currentFilter === 'estoque') filtered = filtered.filter(i => i.Status === 'Em Estoque');
+            else if (currentFilter === 'consignado') filtered = filtered.filter(i => i.Status !== 'Em Estoque' && i.Status !== 'Vendido');
+            else if (currentFilter === 'vendido') filtered = filtered.filter(i => i.Status === 'Vendido');
+            
+            tbody.innerHTML = '';
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-12 text-slate-500">Nenhum item encontrado</td></tr>';
+            } else {
+                filtered.forEach(item => {
+                    let statusClass = 'status-estoque', icon = '🏠';
+                    if (item.Status === 'Vendido') { statusClass = 'status-vendido'; icon = '💰'; }
+                    else if (item.Status !== 'Em Estoque') { statusClass = 'status-consignado'; icon = '🤝'; }
+                    
+                    const row = tbody.insertRow();
+                    row.insertCell(0).innerHTML = `<span class="code-link" onclick="openEditModal(${item.rowId})">${escapeHtml(item.Codigo)}</span>`;
+                    row.insertCell(1).innerHTML = escapeHtml(item.Descricao || '-');
+                    row.insertCell(2).innerHTML = `<span class="bg-slate-800 px-2 py-0.5 rounded-full text-xs">${escapeHtml(item.Tipo || 'Geral')}</span>`;
+                    row.insertCell(3).innerHTML = `<span class="status-pill ${statusClass}" onclick="quickStatusChange(${item.rowId}, '${item.Status}', '${escapeHtml(item.Codigo)}')">${icon} ${escapeHtml(item.Status)}</span>`;
+                    row.insertCell(4).innerHTML = `R$ ${(parseFloat(item.Custo) || 0).toFixed(2)}`;
+                    row.insertCell(5).innerHTML = `<span class="text-amber-500 font-semibold">R$ ${(parseFloat(item.Venda) || 0).toFixed(2)}</span>`;
+                    row.insertCell(6).innerHTML = item.Data ? new Date(item.Data).toLocaleDateString('pt-BR') : '-';
+                    row.insertCell(7).innerHTML = `<div class="w-8 h-8 rounded bg-slate-800 overflow-hidden cursor-pointer flex items-center justify-center" onclick="viewFoto('${escapeHtml(item.Foto || '')}')">${item.Foto ? `<img src="${escapeHtml(item.Foto)}" class="w-full h-full object-cover">` : '<i class="fas fa-image text-slate-600"></i>'}</div>`;
+                });
+            }
+        }
+
+        function updateDashboard() {
+            const total = inventory.length;
+            const capital = inventory.filter(i => i.Status === 'Em Estoque').reduce((a,i) => a + (parseFloat(i.Custo) || 0), 0);
+            const consignado = inventory.filter(i => i.Status !== 'Em Estoque' && i.Status !== 'Vendido').reduce((a,i) => a + (parseFloat(i.Venda) || 0), 0);
+            const vendido = inventory.filter(i => i.Status === 'Vendido').reduce((a,i) => a + (parseFloat(i.Venda) || 0), 0);
+            document.getElementById('dash-total').innerHTML = total;
+            document.getElementById('dash-capital').innerHTML = `R$ ${capital.toFixed(2)}`;
+            document.getElementById('dash-consignado').innerHTML = `R$ ${consignado.toFixed(2)}`;
+            document.getElementById('dash-vendido').innerHTML = `R$ ${vendido.toFixed(2)}`;
+        }
+
+        // ==================== FUNÇÕES DE ITENS ====================
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            document.querySelector(`.filter-chip[data-filter="${filter}"]`).classList.add('active');
+            renderInventory();
+        }
+
+        function openEditModal(rowId) {
+            const item = inventory.find(i => i.rowId === rowId);
+            if (!item) return;
+            document.getElementById('edit-rowid').value = rowId;
+            document.getElementById('edit-codigo').value = item.Codigo;
+            document.getElementById('edit-descricao').value = item.Descricao || '';
+            document.getElementById('edit-custo').value = item.Custo;
+            document.getElementById('edit-venda').value = item.Venda;
+            document.getElementById('edit-foto').value = item.Foto || '';
+            document.getElementById('edit-status').value = item.Status;
+            document.getElementById('edit-tipo').value = item.Tipo || '';
+            updateTipoSelects();
+            document.getElementById('modal-item').classList.remove('hidden');
+        }
+
+        function openNewItemModal() {
+            const codigo = prompt('Digite o código do novo item:');
+            if (!codigo) return;
+            if (inventory.find(i => i.Codigo === codigo)) { showToast('Código já existe!'); return; }
+            document.getElementById('edit-rowid').value = '';
+            document.getElementById('edit-codigo').value = codigo;
+            document.getElementById('edit-descricao').value = '';
+            document.getElementById('edit-custo').value = '';
+            document.getElementById('edit-venda').value = '';
+            document.getElementById('edit-foto').value = '';
+            document.getElementById('edit-status').value = 'Em Estoque';
+            document.getElementById('modal-item').classList.remove('hidden');
+        }
+
+        async function saveItem() {
+            const rowId = document.getElementById('edit-rowid').value;
+            const data = {
+                action: rowId ? 'editInventario' : 'addInventario',
+                codigo: document.getElementById('edit-codigo').value,
+                descricao: document.getElementById('edit-descricao').value,
+                tipo: document.getElementById('edit-tipo').value,
+                custo: document.getElementById('edit-custo').value,
+                venda: document.getElementById('edit-venda').value,
+                status: document.getElementById('edit-status').value,
+                foto: document.getElementById('edit-foto').value
+            };
+            if (rowId) data.rowId = parseInt(rowId);
+            
+            try {
+                const res = await fetch(scriptUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                const result = await res.json();
+                if (result.success) {
+                    showToast(rowId ? '✅ Item atualizado!' : '✅ Item criado!');
+                    closeModal('modal-item');
+                    loadData();
+                } else {
+                    showToast('❌ Erro: ' + (result.error || 'Falha ao salvar'));
+                }
+            } catch(e) { showToast('❌ Erro de conexão: ' + e.message); }
+        }
+
+        async function quickStatusChange(rowId, currentStatus, codigo) {
+            const newStatus = prompt(`Alterar status do item ${codigo}:\nOpções: Em Estoque, Vendido`, currentStatus);
+            if (newStatus && newStatus !== currentStatus) {
+                try {
+                    await fetch(scriptUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'editInventario', rowId, status: newStatus }) });
+                    showToast(`Status alterado para: ${newStatus}`);
+                    loadData();
+                } catch(e) { showToast('Erro ao alterar status'); }
+            }
+        }
+
+        // ==================== REVENDEDORES ====================
+        function renderRevendedoresList() {
+            const container = document.getElementById('revendedores-list');
+            if (!container) return;
+            if (!revendedores.length) { container.innerHTML = '<div class="text-center py-8 text-slate-500">Nenhum revendedor cadastrado</div>'; return; }
+            container.innerHTML = revendedores.map(rev => `
+                <div class="flex justify-between items-center p-3 bg-slate-800/30 rounded-xl border border-slate-700/30">
+                    <div><div class="font-medium">${escapeHtml(rev.Nome)}</div>${rev.Contato ? `<div class="text-xs text-slate-400"><i class="fab fa-whatsapp"></i> ${escapeHtml(rev.Contato)}</div>` : ''}</div>
+                    <div class="flex gap-2"><button onclick="openEditRevendedorModal(${rev.rowId})" class="text-blue-400"><i class="fas fa-edit"></i></button><button onclick="deleteRevendedor(${rev.rowId}, '${escapeHtml(rev.Nome)}')" class="text-red-400"><i class="fas fa-trash"></i></button></div>
+                </div>
+            `).join('');
+        }
+
+        function openAddRevendedorModal() {
+            document.getElementById('modal-rev-title').textContent = 'Novo Revendedor';
+            document.getElementById('edit-rev-rowid').value = '';
+            document.getElementById('rev-nome').value = '';
+            document.getElementById('rev-contato').value = '';
+            document.getElementById('rev-email').value = '';
+            document.getElementById('rev-endereco').value = '';
+            document.getElementById('rev-cpf').value = '';
+            document.getElementById('rev-observacoes').value = '';
+            document.getElementById('modal-revendedor').classList.remove('hidden');
+        }
+
+        function openEditRevendedorModal(rowId) {
+            const rev = revendedores.find(r => r.rowId === rowId);
+            if (!rev) return;
+            document.getElementById('modal-rev-title').textContent = 'Editar Revendedor';
+            document.getElementById('edit-rev-rowid').value = rowId;
+            document.getElementById('rev-nome').value = rev.Nome || '';
+            document.getElementById('rev-contato').value = rev.Contato || '';
+            document.getElementById('rev-email').value = rev.Email || '';
+            document.getElementById('rev-endereco').value = rev.Endereco || '';
+            document.getElementById('rev-cpf').value = rev.CPF || '';
+            document.getElementById('rev-observacoes').value = rev.Observacoes || '';
+            document.getElementById('modal-revendedor').classList.remove('hidden');
+        }
+
+        async function saveRevendedor() {
+            const rowId = document.getElementById('edit-rev-rowid').value;
+            const data = {
+                action: rowId ? 'editRevendedor' : 'addRevendedor',
+                nome: document.getElementById('rev-nome').value,
+                contato: document.getElementById('rev-contato').value,
+                email: document.getElementById('rev-email').value,
+                endereco: document.getElementById('rev-endereco').value,
+                cpf: document.getElementById('rev-cpf').value,
+                observacoes: document.getElementById('rev-observacoes').value
+            };
+            if (rowId) data.rowId = parseInt(rowId);
+            
+            const res = await fetch(scriptUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            const result = await res.json();
+            if (result.success) {
+                showToast(rowId ? 'Revendedor atualizado' : 'Revendedor adicionado');
+                closeModal('modal-revendedor');
+                loadRevendedores();
+            } else {
+                showToast('❌ Erro ao salvar revendedor');
+            }
+        }
+
+        async function deleteRevendedor(rowId, nome) {
+            if (confirm(`Excluir revendedor "${nome}"?`)) {
+                await fetch(scriptUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delRevendedor', rowId }) });
+                showToast('Revendedor excluído');
+                loadRevendedores();
+            }
+        }
+
+        // ==================== TIPOS ====================
+        function updateTipoSelects() {
+            const select = document.getElementById('edit-tipo');
+            if (select) select.innerHTML = '<option value="">Geral</option>' + tipos.map(t => `<option value="${escapeHtml(t.Nome)}">${escapeHtml(t.Nome)}</option>`).join('');
+        }
+
+        function renderTiposList() {
+            const container = document.getElementById('tipos-list');
+            if (!container) return;
+            if (!tipos.length) { container.innerHTML = '<p class="text-slate-500 text-sm">Nenhum tipo cadastrado</p>'; return; }
+            container.innerHTML = tipos.map(t => `<div class="flex justify-between items-center p-2 bg-slate-800/30 rounded-lg"><span>${escapeHtml(t.Nome)}</span><button onclick="deleteTipo('${escapeHtml(t.Nome)}')" class="text-red-400"><i class="fas fa-trash"></i></button></div>`).join('');
+        }
+
+        async function addTipo() {
+            const nome = document.getElementById('new-tipo').value.trim();
+            if (!nome) { showToast('Digite o nome do tipo'); return; }
+            await fetch(scriptUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'addTipo', nome }) });
+            showToast(`Tipo "${nome}" adicionado`);
+            document.getElementById('new-tipo').value = '';
+            loadTipos();
+        }
+
+        async function deleteTipo(nome) {
+            if (confirm(`Excluir tipo "${nome}"?`)) {
+                await fetch(scriptUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delTipo', nome }) });
+                showToast('Tipo excluído');
+                loadTipos();
+            }
+        }
+
+        // ==================== IMPORTAÇÃO/EXPORTAÇÃO ====================
+        async function exportData(format) {
+            try {
+                const res = await fetch(`${scriptUrl}?action=exportData`);
+                const data = await res.json();
+                const exportData = { exportDate: new Date().toISOString(), data };
+                const jsonStr = JSON.stringify(exportData, null, 2);
+                
+                if (format === 'csv') {
+                    let csv = 'Tipo,Exportação em JSON disponível\n';
+                    csv += 'Para exportar em CSV, use a opção JSON e converta com ferramentas externas.';
+                    downloadFile(csv, `luxus_export_${Date.now()}.csv`, 'text/csv');
+                } else {
+                    downloadFile(jsonStr, `luxus_backup_${Date.now()}.json`, 'application/json');
+                }
+                showToast('Exportação concluída!');
+            } catch(e) { showToast('Erro na exportação'); }
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+
+        function downloadTemplate() {
+            const template = {
+                Inventario: [{ Codigo: "000001", Descricao: "Exemplo", Tipo: "Pulseira", Status: "Em Estoque", Custo: 100, Venda: 200 }],
+                Revendedores: [{ Nome: "Nome do Revendedor", Contato: "(11) 99999-9999", Email: "email@exemplo.com" }],
+                Tipos: [{ Nome: "Pulseira" }, { Nome: "Colar" }, { Nome: "Anel" }]
+            };
+            downloadFile(JSON.stringify(template, null, 2), 'luxus_template.json', 'application/json');
+        }
+
+        function handleImport() {
+            const file = document.getElementById('file-input').files[0];
+            if (file) processImport(file);
+        }
+
+        async function processImport(file) {
+            if (!confirm(`Importar "${file.name}"? Isso pode sobrescrever dados.`)) return;
+            try {
+                const text = await file.text();
+                const importedData = JSON.parse(text);
+                await fetch(scriptUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'importData', data: importedData.data || importedData }) });
+                showToast('✅ Importação concluída!');
+                loadData();
+                loadRevendedores();
+                loadTipos();
+            } catch(e) { showToast('❌ Erro na importação: ' + e.message); }
+        }
+
+        // ==================== UTILITÁRIOS ====================
+        function viewFoto(url) { if (url) window.open(url, '_blank'); }
+        function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+    </script>
+</body>
+</html>
