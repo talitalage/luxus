@@ -271,11 +271,14 @@
             font-weight: 600;
         }
         
-                        /* Header ESCURO - elegante */
+                        /* Header ESCURO COMPACTO */
         .header-dark {
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+            padding: 0;
+            height: 56px;
+            display: flex;
+            align-items: center;
         }
         
         .header-dark h1 {
@@ -357,29 +360,31 @@
             box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1) !important;
         }
         
-                        /* Tabs - para header escuro */
+                        /* Nav tabs compactos */
         .nav-tab {
             background: transparent;
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.65);
             border: none;
-            border-bottom: 3px solid transparent;
-            padding: 1rem 1.5rem;
+            border-bottom: 2px solid transparent;
+            padding: 0 1rem;
+            height: 56px;
             font-weight: 500;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             transition: all 0.2s ease;
             cursor: pointer;
-            border-radius: 0;
+            white-space: nowrap;
         }
         
         .nav-tab:hover {
             color: rgba(255, 255, 255, 0.95);
-            border-bottom-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255,255,255,0.06);
         }
         
         .nav-tab.active {
             color: var(--white);
-            border-bottom-color: var(--primary-light);
+            border-bottom-color: #60a5fa;
             font-weight: 600;
+            background: rgba(255,255,255,0.08);
         }
         
         /* Stats cards */
@@ -920,20 +925,27 @@
 </head>
 <body>
     <div class="container">
-        <!-- Header com fundo escuro -->
-        <div class="header-dark p-6 mb-6">
-            <div class="flex justify-between items-center flex-wrap gap-4">
-                <div class="flex items-center gap-4 cursor-pointer" onclick="switchTab('dashboard')">
-                    <div class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
-                        <img src="https://i.ibb.co/6R29d3Dj/luxus-logo.png" alt="Luxus" class="w-full h-full object-contain">
+        <!-- Header compacto -->
+        <div class="header-dark">
+            <div style="max-width:1280px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;gap:1rem;">
+                <!-- Logo + Título editável -->
+                <div style="display:flex;align-items:center;gap:0.75rem;cursor:pointer;flex-shrink:0;" onclick="switchTab('dashboard')">
+                    <div style="width:36px;height:36px;background:white;border-radius:8px;overflow:hidden;flex-shrink:0;">
+                        <img src="https://i.ibb.co/6R29d3Dj/luxus-logo.png" alt="Luxus" style="width:100%;height:100%;object-fit:contain;">
                     </div>
                     <div>
-                        <h1 class="text-3xl font-bold text-amber-400">LUXUS</h1>
-                        <p class="text-xs text-gray-300 tracking-wider">JOIAS & PERFUMES</p>
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <span id="site-title-display" class="text-white font-semibold" style="font-size:1rem;letter-spacing:0.5px;">LUXUS</span>
+                            <button onclick="event.stopPropagation();abrirEditarTitulo()" style="background:transparent;border:none;cursor:pointer;padding:2px 4px;border-radius:4px;opacity:0.6;" title="Editar título">
+                                <i class="fas fa-pen" style="color:rgba(255,255,255,0.7);font-size:10px;"></i>
+                            </button>
+                        </div>
+                        <div style="font-size:0.65rem;color:rgba(255,255,255,0.5);letter-spacing:1px;" id="site-subtitle-display">JOIAS & PERFUMES</div>
                     </div>
                 </div>
                 
-                <div class="flex gap-3 flex-wrap">
+                <!-- Nav tabs -->
+                <nav style="display:flex;flex:1;border-bottom:none;">
                     <button onclick="switchTab('dashboard')" id="tab-dashboard" class="nav-tab active">
                         <i class="fas fa-chart-line mr-2"></i>Dashboard
                     </button>
@@ -949,25 +961,20 @@
                     <button onclick="switchTab('config')" id="tab-config" class="nav-tab">
                         <i class="fas fa-cog mr-2"></i>Configurações
                     </button>
-                </div>
+                </nav>
                 
-                <div class="flex items-center gap-3">
-                    <div class="bg-black/30 px-4 py-2 rounded-full flex items-center gap-2">
-                        <i class="fas fa-circle text-green-400 text-xs animate-pulse"></i>
-                        <span class="text-xs text-white" id="status-time">--:--</span>
-                    </div>
-                    <div class="bg-gradient-to-r from-amber-500/30 to-amber-600/30 px-4 py-2 rounded-full flex items-center gap-2">
-                        <i class="fas fa-user-circle text-amber-400"></i>
-                        <span id="user-name" class="text-sm font-medium text-white">Lu</span>
-                    </div>
-                    <button onclick="logout()" class="bg-red-500/30 hover:bg-red-500/50 px-4 py-2 rounded-full flex items-center gap-2 transition-colors" title="Sair">
-                        <i class="fas fa-sign-out-alt text-red-300"></i>
+                <!-- Hora + user + logout -->
+                <div style="display:flex;align-items:center;gap:0.75rem;flex-shrink:0;">
+                    <span class="text-xs" style="color:rgba(255,255,255,0.6);" id="status-time">--:--</span>
+                    <span class="text-sm font-medium text-white" id="user-name">Lu</span>
+                    <button onclick="logout()" style="background:rgba(239,68,68,0.2);border:none;cursor:pointer;padding:6px 10px;border-radius:6px;color:rgba(252,165,165,1);transition:all 0.2s;" title="Sair" onmouseover="this.style.background='rgba(239,68,68,0.4)'" onmouseout="this.style.background='rgba(239,68,68,0.2)'">
+                        <i class="fas fa-sign-out-alt"></i>
                     </button>
                 </div>
             </div>
         </div>
 
-        <div class="px-6 pb-6">
+        <div style="padding: 1.5rem;">
             <!-- TAB: Dashboard -->
             <div id="content-dashboard" class="tab-content">
                 <!-- Alerta se não há dados -->
@@ -1325,115 +1332,107 @@
 
             <!-- TAB: Configurações -->
             <div id="content-config" class="tab-content hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Revendedores -->
-                    <div class="card-light p-6">
-                        <h3 class="section-title">
-                            <i class="fas fa-users"></i>Revendedores
-                        </h3>
-                        <div id="lista-revendedores" class="space-y-3 mb-4 max-h-96 overflow-y-auto scrollbar-custom"></div>
-                        <button onclick="abrirModalRevendedor()" class="btn-primary w-full">
-                            <i class="fas fa-user-plus mr-2"></i>Novo Revendedor
+                <!-- 3 colunas -->
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;align-items:start;">
+
+                    <!-- Col 1: Revendedores -->
+                    <div class="card-light p-5">
+                        <h3 class="section-title"><i class="fas fa-users"></i>Revendedores</h3>
+                        <div id="lista-revendedores" class="space-y-2 mb-4 max-h-80 overflow-y-auto scrollbar-custom"></div>
+                        <input type="text" id="busca-revendedor" class="w-full mb-2" placeholder="Buscar revendedor..." oninput="renderRevendedores()" style="font-size:13px;">
+                        <button onclick="abrirModalRevendedor()" class="btn-primary w-full" style="font-size:13px;">
+                            <i class="fas fa-plus mr-2"></i>Novo Revendedor
                         </button>
                     </div>
-                    
-                    <!-- Status -->
-                    <div class="card-light p-6">
-                        <h3 class="section-title">
-                            <i class="fas fa-list-check"></i>Status dos Produtos
-                        </h3>
-                        <div id="lista-status" class="space-y-3 mb-4"></div>
-                        <div class="flex gap-2">
-                            <input 
-                                type="text" 
-                                id="novo-status" 
-                                class="flex-1"
-                                placeholder="Novo status (ex: Em Análise)"
-                                onkeypress="if(event.key==='Enter') addStatus()"
-                            >
-                            <button onclick="addStatus()" class="btn-primary">
-                                <i class="fas fa-plus"></i>
-                            </button>
+
+                    <!-- Col 2: Status + Categorias -->
+                    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+
+                        <!-- Status dos Produtos -->
+                        <div class="card-light p-5">
+                            <h3 class="section-title"><i class="fas fa-tag"></i>Status dos Produtos</h3>
+                            <div id="lista-status" class="space-y-2 mb-3"></div>
+                            <div style="display:flex;gap:0.5rem;">
+                                <input type="text" id="novo-status" class="flex-1" placeholder="Novo status..." onkeypress="if(event.key==='Enter') addStatus()" style="font-size:13px;">
+                                <button onclick="addStatus()" class="btn-primary" style="padding:0.5rem 0.75rem;">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <p style="font-size:11px;color:var(--gray-500);margin-top:0.5rem;">Padrão: Em Estoque, Consignado, Vendido</p>
                         </div>
-                        <p class="text-xs text-gray-500 mt-3">
-                            <i class="fas fa-info-circle mr-1"></i>
-                            Status padrão: Em Estoque, Consignado, Vendido
-                        </p>
-                    </div>
-                    
-                    <!-- Categorias -->
-                    <div class="card-light p-6">
-                        <h3 class="section-title">
-                            <i class="fas fa-tags"></i>Categorias
-                        </h3>
-                        
-                        <div class="mb-5">
-                            <h4 class="font-semibold text-blue-700 mb-3">Semi Joias</h4>
+
+                        <!-- Categorias Semi Joias -->
+                        <div class="card-light p-5">
+                            <h3 class="section-title"><i class="fas fa-ring"></i>Semi Joias</h3>
                             <div id="categorias-semijoia" class="space-y-2 mb-3"></div>
-                            <div class="flex gap-2">
-                                <input 
-                                    type="text" 
-                                    id="nova-cat-semijoia" 
-                                    class="flex-1"
-                                    placeholder="Nova categoria"
-                                    onkeypress="if(event.key==='Enter') addCategoria('Semi Joia')"
-                                >
-                                <button onclick="addCategoria('Semi Joia')" class="btn-primary">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <h4 class="font-semibold text-purple-700 mb-3">Perfumes</h4>
-                            <div id="categorias-perfume" class="space-y-2 mb-3"></div>
-                            <div class="flex gap-2">
-                                <input 
-                                    type="text" 
-                                    id="nova-cat-perfume" 
-                                    class="flex-1"
-                                    placeholder="Nova categoria"
-                                    onkeypress="if(event.key==='Enter') addCategoria('Perfume')"
-                                >
-                                <button onclick="addCategoria('Perfume')" class="btn-primary">
+                            <div style="display:flex;gap:0.5rem;">
+                                <input type="text" id="nova-cat-semijoia" class="flex-1" placeholder="Nova categoria..." onkeypress="if(event.key==='Enter') addCategoria('Semi Joia')" style="font-size:13px;">
+                                <button onclick="addCategoria('Semi Joia')" class="btn-primary" style="padding:0.5rem 0.75rem;">
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Conexão -->
-                    <div class="card-light p-6">
-                        <h3 class="section-title">
-                            <i class="fas fa-plug"></i>Conexão
-                        </h3>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">URL do Google Apps Script</label>
-                                <input type="text" id="config-script-url" class="w-full" placeholder="https://script.google.com/...">
-                            </div>
-                            
-                            <div class="flex gap-3">
-                                <button onclick="testarConexao()" class="btn-secondary flex-1" id="btn-testar">
-                                    <i class="fas fa-plug mr-2"></i>Testar Conexão
-                                </button>
-                                <button onclick="salvarConfiguracao()" class="btn-primary flex-1">
-                                    <i class="fas fa-save mr-2"></i>Salvar
+
+                    <!-- Col 3: Perfumes + Conexão -->
+                    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+
+                        <!-- Categorias Perfumes -->
+                        <div class="card-light p-5">
+                            <h3 class="section-title"><i class="fas fa-spray-can"></i>Perfumes</h3>
+                            <div id="categorias-perfume" class="space-y-2 mb-3"></div>
+                            <div style="display:flex;gap:0.5rem;">
+                                <input type="text" id="nova-cat-perfume" class="flex-1" placeholder="Nova categoria..." onkeypress="if(event.key==='Enter') addCategoria('Perfume')" style="font-size:13px;">
+                                <button onclick="addCategoria('Perfume')" class="btn-primary" style="padding:0.5rem 0.75rem;">
+                                    <i class="fas fa-plus"></i>
                                 </button>
                             </div>
-                            
-                            <div id="config-status" class="hidden text-sm p-3 rounded-lg"></div>
-                            
-                            <!-- Debug: Resposta do servidor -->
-                            <div id="server-response" class="hidden mt-4 p-4 bg-gray-50 rounded-lg border border-gray-300">
-                                <div class="flex justify-between items-center mb-2">
-                                    <h4 class="font-semibold text-gray-700 text-sm">📡 Resposta do Servidor</h4>
-                                    <button onclick="document.getElementById('server-response').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
-                                        <i class="fas fa-times"></i>
+                        </div>
+
+                        <!-- Título da Página -->
+                        <div class="card-light p-5">
+                            <h3 class="section-title"><i class="fas fa-heading"></i>Título da Página</h3>
+                            <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                                <div>
+                                    <label style="font-size:12px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px;">Título principal</label>
+                                    <input type="text" id="cfg-titulo" class="w-full" placeholder="LUXUS" style="font-size:13px;" value="LUXUS">
+                                </div>
+                                <div>
+                                    <label style="font-size:12px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px;">Subtítulo / Campanha</label>
+                                    <input type="text" id="cfg-subtitulo" class="w-full" placeholder="JOIAS & PERFUMES" style="font-size:13px;" value="JOIAS & PERFUMES">
+                                </div>
+                                <button onclick="salvarTitulo()" class="btn-primary w-full" style="font-size:13px;">
+                                    <i class="fas fa-save mr-2"></i>Salvar Título
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Conexão -->
+                        <div class="card-light p-5">
+                            <h3 class="section-title"><i class="fas fa-plug"></i>Conexão</h3>
+                            <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                                <div>
+                                    <label style="font-size:12px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px;">URL do Google Apps Script</label>
+                                    <input type="text" id="config-script-url" class="w-full" placeholder="https://script.google.com/..." style="font-size:13px;">
+                                </div>
+                                <div style="display:flex;gap:0.5rem;">
+                                    <button onclick="testarConexao()" class="btn-secondary flex-1" id="btn-testar" style="font-size:13px;">
+                                        <i class="fas fa-plug mr-2"></i>Testar
+                                    </button>
+                                    <button onclick="salvarConfiguracao()" class="btn-primary flex-1" style="font-size:13px;">
+                                        <i class="fas fa-save mr-2"></i>Salvar
                                     </button>
                                 </div>
-                                <pre id="server-response-content" class="text-xs bg-white p-3 rounded border border-gray-200 overflow-x-auto max-h-64 overflow-y-auto text-gray-800" style="font-family: 'Courier New', monospace;"></pre>
-                                <p class="text-xs text-gray-500 mt-2">💡 Copie isso e me envie para eu analisar</p>
+                                <div id="config-status" class="hidden text-sm p-3 rounded-lg"></div>
+                                <div id="server-response" class="hidden mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                                        <span style="font-size:12px;font-weight:600;color:var(--gray-700);">📡 Resposta</span>
+                                        <button onclick="document.getElementById('server-response').classList.add('hidden')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <pre id="server-response-content" style="font-size:11px;font-family:monospace;overflow-x:auto;max-height:120px;overflow-y:auto;background:white;padding:8px;border-radius:4px;border:1px solid var(--gray-200);"></pre>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1629,6 +1628,75 @@
         };
 
         // ========== INICIALIZAÇÃO ==========
+
+        function editarStatus(statusAtual) {
+            const novo = prompt('Novo nome para o status:', statusAtual);
+            if (!novo || novo.trim() === statusAtual) return;
+            const idx = statusList.indexOf(statusAtual);
+            if (idx !== -1) {
+                // Atualizar nos itens do inventário
+                inventory.forEach(item => {
+                    if (item.Status === statusAtual) item.Status = novo.trim();
+                });
+                statusList[idx] = novo.trim();
+                localStorage.setItem('luxus_status', JSON.stringify(statusList));
+                renderStatus();
+                renderInventario();
+                showToast('Status atualizado!', 'success');
+            }
+        }
+        
+        function editarCategoria(tipo, catAtual) {
+            const nova = prompt('Novo nome para a categoria:', catAtual);
+            if (!nova || nova.trim() === catAtual) return;
+            const arr = categorias[tipo] || [];
+            const idx = arr.indexOf(catAtual);
+            if (idx !== -1) {
+                inventory.forEach(item => {
+                    if (item.Tipo === tipo && item.Categoria === catAtual) item.Categoria = nova.trim();
+                });
+                arr[idx] = nova.trim();
+                categorias[tipo] = arr;
+                localStorage.setItem('luxus_categorias', JSON.stringify(categorias));
+                renderCategorias();
+                renderInventario();
+                showToast('Categoria atualizada!', 'success');
+            }
+        }
+        
+        function salvarTitulo() {
+            const titulo = document.getElementById('cfg-titulo').value || 'LUXUS';
+            const subtitulo = document.getElementById('cfg-subtitulo').value || 'JOIAS & PERFUMES';
+            document.getElementById('site-title-display').textContent = titulo;
+            document.getElementById('site-subtitle-display').textContent = subtitulo;
+            document.title = titulo + ' - Sistema de Gestão';
+            localStorage.setItem('luxus_titulo', titulo);
+            localStorage.setItem('luxus_subtitulo', subtitulo);
+            showToast('Título atualizado!', 'success');
+        }
+        
+        function abrirEditarTitulo() {
+            switchTab('config');
+            setTimeout(() => {
+                document.getElementById('cfg-titulo').focus();
+                document.getElementById('cfg-titulo').select();
+            }, 200);
+        }
+        
+        function carregarTitulo() {
+            const titulo = localStorage.getItem('luxus_titulo');
+            const subtitulo = localStorage.getItem('luxus_subtitulo');
+            if (titulo) {
+                document.getElementById('site-title-display').textContent = titulo;
+                document.getElementById('cfg-titulo').value = titulo;
+                document.title = titulo + ' - Sistema de Gestão';
+            }
+            if (subtitulo) {
+                document.getElementById('site-subtitle-display').textContent = subtitulo;
+                document.getElementById('cfg-subtitulo').value = subtitulo;
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             // Verificar login
             const loggedIn = localStorage.getItem('luxus_logged_in');
@@ -1647,6 +1715,7 @@
             // Carregar configurações
             carregarStatusSalvos();
             carregarConfigColunas();
+            carregarTitulo();
             
             document.getElementById('config-script-url').value = scriptUrl;
             if (scriptUrl) {
@@ -2424,14 +2493,8 @@
             const status = document.getElementById('edit-status').value;
             const revendedor = document.getElementById('edit-revendedor').value;
             
-            console.log('=== SALVANDO ITEM ===');
-            console.log('RowId:', rowId);
-            console.log('Status:', status);
-            console.log('Revendedor:', revendedor);
-            
-            // Validação: Se status é Consignado, precisa ter revendedor
             if (status === 'Consignado' && !revendedor) {
-                showToast('Selecione um revendedor para produtos consignados', 'warning');
+                showToast('Selecione um revendedor para status Consignado', 'warning');
                 return;
             }
             
@@ -2450,38 +2513,48 @@
             
             if (rowId) data.rowId = parseInt(rowId);
             
-            console.log('Dados a enviar:', data);
-            
-            if (!scriptUrl) {
-                showToast('Configure a URL do servidor primeiro', 'error');
-                return;
+            // Salvar localmente sempre (fallback imediato)
+            if (rowId) {
+                const idx = inventory.findIndex(i => i.rowId == rowId);
+                if (idx !== -1) {
+                    inventory[idx] = { ...inventory[idx], 
+                        Codigo: data.codigo, Descricao: data.descricao, Tipo: data.tipo,
+                        Categoria: data.categoria, Custo: data.custo, Venda: data.venda,
+                        Status: data.status, Revendedor: data.revendedor, Foto: data.foto 
+                    };
+                }
+            } else {
+                const newItem = {
+                    rowId: Date.now(),
+                    Codigo: data.codigo, Descricao: data.descricao, Tipo: data.tipo,
+                    Categoria: data.categoria, Custo: data.custo, Venda: data.venda,
+                    Status: data.status, Revendedor: data.revendedor, Foto: data.foto,
+                    Data: new Date().toISOString()
+                };
+                inventory.push(newItem);
             }
             
-            try {
-                const res = await fetch(scriptUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                console.log('Response status:', res.status);
-                const text = await res.text();
-                console.log('Response text:', text);
-                
-                const result = JSON.parse(text);
-                console.log('Result:', result);
-                
-                if (result.success) {
-                    showToast('Item salvo com sucesso!', 'success');
-                    fecharModal('modal-item');
-                    loadData();
-                    renderInventario();
-                } else {
-                    showToast('Erro: ' + (result.error || 'Erro desconhecido'), 'error');
+            renderInventario();
+            fecharModal('modal-item');
+            showToast('Item salvo localmente!', 'success');
+            
+            // Tentar sincronizar com servidor em background
+            if (scriptUrl) {
+                try {
+                    const res = await fetch(scriptUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    const text = await res.text();
+                    const result = JSON.parse(text);
+                    if (result.success) {
+                        showToast('Sincronizado com servidor!', 'success');
+                        loadData();
+                    }
+                } catch (err) {
+                    console.warn('Servidor indisponível - dados salvos apenas localmente:', err.message);
                 }
-            } catch (error) {
-                console.error('Erro ao salvar:', error);
-                showToast('Erro ao salvar item: ' + error.message, 'error');
             }
         }
         
@@ -2604,46 +2677,52 @@
             }
         }
 
-                function renderCategorias() {
+                        function renderCategorias() {
             ['Semi Joia', 'Perfume'].forEach(tipo => {
                 const containerId = tipo === 'Semi Joia' ? 'categorias-semijoia' : 'categorias-perfume';
                 const cats = categorias[tipo] || [];
-                
                 const html = cats.map(cat => `
-                    <div class="flex justify-between items-center px-3 py-2 bg-white rounded border border-gray-200 hover:border-gray-300 transition-all">
-                        <span class="text-sm text-gray-700">${cat}</span>
-                        <button onclick="excluirCategoria('${tipo}', '${cat}')" class="text-gray-400 hover:text-red-600 transition-colors" title="Remover">
-                            <i class="fas fa-times text-xs"></i>
-                        </button>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:white;border:1px solid var(--gray-200);border-radius:6px;">
+                        <span style="font-size:13px;color:var(--gray-700);">${cat}</span>
+                        <div style="display:flex;gap:6px;">
+                            <button onclick="editarCategoria('${tipo}','${cat}')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:2px 4px;" title="Editar" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='var(--gray-400)'">
+                                <i class="fas fa-pen" style="font-size:11px;"></i>
+                            </button>
+                            <button onclick="excluirCategoria('${tipo}','${cat}')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:2px 4px;" title="Remover" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--gray-400)'">
+                                <i class="fas fa-times" style="font-size:11px;"></i>
+                            </button>
+                        </div>
                     </div>
                 `).join('');
-                
-                document.getElementById(containerId).innerHTML = html || '<p class="text-gray-400 text-xs text-center py-4">Nenhuma categoria</p>';
+                document.getElementById(containerId).innerHTML = html || '<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:12px 0;">Nenhuma categoria</p>';
             });
         }
 
         // ========== STATUS ==========
-                function renderStatus() {
+                        function renderStatus() {
             const statusPadrao = ['Em Estoque', 'Consignado', 'Vendido'];
-            
             const html = statusList.map(status => {
                 const isPadrao = statusPadrao.includes(status);
+                const cor = status === 'Em Estoque' ? '#10b981' : status === 'Consignado' ? '#3b82f6' : status === 'Vendido' ? '#14b8a6' : '#64748b';
+                const safeId = status.replace(/ /g,'_');
                 return `
-                    <div class="flex justify-between items-center p-3 bg-white rounded border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all">
-                        <div class="flex items-center gap-2">
-                            <div class="w-2 h-2 rounded-full bg-${getStatusColor(status)}-500"></div>
-                            <span class="text-sm text-gray-700">${status}</span>
-                            ${isPadrao ? '<span class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-2">Padrão</span>' : ''}
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:white;border:1px solid var(--gray-200);border-radius:6px;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <div style="width:8px;height:8px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
+                            <span style="font-size:13px;color:var(--gray-700);">${status}</span>
+                            ${isPadrao ? '<span style="font-size:10px;background:var(--gray-100);color:var(--gray-500);padding:1px 6px;border-radius:3px;">Padrão</span>' : ''}
                         </div>
-                        ${!isPadrao ? `
-                            <button onclick="removerStatus('${status}')" class="text-gray-400 hover:text-red-600 transition-colors" title="Remover">
-                                <i class="fas fa-trash text-sm"></i>
+                        <div style="display:flex;gap:6px;">
+                            <button onclick="editarStatus('${status}')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:2px 4px;border-radius:4px;" title="Editar" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='var(--gray-400)'">
+                                <i class="fas fa-pen" style="font-size:11px;"></i>
                             </button>
-                        ` : ''}
+                            ${!isPadrao ? `<button onclick="removerStatus('${status}')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:2px 4px;border-radius:4px;" title="Remover" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--gray-400)'">
+                                <i class="fas fa-trash" style="font-size:11px;"></i>
+                            </button>` : ''}
+                        </div>
                     </div>
                 `;
             }).join('');
-            
             document.getElementById('lista-status').innerHTML = html;
         }
         
