@@ -6,104 +6,107 @@
     <title>Luxus - Sistema de Gestão</title>
     <link rel="icon" type="image/png" href="https://i.ibb.co/6R29d3Dj/luxus-logo.png">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --champagne: #f4e4c1;
             --gold: #d4af37;
-            --rose-gold: #b76e79;
-            --deep-navy: #0a0e27;
-            --midnight: #151b3d;
-            --pearl: #fef9f3;
-            --shadow: rgba(212, 175, 55, 0.1);
+            --gold-light: #e8d4a0;
+            --gold-dark: #b8960c;
+            --navy: #0a0e27;
+            --navy-light: #1a1f3a;
+            --cream: #faf8f5;
+            --white: #ffffff;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
         }
         
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
         
         body {
             font-family: 'Work Sans', sans-serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #151b3d 50%, #1a1f3a 100%);
-            color: var(--pearl);
+            background: linear-gradient(to bottom, var(--gray-50) 0%, var(--white) 100%);
+            color: var(--gray-800);
             min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
         }
         
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle at 20% 80%, rgba(183, 110, 121, 0.05) 0%, transparent 50%),
-                        radial-gradient(circle at 80% 20%, rgba(212, 175, 55, 0.05) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: 0;
-        }
-        
-        .container { position: relative; z-index: 1; }
-        
-        h1, h2, h3, h4 {
-            font-family: 'Cormorant Garamond', serif;
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Work Sans', sans-serif;
             font-weight: 600;
-            letter-spacing: 0.5px;
         }
         
-        .glass-card {
-            background: rgba(21, 27, 61, 0.7);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(212, 175, 55, 0.15);
-            border-radius: 24px;
-            box-shadow: 0 8px 32px var(--shadow);
+        /* Header com fundo escuro */
+        .header-dark {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+            box-shadow: 0 4px 20px rgba(10, 14, 39, 0.15);
+        }
+        
+        /* Cards claros */
+        .card-light {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
         }
         
-        .glass-card:hover {
-            border-color: rgba(212, 175, 55, 0.3);
-            box-shadow: 0 12px 48px var(--shadow);
+        .card-light:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border-color: var(--gold-light);
         }
         
+        /* Botões */
         .btn-primary {
-            background: linear-gradient(135deg, var(--gold), #e2c28d);
-            color: var(--deep-navy);
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--navy);
             font-weight: 600;
             padding: 0.75rem 1.5rem;
-            border-radius: 12px;
+            border-radius: 10px;
             border: none;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(212, 175, 55, 0.25);
         }
         
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(212, 175, 55, 0.5);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.35);
         }
         
         .btn-secondary {
-            background: rgba(183, 110, 121, 0.2);
-            color: var(--rose-gold);
-            border: 1px solid rgba(183, 110, 121, 0.3);
+            background: var(--white);
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
             padding: 0.75rem 1.5rem;
-            border-radius: 12px;
+            border-radius: 10px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
         
         .btn-secondary:hover {
-            background: rgba(183, 110, 121, 0.3);
-            border-color: rgba(183, 110, 121, 0.5);
+            background: var(--gray-50);
+            border-color: var(--gray-400);
         }
         
+        /* Inputs */
         input, select, textarea {
-            background: rgba(10, 14, 39, 0.8) !important;
-            border: 1px solid rgba(212, 175, 55, 0.2) !important;
-            color: var(--pearl) !important;
-            border-radius: 12px !important;
+            background: var(--white) !important;
+            border: 1px solid var(--gray-300) !important;
+            color: var(--gray-800) !important;
+            border-radius: 10px !important;
             padding: 0.75rem 1rem !important;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
         
         input:focus, select:focus, textarea:focus {
@@ -112,34 +115,42 @@
             box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1) !important;
         }
         
+        /* Tabs de navegação */
         .nav-tab {
             padding: 0.75rem 1.5rem;
-            color: rgba(244, 228, 193, 0.6);
+            color: rgba(255, 255, 255, 0.7);
             cursor: pointer;
-            border-radius: 12px;
-            transition: all 0.3s ease;
+            border-radius: 10px;
+            transition: all 0.2s ease;
             font-weight: 500;
             border: 1px solid transparent;
         }
         
         .nav-tab:hover {
-            color: var(--champagne);
-            background: rgba(212, 175, 55, 0.1);
+            color: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.1);
         }
         
         .nav-tab.active {
-            color: var(--gold);
-            background: rgba(212, 175, 55, 0.15);
-            border-color: rgba(212, 175, 55, 0.3);
+            color: var(--white);
+            background: rgba(212, 175, 55, 0.25);
+            border-color: rgba(212, 175, 55, 0.4);
         }
         
+        /* Stats cards */
         .stat-card {
-            background: linear-gradient(135deg, rgba(21, 27, 61, 0.9), rgba(10, 14, 39, 0.9));
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            border-radius: 20px;
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: 16px;
             padding: 1.5rem;
             position: relative;
             overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            border-color: var(--gold-light);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
         
         .stat-card::before {
@@ -148,10 +159,11 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--gold), var(--rose-gold));
+            height: 4px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
         }
         
+        /* Status badges */
         .status-badge {
             padding: 0.4rem 1rem;
             border-radius: 20px;
@@ -169,31 +181,32 @@
         }
         
         .status-estoque {
-            background: rgba(34, 197, 94, 0.15);
-            color: #4ade80;
-            border: 1px solid rgba(34, 197, 94, 0.3);
+            background: rgba(34, 197, 94, 0.1);
+            color: #059669;
+            border: 1px solid rgba(34, 197, 94, 0.2);
         }
         
         .status-consignado {
-            background: rgba(59, 130, 246, 0.15);
-            color: #60a5fa;
-            border: 1px solid rgba(59, 130, 246, 0.3);
+            background: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+            border: 1px solid rgba(59, 130, 246, 0.2);
         }
         
         .status-vendido {
-            background: rgba(239, 68, 68, 0.15);
-            color: #f87171;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.2);
         }
         
+        /* Tabela */
         .data-table {
             width: 100%;
             border-collapse: collapse;
         }
         
         .data-table thead {
-            background: rgba(10, 14, 39, 0.6);
-            border-bottom: 2px solid rgba(212, 175, 55, 0.2);
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
         }
         
         .data-table th {
@@ -201,14 +214,15 @@
             text-align: left;
             font-size: 0.75rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--gold);
-            font-family: 'Work Sans', sans-serif;
+            letter-spacing: 0.5px;
+            color: var(--gray-600);
+            font-weight: 600;
         }
         
         .data-table td {
             padding: 1rem;
-            border-bottom: 1px solid rgba(21, 27, 61, 0.5);
+            border-bottom: 1px solid var(--gray-200);
+            color: var(--gray-700);
         }
         
         .data-table tbody tr {
@@ -216,80 +230,97 @@
         }
         
         .data-table tbody tr:hover {
-            background: rgba(212, 175, 55, 0.05);
+            background: var(--gray-50);
         }
         
         .code-link {
-            color: var(--gold);
+            color: var(--gold-dark);
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
         }
         
         .code-link:hover {
-            color: var(--champagne);
+            color: var(--gold);
             text-decoration: underline;
         }
         
+        /* Modal */
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.9);
-            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            animation: fadeIn 0.3s ease;
+            animation: fadeIn 0.2s ease;
         }
         
         .modal-content {
-            background: var(--midnight);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 24px;
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: 20px;
             padding: 2rem;
             max-width: 600px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
             animation: slideUp 0.3s ease;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
         }
         
+        /* Filter chips */
         .filter-chip {
             padding: 0.5rem 1.25rem;
             border-radius: 20px;
             font-size: 0.8rem;
             cursor: pointer;
-            background: rgba(21, 27, 61, 0.8);
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            color: rgba(244, 228, 193, 0.8);
-            transition: all 0.3s ease;
+            background: var(--white);
+            border: 1px solid var(--gray-300);
+            color: var(--gray-700);
+            transition: all 0.2s ease;
+            font-weight: 500;
         }
         
         .filter-chip:hover {
-            background: rgba(212, 175, 55, 0.1);
-            color: var(--champagne);
+            background: var(--gray-50);
+            border-color: var(--gray-400);
         }
         
         .filter-chip.active {
-            background: var(--gold);
-            color: var(--deep-navy);
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--navy);
             border-color: var(--gold);
         }
         
+        /* Toast */
         .toast {
             position: fixed;
             bottom: 2rem;
             right: 2rem;
-            background: rgba(21, 27, 61, 0.95);
-            border: 1px solid rgba(212, 175, 55, 0.3);
+            background: var(--white);
+            border: 1px solid var(--gray-200);
             padding: 1rem 1.5rem;
             border-radius: 12px;
-            box-shadow: 0 8px 32px var(--shadow);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
             z-index: 2000;
             animation: slideIn 0.3s ease;
         }
         
+        /* Category badge */
+        .category-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border: 1px solid var(--gray-200);
+        }
+        
+        /* Barcode input */
         .barcode-input {
             font-family: 'Courier New', monospace;
             font-size: 1.2rem;
@@ -297,16 +328,7 @@
             letter-spacing: 2px;
         }
         
-        .category-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 500;
-            background: rgba(212, 175, 55, 0.1);
-            color: var(--gold);
-            border: 1px solid rgba(212, 175, 55, 0.2);
-        }
-        
+        /* Animations */
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -336,38 +358,54 @@
         
         .hidden { display: none !important; }
         
+        /* Scrollbar customizada */
         .scrollbar-custom::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
         
         .scrollbar-custom::-webkit-scrollbar-track {
-            background: rgba(10, 14, 39, 0.5);
+            background: var(--gray-100);
             border-radius: 4px;
         }
         
         .scrollbar-custom::-webkit-scrollbar-thumb {
-            background: rgba(212, 175, 55, 0.3);
+            background: var(--gray-300);
             border-radius: 4px;
         }
         
         .scrollbar-custom::-webkit-scrollbar-thumb:hover {
-            background: rgba(212, 175, 55, 0.5);
+            background: var(--gray-400);
+        }
+        
+        /* Section titles */
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--gray-200);
+        }
+        
+        .section-title i {
+            color: var(--gold);
+            margin-right: 0.5rem;
         }
     </style>
 </head>
 <body>
-    <div class="container p-6">
-        <!-- Header -->
-        <div class="glass-card p-5 mb-6">
+    <div class="container">
+        <!-- Header com fundo escuro -->
+        <div class="header-dark p-6 mb-6">
             <div class="flex justify-between items-center flex-wrap gap-4">
                 <div class="flex items-center gap-4 cursor-pointer" onclick="switchTab('dashboard')">
                     <div class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
                         <img src="https://i.ibb.co/6R29d3Dj/luxus-logo.png" alt="Luxus" class="w-full h-full object-contain">
                     </div>
                     <div>
-                        <h1 class="text-3xl font-bold text-amber-400" style="font-family: 'Cormorant Garamond', serif;">LUXUS</h1>
-                        <p class="text-xs text-slate-400 tracking-wider">JOIAS & PERFUMES</p>
+                        <h1 class="text-3xl font-bold text-amber-400">LUXUS</h1>
+                        <p class="text-xs text-gray-300 tracking-wider">JOIAS & PERFUMES</p>
                     </div>
                 </div>
                 
@@ -392,405 +430,405 @@
                 <div class="flex items-center gap-3">
                     <div class="bg-black/30 px-4 py-2 rounded-full flex items-center gap-2">
                         <i class="fas fa-circle text-green-400 text-xs animate-pulse"></i>
-                        <span class="text-xs" id="status-time">--:--</span>
+                        <span class="text-xs text-white" id="status-time">--:--</span>
                     </div>
-                    <div class="bg-gradient-to-r from-amber-500/20 to-rose-400/20 px-4 py-2 rounded-full flex items-center gap-2">
+                    <div class="bg-gradient-to-r from-amber-500/30 to-amber-600/30 px-4 py-2 rounded-full flex items-center gap-2">
                         <i class="fas fa-user-circle text-amber-400"></i>
-                        <span id="user-name" class="text-sm font-medium">Lu</span>
+                        <span id="user-name" class="text-sm font-medium text-white">Lu</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- TAB: Dashboard -->
-        <div id="content-dashboard" class="tab-content">
-            <!-- Saudação -->
-            <div class="glass-card p-6 mb-6 text-center">
-                <h2 class="text-3xl font-bold text-amber-400 mb-2" style="font-family: 'Cormorant Garamond', serif;">
-                    Olá, Lu! ✨
-                </h2>
-                <p class="text-slate-400">Bem-vinda ao seu painel de controle</p>
-            </div>
+        <div class="px-6 pb-6">
+            <!-- TAB: Dashboard -->
+            <div id="content-dashboard" class="tab-content">
+                <!-- Saudação -->
+                <div class="card-light p-6 mb-6 text-center">
+                    <h2 class="text-3xl font-bold text-amber-600 mb-2">Olá, Lu! ✨</h2>
+                    <p class="text-gray-600">Bem-vinda ao seu painel de controle</p>
+                </div>
 
-            <!-- Cards de Estatísticas -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-                <div class="stat-card">
-                    <div class="flex justify-between items-start mb-3">
-                        <div class="bg-amber-500/20 p-3 rounded-xl">
-                            <i class="fas fa-gem text-amber-400 text-xl"></i>
+                <!-- Cards de Estatísticas -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+                    <div class="stat-card">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="bg-amber-100 p-3 rounded-xl">
+                                <i class="fas fa-gem text-amber-600 text-xl"></i>
+                            </div>
+                            <span class="text-xs text-gray-500 uppercase">Total</span>
                         </div>
-                        <span class="text-xs text-slate-400">Total</span>
+                        <h3 id="dash-total" class="text-3xl font-bold mb-1 text-gray-800">0</h3>
+                        <p class="text-xs text-gray-600">Peças no Sistema</p>
                     </div>
-                    <h3 id="dash-total" class="text-3xl font-bold mb-1">0</h3>
-                    <p class="text-xs text-slate-400">Peças no Sistema</p>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="flex justify-between items-start mb-3">
-                        <div class="bg-green-500/20 p-3 rounded-xl">
-                            <i class="fas fa-warehouse text-green-400 text-xl"></i>
-                        </div>
-                        <span class="text-xs text-slate-400">Em Estoque</span>
-                    </div>
-                    <h3 id="dash-capital" class="text-2xl font-bold mb-1 text-green-400">R$ 0</h3>
-                    <p class="text-xs text-slate-400">Capital Investido</p>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="flex justify-between items-start mb-3">
-                        <div class="bg-blue-500/20 p-3 rounded-xl">
-                            <i class="fas fa-handshake text-blue-400 text-xl"></i>
-                        </div>
-                        <span class="text-xs text-slate-400">Consignado</span>
-                    </div>
-                    <h3 id="dash-consignado" class="text-2xl font-bold mb-1 text-blue-400">R$ 0</h3>
-                    <p class="text-xs text-slate-400">Com Revendedores</p>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="flex justify-between items-start mb-3">
-                        <div class="bg-rose-500/20 p-3 rounded-xl">
-                            <i class="fas fa-dollar-sign text-rose-400 text-xl"></i>
-                        </div>
-                        <span class="text-xs text-slate-400">Vendido</span>
-                    </div>
-                    <h3 id="dash-vendido" class="text-2xl font-bold mb-1 text-rose-400">R$ 0</h3>
-                    <p class="text-xs text-slate-400">Total em Vendas</p>
-                </div>
-            </div>
-
-            <!-- Estatísticas por Tipo -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div class="glass-card p-6">
-                    <h3 class="text-lg font-semibold mb-4 text-amber-400">
-                        <i class="fas fa-ring mr-2"></i>Semi Joias
-                    </h3>
-                    <div id="stats-semijoia" class="space-y-3"></div>
-                </div>
-                
-                <div class="glass-card p-6">
-                    <h3 class="text-lg font-semibold mb-4 text-amber-400">
-                        <i class="fas fa-spray-can mr-2"></i>Perfumes
-                    </h3>
-                    <div id="stats-perfume" class="space-y-3"></div>
-                </div>
-            </div>
-
-            <!-- Top Revendedores -->
-            <div class="glass-card p-6">
-                <h3 class="text-lg font-semibold mb-4 text-amber-400">
-                    <i class="fas fa-users mr-2"></i>Revendedores Ativos
-                </h3>
-                <div id="top-revendedores" class="space-y-3"></div>
-            </div>
-        </div>
-
-        <!-- TAB: Entrada/Saída -->
-        <div id="content-entrada" class="tab-content hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Entrada de Produtos -->
-                <div class="glass-card p-6">
-                    <h3 class="text-xl font-bold mb-5 text-amber-400">
-                        <i class="fas fa-box-open mr-2"></i>Entrada de Produtos
-                    </h3>
                     
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm text-slate-400 mb-2">
-                                <i class="fas fa-barcode mr-1"></i>Código do Produto
-                            </label>
-                            <input 
-                                type="text" 
-                                id="entrada-codigo" 
-                                class="w-full barcode-input"
-                                placeholder="Bipe ou digite o código"
-                                autofocus
-                            >
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm text-slate-400 mb-2">Tipo de Produto</label>
-                            <select id="entrada-tipo" class="w-full">
-                                <option value="">Selecione...</option>
-                                <option value="Semi Joia">Semi Joia</option>
-                                <option value="Perfume">Perfume</option>
-                            </select>
-                        </div>
-                        
-                        <div id="entrada-categoria-container" class="hidden">
-                            <label class="block text-sm text-slate-400 mb-2">Categoria</label>
-                            <select id="entrada-categoria" class="w-full"></select>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm text-slate-400 mb-2">Descrição</label>
-                            <input type="text" id="entrada-descricao" class="w-full" placeholder="Ex: Colar Dourado">
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm text-slate-400 mb-2">Custo (R$)</label>
-                                <input type="number" id="entrada-custo" class="w-full" step="0.01" placeholder="0.00">
+                    <div class="stat-card">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="bg-green-100 p-3 rounded-xl">
+                                <i class="fas fa-warehouse text-green-600 text-xl"></i>
                             </div>
-                            <div>
-                                <label class="block text-sm text-slate-400 mb-2">Venda (R$)</label>
-                                <input type="number" id="entrada-venda" class="w-full" step="0.01" placeholder="0.00">
+                            <span class="text-xs text-gray-500 uppercase">Em Estoque</span>
+                        </div>
+                        <h3 id="dash-capital" class="text-2xl font-bold mb-1 text-green-600">R$ 0</h3>
+                        <p class="text-xs text-gray-600">Capital Investido</p>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="bg-blue-100 p-3 rounded-xl">
+                                <i class="fas fa-handshake text-blue-600 text-xl"></i>
                             </div>
+                            <span class="text-xs text-gray-500 uppercase">Consignado</span>
                         </div>
-                        
-                        <div>
-                            <label class="block text-sm text-slate-400 mb-2">Revendedor (Opcional)</label>
-                            <select id="entrada-revendedor" class="w-full">
-                                <option value="">Em Estoque</option>
-                            </select>
+                        <h3 id="dash-consignado" class="text-2xl font-bold mb-1 text-blue-600">R$ 0</h3>
+                        <p class="text-xs text-gray-600">Com Revendedores</p>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="bg-red-100 p-3 rounded-xl">
+                                <i class="fas fa-dollar-sign text-red-600 text-xl"></i>
+                            </div>
+                            <span class="text-xs text-gray-500 uppercase">Vendido</span>
                         </div>
-                        
-                        <button onclick="registrarEntrada()" class="btn-primary w-full">
-                            <i class="fas fa-check-circle mr-2"></i>Registrar Entrada
-                        </button>
-                        
-                        <button onclick="limparFormEntrada()" class="btn-secondary w-full">
-                            <i class="fas fa-eraser mr-2"></i>Limpar Campos
-                        </button>
+                        <h3 id="dash-vendido" class="text-2xl font-bold mb-1 text-red-600">R$ 0</h3>
+                        <p class="text-xs text-gray-600">Total em Vendas</p>
                     </div>
                 </div>
-                
-                <!-- Últimas Entradas -->
-                <div class="glass-card p-6">
-                    <h3 class="text-xl font-bold mb-5 text-amber-400">
-                        <i class="fas fa-history mr-2"></i>Últimas Entradas
+
+                <!-- Estatísticas por Tipo -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="card-light p-6">
+                        <h3 class="section-title">
+                            <i class="fas fa-ring"></i>Semi Joias
+                        </h3>
+                        <div id="stats-semijoia" class="space-y-3"></div>
+                    </div>
+                    
+                    <div class="card-light p-6">
+                        <h3 class="section-title">
+                            <i class="fas fa-spray-can"></i>Perfumes
+                        </h3>
+                        <div id="stats-perfume" class="space-y-3"></div>
+                    </div>
+                </div>
+
+                <!-- Top Revendedores -->
+                <div class="card-light p-6">
+                    <h3 class="section-title">
+                        <i class="fas fa-users"></i>Revendedores Ativos
                     </h3>
-                    <div id="ultimas-entradas" class="space-y-3 max-h-[600px] overflow-y-auto scrollbar-custom"></div>
+                    <div id="top-revendedores" class="space-y-3"></div>
                 </div>
             </div>
-        </div>
 
-        <!-- TAB: Fechamento -->
-        <div id="content-fechamento" class="tab-content hidden">
-            <div class="glass-card p-6 mb-6">
-                <h3 class="text-xl font-bold mb-5 text-amber-400">
-                    <i class="fas fa-calculator mr-2"></i>Fechamento de Revendedor
-                </h3>
-                
+            <!-- TAB: Entrada/Saída -->
+            <div id="content-entrada" class="tab-content hidden">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Seleção do Revendedor -->
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm text-slate-400 mb-2">Selecione o Revendedor</label>
-                            <select id="fechamento-revendedor" class="w-full" onchange="carregarProdutosRevendedor()">
-                                <option value="">Escolha um revendedor...</option>
-                            </select>
-                        </div>
+                    <!-- Entrada de Produtos -->
+                    <div class="card-light p-6">
+                        <h3 class="section-title">
+                            <i class="fas fa-box-open"></i>Entrada de Produtos
+                        </h3>
                         
-                        <div id="info-revendedor" class="hidden bg-gradient-to-br from-blue-500/10 to-purple-500/10 p-4 rounded-xl border border-blue-500/30">
-                            <div class="flex items-center justify-between mb-3">
-                                <h4 class="font-semibold text-blue-300">Informações</h4>
-                                <span id="percentual-revendedor" class="text-2xl font-bold text-amber-400">0%</span>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-barcode mr-1"></i>Código do Produto
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="entrada-codigo" 
+                                    class="w-full barcode-input"
+                                    placeholder="Bipe ou digite o código"
+                                    autofocus
+                                >
                             </div>
-                            <div class="space-y-2 text-sm">
-                                <div class="flex justify-between">
-                                    <span class="text-slate-400">Produtos Consignados:</span>
-                                    <span id="total-consignado" class="font-semibold">0</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-slate-400">Valor Total:</span>
-                                    <span id="valor-total-consignado" class="font-semibold text-blue-300">R$ 0,00</span>
-                                </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Produto</label>
+                                <select id="entrada-tipo" class="w-full">
+                                    <option value="">Selecione...</option>
+                                    <option value="Semi Joia">Semi Joia</option>
+                                    <option value="Perfume">Perfume</option>
+                                </select>
                             </div>
-                        </div>
-                        
-                        <div class="bg-amber-500/10 p-4 rounded-xl border border-amber-500/30">
-                            <h4 class="font-semibold text-amber-300 mb-3">
-                                <i class="fas fa-barcode mr-2"></i>Registrar Devoluções
-                            </h4>
-                            <p class="text-xs text-slate-400 mb-3">Bipe ou digite os códigos dos produtos que voltaram</p>
-                            <input 
-                                type="text" 
-                                id="fechamento-codigo" 
-                                class="w-full barcode-input"
-                                placeholder="Código do produto"
-                                onkeypress="if(event.key==='Enter') registrarDevolucao()"
-                            >
-                            <button onclick="registrarDevolucao()" class="btn-primary w-full mt-3">
-                                <i class="fas fa-undo mr-2"></i>Registrar Devolução
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Lista de Produtos e Resultado -->
-                    <div class="space-y-4">
-                        <div class="bg-gradient-to-br from-green-500/10 to-emerald-500/10 p-4 rounded-xl border border-green-500/30">
-                            <h4 class="font-semibold text-green-300 mb-3">Produtos Devolvidos</h4>
-                            <div id="lista-devolucoes" class="space-y-2 max-h-48 overflow-y-auto scrollbar-custom mb-3"></div>
-                            <button onclick="limparDevolucoes()" class="btn-secondary w-full text-sm">
-                                <i class="fas fa-trash mr-2"></i>Limpar Lista
-                            </button>
-                        </div>
-                        
-                        <div class="bg-gradient-to-br from-rose-500/10 to-red-500/10 p-5 rounded-xl border border-rose-500/30">
-                            <h4 class="font-semibold text-rose-300 mb-4 text-center text-lg">Resumo do Fechamento</h4>
-                            <div class="space-y-3">
-                                <div class="flex justify-between items-center p-3 bg-black/30 rounded-lg">
-                                    <span class="text-slate-300">Consignado:</span>
-                                    <span id="resumo-consignado" class="font-bold text-blue-300">R$ 0,00</span>
+                            
+                            <div id="entrada-categoria-container" class="hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
+                                <select id="entrada-categoria" class="w-full"></select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+                                <input type="text" id="entrada-descricao" class="w-full" placeholder="Ex: Colar Dourado">
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Custo (R$)</label>
+                                    <input type="number" id="entrada-custo" class="w-full" step="0.01" placeholder="0.00">
                                 </div>
-                                <div class="flex justify-between items-center p-3 bg-black/30 rounded-lg">
-                                    <span class="text-slate-300">Devolvido:</span>
-                                    <span id="resumo-devolvido" class="font-bold text-green-300">R$ 0,00</span>
-                                </div>
-                                <div class="h-px bg-gradient-to-r from-transparent via-rose-400 to-transparent"></div>
-                                <div class="flex justify-between items-center p-3 bg-rose-500/20 rounded-lg">
-                                    <span class="text-rose-200 font-semibold">Vendido:</span>
-                                    <span id="resumo-vendido" class="font-bold text-xl text-rose-300">R$ 0,00</span>
-                                </div>
-                                <div class="flex justify-between items-center p-3 bg-amber-500/20 rounded-lg">
-                                    <span class="text-amber-200 font-semibold">Comissão Revendedor:</span>
-                                    <span id="resumo-comissao" class="font-bold text-xl text-amber-300">R$ 0,00</span>
-                                </div>
-                                <div class="flex justify-between items-center p-4 bg-gradient-to-r from-green-500/30 to-emerald-500/30 rounded-lg border-2 border-green-400/50">
-                                    <span class="text-green-200 font-bold text-lg">Lucro Luxus:</span>
-                                    <span id="resumo-lucro" class="font-bold text-2xl text-green-300">R$ 0,00</span>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Venda (R$)</label>
+                                    <input type="number" id="entrada-venda" class="w-full" step="0.01" placeholder="0.00">
                                 </div>
                             </div>
                             
-                            <button onclick="finalizarFechamento()" class="btn-primary w-full mt-5 py-4 text-lg">
-                                <i class="fas fa-check-double mr-2"></i>Finalizar Fechamento
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Revendedor (Opcional)</label>
+                                <select id="entrada-revendedor" class="w-full">
+                                    <option value="">Em Estoque</option>
+                                </select>
+                            </div>
+                            
+                            <button onclick="registrarEntrada()" class="btn-primary w-full">
+                                <i class="fas fa-check-circle mr-2"></i>Registrar Entrada
                             </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- TAB: Inventário -->
-        <div id="content-inventario" class="tab-content hidden">
-            <!-- Busca e Filtros -->
-            <div class="glass-card p-5 mb-5">
-                <div class="flex gap-3 flex-wrap mb-4">
-                    <div class="flex-1 min-w-[250px] relative">
-                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                        <input 
-                            type="text" 
-                            id="search" 
-                            placeholder="Buscar por código, descrição..." 
-                            class="w-full pl-11"
-                            oninput="renderInventario()"
-                        >
-                    </div>
-                    <button onclick="abrirModalNovoItem()" class="btn-primary">
-                        <i class="fas fa-plus mr-2"></i>Novo Item
-                    </button>
-                    <button onclick="loadData()" class="btn-secondary">
-                        <i class="fas fa-sync-alt mr-2"></i>Atualizar
-                    </button>
-                </div>
-                
-                <div class="flex gap-2 flex-wrap">
-                    <button class="filter-chip active" onclick="setFilter('all')">
-                        <i class="fas fa-list mr-1"></i>Todos
-                    </button>
-                    <button class="filter-chip" onclick="setFilter('estoque')">
-                        <i class="fas fa-warehouse mr-1"></i>Em Estoque
-                    </button>
-                    <button class="filter-chip" onclick="setFilter('consignado')">
-                        <i class="fas fa-handshake mr-1"></i>Consignado
-                    </button>
-                    <button class="filter-chip" onclick="setFilter('vendido')">
-                        <i class="fas fa-dollar-sign mr-1"></i>Vendidos
-                    </button>
-                </div>
-            </div>
-
-            <!-- Tabela de Inventário -->
-            <div class="glass-card overflow-x-auto scrollbar-custom">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Código</th>
-                            <th>Descrição</th>
-                            <th>Tipo</th>
-                            <th>Categoria</th>
-                            <th>Status</th>
-                            <th>Revendedor</th>
-                            <th>Custo</th>
-                            <th>Venda</th>
-                            <th>Data</th>
-                            <th>Foto</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-inventario"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- TAB: Configurações -->
-        <div id="content-config" class="tab-content hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Revendedores -->
-                <div class="glass-card p-6">
-                    <h3 class="text-xl font-bold mb-5 text-amber-400">
-                        <i class="fas fa-users mr-2"></i>Revendedores
-                    </h3>
-                    <div id="lista-revendedores" class="space-y-3 mb-4 max-h-96 overflow-y-auto scrollbar-custom"></div>
-                    <button onclick="abrirModalRevendedor()" class="btn-primary w-full">
-                        <i class="fas fa-user-plus mr-2"></i>Novo Revendedor
-                    </button>
-                </div>
-                
-                <!-- Categorias -->
-                <div class="glass-card p-6">
-                    <h3 class="text-xl font-bold mb-5 text-amber-400">
-                        <i class="fas fa-tags mr-2"></i>Categorias
-                    </h3>
-                    
-                    <div class="mb-5">
-                        <h4 class="font-semibold text-blue-300 mb-3">Semi Joias</h4>
-                        <div id="categorias-semijoia" class="space-y-2 mb-3"></div>
-                        <div class="flex gap-2">
-                            <input 
-                                type="text" 
-                                id="nova-cat-semijoia" 
-                                class="flex-1"
-                                placeholder="Nova categoria"
-                                onkeypress="if(event.key==='Enter') addCategoria('Semi Joia')"
-                            >
-                            <button onclick="addCategoria('Semi Joia')" class="btn-primary">
-                                <i class="fas fa-plus"></i>
+                            
+                            <button onclick="limparFormEntrada()" class="btn-secondary w-full">
+                                <i class="fas fa-eraser mr-2"></i>Limpar Campos
                             </button>
                         </div>
                     </div>
                     
-                    <div>
-                        <h4 class="font-semibold text-purple-300 mb-3">Perfumes</h4>
-                        <div id="categorias-perfume" class="space-y-2 mb-3"></div>
-                        <div class="flex gap-2">
-                            <input 
-                                type="text" 
-                                id="nova-cat-perfume" 
-                                class="flex-1"
-                                placeholder="Nova categoria"
-                                onkeypress="if(event.key==='Enter') addCategoria('Perfume')"
-                            >
-                            <button onclick="addCategoria('Perfume')" class="btn-primary">
-                                <i class="fas fa-plus"></i>
-                            </button>
+                    <!-- Últimas Entradas -->
+                    <div class="card-light p-6">
+                        <h3 class="section-title">
+                            <i class="fas fa-history"></i>Últimas Entradas
+                        </h3>
+                        <div id="ultimas-entradas" class="space-y-3 max-h-[600px] overflow-y-auto scrollbar-custom"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Fechamento -->
+            <div id="content-fechamento" class="tab-content hidden">
+                <div class="card-light p-6 mb-6">
+                    <h3 class="section-title">
+                        <i class="fas fa-calculator"></i>Fechamento de Revendedor
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Seleção do Revendedor -->
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Selecione o Revendedor</label>
+                                <select id="fechamento-revendedor" class="w-full" onchange="carregarProdutosRevendedor()">
+                                    <option value="">Escolha um revendedor...</option>
+                                </select>
+                            </div>
+                            
+                            <div id="info-revendedor" class="hidden bg-gradient-to-br from-blue-50 to-purple-50 p-4 rounded-xl border border-blue-200">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-semibold text-blue-900">Informações</h4>
+                                    <span id="percentual-revendedor" class="text-2xl font-bold text-amber-600">0%</span>
+                                </div>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Produtos Consignados:</span>
+                                        <span id="total-consignado" class="font-semibold text-gray-800">0</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Valor Total:</span>
+                                        <span id="valor-total-consignado" class="font-semibold text-blue-700">R$ 0,00</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-amber-50 p-4 rounded-xl border border-amber-200">
+                                <h4 class="font-semibold text-amber-900 mb-3">
+                                    <i class="fas fa-barcode mr-2"></i>Registrar Devoluções
+                                </h4>
+                                <p class="text-xs text-gray-600 mb-3">Bipe ou digite os códigos dos produtos que voltaram</p>
+                                <input 
+                                    type="text" 
+                                    id="fechamento-codigo" 
+                                    class="w-full barcode-input"
+                                    placeholder="Código do produto"
+                                    onkeypress="if(event.key==='Enter') registrarDevolucao()"
+                                >
+                                <button onclick="registrarDevolucao()" class="btn-primary w-full mt-3">
+                                    <i class="fas fa-undo mr-2"></i>Registrar Devolução
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Lista de Produtos e Resultado -->
+                        <div class="space-y-4">
+                            <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200">
+                                <h4 class="font-semibold text-green-900 mb-3">Produtos Devolvidos</h4>
+                                <div id="lista-devolucoes" class="space-y-2 max-h-48 overflow-y-auto scrollbar-custom mb-3"></div>
+                                <button onclick="limparDevolucoes()" class="btn-secondary w-full text-sm">
+                                    <i class="fas fa-trash mr-2"></i>Limpar Lista
+                                </button>
+                            </div>
+                            
+                            <div class="bg-gradient-to-br from-rose-50 to-red-50 p-5 rounded-xl border border-rose-200">
+                                <h4 class="font-semibold text-rose-900 mb-4 text-center text-lg">Resumo do Fechamento</h4>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between items-center p-3 bg-white/60 rounded-lg">
+                                        <span class="text-gray-700">Consignado:</span>
+                                        <span id="resumo-consignado" class="font-bold text-blue-700">R$ 0,00</span>
+                                    </div>
+                                    <div class="flex justify-between items-center p-3 bg-white/60 rounded-lg">
+                                        <span class="text-gray-700">Devolvido:</span>
+                                        <span id="resumo-devolvido" class="font-bold text-green-700">R$ 0,00</span>
+                                    </div>
+                                    <div class="h-px bg-gradient-to-r from-transparent via-rose-300 to-transparent"></div>
+                                    <div class="flex justify-between items-center p-3 bg-rose-100 rounded-lg">
+                                        <span class="text-rose-900 font-semibold">Vendido:</span>
+                                        <span id="resumo-vendido" class="font-bold text-xl text-rose-700">R$ 0,00</span>
+                                    </div>
+                                    <div class="flex justify-between items-center p-3 bg-amber-100 rounded-lg">
+                                        <span class="text-amber-900 font-semibold">Comissão Revendedor:</span>
+                                        <span id="resumo-comissao" class="font-bold text-xl text-amber-700">R$ 0,00</span>
+                                    </div>
+                                    <div class="flex justify-between items-center p-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg border-2 border-green-400">
+                                        <span class="text-green-900 font-bold text-lg">Lucro Luxus:</span>
+                                        <span id="resumo-lucro" class="font-bold text-2xl text-green-700">R$ 0,00</span>
+                                    </div>
+                                </div>
+                                
+                                <button onclick="finalizarFechamento()" class="btn-primary w-full mt-5 py-4 text-lg">
+                                    <i class="fas fa-check-double mr-2"></i>Finalizar Fechamento
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Conexão -->
-                <div class="glass-card p-6">
-                    <h3 class="text-xl font-bold mb-5 text-amber-400">
-                        <i class="fas fa-plug mr-2"></i>Conexão
-                    </h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm text-slate-400 mb-2">URL do Google Apps Script</label>
-                            <input type="text" id="config-script-url" class="w-full" placeholder="https://script.google.com/...">
+            </div>
+
+            <!-- TAB: Inventário -->
+            <div id="content-inventario" class="tab-content hidden">
+                <!-- Busca e Filtros -->
+                <div class="card-light p-5 mb-5">
+                    <div class="flex gap-3 flex-wrap mb-4">
+                        <div class="flex-1 min-w-[250px] relative">
+                            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input 
+                                type="text" 
+                                id="search" 
+                                placeholder="Buscar por código, descrição..." 
+                                class="w-full pl-11"
+                                oninput="renderInventario()"
+                            >
                         </div>
-                        <button onclick="salvarConfiguracao()" class="btn-primary w-full">
-                            <i class="fas fa-save mr-2"></i>Salvar Configuração
+                        <button onclick="abrirModalNovoItem()" class="btn-primary">
+                            <i class="fas fa-plus mr-2"></i>Novo Item
                         </button>
+                        <button onclick="loadData()" class="btn-secondary">
+                            <i class="fas fa-sync-alt mr-2"></i>Atualizar
+                        </button>
+                    </div>
+                    
+                    <div class="flex gap-2 flex-wrap">
+                        <button class="filter-chip active" onclick="setFilter('all')">
+                            <i class="fas fa-list mr-1"></i>Todos
+                        </button>
+                        <button class="filter-chip" onclick="setFilter('estoque')">
+                            <i class="fas fa-warehouse mr-1"></i>Em Estoque
+                        </button>
+                        <button class="filter-chip" onclick="setFilter('consignado')">
+                            <i class="fas fa-handshake mr-1"></i>Consignado
+                        </button>
+                        <button class="filter-chip" onclick="setFilter('vendido')">
+                            <i class="fas fa-dollar-sign mr-1"></i>Vendidos
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabela de Inventário -->
+                <div class="card-light overflow-x-auto scrollbar-custom">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Descrição</th>
+                                <th>Tipo</th>
+                                <th>Categoria</th>
+                                <th>Status</th>
+                                <th>Revendedor</th>
+                                <th>Custo</th>
+                                <th>Venda</th>
+                                <th>Data</th>
+                                <th>Foto</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-inventario"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB: Configurações -->
+            <div id="content-config" class="tab-content hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Revendedores -->
+                    <div class="card-light p-6">
+                        <h3 class="section-title">
+                            <i class="fas fa-users"></i>Revendedores
+                        </h3>
+                        <div id="lista-revendedores" class="space-y-3 mb-4 max-h-96 overflow-y-auto scrollbar-custom"></div>
+                        <button onclick="abrirModalRevendedor()" class="btn-primary w-full">
+                            <i class="fas fa-user-plus mr-2"></i>Novo Revendedor
+                        </button>
+                    </div>
+                    
+                    <!-- Categorias -->
+                    <div class="card-light p-6">
+                        <h3 class="section-title">
+                            <i class="fas fa-tags"></i>Categorias
+                        </h3>
+                        
+                        <div class="mb-5">
+                            <h4 class="font-semibold text-blue-700 mb-3">Semi Joias</h4>
+                            <div id="categorias-semijoia" class="space-y-2 mb-3"></div>
+                            <div class="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    id="nova-cat-semijoia" 
+                                    class="flex-1"
+                                    placeholder="Nova categoria"
+                                    onkeypress="if(event.key==='Enter') addCategoria('Semi Joia')"
+                                >
+                                <button onclick="addCategoria('Semi Joia')" class="btn-primary">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold text-purple-700 mb-3">Perfumes</h4>
+                            <div id="categorias-perfume" class="space-y-2 mb-3"></div>
+                            <div class="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    id="nova-cat-perfume" 
+                                    class="flex-1"
+                                    placeholder="Nova categoria"
+                                    onkeypress="if(event.key==='Enter') addCategoria('Perfume')"
+                                >
+                                <button onclick="addCategoria('Perfume')" class="btn-primary">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Conexão -->
+                    <div class="card-light p-6">
+                        <h3 class="section-title">
+                            <i class="fas fa-plug"></i>Conexão
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">URL do Google Apps Script</label>
+                                <input type="text" id="config-script-url" class="w-full" placeholder="https://script.google.com/...">
+                            </div>
+                            <button onclick="salvarConfiguracao()" class="btn-primary w-full">
+                                <i class="fas fa-save mr-2"></i>Salvar Configuração
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -801,8 +839,8 @@
     <div id="modal-item" class="modal-overlay">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-amber-400">Editar Item</h3>
-                <button onclick="fecharModal('modal-item')" class="text-slate-400 hover:text-white text-2xl">
+                <h3 class="text-2xl font-bold text-gray-800">Editar Item</h3>
+                <button onclick="fecharModal('modal-item')" class="text-gray-400 hover:text-gray-600 text-2xl">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -811,18 +849,18 @@
             
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm text-slate-400 mb-2">Código</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Código</label>
                     <input type="text" id="edit-codigo" class="w-full" readonly>
                 </div>
                 
                 <div>
-                    <label class="block text-sm text-slate-400 mb-2">Descrição</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
                     <input type="text" id="edit-descricao" class="w-full">
                 </div>
                 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm text-slate-400 mb-2">Tipo</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
                         <select id="edit-tipo" class="w-full" onchange="carregarCategoriasEdit()">
                             <option value="">Geral</option>
                             <option value="Semi Joia">Semi Joia</option>
@@ -830,24 +868,24 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm text-slate-400 mb-2">Categoria</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
                         <select id="edit-categoria" class="w-full"></select>
                     </div>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm text-slate-400 mb-2">Custo (R$)</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Custo (R$)</label>
                         <input type="number" id="edit-custo" class="w-full" step="0.01">
                     </div>
                     <div>
-                        <label class="block text-sm text-slate-400 mb-2">Venda (R$)</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Venda (R$)</label>
                         <input type="number" id="edit-venda" class="w-full" step="0.01">
                     </div>
                 </div>
                 
                 <div>
-                    <label class="block text-sm text-slate-400 mb-2">Status</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
                     <select id="edit-status" class="w-full">
                         <option value="Em Estoque">Em Estoque</option>
                         <option value="Vendido">Vendido</option>
@@ -855,14 +893,14 @@
                 </div>
                 
                 <div>
-                    <label class="block text-sm text-slate-400 mb-2">Revendedor</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Revendedor</label>
                     <select id="edit-revendedor" class="w-full">
                         <option value="">Em Estoque</option>
                     </select>
                 </div>
                 
                 <div>
-                    <label class="block text-sm text-slate-400 mb-2">URL da Foto</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">URL da Foto</label>
                     <input type="text" id="edit-foto" class="w-full">
                 </div>
                 
@@ -882,8 +920,8 @@
     <div id="modal-revendedor" class="modal-overlay">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-amber-400" id="titulo-modal-rev">Novo Revendedor</h3>
-                <button onclick="fecharModal('modal-revendedor')" class="text-slate-400 hover:text-white text-2xl">
+                <h3 class="text-2xl font-bold text-gray-800" id="titulo-modal-rev">Novo Revendedor</h3>
+                <button onclick="fecharModal('modal-revendedor')" class="text-gray-400 hover:text-gray-600 text-2xl">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -892,17 +930,17 @@
             
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm text-slate-400 mb-2">Nome</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome</label>
                     <input type="text" id="rev-nome" class="w-full" placeholder="Nome do revendedor">
                 </div>
                 
                 <div>
-                    <label class="block text-sm text-slate-400 mb-2">WhatsApp</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">WhatsApp</label>
                     <input type="text" id="rev-contato" class="w-full" placeholder="(00) 00000-0000">
                 </div>
                 
                 <div>
-                    <label class="block text-sm text-slate-400 mb-2">Percentual de Comissão (%)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Percentual de Comissão (%)</label>
                     <input type="number" id="rev-percentual" class="w-full" min="0" max="100" step="0.1" value="30">
                 </div>
                 
@@ -921,8 +959,8 @@
     <!-- Toast -->
     <div id="toast" class="hidden toast">
         <div class="flex items-center gap-3">
-            <i id="toast-icon" class="fas fa-check-circle text-green-400 text-xl"></i>
-            <span id="toast-msg" class="font-medium"></span>
+            <i id="toast-icon" class="fas fa-check-circle text-green-600 text-xl"></i>
+            <span id="toast-msg" class="font-medium text-gray-800"></span>
         </div>
     </div>
 
@@ -1040,14 +1078,14 @@
             const html = cats.map(cat => {
                 const catItems = items.filter(i => i.Categoria === cat);
                 return `
-                    <div class="flex justify-between items-center p-3 bg-black/20 rounded-lg">
-                        <span class="text-sm">${cat}</span>
-                        <span class="font-bold text-amber-400">${catItems.length}</span>
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="text-sm text-gray-700">${cat}</span>
+                        <span class="font-bold text-amber-600">${catItems.length}</span>
                     </div>
                 `;
             }).join('');
             
-            document.getElementById(containerId).innerHTML = html || '<p class="text-slate-500 text-sm text-center py-4">Nenhuma categoria</p>';
+            document.getElementById(containerId).innerHTML = html || '<p class="text-gray-500 text-sm text-center py-4">Nenhuma categoria</p>';
         }
 
         function renderTopRevendedores() {
@@ -1058,18 +1096,18 @@
             }).filter(r => r.qtd > 0).sort((a, b) => b.valor - a.valor);
             
             const html = revStats.slice(0, 5).map(rev => `
-                <div class="flex justify-between items-center p-4 bg-black/20 rounded-lg">
+                <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
                     <div>
-                        <div class="font-semibold">${rev.Nome}</div>
-                        <div class="text-xs text-slate-400">${rev.qtd} produtos • ${rev.Percentual || 30}% comissão</div>
+                        <div class="font-semibold text-gray-800">${rev.Nome}</div>
+                        <div class="text-xs text-gray-600">${rev.qtd} produtos • ${rev.Percentual || 30}% comissão</div>
                     </div>
                     <div class="text-right">
-                        <div class="font-bold text-blue-400">R$ ${rev.valor.toFixed(2)}</div>
+                        <div class="font-bold text-blue-600">R$ ${rev.valor.toFixed(2)}</div>
                     </div>
                 </div>
             `).join('');
             
-            document.getElementById('top-revendedores').innerHTML = html || '<p class="text-slate-500 text-sm text-center py-4">Nenhum revendedor com produtos</p>';
+            document.getElementById('top-revendedores').innerHTML = html || '<p class="text-gray-500 text-sm text-center py-4">Nenhum revendedor com produtos</p>';
         }
 
         // ========== ENTRADA DE PRODUTOS ==========
@@ -1151,20 +1189,20 @@
             const ultimas = [...inventory].sort((a, b) => new Date(b.Data) - new Date(a.Data)).slice(0, 10);
             
             const html = ultimas.map(item => `
-                <div class="bg-black/20 p-3 rounded-lg">
+                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
                     <div class="flex justify-between items-start mb-2">
-                        <span class="font-mono text-amber-400 font-bold">${item.Codigo}</span>
+                        <span class="font-mono text-amber-700 font-bold">${item.Codigo}</span>
                         <span class="category-badge">${item.Categoria || item.Tipo}</span>
                     </div>
-                    <div class="text-sm">${item.Descricao}</div>
-                    <div class="flex justify-between items-center mt-2 text-xs text-slate-400">
+                    <div class="text-sm text-gray-700">${item.Descricao}</div>
+                    <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
                         <span>R$ ${(parseFloat(item.Venda) || 0).toFixed(2)}</span>
                         <span>${item.Revendedor || 'Estoque'}</span>
                     </div>
                 </div>
             `).join('');
             
-            document.getElementById('ultimas-entradas').innerHTML = html || '<p class="text-slate-500 text-sm text-center py-4">Nenhuma entrada registrada</p>';
+            document.getElementById('ultimas-entradas').innerHTML = html || '<p class="text-gray-500 text-sm text-center py-4">Nenhuma entrada registrada</p>';
         }
 
         // ========== FECHAMENTO ==========
@@ -1229,18 +1267,18 @@
 
         function renderDevolucoes() {
             const html = devolucoes.map((item, idx) => `
-                <div class="flex justify-between items-center bg-black/30 p-2 rounded">
+                <div class="flex justify-between items-center bg-white/60 p-2 rounded">
                     <div>
-                        <span class="font-mono text-amber-400 text-sm">${item.Codigo}</span>
-                        <span class="text-xs text-slate-400 ml-2">${item.Descricao}</span>
+                        <span class="font-mono text-amber-700 text-sm">${item.Codigo}</span>
+                        <span class="text-xs text-gray-600 ml-2">${item.Descricao}</span>
                     </div>
-                    <button onclick="removerDevolucao(${idx})" class="text-red-400 hover:text-red-300">
+                    <button onclick="removerDevolucao(${idx})" class="text-red-600 hover:text-red-700">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
             `).join('');
             
-            document.getElementById('lista-devolucoes').innerHTML = html || '<p class="text-slate-500 text-xs text-center py-2">Nenhuma devolução</p>';
+            document.getElementById('lista-devolucoes').innerHTML = html || '<p class="text-gray-600 text-xs text-center py-2">Nenhuma devolução</p>';
         }
 
         function removerDevolucao(idx) {
@@ -1382,11 +1420,11 @@
                     <td><span class="status-badge ${statusClass}">${icon} ${item.Status}</span></td>
                     <td>${item.Revendedor || '-'}</td>
                     <td>R$ ${(parseFloat(item.Custo) || 0).toFixed(2)}</td>
-                    <td class="text-amber-400 font-semibold">R$ ${(parseFloat(item.Venda) || 0).toFixed(2)}</td>
+                    <td class="text-amber-700 font-semibold">R$ ${(parseFloat(item.Venda) || 0).toFixed(2)}</td>
                     <td>${item.Data ? new Date(item.Data).toLocaleDateString('pt-BR') : '-'}</td>
                     <td>
-                        <div class="w-10 h-10 rounded-lg bg-black/30 flex items-center justify-center cursor-pointer overflow-hidden" onclick="verFoto('${item.Foto || ''}')">
-                            ${item.Foto ? `<img src="${item.Foto}" class="w-full h-full object-cover">` : '<i class="fas fa-image text-slate-600"></i>'}
+                        <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center cursor-pointer overflow-hidden border border-gray-200" onclick="verFoto('${item.Foto || ''}')">
+                            ${item.Foto ? `<img src="${item.Foto}" class="w-full h-full object-cover">` : '<i class="fas fa-image text-gray-400"></i>'}
                         </div>
                     </td>
                 `;
@@ -1493,26 +1531,26 @@
         // ========== CONFIGURAÇÕES ==========
         function renderRevendedores() {
             const html = revendedores.map(rev => `
-                <div class="flex justify-between items-center p-4 bg-black/20 rounded-lg">
+                <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div class="flex-1">
-                        <div class="font-semibold">${rev.Nome}</div>
-                        <div class="text-xs text-slate-400 mt-1">
+                        <div class="font-semibold text-gray-800">${rev.Nome}</div>
+                        <div class="text-xs text-gray-600 mt-1">
                             <i class="fab fa-whatsapp mr-1"></i>${rev.Contato || 'Sem contato'}
                             <span class="ml-3"><i class="fas fa-percentage mr-1"></i>${rev.Percentual || 30}%</span>
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="editarRevendedor(${rev.rowId})" class="text-blue-400 hover:text-blue-300">
+                        <button onclick="editarRevendedor(${rev.rowId})" class="text-blue-600 hover:text-blue-700">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="excluirRevendedor(${rev.rowId})" class="text-red-400 hover:text-red-300">
+                        <button onclick="excluirRevendedor(${rev.rowId})" class="text-red-600 hover:text-red-700">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </div>
             `).join('');
             
-            document.getElementById('lista-revendedores').innerHTML = html || '<p class="text-slate-500 text-sm text-center py-4">Nenhum revendedor cadastrado</p>';
+            document.getElementById('lista-revendedores').innerHTML = html || '<p class="text-gray-500 text-sm text-center py-4">Nenhum revendedor cadastrado</p>';
         }
 
         function abrirModalRevendedor() {
@@ -1595,15 +1633,15 @@
                 const cats = categorias[tipo] || [];
                 
                 const html = cats.map(cat => `
-                    <div class="flex justify-between items-center p-2 bg-black/20 rounded">
-                        <span class="text-sm">${cat}</span>
-                        <button onclick="excluirCategoria('${tipo}', '${cat}')" class="text-red-400 hover:text-red-300 text-sm">
+                    <div class="flex justify-between items-center p-2 bg-gray-50 rounded border border-gray-200">
+                        <span class="text-sm text-gray-700">${cat}</span>
+                        <button onclick="excluirCategoria('${tipo}', '${cat}')" class="text-red-600 hover:text-red-700 text-sm">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
                 `).join('');
                 
-                document.getElementById(containerId).innerHTML = html || '<p class="text-slate-500 text-xs text-center py-2">Nenhuma categoria</p>';
+                document.getElementById(containerId).innerHTML = html || '<p class="text-gray-500 text-xs text-center py-2">Nenhuma categoria</p>';
             });
         }
 
@@ -1693,10 +1731,10 @@
             const msgEl = document.getElementById('toast-msg');
             
             const icons = {
-                success: 'fa-check-circle text-green-400',
-                error: 'fa-exclamation-circle text-red-400',
-                warning: 'fa-exclamation-triangle text-yellow-400',
-                info: 'fa-info-circle text-blue-400'
+                success: 'fa-check-circle text-green-600',
+                error: 'fa-exclamation-circle text-red-600',
+                warning: 'fa-exclamation-triangle text-yellow-600',
+                info: 'fa-info-circle text-blue-600'
             };
             
             icon.className = `fas ${icons[type] || icons.info} text-xl`;
