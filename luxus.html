@@ -271,15 +271,23 @@
             font-weight: 600;
         }
         
-        /* Header escuro com gradiente */
+                        /* Header ESCURO - elegante */
         .header-dark {
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem 2rem;
         }
         
         .header-dark h1 {
             color: var(--white);
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: 600;
+            font-size: 1.75rem;
+            letter-spacing: -0.5px;
+        }
+        
+        .header-dark p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
         }
         
         /* Cards limpos */
@@ -297,6 +305,7 @@
         }
         
         /* Botões minimalistas */
+                /* Botões FLAT e SIMPLES */
         .btn-primary {
             background: var(--primary);
             color: white;
@@ -306,13 +315,13 @@
             border: none;
             cursor: pointer;
             transition: all 0.2s ease;
-            font-size: 14px;
+            font-size: 0.875rem;
         }
         
         .btn-primary:hover {
             background: var(--primary-light);
-            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2);
             transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(30, 64, 175, 0.15);
         }
         
         .btn-secondary {
@@ -348,46 +357,46 @@
             box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1) !important;
         }
         
-        /* Tabs de navegação - Para header escuro */
+                        /* Tabs - para header escuro */
         .nav-tab {
             background: transparent;
             color: rgba(255, 255, 255, 0.7);
             border: none;
-            border-bottom: 2px solid transparent;
-            padding: 0.75rem 1.5rem;
+            border-bottom: 3px solid transparent;
+            padding: 1rem 1.5rem;
             font-weight: 500;
-            font-size: 14px;
+            font-size: 0.9rem;
             transition: all 0.2s ease;
             cursor: pointer;
-            border-radius: 8px 8px 0 0;
+            border-radius: 0;
         }
         
         .nav-tab:hover {
             color: rgba(255, 255, 255, 0.95);
-            background: rgba(255, 255, 255, 0.08);
+            border-bottom-color: rgba(255, 255, 255, 0.3);
         }
         
         .nav-tab.active {
             color: var(--white);
-            background: rgba(59, 130, 246, 0.2);
             border-bottom-color: var(--primary-light);
             font-weight: 600;
         }
         
         /* Stats cards */
+                /* Stat cards - MINIMALISTAS sem gradientes */
         .stat-card {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(16, 185, 129, 0.05));
-            border: 2px solid transparent;
-            border-radius: 16px;
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
             padding: 1.5rem;
             position: relative;
             overflow: hidden;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
         
         .stat-card:hover {
-            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.1);
-            border-color: var(--primary-light);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border-color: var(--gray-300);
             transform: translateY(-2px);
         }
         
@@ -397,9 +406,8 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 5px;
-            background: linear-gradient(90deg, var(--emerald), var(--amethyst), var(--sapphire), var(--gold));
-            background-size: 200% 100%;
+            height: 3px;
+            background: var(--primary);
         }
         
         
@@ -511,28 +519,29 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
         }
         
-        /* Filter chips */
+                /* Filter chips LIMPOS */
         .filter-chip {
-            padding: 0.5rem 1.25rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
+            padding: 0.625rem 1.25rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
             cursor: pointer;
             background: var(--white);
             border: 1px solid var(--gray-300);
             color: var(--gray-700);
             transition: all 0.2s ease;
-            font-weight: 500;
         }
         
         .filter-chip:hover {
             background: var(--gray-50);
-            border-color: var(--gray-400);
+            border-color: var(--primary);
+            color: var(--primary);
         }
         
         .filter-chip.active {
-            background: linear-gradient(135deg, var(--gold), var(--gold-light));
-            color: var(--navy);
-            border-color: var(--gold);
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
         }
         
         /* Toast */
@@ -640,83 +649,83 @@
         }
         
         /* Section titles */
-        .section-title {
-            font-size: 1.125rem;
+                .section-title {
+            font-size: 1rem;
             font-weight: 600;
             color: var(--gray-700);
-            margin-bottom: 1.25rem;
+            margin-bottom: 1rem;
             padding-bottom: 0.75rem;
-            border-bottom: 2px solid var(--gray-200);
+            border-bottom: 1px solid var(--gray-200);
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
         
         .section-title i {
-            background: linear-gradient(135deg, var(--amethyst), var(--emerald));
-            -webkit-
-            
-            
-            margin-right: 0.5rem;
-            filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.3));
+            color: var(--primary);
+            font-size: 0.9rem;
         }
         
-        /* Ícones dos cards stats - Sofisticados e Modernos */
+                /* Ícones - SIMPLES E DISCRETOS */
         .bg-amber-100 { 
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
-            box-shadow: 0 8px 20px rgba(217, 119, 6, 0.35);
-            border: 1px solid rgba(251, 191, 36, 0.3);
+            background: #fef3c7 !important;
+            color: #92400e !important;
+            box-shadow: none;
+            border: none;
         }
         .text-amber-600 { 
-            color: #fff !important; 
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+            color: #92400e !important; 
+            filter: none;
         }
         
         .bg-green-100 { 
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-            box-shadow: 0 8px 20px rgba(5, 150, 105, 0.35);
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            background: #d1fae5 !important;
+            color: #065f46 !important;
+            box-shadow: none;
+            border: none;
         }
         .text-green-600 { 
-            color: #fff !important; 
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+            color: #065f46 !important; 
+            filter: none;
         }
         
         .bg-blue-100 { 
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
-            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
-            border: 1px solid rgba(59, 130, 246, 0.3);
+            background: #dbeafe !important;
+            color: #1e40af !important;
+            box-shadow: none;
+            border: none;
         }
         .text-blue-600 { 
-            color: #fff !important; 
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+            color: #1e40af !important; 
+            filter: none;
         }
         
         .bg-red-100 { 
-            background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important;
-            box-shadow: 0 8px 20px rgba(13, 148, 136, 0.35);
-            border: 1px solid rgba(20, 184, 166, 0.3);
+            background: #ccfbf1 !important;
+            color: #0f766e !important;
+            box-shadow: none;
+            border: none;
         }
         .text-red-600 { 
-            color: #fff !important; 
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+            color: #0f766e !important; 
+            filter: none;
         }
         
-        /* Valores dos cards coloridos - vibrantes e modernos */
+                /* Valores dos cards - SEM EFEITOS */
         #dash-capital { 
-            color: #10b981 !important;
+            color: var(--gray-800) !important;
             font-weight: 700;
-            text-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+            
         }
         #dash-consignado { 
-            color: #3b82f6 !important;
+            color: var(--gray-800) !important;
             font-weight: 700;
-            text-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+            
         }
         #dash-vendido { 
-            color: #14b8a6 !important;
+            color: var(--gray-800) !important;
             font-weight: 700;
-            text-shadow: 0 0 15px rgba(20, 184, 166, 0.4);
+            
         }
         
         /* Status badges estilo gemas */
@@ -754,7 +763,82 @@
             border-color: var(--amethyst);
             box-shadow: 0 12px 40px rgba(139, 92, 246, 0.2);
         }
-    </style>
+    
+        /* Tabela com larguras proporcionais */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 0.875rem 0.75rem;
+            text-align: left;
+            vertical-align: middle;
+        }
+        
+        /* Larguras específicas por coluna */
+        .data-table th:nth-child(1), 
+        .data-table td:nth-child(1) { width: 100px; } /* Código */
+        
+        .data-table th:nth-child(2), 
+        .data-table td:nth-child(2) { min-width: 150px; } /* Descrição */
+        
+        .data-table th:nth-child(3), 
+        .data-table td:nth-child(3) { width: 100px; } /* Tipo */
+        
+        .data-table th:nth-child(4), 
+        .data-table td:nth-child(4) { width: 120px; } /* Categoria */
+        
+        .data-table th:nth-child(5), 
+        .data-table td:nth-child(5) { width: 130px; } /* Status */
+        
+        .data-table th:nth-child(6), 
+        .data-table td:nth-child(6) { width: 120px; } /* Revendedor */
+        
+        .data-table th:nth-child(7), 
+        .data-table td:nth-child(7) { width: 90px; text-align: right; } /* Custo */
+        
+        .data-table th:nth-child(8), 
+        .data-table td:nth-child(8) { width: 90px; text-align: right; } /* Venda */
+        
+        .data-table th:nth-child(9), 
+        .data-table td:nth-child(9) { width: 100px; } /* Data */
+        
+        .data-table th:nth-child(10), 
+        .data-table td:nth-child(10) { width: 60px; text-align: center; } /* Foto */
+        
+        /* Imagem da foto */
+        .foto-thumbnail {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid var(--gray-200);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .foto-thumbnail:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        /* Placeholder para sem foto */
+        .foto-placeholder {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gray-100);
+            border-radius: 4px;
+            border: 1px solid var(--gray-200);
+            color: var(--gray-400);
+            font-size: 1.2rem;
+        }
+
+        </style>
 </head>
 <body>
     <div class="container">
@@ -854,7 +938,7 @@
                         </div>
                         <h3 id="dash-total" class="text-3xl font-bold mb-1 text-gray-800">0</h3>
                         <p class="text-xs text-gray-600">Peças no Sistema</p>
-                        <p class="text-[10px] text-amber-600 mt-2">👆 Clique para ver todos</p>
+                        
                     </div>
                     
                     <div class="stat-card cursor-pointer hover:scale-105 transition-transform" onclick="filtrarDashboard('estoque')">
@@ -866,7 +950,7 @@
                         </div>
                         <h3 id="dash-capital" class="text-2xl font-bold mb-1 text-green-600">R$ 0</h3>
                         <p class="text-xs text-gray-600">Capital Investido</p>
-                        <p class="text-[10px] text-green-600 mt-2">👆 Clique para filtrar</p>
+                        
                     </div>
                     
                     <div class="stat-card cursor-pointer hover:scale-105 transition-transform" onclick="filtrarDashboard('consignado')">
@@ -878,7 +962,7 @@
                         </div>
                         <h3 id="dash-consignado" class="text-2xl font-bold mb-1 text-blue-600">R$ 0</h3>
                         <p class="text-xs text-gray-600">Com Revendedores</p>
-                        <p class="text-[10px] text-blue-600 mt-2">👆 Clique para filtrar</p>
+                        
                     </div>
                     
                     <div class="stat-card cursor-pointer hover:scale-105 transition-transform" onclick="filtrarDashboard('vendido')">
@@ -890,7 +974,7 @@
                         </div>
                         <h3 id="dash-vendido" class="text-2xl font-bold mb-1 text-red-600">R$ 0</h3>
                         <p class="text-xs text-gray-600">Total em Vendas</p>
-                        <p class="text-[10px] text-red-600 mt-2">👆 Clique para filtrar</p>
+                        
                     </div>
                 </div>
 
@@ -1101,14 +1185,14 @@
             <div id="content-inventario" class="tab-content hidden">
                 <!-- Busca e Filtros -->
                 <div class="card-light p-5 mb-5">
-                    <div class="flex gap-3 flex-wrap mb-4">
+                                        <div class="flex gap-3 flex-wrap mb-4">
                         <div class="flex-1 min-w-[250px] relative">
-                            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                             <input 
                                 type="text" 
                                 id="search" 
                                 placeholder="Buscar por código, descrição..." 
-                                class="w-full pl-11"
+                                class="w-full pl-10 pr-4"
                                 oninput="renderInventario()"
                             >
                         </div>
@@ -1123,18 +1207,18 @@
                         </button>
                     </div>
                     
-                    <div class="flex gap-2 flex-wrap">
+                                        <div class="flex gap-2 flex-wrap">
                         <button class="filter-chip active" onclick="setFilter('all')">
-                            <i class="fas fa-list mr-1"></i>Todos
+                            Todos
                         </button>
                         <button class="filter-chip" onclick="setFilter('estoque')">
-                            <i class="fas fa-warehouse mr-1"></i>Em Estoque
+                            Em Estoque
                         </button>
                         <button class="filter-chip" onclick="setFilter('consignado')">
-                            <i class="fas fa-handshake mr-1"></i>Consignado
+                            Consignado
                         </button>
                         <button class="filter-chip" onclick="setFilter('vendido')">
-                            <i class="fas fa-dollar-sign mr-1"></i>Vendidos
+                            Vendidos
                         </button>
                     </div>
                 </div>
@@ -2118,12 +2202,12 @@
                         case 'data':
                             td.textContent = item.Data ? new Date(item.Data).toLocaleDateString('pt-BR') : '-';
                             break;
-                        case 'foto':
-                            td.innerHTML = `
-                                <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center cursor-pointer overflow-hidden border border-gray-200" onclick="verFoto('${item.Foto || ''}')">
-                                    ${item.Foto ? `<img src="${item.Foto}" class="w-full h-full object-cover">` : '<i class="fas fa-image text-gray-400"></i>'}
-                                </div>
-                            `;
+                                                case 'foto':
+                            if (item.Foto) {
+                                td.innerHTML = `<img src="${item.Foto}" class="foto-thumbnail" onclick="verFoto('${item.Foto}')" alt="Foto do produto">`;
+                            } else {
+                                td.innerHTML = `<div class="foto-placeholder"><i class="fas fa-image"></i></div>`;
+                            }
                             break;
                     }
                 });
@@ -2288,28 +2372,27 @@
         }
 
         // ========== CONFIGURAÇÕES ==========
-        function renderRevendedores() {
+                function renderRevendedores() {
             const html = revendedores.map(rev => `
-                <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div class="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all">
                     <div class="flex-1">
-                        <div class="font-semibold text-gray-800">${rev.Nome}</div>
-                        <div class="text-xs text-gray-600 mt-1">
-                            <i class="fab fa-whatsapp mr-1"></i>${rev.Contato || 'Sem contato'}
-                            <span class="ml-3"><i class="fas fa-percentage mr-1"></i>${rev.Percentual || 30}%</span>
+                        <div class="font-medium text-gray-800 text-sm">${rev.Nome}</div>
+                        <div class="text-xs text-gray-500 mt-1">
+                            ${rev.Contato || 'Sem contato'} • ${rev.Percentual || 30}% comissão
                         </div>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="editarRevendedor(${rev.rowId})" class="text-blue-600 hover:text-blue-700">
-                            <i class="fas fa-edit"></i>
+                    <div class="flex gap-3">
+                        <button onclick="editarRevendedor(${rev.rowId})" class="text-gray-400 hover:text-blue-600 transition-colors" title="Editar">
+                            <i class="fas fa-pen text-sm"></i>
                         </button>
-                        <button onclick="excluirRevendedor(${rev.rowId})" class="text-red-600 hover:text-red-700">
-                            <i class="fas fa-trash"></i>
+                        <button onclick="excluirRevendedor(${rev.rowId})" class="text-gray-400 hover:text-red-600 transition-colors" title="Excluir">
+                            <i class="fas fa-trash text-sm"></i>
                         </button>
                     </div>
                 </div>
             `).join('');
             
-            document.getElementById('lista-revendedores').innerHTML = html || '<p class="text-gray-500 text-sm text-center py-4">Nenhum revendedor cadastrado</p>';
+            document.getElementById('lista-revendedores').innerHTML = html || '<p class="text-gray-400 text-sm text-center py-8">Nenhum revendedor cadastrado</p>';
         }
 
         function abrirModalRevendedor() {
@@ -2386,40 +2469,40 @@
             }
         }
 
-        function renderCategorias() {
+                function renderCategorias() {
             ['Semi Joia', 'Perfume'].forEach(tipo => {
                 const containerId = tipo === 'Semi Joia' ? 'categorias-semijoia' : 'categorias-perfume';
                 const cats = categorias[tipo] || [];
                 
                 const html = cats.map(cat => `
-                    <div class="flex justify-between items-center p-2 bg-gray-50 rounded border border-gray-200">
+                    <div class="flex justify-between items-center px-3 py-2 bg-white rounded border border-gray-200 hover:border-gray-300 transition-all">
                         <span class="text-sm text-gray-700">${cat}</span>
-                        <button onclick="excluirCategoria('${tipo}', '${cat}')" class="text-red-600 hover:text-red-700 text-sm">
-                            <i class="fas fa-times"></i>
+                        <button onclick="excluirCategoria('${tipo}', '${cat}')" class="text-gray-400 hover:text-red-600 transition-colors" title="Remover">
+                            <i class="fas fa-times text-xs"></i>
                         </button>
                     </div>
                 `).join('');
                 
-                document.getElementById(containerId).innerHTML = html || '<p class="text-gray-500 text-xs text-center py-2">Nenhuma categoria</p>';
+                document.getElementById(containerId).innerHTML = html || '<p class="text-gray-400 text-xs text-center py-4">Nenhuma categoria</p>';
             });
         }
 
         // ========== STATUS ==========
-        function renderStatus() {
+                function renderStatus() {
             const statusPadrao = ['Em Estoque', 'Consignado', 'Vendido'];
             
             const html = statusList.map(status => {
                 const isPadrao = statusPadrao.includes(status);
                 return `
-                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div class="flex justify-between items-center p-3 bg-white rounded border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all">
                         <div class="flex items-center gap-2">
-                            <i class="fas fa-circle-dot text-${getStatusColor(status)}-600"></i>
-                            <span class="font-medium text-gray-800">${status}</span>
-                            ${isPadrao ? '<span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded ml-2">Padrão</span>' : ''}
+                            <div class="w-2 h-2 rounded-full bg-${getStatusColor(status)}-500"></div>
+                            <span class="text-sm text-gray-700">${status}</span>
+                            ${isPadrao ? '<span class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-2">Padrão</span>' : ''}
                         </div>
                         ${!isPadrao ? `
-                            <button onclick="removerStatus('${status}')" class="text-red-600 hover:text-red-700 text-sm">
-                                <i class="fas fa-trash"></i>
+                            <button onclick="removerStatus('${status}')" class="text-gray-400 hover:text-red-600 transition-colors" title="Remover">
+                                <i class="fas fa-trash text-sm"></i>
                             </button>
                         ` : ''}
                     </div>
@@ -2731,24 +2814,28 @@
             abrirModal('modal-colunas');
         }
         
-        function renderListaColunas() {
+                function renderListaColunas() {
             const colunas = Object.keys(colunasConfig)
                 .sort((a, b) => colunasConfig[a].ordem - colunasConfig[b].ordem);
+            
+            console.log('📋 Renderizando colunas:', colunasConfig);
             
             const html = colunas.map((key, index) => {
                 const col = colunasConfig[key];
                 return `
-                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200" draggable="true" data-coluna="${key}">
-                        <i class="fas fa-grip-vertical text-gray-400 cursor-move"></i>
+                    <div class="flex items-center gap-3 p-3 bg-white rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-all cursor-move" 
+                         draggable="true" 
+                         data-coluna="${key}">
+                        <i class="fas fa-grip-vertical text-gray-400"></i>
                         
                         <label class="flex items-center flex-1 cursor-pointer">
                             <input 
                                 type="checkbox" 
                                 ${col.visivel ? 'checked' : ''} 
                                 onchange="toggleColuna('${key}')"
-                                class="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500"
+                                class="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
                             >
-                            <span class="ml-3 font-medium text-gray-800">${col.nome}</span>
+                            <span class="ml-3 font-medium text-gray-700 select-none">${col.nome}</span>
                         </label>
                     </div>
                 `;
@@ -2760,31 +2847,46 @@
             initDragAndDrop();
         }
         
-        function initDragAndDrop() {
+                function initDragAndDrop() {
             const items = document.querySelectorAll('[draggable="true"]');
             let draggedItem = null;
             
+            console.log('🎯 Drag and drop inicializado para', items.length, 'items');
+            
             items.forEach(item => {
-                item.addEventListener('dragstart', function() {
+                item.addEventListener('dragstart', function(e) {
                     draggedItem = this;
-                    this.style.opacity = '0.5';
+                    this.style.opacity = '0.4';
+                    this.classList.add('border-blue-500');
+                    e.dataTransfer.effectAllowed = 'move';
                 });
                 
                 item.addEventListener('dragend', function() {
                     this.style.opacity = '1';
+                    this.classList.remove('border-blue-500');
                 });
                 
                 item.addEventListener('dragover', function(e) {
                     e.preventDefault();
+                    this.classList.add('border-blue-400', 'bg-blue-50');
+                    e.dataTransfer.dropEffect = 'move';
+                });
+                
+                item.addEventListener('dragleave', function() {
+                    this.classList.remove('border-blue-400', 'bg-blue-50');
                 });
                 
                 item.addEventListener('drop', function(e) {
                     e.preventDefault();
+                    this.classList.remove('border-blue-400', 'bg-blue-50');
+                    
                     if (draggedItem !== this) {
                         // Trocar posições
                         const allItems = [...document.querySelectorAll('[draggable="true"]')];
                         const draggedIndex = allItems.indexOf(draggedItem);
                         const targetIndex = allItems.indexOf(this);
+                        
+                        console.log(`🔄 Movendo item ${draggedIndex} para posição ${targetIndex}`);
                         
                         if (draggedIndex < targetIndex) {
                             this.parentNode.insertBefore(draggedItem, this.nextSibling);
@@ -2807,13 +2909,16 @@
             });
         }
         
-        function toggleColuna(key) {
+                function toggleColuna(key) {
             colunasConfig[key].visivel = !colunasConfig[key].visivel;
+            console.log(`✅ Toggle coluna ${key}:`, colunasConfig[key].visivel);
         }
         
-        function aplicarColunas() {
+                function aplicarColunas() {
+            console.log('💾 Aplicando configuração de colunas...');
             atualizarOrdemColunas();
             salvarConfigColunas();
+            console.log('✅ Config salva:', colunasConfig);
             renderInventario();
             fecharModal('modal-colunas');
             showToast('Configuração de colunas aplicada!', 'success');
