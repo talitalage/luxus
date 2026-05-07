@@ -2364,58 +2364,81 @@
 
         
         // ========== REDIMENSIONAMENTO DE COLUNAS ==========
+        // Larguras salvas por índice de coluna
+        let colunasLarguras = JSON.parse(localStorage.getItem('luxus_larguras') || '{}');
+
+        function salvarLarguras() {
+            localStorage.setItem('luxus_larguras', JSON.stringify(colunasLarguras));
+        }
+
+        function aplicarLargurasSalvas() {
+            const table = document.querySelector('.data-table');
+            if (!table) return;
+            const headers = table.querySelectorAll('th');
+            headers.forEach((header, index) => {
+                const w = colunasLarguras[index];
+                if (w) {
+                    header.style.width = w + 'px';
+                    table.querySelectorAll(`td:nth-child(${index + 1})`).forEach(td => td.style.width = w + 'px');
+                }
+            });
+        }
+
         function initColumnResize() {
             const table = document.querySelector('.data-table');
             if (!table) return;
-            
+
+            // Remover resizers antigos para evitar duplicatas ao re-renderizar
+            table.querySelectorAll('.column-resizer').forEach(r => r.remove());
+
             const headers = table.querySelectorAll('th');
-            
+
+            // Aplicar larguras salvas antes de adicionar handles
+            aplicarLargurasSalvas();
+
             headers.forEach((header, index) => {
-                // Criar handle de resize
                 const resizer = document.createElement('div');
                 resizer.className = 'column-resizer';
-                resizer.style.cssText = 'position: absolute; right: 0; top: 0; bottom: 0; width: 5px; cursor: col-resize; z-index: 1; background: transparent;';
-                
-                resizer.addEventListener('mouseenter', () => {
-                    resizer.style.background = 'rgba(59, 130, 246, 0.3)';
-                });
-                
-                resizer.addEventListener('mouseleave', () => {
-                    resizer.style.background = 'transparent';
-                });
-                
+                resizer.style.cssText = 'position:absolute;right:0;top:0;bottom:0;width:5px;cursor:col-resize;z-index:1;background:transparent;';
+
+                resizer.addEventListener('mouseenter', () => resizer.style.background = 'rgba(59,130,246,0.35)');
+                resizer.addEventListener('mouseleave', () => resizer.style.background = 'transparent');
+
                 header.style.position = 'relative';
                 header.appendChild(resizer);
-                
+
                 let startX, startWidth;
-                
+
                 resizer.addEventListener('mousedown', (e) => {
                     e.preventDefault();
                     startX = e.pageX;
                     startWidth = header.offsetWidth;
-                    
+
+                    // Linha visual de arraste
+                    const line = document.createElement('div');
+                    line.style.cssText = `position:fixed;top:0;bottom:0;width:2px;background:#3b82f6;opacity:0.6;z-index:9999;pointer-events:none;left:${e.clientX}px;`;
+                    document.body.appendChild(line);
+
                     const onMouseMove = (e) => {
-                        const width = startWidth + (e.pageX - startX);
-                        if (width > 50) { // Largura mínima
-                            header.style.width = width + 'px';
-                            // Aplicar mesma largura nas células da coluna
-                            const cells = table.querySelectorAll(`td:nth-child(${index + 1})`);
-                            cells.forEach(cell => cell.style.width = width + 'px');
-                        }
+                        const width = Math.max(50, startWidth + (e.pageX - startX));
+                        header.style.width = width + 'px';
+                        table.querySelectorAll(`td:nth-child(${index + 1})`).forEach(td => td.style.width = width + 'px');
+                        line.style.left = e.clientX + 'px';
                     };
-                    
+
                     const onMouseUp = () => {
                         document.removeEventListener('mousemove', onMouseMove);
                         document.removeEventListener('mouseup', onMouseUp);
-                        console.log(`📏 Coluna ${index + 1} redimensionada para ${header.offsetWidth}px`);
+                        line.remove();
+                        // Salvar no localStorage
+                        colunasLarguras[index] = header.offsetWidth;
+                        salvarLarguras();
                     };
-                    
+
                     document.addEventListener('mousemove', onMouseMove);
                     document.addEventListener('mouseup', onMouseUp);
                 });
             });
-            
-            console.log('✅ Redimensionamento de colunas inicializado');
         }
 
         function setFilter(filter) {
