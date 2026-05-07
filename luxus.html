@@ -764,10 +764,12 @@
             box-shadow: 0 12px 40px rgba(139, 92, 246, 0.2);
         }
     
-        /* Tabela com larguras proporcionais */
+        
+        /* Tabela com colunas redimensionáveis e sem quebra */
         .data-table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed; /* Força larguras fixas */
         }
         
         .data-table th,
@@ -775,38 +777,57 @@
             padding: 0.875rem 0.75rem;
             text-align: left;
             vertical-align: middle;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap; /* Sem quebra de linha */
         }
         
-        /* Larguras específicas por coluna */
+        /* Larguras ajustadas - proporcionais */
         .data-table th:nth-child(1), 
-        .data-table td:nth-child(1) { width: 100px; } /* Código */
+        .data-table td:nth-child(1) { width: 110px; } /* Código - aumentado */
         
         .data-table th:nth-child(2), 
-        .data-table td:nth-child(2) { min-width: 150px; } /* Descrição */
+        .data-table td:nth-child(2) { width: 200px; } /* Descrição - reduzido */
         
         .data-table th:nth-child(3), 
-        .data-table td:nth-child(3) { width: 100px; } /* Tipo */
+        .data-table td:nth-child(3) { width: 90px; } /* Tipo */
         
         .data-table th:nth-child(4), 
-        .data-table td:nth-child(4) { width: 120px; } /* Categoria */
+        .data-table td:nth-child(4) { width: 110px; } /* Categoria */
         
         .data-table th:nth-child(5), 
-        .data-table td:nth-child(5) { width: 130px; } /* Status */
+        .data-table td:nth-child(5) { width: 150px; } /* Status */
         
         .data-table th:nth-child(6), 
-        .data-table td:nth-child(6) { width: 120px; } /* Revendedor */
+        .data-table td:nth-child(6) { width: 110px; } /* Revendedor */
         
         .data-table th:nth-child(7), 
-        .data-table td:nth-child(7) { width: 90px; text-align: right; } /* Custo */
+        .data-table td:nth-child(7) { width: 100px; text-align: right; } /* Custo */
         
         .data-table th:nth-child(8), 
-        .data-table td:nth-child(8) { width: 90px; text-align: right; } /* Venda */
+        .data-table td:nth-child(8) { width: 100px; text-align: right; } /* Venda */
         
         .data-table th:nth-child(9), 
-        .data-table td:nth-child(9) { width: 100px; } /* Data */
+        .data-table td:nth-child(9) { width: 110px; } /* Data */
         
         .data-table th:nth-child(10), 
         .data-table td:nth-child(10) { width: 60px; text-align: center; } /* Foto */
+        
+        /* Headers redimensionáveis */
+        .data-table th {
+            position: relative;
+            resize: horizontal;
+            overflow: auto;
+        }
+        
+        .data-table th:hover {
+            background: var(--gray-100);
+        }
+        
+        /* Tooltip para ver conteúdo completo */
+        .data-table td[title] {
+            cursor: help;
+        }
         
         /* Imagem da foto */
         .foto-thumbnail {
@@ -836,6 +857,63 @@
             border: 1px solid var(--gray-200);
             color: var(--gray-400);
             font-size: 1.2rem;
+        }
+
+
+        
+        /* Toggle Switch (Chavinha) */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--gray-300);
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: var(--primary);
+        }
+        
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+        
+        .toggle-slider:hover {
+            background-color: var(--gray-400);
+        }
+        
+        .toggle-switch input:checked + .toggle-slider:hover {
+            background-color: var(--primary-light);
         }
 
         </style>
@@ -1490,20 +1568,20 @@
     </div>
 
     <!-- Modal: Configurar Colunas -->
-    <div id="modal-colunas" class="modal-overlay">
+        <div id="modal-colunas" class="modal-overlay">
         <div class="modal-content max-w-md">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-gray-800">Configurar Colunas</h3>
-                <button onclick="fecharModal('modal-colunas')" class="text-gray-400 hover:text-gray-600 text-2xl">
-                    <i class="fas fa-times"></i>
+            <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-800">Configurar Colunas</h3>
+                <button onclick="fecharModal('modal-colunas')" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all">
+                    <i class="fas fa-times text-lg"></i>
                 </button>
             </div>
             
-            <p class="text-sm text-gray-600 mb-4">
+            <p class="text-sm text-gray-500 mb-4">
                 Arraste para reordenar • Toggle para mostrar/ocultar
             </p>
             
-            <div id="lista-colunas" class="space-y-2 mb-6"></div>
+            <div id="lista-colunas" class="space-y-2 mb-6 max-h-96 overflow-y-auto"></div>
             
             <div class="flex gap-3 pt-4 border-t border-gray-200">
                 <button onclick="restaurarColunasPadrao()" class="flex-1 btn-secondary text-sm">
@@ -1514,6 +1592,7 @@
                 </button>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- Toast -->
@@ -2214,6 +2293,62 @@
             });
         }
 
+        
+        // ========== REDIMENSIONAMENTO DE COLUNAS ==========
+        function initColumnResize() {
+            const table = document.querySelector('.data-table');
+            if (!table) return;
+            
+            const headers = table.querySelectorAll('th');
+            
+            headers.forEach((header, index) => {
+                // Criar handle de resize
+                const resizer = document.createElement('div');
+                resizer.className = 'column-resizer';
+                resizer.style.cssText = 'position: absolute; right: 0; top: 0; bottom: 0; width: 5px; cursor: col-resize; z-index: 1; background: transparent;';
+                
+                resizer.addEventListener('mouseenter', () => {
+                    resizer.style.background = 'rgba(59, 130, 246, 0.3)';
+                });
+                
+                resizer.addEventListener('mouseleave', () => {
+                    resizer.style.background = 'transparent';
+                });
+                
+                header.style.position = 'relative';
+                header.appendChild(resizer);
+                
+                let startX, startWidth;
+                
+                resizer.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    startX = e.pageX;
+                    startWidth = header.offsetWidth;
+                    
+                    const onMouseMove = (e) => {
+                        const width = startWidth + (e.pageX - startX);
+                        if (width > 50) { // Largura mínima
+                            header.style.width = width + 'px';
+                            // Aplicar mesma largura nas células da coluna
+                            const cells = table.querySelectorAll(`td:nth-child(${index + 1})`);
+                            cells.forEach(cell => cell.style.width = width + 'px');
+                        }
+                    };
+                    
+                    const onMouseUp = () => {
+                        document.removeEventListener('mousemove', onMouseMove);
+                        document.removeEventListener('mouseup', onMouseUp);
+                        console.log(`📏 Coluna ${index + 1} redimensionada para ${header.offsetWidth}px`);
+                    };
+                    
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                });
+            });
+            
+            console.log('✅ Redimensionamento de colunas inicializado');
+        }
+
         function setFilter(filter) {
             currentFilter = filter;
             document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
@@ -2814,7 +2949,7 @@
             abrirModal('modal-colunas');
         }
         
-                function renderListaColunas() {
+                        function renderListaColunas() {
             const colunas = Object.keys(colunasConfig)
                 .sort((a, b) => colunasConfig[a].ordem - colunasConfig[b].ordem);
             
@@ -2823,19 +2958,20 @@
             const html = colunas.map((key, index) => {
                 const col = colunasConfig[key];
                 return `
-                    <div class="flex items-center gap-3 p-3 bg-white rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-all cursor-move" 
+                    <div class="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-all cursor-move" 
                          draggable="true" 
                          data-coluna="${key}">
                         <i class="fas fa-grip-vertical text-gray-400"></i>
                         
-                        <label class="flex items-center flex-1 cursor-pointer">
+                        <span class="flex-1 font-medium text-gray-700 select-none">${col.nome}</span>
+                        
+                        <label class="toggle-switch">
                             <input 
                                 type="checkbox" 
                                 ${col.visivel ? 'checked' : ''} 
                                 onchange="toggleColuna('${key}')"
-                                class="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
                             >
-                            <span class="ml-3 font-medium text-gray-700 select-none">${col.nome}</span>
+                            <span class="toggle-slider"></span>
                         </label>
                     </div>
                 `;
