@@ -5,28 +5,252 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Luxus - Sistema de Gestão</title>
     <link rel="icon" type="image/png" href="https://i.ibb.co/6R29d3Dj/luxus-logo.png">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS removido - usando CSS customizado -->
     <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --gold: #d4af37;
-            --gold-light: #e8d4a0;
-            --gold-dark: #b8960c;
-            --navy: #0a0e27;
-            --navy-light: #1a1f3a;
-            --cream: #faf8f5;
-            --white: #ffffff;
-            --gray-50: #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-200: #e5e7eb;
-            --gray-300: #d1d5db;
-            --gray-400: #9ca3af;
-            --gray-500: #6b7280;
-            --gray-600: #4b5563;
-            --gray-700: #374151;
+            /* Clean & Professional Palette */
+            --primary: #1e40af;        /* Azul institucional */
+            --primary-light: #3b82f6;  /* Azul médio */
+            --accent: #14b8a6;         /* Verde água/teal */
+            --accent-light: #5eead4;   /* Teal claro */
+            
+            /* Cores mantidas para compatibilidade */
+            --emerald: #10b981;
+            --amethyst: #8b5cf6;
+            --sapphire: #3b82f6;
+            --gold: #f59e0b;
+            --ruby: #ef4444;
+            
+            /* Neutros Clean */
+            --navy: #0f172a;
+            --navy-light: #1e293b;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
             --gray-800: #1f2937;
+            --white: #ffffff;
+            --cream: #fafafa;
+            
+            /* Original mantidas */
+            --gold-light: #fbbf24;
+            --gold-dark: #d97706;
         }
+        
+        /* ========== UTILITY CLASSES (Tailwind replacement) ========== */
+        .container { max-width: 1280px; margin: 0 auto; padding: 0 1rem; }
+        .flex { display: flex; }
+        .inline-flex { display: inline-flex; }
+        .grid { display: grid; }
+        .hidden { display: none !important; }
+        .block { display: block; }
+        .inline-block { display: inline-block; }
+        
+        .items-center { align-items: center; }
+        .items-start { align-items: flex-start; }
+        .items-end { align-items: flex-end; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-end { justify-content: flex-end; }
+        
+        .flex-col { flex-direction: column; }
+        .flex-wrap { flex-wrap: wrap; }
+        .flex-1 { flex: 1; }
+        
+        .gap-1 { gap: 0.25rem; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-3 { gap: 0.75rem; }
+        .gap-4 { gap: 1rem; }
+        .gap-5 { gap: 1.25rem; }
+        .gap-6 { gap: 1.5rem; }
+        .gap-8 { gap: 2rem; }
+        
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        
+        .w-full { width: 100%; }
+        .w-1\/2 { width: 50%; }
+        .w-1\/3 { width: 33.333333%; }
+        .w-2\/3 { width: 66.666667%; }
+        .w-1\/4 { width: 25%; }
+        .w-auto { width: auto; }
+        .h-full { height: 100%; }
+        
+        .p-2 { padding: 0.5rem; }
+        .p-3 { padding: 0.75rem; }
+        .p-4 { padding: 1rem; }
+        .p-5 { padding: 1.25rem; }
+        .p-6 { padding: 1.5rem; }
+        .p-8 { padding: 2rem; }
+        
+        .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+        .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+        .px-4 { padding-left: 1rem; padding-right: 1rem; }
+        .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+        .px-8 { padding-left: 2rem; padding-right: 2rem; }
+        
+        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+        .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+        .py-6 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+        .py-8 { padding-top: 2rem; padding-bottom: 2rem; }
+        
+        .m-0 { margin: 0; }
+        .m-2 { margin: 0.5rem; }
+        .m-4 { margin: 1rem; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+        
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mt-6 { margin-top: 1.5rem; }
+        .mt-8 { margin-top: 2rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mb-8 { margin-bottom: 2rem; }
+        .ml-2 { margin-left: 0.5rem; }
+        .ml-4 { margin-left: 1rem; }
+        .mr-2 { margin-right: 0.5rem; }
+        .mr-4 { margin-right: 1rem; }
+        
+        .text-xs { font-size: 0.75rem; line-height: 1rem; }
+        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+        .text-base { font-size: 1rem; line-height: 1.5rem; }
+        .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+        .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+        .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+        .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+        .text-4xl { font-size: 2.25rem; line-height: 2.5rem; }
+        
+        .font-light { font-weight: 300; }
+        .font-normal { font-weight: 400; }
+        .font-medium { font-weight: 500; }
+        .font-semibold { font-weight: 600; }
+        .font-bold { font-weight: 700; }
+        .font-extrabold { font-weight: 800; }
+        
+        .text-left { text-align: left; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        
+        .uppercase { text-transform: uppercase; }
+        .lowercase { text-transform: lowercase; }
+        .capitalize { text-transform: capitalize; }
+        
+        .rounded { border-radius: 0.25rem; }
+        .rounded-md { border-radius: 0.375rem; }
+        .rounded-lg { border-radius: 0.5rem; }
+        .rounded-xl { border-radius: 0.75rem; }
+        .rounded-2xl { border-radius: 1rem; }
+        .rounded-full { border-radius: 9999px; }
+        
+        .border { border-width: 1px; }
+        .border-2 { border-width: 2px; }
+        .border-t { border-top-width: 1px; }
+        .border-b { border-bottom-width: 1px; }
+        .border-l { border-left-width: 1px; }
+        .border-r { border-right-width: 1px; }
+        
+        .shadow { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); }
+        .shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        
+        .overflow-hidden { overflow: hidden; }
+        .overflow-auto { overflow: auto; }
+        .overflow-x-auto { overflow-x: auto; }
+        .overflow-y-auto { overflow-y: auto; }
+        
+        .relative { position: relative; }
+        .absolute { position: absolute; }
+        .fixed { position: fixed; }
+        .sticky { position: sticky; }
+        
+        .top-0 { top: 0; }
+        .right-0 { right: 0; }
+        .bottom-0 { bottom: 0; }
+        .left-0 { left: 0; }
+        .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+        
+        .z-10 { z-index: 10; }
+        .z-20 { z-index: 20; }
+        .z-30 { z-index: 30; }
+        .z-40 { z-index: 40; }
+        .z-50 { z-index: 50; }
+        
+        .cursor-pointer { cursor: pointer; }
+        .cursor-not-allowed { cursor: not-allowed; }
+        
+        .select-none { user-select: none; }
+        
+        .opacity-0 { opacity: 0; }
+        .opacity-50 { opacity: 0.5; }
+        .opacity-75 { opacity: 0.75; }
+        .opacity-100 { opacity: 1; }
+        
+        .transition { transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+        .duration-200 { transition-duration: 200ms; }
+        .duration-300 { transition-duration: 300ms; }
+        .ease-in-out { transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        /* Background colors */
+        .bg-white { background-color: #ffffff; }
+        .bg-gray-50 { background-color: #f9fafb; }
+        .bg-gray-100 { background-color: #f3f4f6; }
+        .bg-gray-200 { background-color: #e5e7eb; }
+        .bg-blue-500 { background-color: #3b82f6; }
+        .bg-green-500 { background-color: #10b981; }
+        .bg-red-500 { background-color: #ef4444; }
+        .bg-amber-100 { background-color: #fef3c7; }
+        .bg-green-100 { background-color: #d1fae5; }
+        .bg-blue-100 { background-color: #dbeafe; }
+        .bg-red-100 { background-color: #fee2e2; }
+        
+        /* Text colors */
+        .text-white { color: #ffffff; }
+        .text-gray-400 { color: #9ca3af; }
+        .text-gray-500 { color: #6b7280; }
+        .text-gray-600 { color: #4b5563; }
+        .text-gray-700 { color: #374151; }
+        .text-gray-800 { color: #1f2937; }
+        .text-blue-600 { color: #2563eb; }
+        .text-green-600 { color: #059669; }
+        .text-red-600 { color: #dc2626; }
+        .text-amber-600 { color: #d97706; }
+        
+        /* Border colors */
+        .border-gray-200 { border-color: #e5e7eb; }
+        .border-gray-300 { border-color: #d1d5db; }
+        
+        /* Hover states */
+        .hover\:bg-gray-50:hover { background-color: #f9fafb; }
+        .hover\:bg-gray-100:hover { background-color: #f3f4f6; }
+        .hover\:text-blue-700:hover { color: #1d4ed8; }
+        
+        /* Responsive */
+        @media (max-width: 640px) {
+            .sm\:hidden { display: none; }
+        }
+        
+        @media (min-width: 768px) {
+            .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .md\:flex-row { flex-direction: row; }
+        }
+        
+        @media (min-width: 1024px) {
+            .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        }
+
         
         * { 
             margin: 0; 
@@ -35,10 +259,11 @@
         }
         
         body {
-            font-family: 'Work Sans', sans-serif;
-            background: linear-gradient(to bottom, var(--gray-50) 0%, var(--white) 100%);
-            color: var(--gray-800);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-700);
             min-height: 100vh;
+            line-height: 1.6;
         }
         
         h1, h2, h3, h4, h5, h6 {
@@ -46,52 +271,60 @@
             font-weight: 600;
         }
         
-        /* Header com fundo escuro */
+        /* Header escuro com gradiente */
         .header-dark {
-            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
-            box-shadow: 0 4px 20px rgba(10, 14, 39, 0.15);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
         
-        /* Cards claros */
+        .header-dark h1 {
+            color: var(--white);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        /* Cards limpos */
         .card-light {
             background: var(--white);
             border: 1px solid var(--gray-200);
-            border-radius: 16px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+            transition: all 0.2s ease;
         }
         
         .card-light:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            border-color: var(--gold-light);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            border-color: var(--gray-300);
         }
         
-        /* Botões */
+        /* Botões minimalistas */
         .btn-primary {
-            background: linear-gradient(135deg, var(--gold), var(--gold-light));
-            color: var(--navy);
-            font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
+            background: var(--primary);
+            color: white;
+            font-weight: 500;
+            padding: 0.625rem 1.25rem;
+            border-radius: 6px;
             border: none;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 2px 8px rgba(212, 175, 55, 0.25);
+            font-size: 14px;
         }
         
         .btn-primary:hover {
+            background: var(--primary-light);
+            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.35);
         }
         
         .btn-secondary {
             background: var(--white);
             color: var(--gray-700);
             border: 1px solid var(--gray-300);
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
+            padding: 0.625rem 1.25rem;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s ease;
+            font-weight: 500;
+            font-size: 14px;
         }
         
         .btn-secondary:hover {
@@ -115,32 +348,36 @@
             box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1) !important;
         }
         
-        /* Tabs de navegação */
+        /* Tabs de navegação - Para header escuro */
         .nav-tab {
-            padding: 0.75rem 1.5rem;
+            background: transparent;
             color: rgba(255, 255, 255, 0.7);
-            cursor: pointer;
-            border-radius: 10px;
-            transition: all 0.2s ease;
+            border: none;
+            border-bottom: 2px solid transparent;
+            padding: 0.75rem 1.5rem;
             font-weight: 500;
-            border: 1px solid transparent;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
         }
         
         .nav-tab:hover {
             color: rgba(255, 255, 255, 0.95);
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.08);
         }
         
         .nav-tab.active {
             color: var(--white);
-            background: rgba(212, 175, 55, 0.25);
-            border-color: rgba(212, 175, 55, 0.4);
+            background: rgba(59, 130, 246, 0.2);
+            border-bottom-color: var(--primary-light);
+            font-weight: 600;
         }
         
         /* Stats cards */
         .stat-card {
-            background: var(--white);
-            border: 1px solid var(--gray-200);
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(16, 185, 129, 0.05));
+            border: 2px solid transparent;
             border-radius: 16px;
             padding: 1.5rem;
             position: relative;
@@ -149,8 +386,9 @@
         }
         
         .stat-card:hover {
-            border-color: var(--gold-light);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.1);
+            border-color: var(--primary-light);
+            transform: translateY(-2px);
         }
         
         .stat-card::before {
@@ -159,9 +397,11 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            height: 5px;
+            background: linear-gradient(90deg, var(--emerald), var(--amethyst), var(--sapphire), var(--gold));
+            background-size: 200% 100%;
         }
+        
         
         /* Status badges */
         .status-badge {
@@ -210,9 +450,9 @@
         }
         
         .data-table th {
-            padding: 1rem;
+            padding: 0.875rem 1rem;
             text-align: left;
-            font-size: 0.75rem;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: var(--gray-600);
@@ -220,7 +460,7 @@
         }
         
         .data-table td {
-            padding: 1rem;
+            padding: 0.875rem 1rem;
             border-bottom: 1px solid var(--gray-200);
             color: var(--gray-700);
         }
@@ -367,6 +607,18 @@
             animation: spin 1s linear infinite;
         }
         
+        /* Campo desabilitado */
+        select:disabled,
+        input:disabled {
+            background-color: #f3f4f6 !important;
+            cursor: not-allowed !important;
+            opacity: 0.6;
+        }
+        
+        .opacity-50 {
+            opacity: 0.5;
+        }
+        
         /* Scrollbar customizada */
         .scrollbar-custom::-webkit-scrollbar {
             width: 8px;
@@ -389,17 +641,118 @@
         
         /* Section titles */
         .section-title {
-            font-size: 1.25rem;
+            font-size: 1.125rem;
             font-weight: 600;
-            color: var(--gray-800);
-            margin-bottom: 1.5rem;
+            color: var(--gray-700);
+            margin-bottom: 1.25rem;
             padding-bottom: 0.75rem;
             border-bottom: 2px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
         
         .section-title i {
-            color: var(--gold);
+            background: linear-gradient(135deg, var(--amethyst), var(--emerald));
+            -webkit-
+            
+            
             margin-right: 0.5rem;
+            filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.3));
+        }
+        
+        /* Ícones dos cards stats - Sofisticados e Modernos */
+        .bg-amber-100 { 
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+            box-shadow: 0 8px 20px rgba(217, 119, 6, 0.35);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+        .text-amber-600 { 
+            color: #fff !important; 
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+        
+        .bg-green-100 { 
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+            box-shadow: 0 8px 20px rgba(5, 150, 105, 0.35);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .text-green-600 { 
+            color: #fff !important; 
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+        
+        .bg-blue-100 { 
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        .text-blue-600 { 
+            color: #fff !important; 
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+        
+        .bg-red-100 { 
+            background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important;
+            box-shadow: 0 8px 20px rgba(13, 148, 136, 0.35);
+            border: 1px solid rgba(20, 184, 166, 0.3);
+        }
+        .text-red-600 { 
+            color: #fff !important; 
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+        
+        /* Valores dos cards coloridos - vibrantes e modernos */
+        #dash-capital { 
+            color: #10b981 !important;
+            font-weight: 700;
+            text-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+        #dash-consignado { 
+            color: #3b82f6 !important;
+            font-weight: 700;
+            text-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+        }
+        #dash-vendido { 
+            color: #14b8a6 !important;
+            font-weight: 700;
+            text-shadow: 0 0 15px rgba(20, 184, 166, 0.4);
+        }
+        
+        /* Status badges estilo gemas */
+        .status-estoque {
+            background: linear-gradient(135deg, #d1fae5, #6ee7b7) !important;
+            color: #065f46 !important;
+            border: 2px solid #10b981 !important;
+            font-weight: 600;
+        }
+        
+        .status-consignado {
+            background: linear-gradient(135deg, #ede9fe, #c4b5fd) !important;
+            color: #5b21b6 !important;
+            border: 2px solid #8b5cf6 !important;
+            font-weight: 600;
+        }
+        
+        .status-vendido {
+            background: linear-gradient(135deg, #fee2e2, #fca5a5) !important;
+            color: #991b1b !important;
+            border: 2px solid #ef4444 !important;
+            font-weight: 600;
+        }
+        
+        /* Filter chips ativos */
+        .filter-chip.active {
+            background: linear-gradient(135deg, var(--amethyst), var(--emerald)) !important;
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+        }
+        
+        /* Card hover com brilho */
+        .card-light:hover {
+            border-color: var(--amethyst);
+            box-shadow: 0 12px 40px rgba(139, 92, 246, 0.2);
         }
     </style>
 </head>
@@ -455,15 +808,44 @@
         <div class="px-6 pb-6">
             <!-- TAB: Dashboard -->
             <div id="content-dashboard" class="tab-content">
+                <!-- Alerta se não há dados -->
+                <div id="alerta-sem-dados" class="hidden bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle text-yellow-400 text-xl"></i>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <h3 class="text-sm font-medium text-yellow-800">Nenhum dado carregado</h3>
+                            <div class="mt-2 text-sm text-yellow-700">
+                                <p>O sistema não conseguiu carregar dados do servidor.</p>
+                                <p class="mt-1">Verifique:</p>
+                                <ul class="list-disc list-inside mt-1 space-y-1">
+                                    <li>A URL está correta nas Configurações</li>
+                                    <li>O Google Apps Script está funcionando</li>
+                                    <li>Você tem dados cadastrados no sistema</li>
+                                </ul>
+                            </div>
+                            <div class="mt-3 flex gap-2">
+                                <button onclick="loadData()" class="btn-primary text-sm py-2">
+                                    <i class="fas fa-sync-alt mr-2"></i>Tentar Novamente
+                                </button>
+                                <button onclick="switchTab('config')" class="btn-secondary text-sm py-2">
+                                    <i class="fas fa-cog mr-2"></i>Ir para Configurações
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Saudação -->
                 <div class="card-light p-6 mb-6 text-center">
-                    <h2 class="text-3xl font-bold text-amber-600 mb-2">Olá, Lu! ✨</h2>
+                    <h2 class="text-3xl font-bold text-amber-600 mb-2">Olá, <span id="dashboard-username">Lu</span>! ✨</h2>
                     <p class="text-gray-600">Bem-vinda ao seu painel de controle</p>
                 </div>
 
                 <!-- Cards de Estatísticas -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-                    <div class="stat-card">
+                    <div class="stat-card cursor-pointer hover:scale-105 transition-transform" onclick="filtrarDashboard('all')">
                         <div class="flex justify-between items-start mb-3">
                             <div class="bg-amber-100 p-3 rounded-xl">
                                 <i class="fas fa-gem text-amber-600 text-xl"></i>
@@ -472,9 +854,10 @@
                         </div>
                         <h3 id="dash-total" class="text-3xl font-bold mb-1 text-gray-800">0</h3>
                         <p class="text-xs text-gray-600">Peças no Sistema</p>
+                        <p class="text-[10px] text-amber-600 mt-2">👆 Clique para ver todos</p>
                     </div>
                     
-                    <div class="stat-card">
+                    <div class="stat-card cursor-pointer hover:scale-105 transition-transform" onclick="filtrarDashboard('estoque')">
                         <div class="flex justify-between items-start mb-3">
                             <div class="bg-green-100 p-3 rounded-xl">
                                 <i class="fas fa-warehouse text-green-600 text-xl"></i>
@@ -483,9 +866,10 @@
                         </div>
                         <h3 id="dash-capital" class="text-2xl font-bold mb-1 text-green-600">R$ 0</h3>
                         <p class="text-xs text-gray-600">Capital Investido</p>
+                        <p class="text-[10px] text-green-600 mt-2">👆 Clique para filtrar</p>
                     </div>
                     
-                    <div class="stat-card">
+                    <div class="stat-card cursor-pointer hover:scale-105 transition-transform" onclick="filtrarDashboard('consignado')">
                         <div class="flex justify-between items-start mb-3">
                             <div class="bg-blue-100 p-3 rounded-xl">
                                 <i class="fas fa-handshake text-blue-600 text-xl"></i>
@@ -494,9 +878,10 @@
                         </div>
                         <h3 id="dash-consignado" class="text-2xl font-bold mb-1 text-blue-600">R$ 0</h3>
                         <p class="text-xs text-gray-600">Com Revendedores</p>
+                        <p class="text-[10px] text-blue-600 mt-2">👆 Clique para filtrar</p>
                     </div>
                     
-                    <div class="stat-card">
+                    <div class="stat-card cursor-pointer hover:scale-105 transition-transform" onclick="filtrarDashboard('vendido')">
                         <div class="flex justify-between items-start mb-3">
                             <div class="bg-red-100 p-3 rounded-xl">
                                 <i class="fas fa-dollar-sign text-red-600 text-xl"></i>
@@ -505,6 +890,7 @@
                         </div>
                         <h3 id="dash-vendido" class="text-2xl font-bold mb-1 text-red-600">R$ 0</h3>
                         <p class="text-xs text-gray-600">Total em Vendas</p>
+                        <p class="text-[10px] text-red-600 mt-2">👆 Clique para filtrar</p>
                     </div>
                 </div>
 
@@ -726,6 +1112,9 @@
                                 oninput="renderInventario()"
                             >
                         </div>
+                        <button onclick="abrirModalColunas()" class="btn-secondary" title="Configurar Colunas">
+                            <i class="fas fa-columns mr-2"></i>Colunas
+                        </button>
                         <button onclick="abrirModalNovoItem()" class="btn-primary">
                             <i class="fas fa-plus mr-2"></i>Novo Item
                         </button>
@@ -784,6 +1173,30 @@
                         <button onclick="abrirModalRevendedor()" class="btn-primary w-full">
                             <i class="fas fa-user-plus mr-2"></i>Novo Revendedor
                         </button>
+                    </div>
+                    
+                    <!-- Status -->
+                    <div class="card-light p-6">
+                        <h3 class="section-title">
+                            <i class="fas fa-list-check"></i>Status dos Produtos
+                        </h3>
+                        <div id="lista-status" class="space-y-3 mb-4"></div>
+                        <div class="flex gap-2">
+                            <input 
+                                type="text" 
+                                id="novo-status" 
+                                class="flex-1"
+                                placeholder="Novo status (ex: Em Análise)"
+                                onkeypress="if(event.key==='Enter') addStatus()"
+                            >
+                            <button onclick="addStatus()" class="btn-primary">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-3">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Status padrão: Em Estoque, Consignado, Vendido
+                        </p>
                     </div>
                     
                     <!-- Categorias -->
@@ -848,6 +1261,18 @@
                             </div>
                             
                             <div id="config-status" class="hidden text-sm p-3 rounded-lg"></div>
+                            
+                            <!-- Debug: Resposta do servidor -->
+                            <div id="server-response" class="hidden mt-4 p-4 bg-gray-50 rounded-lg border border-gray-300">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="font-semibold text-gray-700 text-sm">📡 Resposta do Servidor</h4>
+                                    <button onclick="document.getElementById('server-response').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <pre id="server-response-content" class="text-xs bg-white p-3 rounded border border-gray-200 overflow-x-auto max-h-64 overflow-y-auto text-gray-800" style="font-family: 'Courier New', monospace;"></pre>
+                                <p class="text-xs text-gray-500 mt-2">💡 Copie isso e me envie para eu analisar</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -906,16 +1331,20 @@
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                    <select id="edit-status" class="w-full">
+                    <select id="edit-status" class="w-full" onchange="atualizarCampoRevendedorEdit()">
                         <option value="Em Estoque">Em Estoque</option>
+                        <option value="Consignado">Consignado</option>
                         <option value="Vendido">Vendido</option>
                     </select>
                 </div>
                 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Revendedor</label>
+                <div id="edit-revendedor-container">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Revendedor
+                        <span class="text-xs text-gray-500">(selecione "Consignado" no status acima)</span>
+                    </label>
                     <select id="edit-revendedor" class="w-full">
-                        <option value="">Em Estoque</option>
+                        <option value="">Selecione um revendedor...</option>
                     </select>
                 </div>
                 
@@ -976,6 +1405,33 @@
         </div>
     </div>
 
+    <!-- Modal: Configurar Colunas -->
+    <div id="modal-colunas" class="modal-overlay">
+        <div class="modal-content max-w-md">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800">Configurar Colunas</h3>
+                <button onclick="fecharModal('modal-colunas')" class="text-gray-400 hover:text-gray-600 text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <p class="text-sm text-gray-600 mb-4">
+                Arraste para reordenar • Toggle para mostrar/ocultar
+            </p>
+            
+            <div id="lista-colunas" class="space-y-2 mb-6"></div>
+            
+            <div class="flex gap-3 pt-4 border-t border-gray-200">
+                <button onclick="restaurarColunasPadrao()" class="flex-1 btn-secondary text-sm">
+                    Restaurar padrão
+                </button>
+                <button onclick="aplicarColunas()" class="flex-1 btn-primary">
+                    <i class="fas fa-check mr-2"></i>Aplicar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div id="toast" class="hidden toast">
         <div class="flex items-center gap-3">
@@ -989,10 +1445,25 @@
         let inventory = [];
         let revendedores = [];
         let categorias = { 'Semi Joia': [], 'Perfume': [] };
+        let statusList = ['Em Estoque', 'Consignado', 'Vendido']; // Status padrão
         let scriptUrl = localStorage.getItem('luxus_script_url') || '';
         let currentFilter = 'all';
         let produtosConsignados = [];
         let devolucoes = [];
+        
+        // Configuração de colunas
+        let colunasConfig = {
+            'codigo': { nome: 'Código', visivel: true, ordem: 0 },
+            'descricao': { nome: 'Descrição', visivel: true, ordem: 1 },
+            'tipo': { nome: 'Tipo', visivel: true, ordem: 2 },
+            'categoria': { nome: 'Categoria', visivel: true, ordem: 3 },
+            'status': { nome: 'Status', visivel: true, ordem: 4 },
+            'revendedor': { nome: 'Revendedor', visivel: true, ordem: 5 },
+            'custo': { nome: 'Custo', visivel: true, ordem: 6 },
+            'venda': { nome: 'Venda', visivel: true, ordem: 7 },
+            'data': { nome: 'Data', visivel: true, ordem: 8 },
+            'foto': { nome: 'Foto', visivel: true, ordem: 9 }
+        };
 
         // ========== INICIALIZAÇÃO ==========
         document.addEventListener('DOMContentLoaded', () => {
@@ -1009,6 +1480,10 @@
             if (username) {
                 document.getElementById('user-name').textContent = username;
             }
+            
+            // Carregar configurações
+            carregarStatusSalvos();
+            carregarConfigColunas();
             
             document.getElementById('config-script-url').value = scriptUrl;
             if (scriptUrl) {
@@ -1040,6 +1515,7 @@
                 carregarRevendedoresFechamento();
             } else if (tab === 'config') {
                 renderRevendedores();
+                renderStatus();
                 renderCategorias();
             } else if (tab === 'dashboard') {
                 renderDashboard();
@@ -1050,38 +1526,144 @@
 
         // ========== CARREGAMENTO DE DADOS ==========
         async function loadData() {
-            if (!scriptUrl) return;
+            if (!scriptUrl) {
+                console.warn('⚠️ scriptUrl não configurada');
+                showToast('Configure a URL do servidor nas Configurações', 'warning');
+                return;
+            }
+            
+            console.log('=== CARREGANDO DADOS ===');
+            console.log('URL:', scriptUrl);
+            showToast('Carregando dados...', 'info');
             
             try {
-                const [invRes, revRes, catRes] = await Promise.all([
-                    fetch(`${scriptUrl}?action=getInventario`),
-                    fetch(`${scriptUrl}?action=getRevendedores`),
-                    fetch(`${scriptUrl}?action=getCategorias`)
-                ]);
+                // Tentar carregar cada recurso individualmente com fallback
                 
-                inventory = await invRes.json();
-                revendedores = await revRes.json();
-                const catData = await catRes.json();
-                
-                // Organizar categorias
-                categorias = { 'Semi Joia': [], 'Perfume': [] };
-                catData.forEach(cat => {
-                    if (cat.Tipo && categorias[cat.Tipo]) {
-                        categorias[cat.Tipo].push(cat.Nome);
+                // 1. INVENTÁRIO
+                console.log('📦 Carregando inventário...');
+                try {
+                    const invRes = await fetch(`${scriptUrl}?action=getInventario`, {
+                        method: 'GET',
+                        cache: 'no-cache'
+                    });
+                    console.log('Inventário - Status:', invRes.status);
+                    
+                    if (invRes.ok) {
+                        const text = await invRes.text();
+                        console.log('Inventário - Response:', text.substring(0, 200));
+                        inventory = JSON.parse(text);
+                        console.log(`✅ ${inventory.length} itens carregados`);
+                    } else {
+                        throw new Error(`Status ${invRes.status}`);
                     }
-                });
+                } catch (e) {
+                    console.error('❌ Erro ao carregar inventário:', e);
+                    inventory = [];
+                }
                 
+                // 2. REVENDEDORES
+                console.log('👥 Carregando revendedores...');
+                try {
+                    const revRes = await fetch(`${scriptUrl}?action=getRevendedores`, {
+                        method: 'GET',
+                        cache: 'no-cache'
+                    });
+                    console.log('Revendedores - Status:', revRes.status);
+                    
+                    if (revRes.ok) {
+                        const text = await revRes.text();
+                        console.log('Revendedores - Response:', text.substring(0, 200));
+                        revendedores = JSON.parse(text);
+                        console.log(`✅ ${revendedores.length} revendedores carregados`);
+                    } else {
+                        throw new Error(`Status ${revRes.status}`);
+                    }
+                } catch (e) {
+                    console.error('❌ Erro ao carregar revendedores:', e);
+                    revendedores = [];
+                }
+                
+                // 3. CATEGORIAS
+                console.log('🏷️ Carregando categorias...');
+                try {
+                    const catRes = await fetch(`${scriptUrl}?action=getCategorias`, {
+                        method: 'GET',
+                        cache: 'no-cache'
+                    });
+                    console.log('Categorias - Status:', catRes.status);
+                    
+                    if (catRes.ok) {
+                        const text = await catRes.text();
+                        console.log('Categorias - Response:', text.substring(0, 200));
+                        const catData = JSON.parse(text);
+                        
+                        // Organizar categorias
+                        categorias = { 'Semi Joia': [], 'Perfume': [] };
+                        if (Array.isArray(catData)) {
+                            catData.forEach(cat => {
+                                if (cat.Tipo && categorias[cat.Tipo]) {
+                                    categorias[cat.Tipo].push(cat.Nome || cat.nome);
+                                }
+                            });
+                        }
+                        console.log('✅ Categorias carregadas:', categorias);
+                    } else {
+                        throw new Error(`Status ${catRes.status}`);
+                    }
+                } catch (e) {
+                    console.error('❌ Erro ao carregar categorias:', e);
+                    categorias = { 'Semi Joia': [], 'Perfume': [] };
+                }
+                
+                // Atualizar interface
                 carregarRevendedoresSelects();
                 renderDashboard();
-                showToast(`${inventory.length} itens carregados`, 'success');
+                renderUltimasEntradas();
+                
+                // Feedback de sucesso
+                const totalItens = inventory.length + revendedores.length;
+                if (totalItens > 0) {
+                    showToast(`✅ ${inventory.length} produtos, ${revendedores.length} revendedores`, 'success');
+                } else {
+                    showToast('⚠️ Nenhum dado encontrado. Sistema está vazio.', 'warning');
+                }
+                
+                console.log('=== DADOS CARREGADOS COM SUCESSO ===');
+                console.log('Inventário:', inventory.length);
+                console.log('Revendedores:', revendedores.length);
+                console.log('Categorias:', categorias);
+                
             } catch (error) {
-                console.error('Erro ao carregar dados:', error);
-                showToast('Erro ao carregar dados', 'error');
+                console.error('❌ ERRO CRÍTICO ao carregar dados:', error);
+                console.error('Stack:', error.stack);
+                
+                showToast('❌ Erro ao conectar com servidor. Verifique a URL nas Configurações.', 'error');
+                
+                // Inicializar vazios para evitar erros
+                inventory = [];
+                revendedores = [];
+                categorias = { 'Semi Joia': [], 'Perfume': [] };
+                
+                renderDashboard();
             }
         }
 
         // ========== DASHBOARD ==========
         function renderDashboard() {
+            // Mostrar/esconder alerta se não há dados
+            const temDados = inventory.length > 0 || revendedores.length > 0;
+            const alerta = document.getElementById('alerta-sem-dados');
+            if (alerta) {
+                alerta.classList.toggle('hidden', temDados);
+            }
+            
+            // Atualizar nome do usuário
+            const username = localStorage.getItem('luxus_user') || 'Lu';
+            const dashUsername = document.getElementById('dashboard-username');
+            if (dashUsername) {
+                dashUsername.textContent = username;
+            }
+            
             // Cards principais
             const total = inventory.length;
             const estoque = inventory.filter(i => i.Status === 'Em Estoque');
@@ -1123,25 +1705,42 @@
         }
 
         function renderTopRevendedores() {
+            console.log('=== RENDERIZANDO TOP REVENDEDORES ===');
+            console.log('Total revendedores:', revendedores.length);
+            console.log('Total inventário:', inventory.length);
+            
             const revStats = revendedores.map(rev => {
-                const produtos = inventory.filter(i => i.Revendedor === rev.Nome && i.Status !== 'Vendido' && i.Status !== 'Em Estoque');
+                // Produtos consignados = tem revendedor e não foi vendido
+                const produtos = inventory.filter(i => {
+                    const temRevendedor = i.Revendedor && i.Revendedor === rev.Nome;
+                    const naoVendido = i.Status !== 'Vendido';
+                    const naoEstoque = i.Status !== 'Em Estoque';
+                    return temRevendedor && naoVendido && naoEstoque;
+                });
+                
                 const valor = produtos.reduce((sum, i) => sum + (parseFloat(i.Venda) || 0), 0);
+                
+                console.log(`Revendedor: ${rev.Nome} - ${produtos.length} produtos - R$ ${valor.toFixed(2)}`);
+                
                 return { ...rev, qtd: produtos.length, valor };
             }).filter(r => r.qtd > 0).sort((a, b) => b.valor - a.valor);
             
+            console.log('Revendedores com produtos:', revStats.length);
+            
             const html = revStats.slice(0, 5).map(rev => `
-                <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" onclick="verProdutosRevendedor('${rev.Nome}')">
                     <div>
                         <div class="font-semibold text-gray-800">${rev.Nome}</div>
                         <div class="text-xs text-gray-600">${rev.qtd} produtos • ${rev.Percentual || 30}% comissão</div>
                     </div>
                     <div class="text-right">
                         <div class="font-bold text-blue-600">R$ ${rev.valor.toFixed(2)}</div>
+                        <div class="text-[10px] text-gray-500 mt-1">👆 Ver produtos</div>
                     </div>
                 </div>
             `).join('');
             
-            document.getElementById('top-revendedores').innerHTML = html || '<p class="text-gray-500 text-sm text-center py-4">Nenhum revendedor com produtos</p>';
+            document.getElementById('top-revendedores').innerHTML = html || '<p class="text-gray-500 text-sm text-center py-4">Nenhum revendedor com produtos consignados</p>';
         }
 
         // ========== ENTRADA DE PRODUTOS ==========
@@ -1249,6 +1848,9 @@
         function carregarProdutosRevendedor() {
             const nomeRev = document.getElementById('fechamento-revendedor').value;
             
+            console.log('=== CARREGANDO PRODUTOS DO REVENDEDOR ===');
+            console.log('Revendedor selecionado:', nomeRev);
+            
             if (!nomeRev) {
                 document.getElementById('info-revendedor').classList.add('hidden');
                 produtosConsignados = [];
@@ -1258,15 +1860,41 @@
             }
             
             const rev = revendedores.find(r => r.Nome === nomeRev);
-            produtosConsignados = inventory.filter(i => i.Revendedor === nomeRev && i.Status !== 'Vendido' && i.Status !== 'Em Estoque');
+            
+            if (!rev) {
+                console.error('Revendedor não encontrado!');
+                showToast('Revendedor não encontrado', 'error');
+                return;
+            }
+            
+            console.log('Dados do revendedor:', rev);
+            console.log('Total de itens no inventário:', inventory.length);
+            
+            // Produtos consignados = tem revendedor E não está vendido E não está em estoque
+            produtosConsignados = inventory.filter(i => {
+                const match = i.Revendedor && i.Revendedor === nomeRev && i.Status !== 'Vendido' && i.Status !== 'Em Estoque';
+                if (match) {
+                    console.log('Produto consignado encontrado:', i.Codigo, i.Descricao, i.Status, i.Revendedor);
+                }
+                return match;
+            });
+            
+            console.log('Total de produtos consignados:', produtosConsignados.length);
+            
             devolucoes = [];
             
             const valorTotal = produtosConsignados.reduce((sum, i) => sum + (parseFloat(i.Venda) || 0), 0);
+            
+            console.log('Valor total consignado:', valorTotal);
             
             document.getElementById('info-revendedor').classList.remove('hidden');
             document.getElementById('percentual-revendedor').textContent = `${rev.Percentual || 30}%`;
             document.getElementById('total-consignado').textContent = produtosConsignados.length;
             document.getElementById('valor-total-consignado').textContent = `R$ ${valorTotal.toFixed(2)}`;
+            
+            if (produtosConsignados.length === 0) {
+                showToast('Este revendedor não possui produtos consignados', 'warning');
+            }
             
             atualizarResumoFechamento();
             document.getElementById('fechamento-codigo').value = '';
@@ -1432,36 +2060,73 @@
                 filtered = filtered.filter(i => i.Status === 'Vendido');
             }
             
+            // Obter colunas visíveis ordenadas
+            const colunasVisiveis = Object.keys(colunasConfig)
+                .filter(key => colunasConfig[key].visivel)
+                .sort((a, b) => colunasConfig[a].ordem - colunasConfig[b].ordem);
+            
+            // Atualizar cabeçalho da tabela
+            const thead = document.querySelector('.data-table thead tr');
+            thead.innerHTML = colunasVisiveis.map(key => 
+                `<th>${colunasConfig[key].nome}</th>`
+            ).join('');
+            
+            // Atualizar corpo da tabela
             const tbody = document.getElementById('table-inventario');
             tbody.innerHTML = '';
             
             filtered.forEach(item => {
-                let statusClass = 'status-estoque', icon = '🏠';
-                if (item.Status === 'Vendido') {
-                    statusClass = 'status-vendido';
-                    icon = '💰';
-                } else if (item.Status !== 'Em Estoque') {
-                    statusClass = 'status-consignado';
-                    icon = '🤝';
-                }
-                
                 const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td><span class="code-link" onclick="editarItem(${item.rowId})">${item.Codigo}</span></td>
-                    <td>${item.Descricao || '-'}</td>
-                    <td><span class="category-badge">${item.Tipo || 'Geral'}</span></td>
-                    <td>${item.Categoria || '-'}</td>
-                    <td><span class="status-badge ${statusClass}">${icon} ${item.Status}</span></td>
-                    <td>${item.Revendedor || '-'}</td>
-                    <td>R$ ${(parseFloat(item.Custo) || 0).toFixed(2)}</td>
-                    <td class="text-amber-700 font-semibold">R$ ${(parseFloat(item.Venda) || 0).toFixed(2)}</td>
-                    <td>${item.Data ? new Date(item.Data).toLocaleDateString('pt-BR') : '-'}</td>
-                    <td>
-                        <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center cursor-pointer overflow-hidden border border-gray-200" onclick="verFoto('${item.Foto || ''}')">
-                            ${item.Foto ? `<img src="${item.Foto}" class="w-full h-full object-cover">` : '<i class="fas fa-image text-gray-400"></i>'}
-                        </div>
-                    </td>
-                `;
+                
+                colunasVisiveis.forEach(key => {
+                    const td = row.insertCell();
+                    
+                    switch(key) {
+                        case 'codigo':
+                            td.innerHTML = `<span class="code-link" onclick="editarItem(${item.rowId})">${item.Codigo}</span>`;
+                            break;
+                        case 'descricao':
+                            td.textContent = item.Descricao || '-';
+                            break;
+                        case 'tipo':
+                            td.innerHTML = `<span class="category-badge">${item.Tipo || 'Geral'}</span>`;
+                            break;
+                        case 'categoria':
+                            td.textContent = item.Categoria || '-';
+                            break;
+                        case 'status':
+                            let statusClass = 'status-estoque', icon = '🏠';
+                            if (item.Status === 'Vendido') {
+                                statusClass = 'status-vendido';
+                                icon = '💰';
+                            } else if (item.Status !== 'Em Estoque') {
+                                statusClass = 'status-consignado';
+                                icon = '🤝';
+                            }
+                            td.innerHTML = `<span class="status-badge ${statusClass}">${icon} ${item.Status}</span>`;
+                            break;
+                        case 'revendedor':
+                            td.textContent = item.Revendedor || '-';
+                            break;
+                        case 'custo':
+                            td.textContent = `R$ ${(parseFloat(item.Custo) || 0).toFixed(2)}`;
+                            break;
+                        case 'venda':
+                            td.className = 'text-amber-700 font-semibold';
+                            td.textContent = `R$ ${(parseFloat(item.Venda) || 0).toFixed(2)}`;
+                            break;
+                        case 'data':
+                            td.textContent = item.Data ? new Date(item.Data).toLocaleDateString('pt-BR') : '-';
+                            break;
+                        case 'foto':
+                            td.innerHTML = `
+                                <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center cursor-pointer overflow-hidden border border-gray-200" onclick="verFoto('${item.Foto || ''}')">
+                                    ${item.Foto ? `<img src="${item.Foto}" class="w-full h-full object-cover">` : '<i class="fas fa-image text-gray-400"></i>'}
+                                </div>
+                            `;
+                            break;
+                    }
+                });
             });
         }
 
@@ -1493,6 +2158,9 @@
         function editarItem(rowId) {
             const item = inventory.find(i => i.rowId === rowId);
             
+            console.log('=== EDITANDO ITEM ===');
+            console.log('Item:', item);
+            
             document.getElementById('edit-rowid').value = rowId;
             document.getElementById('edit-codigo').value = item.Codigo;
             document.getElementById('edit-descricao').value = item.Descricao || '';
@@ -1500,11 +2168,23 @@
             document.getElementById('edit-categoria').value = item.Categoria || '';
             document.getElementById('edit-custo').value = item.Custo || '';
             document.getElementById('edit-venda').value = item.Venda || '';
-            document.getElementById('edit-status').value = item.Status;
-            document.getElementById('edit-revendedor').value = item.Revendedor || '';
             document.getElementById('edit-foto').value = item.Foto || '';
             
+            // Detectar status correto
+            let status = item.Status;
+            if (item.Revendedor && item.Status !== 'Vendido' && item.Status !== 'Em Estoque') {
+                status = 'Consignado';
+                console.log('Item tem revendedor, forçando status para Consignado');
+            }
+            
+            document.getElementById('edit-status').value = status;
+            document.getElementById('edit-revendedor').value = item.Revendedor || '';
+            
+            console.log('Status definido:', status);
+            console.log('Revendedor:', item.Revendedor);
+            
             carregarCategoriasEdit();
+            atualizarCampoRevendedorEdit();
             abrirModal('modal-item');
         }
 
@@ -1522,6 +2202,20 @@
 
         async function salvarItem() {
             const rowId = document.getElementById('edit-rowid').value;
+            const status = document.getElementById('edit-status').value;
+            const revendedor = document.getElementById('edit-revendedor').value;
+            
+            console.log('=== SALVANDO ITEM ===');
+            console.log('RowId:', rowId);
+            console.log('Status:', status);
+            console.log('Revendedor:', revendedor);
+            
+            // Validação: Se status é Consignado, precisa ter revendedor
+            if (status === 'Consignado' && !revendedor) {
+                showToast('Selecione um revendedor para produtos consignados', 'warning');
+                return;
+            }
+            
             const data = {
                 action: rowId ? 'editInventario' : 'addInventario',
                 codigo: document.getElementById('edit-codigo').value,
@@ -1530,12 +2224,19 @@
                 categoria: document.getElementById('edit-categoria').value,
                 custo: parseFloat(document.getElementById('edit-custo').value) || 0,
                 venda: parseFloat(document.getElementById('edit-venda').value) || 0,
-                status: document.getElementById('edit-status').value,
-                revendedor: document.getElementById('edit-revendedor').value,
+                status: status,
+                revendedor: status === 'Consignado' ? revendedor : '',
                 foto: document.getElementById('edit-foto').value
             };
             
             if (rowId) data.rowId = parseInt(rowId);
+            
+            console.log('Dados a enviar:', data);
+            
+            if (!scriptUrl) {
+                showToast('Configure a URL do servidor primeiro', 'error');
+                return;
+            }
             
             try {
                 const res = await fetch(scriptUrl, {
@@ -1544,17 +2245,41 @@
                     body: JSON.stringify(data)
                 });
                 
-                const result = await res.json();
+                console.log('Response status:', res.status);
+                const text = await res.text();
+                console.log('Response text:', text);
+                
+                const result = JSON.parse(text);
+                console.log('Result:', result);
                 
                 if (result.success) {
                     showToast('Item salvo com sucesso!', 'success');
                     fecharModal('modal-item');
                     loadData();
+                    renderInventario();
                 } else {
-                    showToast('Erro: ' + result.error, 'error');
+                    showToast('Erro: ' + (result.error || 'Erro desconhecido'), 'error');
                 }
             } catch (error) {
-                showToast('Erro ao salvar item', 'error');
+                console.error('Erro ao salvar:', error);
+                showToast('Erro ao salvar item: ' + error.message, 'error');
+            }
+        }
+        
+        function atualizarCampoRevendedorEdit() {
+            const status = document.getElementById('edit-status').value;
+            const revendedorSelect = document.getElementById('edit-revendedor');
+            const container = document.getElementById('edit-revendedor-container');
+            
+            if (status === 'Consignado') {
+                container.classList.remove('opacity-50');
+                revendedorSelect.disabled = false;
+                revendedorSelect.required = true;
+            } else {
+                container.classList.add('opacity-50');
+                revendedorSelect.disabled = true;
+                revendedorSelect.required = false;
+                revendedorSelect.value = '';
             }
         }
 
@@ -1679,6 +2404,102 @@
             });
         }
 
+        // ========== STATUS ==========
+        function renderStatus() {
+            const statusPadrao = ['Em Estoque', 'Consignado', 'Vendido'];
+            
+            const html = statusList.map(status => {
+                const isPadrao = statusPadrao.includes(status);
+                return `
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-circle-dot text-${getStatusColor(status)}-600"></i>
+                            <span class="font-medium text-gray-800">${status}</span>
+                            ${isPadrao ? '<span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded ml-2">Padrão</span>' : ''}
+                        </div>
+                        ${!isPadrao ? `
+                            <button onclick="removerStatus('${status}')" class="text-red-600 hover:text-red-700 text-sm">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('lista-status').innerHTML = html;
+        }
+        
+        function getStatusColor(status) {
+            if (status === 'Em Estoque') return 'green';
+            if (status === 'Consignado') return 'purple';
+            if (status === 'Vendido') return 'red';
+            return 'gray';
+        }
+        
+        function addStatus() {
+            const input = document.getElementById('novo-status');
+            const novoStatus = input.value.trim();
+            
+            if (!novoStatus) {
+                showToast('Digite o nome do status', 'warning');
+                return;
+            }
+            
+            if (statusList.includes(novoStatus)) {
+                showToast('Este status já existe', 'warning');
+                return;
+            }
+            
+            statusList.push(novoStatus);
+            localStorage.setItem('luxus_status', JSON.stringify(statusList));
+            
+            input.value = '';
+            renderStatus();
+            atualizarSelectsStatus();
+            
+            showToast('Status adicionado com sucesso!', 'success');
+        }
+        
+        function removerStatus(status) {
+            if (confirm(`Deseja realmente remover o status "${status}"?`)) {
+                // Verificar se há produtos usando este status
+                const produtosUsando = inventory.filter(i => i.Status === status);
+                
+                if (produtosUsando.length > 0) {
+                    showToast(`Não é possível remover. ${produtosUsando.length} produto(s) usando este status.`, 'error');
+                    return;
+                }
+                
+                statusList = statusList.filter(s => s !== status);
+                localStorage.setItem('luxus_status', JSON.stringify(statusList));
+                
+                renderStatus();
+                atualizarSelectsStatus();
+                
+                showToast('Status removido com sucesso!', 'success');
+            }
+        }
+        
+        function atualizarSelectsStatus() {
+            const selects = ['edit-status'];
+            const options = statusList.map(s => `<option value="${s}">${s}</option>`).join('');
+            
+            selects.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = options;
+            });
+        }
+        
+        function carregarStatusSalvos() {
+            const saved = localStorage.getItem('luxus_status');
+            if (saved) {
+                statusList = JSON.parse(saved);
+            }
+            renderStatus();
+            atualizarSelectsStatus();
+        }
+
+        // ========== CATEGORIAS ==========
         async function addCategoria(tipo) {
             const inputId = tipo === 'Semi Joia' ? 'nova-cat-semijoia' : 'nova-cat-perfume';
             const nome = document.getElementById(inputId).value.trim();
@@ -1743,6 +2564,8 @@
             const url = document.getElementById('config-script-url').value.trim();
             const btnTestar = document.getElementById('btn-testar');
             const statusDiv = document.getElementById('config-status');
+            const responseDiv = document.getElementById('server-response');
+            const responseContent = document.getElementById('server-response-content');
             
             if (!url) {
                 showConfigStatus('Digite a URL primeiro!', 'error');
@@ -1757,17 +2580,38 @@
             btnTestar.disabled = true;
             btnTestar.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i>Testando...';
             showConfigStatus('Conectando ao servidor...', 'loading');
+            if (responseDiv) responseDiv.classList.add('hidden');
+            
+            console.log('=== TESTE DE CONEXÃO ===');
+            console.log('URL:', url);
             
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000);
                 
-                const response = await fetch(url + '?action=getInventario', {
-                    signal: controller.signal
+                const testUrl = url + '?action=getInventario';
+                console.log('URL completa:', testUrl);
+                
+                const response = await fetch(testUrl, {
+                    signal: controller.signal,
+                    method: 'GET',
+                    cache: 'no-cache'
                 });
                 clearTimeout(timeoutId);
                 
-                const data = await response.json();
+                console.log('Status:', response.status);
+                console.log('OK:', response.ok);
+                
+                const text = await response.text();
+                console.log('Response:', text);
+                
+                // Mostrar resposta
+                if (responseContent) {
+                    responseContent.textContent = text;
+                    responseDiv.classList.remove('hidden');
+                }
+                
+                const data = JSON.parse(text);
                 
                 if (response.ok && (Array.isArray(data) || data.status === 'success')) {
                     showConfigStatus(`✓ Conexão bem-sucedida! ${Array.isArray(data) ? data.length + ' itens encontrados' : 'Servidor online'}`, 'success');
@@ -1823,14 +2667,24 @@
 
         // ========== UTILITÁRIOS ==========
         function carregarRevendedoresSelects() {
-            const selects = ['entrada-revendedor', 'edit-revendedor'];
-            const options = '<option value="">Em Estoque</option>' + 
-                revendedores.map(r => `<option value="${r.Nome}">${r.Nome}</option>`).join('');
+            console.log('Carregando revendedores nos selects...');
+            console.log('Total de revendedores:', revendedores.length);
             
-            selects.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.innerHTML = options;
-            });
+            // Select de entrada (pode deixar em estoque)
+            const entradaSelect = document.getElementById('entrada-revendedor');
+            if (entradaSelect) {
+                entradaSelect.innerHTML = '<option value="">Em Estoque</option>' + 
+                    revendedores.map(r => `<option value="${r.Nome}">${r.Nome}</option>`).join('');
+            }
+            
+            // Select de edição (precisa selecionar revendedor se consignado)
+            const editSelect = document.getElementById('edit-revendedor');
+            if (editSelect) {
+                editSelect.innerHTML = '<option value="">Selecione um revendedor...</option>' + 
+                    revendedores.map(r => `<option value="${r.Nome}">${r.Nome}</option>`).join('');
+            }
+            
+            console.log('Revendedores carregados nos selects');
         }
 
         function abrirModal(id) {
@@ -1860,11 +2714,155 @@
             setTimeout(() => toast.classList.add('hidden'), 3000);
         }
         
+        // ========== CONFIGURAÇÃO DE COLUNAS ==========
+        function carregarConfigColunas() {
+            const saved = localStorage.getItem('luxus_colunas');
+            if (saved) {
+                colunasConfig = JSON.parse(saved);
+            }
+        }
+        
+        function salvarConfigColunas() {
+            localStorage.setItem('luxus_colunas', JSON.stringify(colunasConfig));
+        }
+        
+        function abrirModalColunas() {
+            renderListaColunas();
+            abrirModal('modal-colunas');
+        }
+        
+        function renderListaColunas() {
+            const colunas = Object.keys(colunasConfig)
+                .sort((a, b) => colunasConfig[a].ordem - colunasConfig[b].ordem);
+            
+            const html = colunas.map((key, index) => {
+                const col = colunasConfig[key];
+                return `
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200" draggable="true" data-coluna="${key}">
+                        <i class="fas fa-grip-vertical text-gray-400 cursor-move"></i>
+                        
+                        <label class="flex items-center flex-1 cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                ${col.visivel ? 'checked' : ''} 
+                                onchange="toggleColuna('${key}')"
+                                class="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500"
+                            >
+                            <span class="ml-3 font-medium text-gray-800">${col.nome}</span>
+                        </label>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('lista-colunas').innerHTML = html;
+            
+            // Adicionar drag and drop
+            initDragAndDrop();
+        }
+        
+        function initDragAndDrop() {
+            const items = document.querySelectorAll('[draggable="true"]');
+            let draggedItem = null;
+            
+            items.forEach(item => {
+                item.addEventListener('dragstart', function() {
+                    draggedItem = this;
+                    this.style.opacity = '0.5';
+                });
+                
+                item.addEventListener('dragend', function() {
+                    this.style.opacity = '1';
+                });
+                
+                item.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                });
+                
+                item.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    if (draggedItem !== this) {
+                        // Trocar posições
+                        const allItems = [...document.querySelectorAll('[draggable="true"]')];
+                        const draggedIndex = allItems.indexOf(draggedItem);
+                        const targetIndex = allItems.indexOf(this);
+                        
+                        if (draggedIndex < targetIndex) {
+                            this.parentNode.insertBefore(draggedItem, this.nextSibling);
+                        } else {
+                            this.parentNode.insertBefore(draggedItem, this);
+                        }
+                        
+                        // Atualizar ordem no config
+                        atualizarOrdemColunas();
+                    }
+                });
+            });
+        }
+        
+        function atualizarOrdemColunas() {
+            const items = document.querySelectorAll('[draggable="true"]');
+            items.forEach((item, index) => {
+                const key = item.dataset.coluna;
+                colunasConfig[key].ordem = index;
+            });
+        }
+        
+        function toggleColuna(key) {
+            colunasConfig[key].visivel = !colunasConfig[key].visivel;
+        }
+        
+        function aplicarColunas() {
+            atualizarOrdemColunas();
+            salvarConfigColunas();
+            renderInventario();
+            fecharModal('modal-colunas');
+            showToast('Configuração de colunas aplicada!', 'success');
+        }
+        
+        function restaurarColunasPadrao() {
+            if (confirm('Restaurar configuração padrão das colunas?')) {
+                colunasConfig = {
+                    'codigo': { nome: 'Código', visivel: true, ordem: 0 },
+                    'descricao': { nome: 'Descrição', visivel: true, ordem: 1 },
+                    'tipo': { nome: 'Tipo', visivel: true, ordem: 2 },
+                    'categoria': { nome: 'Categoria', visivel: true, ordem: 3 },
+                    'status': { nome: 'Status', visivel: true, ordem: 4 },
+                    'revendedor': { nome: 'Revendedor', visivel: true, ordem: 5 },
+                    'custo': { nome: 'Custo', visivel: true, ordem: 6 },
+                    'venda': { nome: 'Venda', visivel: true, ordem: 7 },
+                    'data': { nome: 'Data', visivel: true, ordem: 8 },
+                    'foto': { nome: 'Foto', visivel: true, ordem: 9 }
+                };
+                renderListaColunas();
+                showToast('Configuração restaurada!', 'success');
+            }
+        }
+
         function logout() {
             if (confirm('Deseja sair do sistema?')) {
                 localStorage.removeItem('luxus_logged_in');
                 localStorage.removeItem('luxus_user');
                 window.location.href = 'config.html';
+            }
+        }
+        
+        // Filtrar dashboard e ir para inventário
+        function filtrarDashboard(filtro) {
+            currentFilter = filtro;
+            switchTab('inventario');
+            renderInventario();
+        }
+        
+        // Ver produtos de um revendedor específico
+        function verProdutosRevendedor(nomeRev) {
+            // Ir para o inventário e filtrar por esse revendedor
+            switchTab('inventario');
+            
+            // Filtrar produtos desse revendedor
+            const search = document.getElementById('search');
+            if (search) {
+                search.value = nomeRev;
+                renderInventario();
             }
         }
     </script>
