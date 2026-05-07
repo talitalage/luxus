@@ -271,12 +271,12 @@
             font-weight: 600;
         }
         
-                        /* Header ESCURO COMPACTO */
+                        /* Header ESCURO - altura equilibrada */
         .header-dark {
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
             padding: 0;
-            height: 56px;
+            height: 72px;
             display: flex;
             align-items: center;
         }
@@ -360,14 +360,14 @@
             box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1) !important;
         }
         
-                        /* Nav tabs compactos */
+                        /* Nav tabs altura equilibrada */
         .nav-tab {
             background: transparent;
             color: rgba(255, 255, 255, 0.65);
             border: none;
             border-bottom: 2px solid transparent;
             padding: 0 1rem;
-            height: 56px;
+            height: 72px;
             font-weight: 500;
             font-size: 0.85rem;
             transition: all 0.2s ease;
@@ -1446,7 +1446,7 @@
         <div class="modal-content">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-bold text-gray-800">Editar Item</h3>
-                <button onclick="fecharModal('modal-item')" class="text-gray-400 hover:text-gray-600 text-2xl">
+                <button onclick="fecharModal('modal-item')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;line-height:1;padding:4px;" onmouseover="this.style.color='var(--gray-700)'" onmouseout="this.style.color='var(--gray-400)'">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -1531,7 +1531,7 @@
         <div class="modal-content">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-bold text-gray-800" id="titulo-modal-rev">Novo Revendedor</h3>
-                <button onclick="fecharModal('modal-revendedor')" class="text-gray-400 hover:text-gray-600 text-2xl">
+                <button onclick="fecharModal('modal-revendedor')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;line-height:1;padding:4px;" onmouseover="this.style.color='var(--gray-700)'" onmouseout="this.style.color='var(--gray-400)'">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -1571,8 +1571,8 @@
         <div class="modal-content max-w-md">
             <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
                 <h3 class="text-xl font-semibold text-gray-800">Configurar Colunas</h3>
-                <button onclick="fecharModal('modal-colunas')" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all">
-                    <i class="fas fa-times text-lg"></i>
+                <button onclick="fecharModal('modal-colunas')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;line-height:1;padding:4px;" onmouseover="this.style.color='var(--gray-700)'" onmouseout="this.style.color='var(--gray-400)'">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
             
@@ -2426,11 +2426,8 @@
         }
 
         function abrirModalNovoItem() {
-            const codigo = prompt('Digite o código do novo item:');
-            if (!codigo) return;
-            
             document.getElementById('edit-rowid').value = '';
-            document.getElementById('edit-codigo').value = codigo;
+            document.getElementById('edit-codigo').value = '';
             document.getElementById('edit-descricao').value = '';
             document.getElementById('edit-tipo').value = '';
             document.getElementById('edit-categoria').value = '';
@@ -2450,7 +2447,7 @@
             console.log('Item:', item);
             
             document.getElementById('edit-rowid').value = rowId;
-            document.getElementById('edit-codigo').value = item.Codigo;
+            document.getElementById('edit-codigo').value = item.Codigo || '';
             document.getElementById('edit-descricao').value = item.Descricao || '';
             document.getElementById('edit-tipo').value = item.Tipo || '';
             document.getElementById('edit-categoria').value = item.Categoria || '';
@@ -2589,12 +2586,12 @@
                             ${rev.Contato || 'Sem contato'} • ${rev.Percentual || 30}% comissão
                         </div>
                     </div>
-                    <div class="flex gap-3">
-                        <button onclick="editarRevendedor(${rev.rowId})" class="text-gray-400 hover:text-blue-600 transition-colors" title="Editar">
-                            <i class="fas fa-pen text-sm"></i>
+                    <div style="display:flex;gap:6px;">
+                        <button onclick="editarRevendedor(${rev.rowId})" style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:2px 4px;" title="Editar" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='var(--gray-400)'">
+                            <i class="fas fa-pen" style="font-size:11px;"></i>
                         </button>
-                        <button onclick="excluirRevendedor(${rev.rowId})" class="text-gray-400 hover:text-red-600 transition-colors" title="Excluir">
-                            <i class="fas fa-trash text-sm"></i>
+                        <button onclick="excluirRevendedor(${rev.rowId})" style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:2px 4px;" title="Excluir" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--gray-400)'">
+                            <i class="fas fa-trash" style="font-size:11px;"></i>
                         </button>
                     </div>
                 </div>
@@ -2699,31 +2696,47 @@
         }
 
         // ========== STATUS ==========
-                        function renderStatus() {
-            const statusPadrao = ['Em Estoque', 'Consignado', 'Vendido'];
+                        let statusPadraoConfig = JSON.parse(localStorage.getItem('luxus_status_padrao') || '["Em Estoque","Consignado","Vendido"]');
+        
+        function renderStatus() {
             const html = statusList.map(status => {
-                const isPadrao = statusPadrao.includes(status);
+                const isPadrao = statusPadraoConfig.includes(status);
                 const cor = status === 'Em Estoque' ? '#10b981' : status === 'Consignado' ? '#3b82f6' : status === 'Vendido' ? '#14b8a6' : '#64748b';
-                const safeId = status.replace(/ /g,'_');
                 return `
                     <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:white;border:1px solid var(--gray-200);border-radius:6px;">
                         <div style="display:flex;align-items:center;gap:8px;">
                             <div style="width:8px;height:8px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
                             <span style="font-size:13px;color:var(--gray-700);">${status}</span>
-                            ${isPadrao ? '<span style="font-size:10px;background:var(--gray-100);color:var(--gray-500);padding:1px 6px;border-radius:3px;">Padrão</span>' : ''}
                         </div>
-                        <div style="display:flex;gap:6px;">
-                            <button onclick="editarStatus('${status}')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:2px 4px;border-radius:4px;" title="Editar" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='var(--gray-400)'">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <label title="${isPadrao ? 'Remover dos padrões' : 'Marcar como padrão'}" style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+                                <span style="font-size:10px;color:var(--gray-400);">Padrão</span>
+                                <div class="toggle-switch" style="transform:scale(0.75);transform-origin:right center;">
+                                    <input type="checkbox" ${isPadrao ? 'checked' : ''} onchange="toggleStatusPadrao('${status}', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </div>
+                            </label>
+                            <button onclick="editarStatus('${status}')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:2px 4px;" title="Editar" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='var(--gray-400)'">
                                 <i class="fas fa-pen" style="font-size:11px;"></i>
                             </button>
-                            ${!isPadrao ? `<button onclick="removerStatus('${status}')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:2px 4px;border-radius:4px;" title="Remover" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--gray-400)'">
+                            <button onclick="removerStatus('${status}')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:2px 4px;" title="Remover" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--gray-400)'">
                                 <i class="fas fa-trash" style="font-size:11px;"></i>
-                            </button>` : ''}
+                            </button>
                         </div>
                     </div>
                 `;
             }).join('');
             document.getElementById('lista-status').innerHTML = html;
+        }
+        
+        function toggleStatusPadrao(status, isPadrao) {
+            if (isPadrao) {
+                if (!statusPadraoConfig.includes(status)) statusPadraoConfig.push(status);
+            } else {
+                statusPadraoConfig = statusPadraoConfig.filter(s => s !== status);
+            }
+            localStorage.setItem('luxus_status_padrao', JSON.stringify(statusPadraoConfig));
+            showToast(isPadrao ? `"${status}" agora é padrão` : `"${status}" removido dos padrões`, 'success');
         }
         
         function getStatusColor(status) {
@@ -2800,27 +2813,29 @@
         async function addCategoria(tipo) {
             const inputId = tipo === 'Semi Joia' ? 'nova-cat-semijoia' : 'nova-cat-perfume';
             const nome = document.getElementById(inputId).value.trim();
-            
             if (!nome) return;
             
-            try {
-                const res = await fetch(scriptUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'addCategoria', tipo, nome })
-                });
-                
-                const result = await res.json();
-                
-                if (result.success) {
-                    showToast('Categoria adicionada', 'success');
-                    document.getElementById(inputId).value = '';
-                    loadData();
-                } else {
-                    showToast('Erro ao adicionar categoria', 'error');
-                }
-            } catch (error) {
-                showToast('Erro ao adicionar categoria', 'error');
+            // Salvar localmente sempre
+            if (!categorias[tipo]) categorias[tipo] = [];
+            if (categorias[tipo].includes(nome)) {
+                showToast('Categoria já existe', 'warning');
+                return;
+            }
+            categorias[tipo].push(nome);
+            localStorage.setItem('luxus_categorias', JSON.stringify(categorias));
+            document.getElementById(inputId).value = '';
+            renderCategorias();
+            showToast('Categoria adicionada!', 'success');
+            
+            // Tentar sync com servidor em background
+            if (scriptUrl) {
+                try {
+                    await fetch(scriptUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'addCategoria', tipo, nome })
+                    });
+                } catch(e) { /* offline - ok, já salvou local */ }
             }
         }
 
