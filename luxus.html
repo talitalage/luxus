@@ -930,17 +930,18 @@
             <div style="max-width:1280px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;gap:1rem;">
                 <!-- Logo + Título editável -->
                 <div style="display:flex;align-items:center;gap:0.75rem;cursor:pointer;flex-shrink:0;" onclick="switchTab('dashboard')">
-                    <div style="width:36px;height:36px;background:white;border-radius:8px;overflow:hidden;flex-shrink:0;">
-                        <img src="https://i.ibb.co/6R29d3Dj/luxus-logo.png" alt="Luxus" style="width:100%;height:100%;object-fit:contain;">
-                    </div>
+                    <!-- Logo só com o frasco, fundo transparente -->
+                    <img src="https://i.ibb.co/6R29d3Dj/luxus-logo.png" alt="Luxus"
+                         style="height:42px;width:auto;object-fit:contain;filter:drop-shadow(0 1px 4px rgba(0,0,0,0.3));"
+                         onerror="this.style.display='none'">
                     <div>
                         <div style="display:flex;align-items:center;gap:0.5rem;">
-                            <span id="site-title-display" class="text-white font-semibold" style="font-size:1rem;letter-spacing:0.5px;">LUXUS</span>
-                            <button onclick="event.stopPropagation();abrirEditarTitulo()" style="background:transparent;border:none;cursor:pointer;padding:2px 4px;border-radius:4px;opacity:0.6;" title="Editar título">
-                                <i class="fas fa-pen" style="color:rgba(255,255,255,0.7);font-size:10px;"></i>
+                            <span id="site-title-display" style="color:white;font-weight:600;font-size:1rem;letter-spacing:0.5px;">LUXUS</span>
+                            <button onclick="event.stopPropagation();abrirEditarTitulo()" style="background:transparent;border:none;cursor:pointer;padding:2px 4px;opacity:0.5;" title="Editar título">
+                                <i class="fas fa-pen" style="color:white;font-size:9px;"></i>
                             </button>
                         </div>
-                        <div style="font-size:0.65rem;color:rgba(255,255,255,0.5);letter-spacing:1px;" id="site-subtitle-display">JOIAS & PERFUMES</div>
+                        <div id="site-subtitle-display" style="font-size:0.65rem;color:rgba(255,255,255,0.5);letter-spacing:1px;">JOIAS & PERFUMES</div>
                     </div>
                 </div>
                 
@@ -1063,29 +1064,20 @@
                     </div>
                 </div>
 
-                <!-- Estatísticas por Tipo -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <div class="card-light p-6">
-                        <h3 class="section-title">
-                            <i class="fas fa-ring"></i>Semi Joias
-                        </h3>
-                        <div id="stats-semijoia" class="space-y-3"></div>
+                <!-- Estatísticas por Tipo + Revendedores -->
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;max-width:960px;">
+                    <div class="card-light p-5">
+                        <h3 class="section-title"><i class="fas fa-ring"></i>Semi Joias</h3>
+                        <div id="stats-semijoia" class="space-y-2"></div>
                     </div>
-                    
-                    <div class="card-light p-6">
-                        <h3 class="section-title">
-                            <i class="fas fa-spray-can"></i>Perfumes
-                        </h3>
-                        <div id="stats-perfume" class="space-y-3"></div>
+                    <div class="card-light p-5">
+                        <h3 class="section-title"><i class="fas fa-spray-can"></i>Perfumes</h3>
+                        <div id="stats-perfume" class="space-y-2"></div>
                     </div>
-                </div>
-
-                <!-- Top Revendedores -->
-                <div class="card-light p-6">
-                    <h3 class="section-title">
-                        <i class="fas fa-users"></i>Revendedores Ativos
-                    </h3>
-                    <div id="top-revendedores" class="space-y-3"></div>
+                    <div class="card-light p-5">
+                        <h3 class="section-title"><i class="fas fa-users"></i>Revendedores Ativos</h3>
+                        <div id="top-revendedores" class="space-y-2"></div>
+                    </div>
                 </div>
             </div>
 
@@ -1171,6 +1163,7 @@
 
             <!-- TAB: Fechamento -->
             <div id="content-fechamento" class="tab-content hidden">
+                <div style="max-width:860px;">
                 <div class="card-light p-6 mb-6">
                     <h3 class="section-title">
                         <i class="fas fa-calculator"></i>Fechamento de Revendedor
@@ -1264,6 +1257,7 @@
                         </div>
                     </div>
                 </div>
+                </div><!-- /max-width -->
             </div>
 
             <!-- TAB: Inventário -->
