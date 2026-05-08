@@ -294,18 +294,18 @@
             font-size: 0.875rem;
         }
         
-        /* Cards limpos */
+        /* Cards modernos — sombra suave sem borda rígida */
         .card-light {
             background: var(--white);
-            border: 1px solid var(--gray-200);
-            border-radius: 8px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
             transition: all 0.2s ease;
         }
         
         .card-light:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-            border-color: var(--gray-300);
+            box-shadow: 0 4px 16px rgba(30,64,175,0.08), 0 1px 4px rgba(0,0,0,0.04);
+            border-color: rgba(30,64,175,0.12);
         }
         
         /* Botões minimalistas */
@@ -413,7 +413,8 @@
             left: 0;
             right: 0;
             height: 3px;
-            background: var(--primary);
+            background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+            border-radius: 8px 8px 0 0;
         }
         
         
@@ -526,22 +527,24 @@
         }
         
                 /* Filter chips LIMPOS */
+        /* Chips compactos — estilo pill moderno */
         .filter-chip {
-            padding: 0.625rem 1.25rem;
-            border-radius: 6px;
-            font-size: 0.875rem;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 12px;
             font-weight: 500;
             cursor: pointer;
             background: var(--white);
-            border: 1px solid var(--gray-300);
-            color: var(--gray-700);
-            transition: all 0.2s ease;
+            border: 1.5px solid var(--gray-200);
+            color: var(--gray-600);
+            transition: all 0.15s ease;
+            line-height: 1.6;
         }
         
         .filter-chip:hover {
-            background: var(--gray-50);
             border-color: var(--primary);
             color: var(--primary);
+            background: #eff6ff;
         }
         
         .filter-chip.active {
@@ -756,8 +759,8 @@
             font-weight: 600;
         }
         
-        /* Filter chips ativos */
-        .filter-chip.active {
+        /* Filter chips ativos — mantido acima */
+        /*.filter-chip.active {
             background: linear-gradient(135deg, var(--amethyst), var(--emerald)) !important;
             color: white !important;
             border: none !important;
@@ -986,9 +989,6 @@
                     <button onclick="switchTab('entrada')" id="tab-entrada" class="nav-tab">
                         <i class="fas fa-exchange-alt mr-2"></i>Operações
                     </button>
-                    <button onclick="switchTab('inventario')" id="tab-inventario" class="nav-tab">
-                        <i class="fas fa-gem mr-2"></i>Inventário
-                    </button>
                     <button onclick="switchTab('config')" id="tab-config" class="nav-tab">
                         <i class="fas fa-cog mr-2"></i>Configurações
                     </button>
@@ -1131,38 +1131,51 @@
 
                 <!-- Tabela de inventário embutida no dashboard -->
                 <div class="card-light">
-                    <!-- Barra de controles -->
-                    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--gray-200);flex-wrap:wrap;gap:10px;">
-                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                            <!-- Chips de status -->
-                            <button class="filter-chip active" id="dash-fstatus-all" onclick="dashSetFilter('all',event)">Todos</button>
-                            <button class="filter-chip" id="dash-fstatus-estoque" onclick="dashSetFilter('estoque',event)">Em Estoque</button>
-                            <button class="filter-chip" id="dash-fstatus-consignado" onclick="dashSetFilter('consignado',event)">Consignado</button>
-                            <button class="filter-chip" id="dash-fstatus-vendido" onclick="dashSetFilter('vendido',event)">Vendidos</button>
-                            <div style="width:1px;height:20px;background:var(--gray-200);margin:0 4px;"></div>
-                            <!-- Chips de tipo -->
-                            <button class="filter-chip active" id="dash-ftipo-all" onclick="dashSetTipo('all',event)">Todos os tipos</button>
+                    <!-- Barra de filtros unificada -->
+                    <div style="padding:12px 16px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                            <!-- Status -->
+                            <span style="font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.5px;margin-right:2px;">Status</span>
+                            <button class="filter-chip active" id="dash-fstatus-all" onclick="dashToggleStatus('all')">Todos</button>
+                            <button class="filter-chip" id="dash-fstatus-estoque" onclick="dashToggleStatus('estoque')">Em Estoque</button>
+                            <button class="filter-chip" id="dash-fstatus-consignado" onclick="dashToggleStatus('consignado')">Consignado</button>
+                            <button class="filter-chip" id="dash-fstatus-vendido" onclick="dashToggleStatus('vendido')">Vendidos</button>
+
+                            <div style="width:1px;height:16px;background:var(--gray-200);margin:0 4px;"></div>
+
+                            <!-- Tipo -->
+                            <span style="font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.5px;margin-right:2px;">Tipo</span>
+                            <button class="filter-chip active" id="dash-ftipo-all" onclick="dashSetTipo('all',event)">Todos</button>
                             <button class="filter-chip" id="dash-ftipo-sj" onclick="dashSetTipo('Semi Joia',event)">Semi Joia</button>
                             <button class="filter-chip" id="dash-ftipo-pf" onclick="dashSetTipo('Perfume',event)">Perfume</button>
+
+                            <div style="width:1px;height:16px;background:var(--gray-200);margin:0 4px;"></div>
+
+                            <!-- Categoria — dinâmico -->
+                            <span style="font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.5px;margin-right:2px;">Categoria</span>
+                            <div id="dash-chips-cat" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+
+                            <!-- Chip revendedor ativo (inline, sem banner separado) -->
+                            <div id="dash-chip-rev" style="display:none;align-items:center;">
+                                <div style="width:1px;height:16px;background:var(--gray-200);margin:0 4px;"></div>
+                                <button class="filter-chip active" style="display:flex;align-items:center;gap:4px;background:#dbeafe;color:#1e40af;border-color:#93c5fd;" onclick="dashLimparRev()">
+                                    <i class="fas fa-user" style="font-size:9px;"></i>
+                                    <span id="dash-label-rev">—</span>
+                                    <i class="fas fa-times" style="font-size:9px;opacity:0.7;"></i>
+                                </button>
+                            </div>
                         </div>
                         <div style="display:flex;align-items:center;gap:8px;">
-                            <input type="text" id="dash-search" placeholder="Buscar..." 
-                                   style="padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:13px;width:180px;"
+                            <input type="text" id="dash-search" placeholder="Buscar..."
+                                   style="padding:5px 10px;border:1px solid var(--gray-300);border-radius:20px;font-size:12px;width:160px;outline:none;"
                                    oninput="renderDashTable()">
-                            <button onclick="abrirModalNovoItem()" class="btn-primary" style="font-size:13px;padding:6px 14px;">
+                            <button onclick="abrirModalColunas()" class="btn-secondary" style="font-size:12px;padding:5px 10px;" title="Configurar colunas">
+                                <i class="fas fa-columns mr-1"></i>Colunas
+                            </button>
+                            <button onclick="abrirModalNovoItem()" class="btn-primary" style="font-size:12px;padding:5px 12px;">
                                 <i class="fas fa-plus mr-1"></i>Novo
                             </button>
                         </div>
-                    </div>
-                    <!-- Banner filtro revendedor ativo (dashboard) -->
-                    <div id="dash-banner-rev" style="display:none;background:#eff6ff;border-bottom:1px solid #bfdbfe;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;">
-                        <span style="font-size:13px;color:#1e40af;">
-                            <i class="fas fa-filter" style="margin-right:6px;"></i>
-                            Revendedor: <strong id="dash-label-rev"></strong>
-                        </span>
-                        <button onclick="dashLimparRev()" style="background:none;border:none;cursor:pointer;font-size:12px;color:#3b82f6;">
-                            <i class="fas fa-times mr-1"></i>Limpar
-                        </button>
                     </div>
                     <!-- Tabela -->
                     <div style="overflow-x:auto;">
@@ -1202,6 +1215,10 @@
                                 <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;"><i class="fas fa-barcode mr-1"></i>Código do Produto</label>
                                 <input type="text" id="entrada-codigo" class="w-full barcode-input" placeholder="Bipe ou digite o código">
                             </div>
+                            <div>
+                                <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Descrição</label>
+                                <input type="text" id="entrada-descricao" class="w-full" placeholder="Ex: Colar Dourado">
+                            </div>
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
                                 <div>
                                     <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Tipo</label>
@@ -1215,10 +1232,6 @@
                                     <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Categoria</label>
                                     <select id="entrada-categoria" class="w-full"></select>
                                 </div>
-                            </div>
-                            <div>
-                                <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Descrição</label>
-                                <input type="text" id="entrada-descricao" class="w-full" placeholder="Ex: Colar Dourado">
                             </div>
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
                                 <div>
@@ -2140,6 +2153,9 @@
             // Top revendedores
             renderTopRevendedores();
 
+            // Chips de categoria dinâmicos
+            renderCatChips();
+
             // Tabela embutida
             renderDashTable();
         }
@@ -2147,18 +2163,48 @@
         function renderStatsPorTipo(tipo, containerId) {
             const items = inventory.filter(i => i.Tipo === tipo);
             const cats = categorias[tipo] || [];
-            
+
             const html = cats.map(cat => {
                 const catItems = items.filter(i => i.Categoria === cat);
+                const isActive = dashCatFilter === cat && (dashTipoFilter === tipo || dashTipoFilter === 'all');
                 return `
-                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                        <span class="text-sm text-gray-700">${cat}</span>
-                        <span class="font-bold text-amber-600">${catItems.length}</span>
+                    <div onclick="dashClicarCategoria('${tipo}','${cat.replace(/'/g,"\'")}')"
+                         style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;
+                                border-radius:6px;cursor:pointer;transition:all 0.15s;
+                                background:${isActive ? '#eff6ff' : 'var(--gray-50)'};
+                                border:1.5px solid ${isActive ? 'var(--primary)' : 'transparent'};"
+                         onmouseover="this.style.background='#eff6ff';this.style.borderColor='#bfdbfe';"
+                         onmouseout="this.style.background='${isActive ? '#eff6ff' : 'var(--gray-50)';}';this.style.borderColor='${isActive ? 'var(--primary)' : 'transparent'}';">
+                        <span style="font-size:13px;color:${isActive ? 'var(--primary)' : 'var(--gray-700)'};font-weight:${isActive ? '600' : '400'};">${cat}</span>
+                        <span style="font-size:13px;font-weight:700;color:${catItems.length > 0 ? '#f59e0b' : 'var(--gray-400)'};">${catItems.length}</span>
                     </div>
                 `;
             }).join('');
-            
-            document.getElementById(containerId).innerHTML = html || '<p class="text-gray-500 text-sm text-center py-4">Nenhuma categoria</p>';
+
+            document.getElementById(containerId).innerHTML = html || '<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:12px 0;">Nenhuma categoria</p>';
+        }
+
+        function dashClicarCategoria(tipo, cat) {
+            // Ativar tipo correspondente
+            dashTipoFilter = tipo;
+            ['dash-ftipo-all','dash-ftipo-sj','dash-ftipo-pf'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.classList.remove('active');
+            });
+            const tipoBtnId = tipo === 'Semi Joia' ? 'dash-ftipo-sj' : 'dash-ftipo-pf';
+            document.getElementById(tipoBtnId)?.classList.add('active');
+            document.getElementById('dash-ftipo-all')?.classList.remove('active');
+
+            // Toggle da categoria
+            dashCatFilter = dashCatFilter === cat ? '' : cat;
+            dashRevFilter = '';
+            document.getElementById('dash-chip-rev') && (document.getElementById('dash-chip-rev').style.display = 'none');
+
+            renderStatsPorTipo('Semi Joia', 'stats-semijoia');
+            renderStatsPorTipo('Perfume', 'stats-perfume');
+            renderCatChips();
+            renderDashTable();
+            // Scroll suave para a tabela
+            document.getElementById('dash-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
 
@@ -2279,50 +2325,69 @@
         });
 
         async function registrarEntrada() {
-            const codigo = document.getElementById('entrada-codigo').value.trim();
-            const tipo = document.getElementById('entrada-tipo').value;
-            const categoria = document.getElementById('entrada-categoria').value;
+            const codigo    = document.getElementById('entrada-codigo').value.trim();
             const descricao = document.getElementById('entrada-descricao').value.trim();
-            const custo = parseFloat(document.getElementById('entrada-custo').value) || 0;
-            const venda = parseFloat(document.getElementById('entrada-venda').value) || 0;
+            const tipo      = document.getElementById('entrada-tipo').value;
+            const categoria = document.getElementById('entrada-categoria').value;
+            const custo     = parseNum(document.getElementById('entrada-custo').value);
+            const venda     = parseNum(document.getElementById('entrada-venda').value);
             const revendedor = document.getElementById('entrada-revendedor').value;
-            
-            if (!codigo || !tipo || !descricao) {
-                showToast('Preencha os campos obrigatórios', 'warning');
+
+            if (!codigo) {
+                showToast('Informe o código do produto', 'warning');
+                document.getElementById('entrada-codigo').focus();
                 return;
             }
-            
-            const data = {
-                action: 'addInventario',
-                codigo,
-                tipo,
-                categoria,
-                descricao,
-                custo,
-                venda,
-                status: revendedor ? revendedor : 'Em Estoque',
-                revendedor: revendedor || ''
+
+            // Status correto: se tem revendedor → Consignado, senão → Em Estoque
+            const status = revendedor ? 'Consignado' : 'Em Estoque';
+
+            const novoItem = {
+                rowId:      Date.now(),
+                Codigo:     codigo,
+                Descricao:  descricao,
+                Tipo:       tipo,
+                Categoria:  categoria,
+                Custo:      custo,
+                Venda:      venda,
+                Status:     status,
+                Revendedor: revendedor,
+                Foto:       '',
+                Data:       new Date().toISOString()
             };
-            
-            try {
-                const res = await fetch(scriptUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                const result = await res.json();
-                
-                if (result.success) {
-                    showToast('Produto registrado com sucesso!', 'success');
-                    limparFormEntrada();
-                    loadData();
-                    renderUltimasEntradas();
-                } else {
-                    showToast('Erro: ' + result.error, 'error');
+
+            // 1. Salvar localmente imediato
+            inventory.push(novoItem);
+            persistirInventarioLocal();
+            limparFormEntrada();
+            renderUltimasEntradas();
+            renderDashboard();
+            showToast('Produto registrado!', 'success');
+
+            // 2. Sync com servidor em background
+            if (scriptUrl) {
+                try {
+                    const data = {
+                        action: 'addInventario',
+                        codigo, descricao, tipo, categoria,
+                        custo, venda, status,
+                        revendedor: revendedor || ''
+                    };
+                    const res = await fetch(scriptUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        localStorage.removeItem('luxus_inventory_local');
+                        loadData();
+                    } else {
+                        console.warn('Servidor retornou erro:', result.error);
+                    }
+                } catch (err) {
+                    console.warn('Offline — entrada salva localmente:', err.message);
                 }
-            } catch (error) {
-                showToast('Erro ao registrar produto', 'error');
             }
         }
 
@@ -3945,11 +4010,10 @@
         }
         
                 function aplicarColunas() {
-            console.log('💾 Aplicando configuração de colunas...');
             atualizarOrdemColunas();
             salvarConfigColunas();
-            console.log('✅ Config salva:', colunasConfig);
             renderInventario();
+            renderDashTable(); // atualizar também a tabela do dashboard
             fecharModal('modal-colunas');
             showToast('Configuração de colunas aplicada!', 'success');
         }
@@ -3985,71 +4049,139 @@
         // Filtros da tabela do dashboard (independentes do inventário)
         let historicFechamentos = JSON.parse(localStorage.getItem('luxus_historico') || '[]');
 
-        let dashFilter = 'all';
+        // dashStatusFilters: Set com os status selecionados. Vazio = todos.
+        let dashStatusFilters = new Set();
+        let dashSortCol = null;   // chave da coluna
+        let dashSortDir = 'asc';  // 'asc' | 'desc'
+        let dashCatFilter = '';    // categoria selecionada // vazio = "Todos"
         let dashTipoFilter = 'all';
         let dashRevFilter = '';
 
-        function filtrarDashboard(filtro) {
-            dashFilter = filtro;
-            dashRevFilter = '';
-            dashTipoFilter = 'all';
-            // Atualizar chips
-            ['dash-fstatus-all','dash-fstatus-estoque','dash-fstatus-consignado','dash-fstatus-vendido'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.classList.remove('active');
+
+
+        function renderCatChips() {
+            const container = document.getElementById('dash-chips-cat');
+            if (!container) return;
+
+            // Coletar categorias visíveis conforme tipo selecionado
+            let cats = new Set();
+            inventory.forEach(i => {
+                if (dashTipoFilter === 'all' || i.Tipo === dashTipoFilter) {
+                    if (i.Categoria) cats.add(i.Categoria);
+                }
             });
-            const chipId = filtro === 'all' ? 'dash-fstatus-all' : filtro === 'estoque' ? 'dash-fstatus-estoque' : filtro === 'consignado' ? 'dash-fstatus-consignado' : 'dash-fstatus-vendido';
-            const chip = document.getElementById(chipId);
-            if (chip) chip.classList.add('active');
-            // Limpar banner revendedor
-            const banner = document.getElementById('dash-banner-rev');
-            if (banner) banner.style.display = 'none';
+
+            if (cats.size === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = [...cats].sort().map(cat => {
+                const isActive = dashCatFilter === cat;
+                return `<button class="filter-chip ${isActive ? 'active' : ''}" onclick="dashSetCat('${cat.replace(/'/g, "\'")}')">${cat}</button>`;
+            }).join('');
+        }
+
+        function dashSetCat(cat) {
+            dashCatFilter = dashCatFilter === cat ? '' : cat; // toggle
+            renderCatChips();
             renderDashTable();
-            // Scroll até a tabela
+        }
+
+        function dashSortBy(col) {
+            if (dashSortCol === col) {
+                dashSortDir = dashSortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                dashSortCol = col;
+                dashSortDir = 'asc';
+            }
+            renderDashTable();
+        }
+
+        function dashToggleStatus(status) {
+            if (status === 'all') {
+                // Limpar todos — volta para "Todos"
+                dashStatusFilters.clear();
+            } else {
+                if (dashStatusFilters.has(status)) {
+                    dashStatusFilters.delete(status);
+                } else {
+                    dashStatusFilters.add(status);
+                }
+            }
+            // Atualizar visual dos chips
+            const allEmpty = dashStatusFilters.size === 0;
+            const allBtn = document.getElementById('dash-fstatus-all');
+            if (allBtn) allBtn.classList.toggle('active', allEmpty);
+            ['estoque','consignado','vendido'].forEach(s => {
+                const el = document.getElementById('dash-fstatus-' + s);
+                if (el) el.classList.toggle('active', dashStatusFilters.has(s));
+            });
+            renderDashTable();
+        }
+
+        function filtrarDashboard(filtro) {
+            // Chamado pelos cards do topo — limpa multi-select e aplica único
+            dashStatusFilters.clear();
+            if (filtro !== 'all') dashStatusFilters.add(filtro);
+            dashRevFilter = '';
+            dashCatFilter = '';
+            document.getElementById('dash-chip-rev') && (document.getElementById('dash-chip-rev').style.display = 'none');
+            dashTipoFilter = 'all';
+            // Reset chip tipo
+            ['dash-ftipo-all','dash-ftipo-sj','dash-ftipo-pf'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.classList.remove('active');
+            });
+            const ftAll = document.getElementById('dash-ftipo-all'); if (ftAll) ftAll.classList.add('active');
+            // Visual chips status
+            const allEmpty = dashStatusFilters.size === 0;
+            const allBtn = document.getElementById('dash-fstatus-all');
+            if (allBtn) allBtn.classList.toggle('active', allEmpty);
+            ['estoque','consignado','vendido'].forEach(s => {
+                const el = document.getElementById('dash-fstatus-' + s);
+                if (el) el.classList.toggle('active', dashStatusFilters.has(s));
+            });
+            // Atualizar chips de categoria
+            renderCatChips();
+            renderDashTable();
             const t = document.getElementById('dash-table');
             if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
-        function dashSetFilter(filtro, e) {
-            dashFilter = filtro;
-            ['dash-fstatus-all','dash-fstatus-estoque','dash-fstatus-consignado','dash-fstatus-vendido'].forEach(id => {
-                const el = document.getElementById(id); if (el) el.classList.remove('active');
-            });
-            if (e && e.target) e.target.classList.add('active');
-            renderDashTable();
-        }
-
         function dashSetTipo(tipo, e) {
             dashTipoFilter = tipo;
+            dashCatFilter = ''; // limpar categoria ao mudar tipo
             ['dash-ftipo-all','dash-ftipo-sj','dash-ftipo-pf'].forEach(id => {
                 const el = document.getElementById(id); if (el) el.classList.remove('active');
             });
             if (e && e.target) e.target.classList.add('active');
+            renderCatChips();
             renderDashTable();
         }
 
         function dashFiltrarRev(nome) {
             dashRevFilter = nome;
-            dashFilter = 'all';
-            // Reset chips
+            dashStatusFilters.clear();
+            dashCatFilter = '';
+            // Reset chips status
             ['dash-fstatus-all','dash-fstatus-estoque','dash-fstatus-consignado','dash-fstatus-vendido'].forEach(id => {
                 const el = document.getElementById(id); if (el) el.classList.remove('active');
             });
-            const el = document.getElementById('dash-fstatus-all'); if (el) el.classList.add('active');
-            // Mostrar banner
-            const banner = document.getElementById('dash-banner-rev');
+            document.getElementById('dash-fstatus-all')?.classList.add('active');
+            // Mostrar chip inline do revendedor
+            const chip = document.getElementById('dash-chip-rev');
             const label = document.getElementById('dash-label-rev');
-            if (banner) { banner.style.display = 'flex'; }
+            if (chip) chip.style.display = 'flex';
             if (label) label.textContent = nome;
+            renderCatChips();
             renderDashTable();
-            const t = document.getElementById('dash-table');
-            if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            document.getElementById('dash-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function dashLimparRev() {
             dashRevFilter = '';
-            const banner = document.getElementById('dash-banner-rev');
-            if (banner) banner.style.display = 'none';
+            const chip = document.getElementById('dash-chip-rev');
+            if (chip) chip.style.display = 'none';
             renderDashTable();
         }
 
@@ -4061,73 +4193,131 @@
                 (i.Categoria||'').toLowerCase().includes(search) ||
                 (i.Revendedor||'').toLowerCase().includes(search)
             );
-            if (dashFilter === 'estoque')         filtered = filtered.filter(i => i.Status === 'Em Estoque');
-            else if (dashFilter === 'consignado') filtered = filtered.filter(i => i.Status !== 'Em Estoque' && i.Status !== 'Vendido');
-            else if (dashFilter === 'vendido')    filtered = filtered.filter(i => i.Status === 'Vendido');
+            // Filtro multi-select de status
+            if (dashStatusFilters.size > 0) {
+                filtered = filtered.filter(i => {
+                    if (dashStatusFilters.has('estoque')    && i.Status === 'Em Estoque') return true;
+                    if (dashStatusFilters.has('consignado') && i.Status !== 'Em Estoque' && i.Status !== 'Vendido') return true;
+                    if (dashStatusFilters.has('vendido')    && i.Status === 'Vendido') return true;
+                    return false;
+                });
+            }
             if (dashTipoFilter && dashTipoFilter !== 'all') filtered = filtered.filter(i => i.Tipo === dashTipoFilter);
             if (dashRevFilter) filtered = filtered.filter(i => i.Revendedor === dashRevFilter);
+            if (dashCatFilter) filtered = filtered.filter(i => (i.Categoria || '') === dashCatFilter);
 
-            // Colunas com alinhamento
-            const cols = [
-                { label: 'Código',      align: 'left'  },
-                { label: 'Descrição',   align: 'left'  },
-                { label: 'Tipo',        align: 'left'  },
-                { label: 'Categoria',   align: 'left'  },
-                { label: 'Status',      align: 'left'  },
-                { label: 'Revendedor',  align: 'left'  },
-                { label: 'Custo',       align: 'right' },
-                { label: 'Venda',       align: 'right' },
-            ];
-            const NCOLS = cols.length;
+            // Usar colunasConfig para respeitar visibilidade e ordem configuradas pelo usuário
+            const colsVisiveis = Object.keys(colunasConfig)
+                .filter(k => colunasConfig[k].visivel)
+                .sort((a, b) => colunasConfig[a].ordem - colunasConfig[b].ordem);
+            const NCOLS = colsVisiveis.length;
 
-            const thStyle = (align) =>
-                `padding:0.75rem;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);font-weight:600;background:var(--gray-50);border-bottom:2px solid var(--gray-200);white-space:nowrap;text-align:${align};`;
+            // Mapa chave → campo do item
+            const campoMap = {
+                codigo: { field: 'Codigo', align: 'left', num: false },
+                descricao: { field: 'Descricao', align: 'left', num: false },
+                tipo: { field: 'Tipo', align: 'left', num: false },
+                categoria: { field: 'Categoria', align: 'left', num: false },
+                status: { field: 'Status', align: 'left', num: false },
+                revendedor: { field: 'Revendedor', align: 'left', num: false },
+                custo: { field: 'Custo', align: 'right', num: true },
+                venda: { field: 'Venda', align: 'right', num: true },
+                data: { field: 'Data', align: 'left', num: false },
+                foto: { field: 'Foto', align: 'center', num: false },
+            };
+
+            // Aplicar ordenação
+            if (dashSortCol) {
+                const numSort = campoMap[dashSortCol]?.num;
+                filtered.sort((a, b) => {
+                    const field = campoMap[dashSortCol]?.field || dashSortCol;
+                    let va = a[field] ?? '', vb = b[field] ?? '';
+                    if (numSort) { va = parseNum(va); vb = parseNum(vb); return dashSortDir === 'asc' ? va-vb : vb-va; }
+                    va = String(va).toLowerCase(); vb = String(vb).toLowerCase();
+                    return dashSortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+                });
+            }
+
+            const sortIcon = (key) => {
+                if (dashSortCol !== key) return '<span style="opacity:0.2;margin-left:3px;">↕</span>';
+                return dashSortDir === 'asc'
+                    ? '<span style="color:var(--primary);margin-left:3px;">↑</span>'
+                    : '<span style="color:var(--primary);margin-left:3px;">↓</span>';
+            };
 
             const thead = document.getElementById('dash-thead-row');
-            if (thead) thead.innerHTML = cols.map(c => `<th style="${thStyle(c.align)}">${c.label}</th>`).join('');
+            if (thead) thead.innerHTML = colsVisiveis.map(k => {
+                const c = campoMap[k] || { align: 'left' };
+                const isActive = dashSortCol === k;
+                const style = `padding:0.75rem;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;background:var(--gray-50);border-bottom:2px solid var(--gray-200);white-space:nowrap;text-align:${c.align};cursor:pointer;user-select:none;color:${isActive?'var(--primary)':'var(--gray-500)'};`;
+                return `<th style="${style}" onclick="dashSortBy('${k}')">${colunasConfig[k].nome}${sortIcon(k)}</th>`;
+            }).join('');
 
             const tbody = document.getElementById('dash-tbody');
             if (!tbody) return;
 
             let totalCusto = 0, totalVenda = 0;
+            let hasCusto = colsVisiveis.includes('custo');
+            let hasVenda = colsVisiveis.includes('venda');
+
             tbody.innerHTML = filtered.map(item => {
                 totalCusto += parseNum(item.Custo);
                 totalVenda += parseNum(item.Venda);
                 const cor = getCorStatus(item.Status);
                 const hex = cor.replace('#','');
                 const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
-                const td = (content, extra='') => `<td style="padding:0.75rem;font-size:13px;color:var(--gray-700);vertical-align:middle;${extra}">${content}</td>`;
-                return `<tr style="border-bottom:1px solid var(--gray-200);transition:background 0.15s;" onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background='white'">
-                    <td style="padding:0.75rem;font-family:monospace;font-size:12px;font-weight:700;color:var(--primary);cursor:pointer;vertical-align:middle;white-space:nowrap;" onclick="editarItem(${item.rowId})">${item.Codigo}</td>
-                    <td style="padding:0.75rem;font-size:13px;color:var(--gray-700);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle;">${item.Descricao||'—'}</td>
-                    <td style="padding:0.75rem;vertical-align:middle;white-space:nowrap;"><span style="font-size:11px;background:var(--gray-100);color:var(--gray-600);padding:2px 8px;border-radius:4px;">${item.Tipo||'Geral'}</span></td>
-                    ${td(item.Categoria||'—', 'white-space:nowrap;')}
-                    <td style="padding:0.75rem;vertical-align:middle;white-space:nowrap;">
-                        <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px 3px 6px;border-radius:20px;font-size:12px;font-weight:500;background:rgba(${r},${g},${b},0.12);border:1px solid rgba(${r},${g},${b},0.3);color:${cor};white-space:nowrap;">
-                            <span style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></span>${item.Status}
-                        </span>
-                    </td>
-                    ${td(item.Revendedor||'—', 'white-space:nowrap;')}
-                    ${td('R$ '+parseNum(item.Custo).toFixed(2), 'text-align:right;white-space:nowrap;')}
-                    <td style="padding:0.75rem;font-size:13px;font-weight:700;color:#b45309;text-align:right;white-space:nowrap;vertical-align:middle;">R$ ${parseNum(item.Venda).toFixed(2)}</td>
-                </tr>`;
+
+                const cells = colsVisiveis.map(k => {
+                    const base = 'padding:0.75rem;font-size:13px;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+                    switch(k) {
+                        case 'codigo':
+                            return `<td style="${base}font-family:monospace;font-weight:700;color:var(--primary);cursor:pointer;" onclick="editarItem(${item.rowId})">${item.Codigo||'—'}</td>`;
+                        case 'descricao':
+                            return `<td style="${base}color:var(--gray-700);max-width:200px;" title="${item.Descricao||''}">${item.Descricao||'—'}</td>`;
+                        case 'tipo':
+                            return `<td style="${base}"><span style="font-size:11px;background:var(--gray-100);color:var(--gray-600);padding:2px 8px;border-radius:4px;">${item.Tipo||'Geral'}</span></td>`;
+                        case 'categoria':
+                            return `<td style="${base}color:var(--gray-700);">${item.Categoria||'—'}</td>`;
+                        case 'status':
+                            return `<td style="${base}"><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px 3px 6px;border-radius:20px;font-size:12px;font-weight:500;background:rgba(${r},${g},${b},0.12);border:1px solid rgba(${r},${g},${b},0.3);color:${cor};"><span style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></span>${item.Status}</span></td>`;
+                        case 'revendedor':
+                            return `<td style="${base}color:var(--gray-600);">${item.Revendedor||'—'}</td>`;
+                        case 'custo':
+                            return `<td style="${base}text-align:right;color:var(--gray-700);">R$ ${parseNum(item.Custo).toFixed(2)}</td>`;
+                        case 'venda':
+                            return `<td style="${base}text-align:right;font-weight:700;color:#b45309;">R$ ${parseNum(item.Venda).toFixed(2)}</td>`;
+                        case 'data':
+                            return `<td style="${base}color:var(--gray-600);">${item.Data ? new Date(item.Data).toLocaleDateString('pt-BR') : '—'}</td>`;
+                        case 'foto':
+                            return item.Foto
+                                ? `<td style="${base}text-align:center;"><img src="${item.Foto}" style="width:36px;height:36px;object-fit:cover;border-radius:4px;border:1px solid var(--gray-200);" onclick="verFoto('${item.Foto}')"></td>`
+                                : `<td style="${base}text-align:center;"><div style="width:36px;height:36px;background:var(--gray-100);border-radius:4px;display:inline-flex;align-items:center;justify-content:center;"><i class="fas fa-image" style="color:var(--gray-300);font-size:12px;"></i></div></td>`;
+                        default:
+                            return `<td style="${base}color:var(--gray-600);">—</td>`;
+                    }
+                }).join('');
+
+                return `<tr style="border-bottom:1px solid var(--gray-200);transition:background 0.15s;" onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background='white'">${cells}</tr>`;
             }).join('') || `<tr><td colspan="${NCOLS}" style="text-align:center;padding:2rem;color:var(--gray-400);font-size:13px;">Nenhum item encontrado</td></tr>`;
 
+            // Tfoot com totais nas colunas corretas
             const tfoot = document.getElementById('dash-tfoot');
-            if (tfoot) tfoot.innerHTML = `<tr style="background:var(--gray-50);border-top:2px solid var(--gray-200);">
-                <td colspan="${NCOLS-2}" style="padding:0.75rem;font-size:13px;font-weight:600;color:var(--gray-600);">
-                    <i class="fas fa-calculator" style="color:var(--primary);margin-right:6px;"></i>${filtered.length} ${filtered.length===1?'item':'itens'}
-                </td>
-                <td style="padding:0.75rem;font-size:13px;font-weight:600;color:var(--gray-700);text-align:right;white-space:nowrap;">R$ ${totalCusto.toFixed(2)}</td>
-                <td style="padding:0.75rem;font-size:13px;font-weight:700;color:#b45309;text-align:right;white-space:nowrap;">R$ ${totalVenda.toFixed(2)}</td>
-            </tr>`;
+            if (tfoot) {
+                const tfCells = colsVisiveis.map((k, i) => {
+                    if (i === 0) return `<td style="padding:0.75rem;font-size:13px;font-weight:600;color:var(--gray-600);"><i class="fas fa-calculator" style="color:var(--primary);margin-right:5px;"></i>${filtered.length} ${filtered.length===1?'item':'itens'}</td>`;
+                    if (k === 'custo') return `<td style="padding:0.75rem;font-size:13px;font-weight:600;color:var(--gray-700);text-align:right;">R$ ${totalCusto.toFixed(2)}</td>`;
+                    if (k === 'venda') return `<td style="padding:0.75rem;font-size:13px;font-weight:700;color:#b45309;text-align:right;">R$ ${totalVenda.toFixed(2)}</td>`;
+                    return `<td></td>`;
+                }).join('');
+                tfoot.innerHTML = `<tr style="background:var(--gray-50);border-top:2px solid var(--gray-200);">${tfCells}</tr>`;
+            }
         }
         
         function verProdutosRevendedor(nomeRev) {
             currentRevendedorFilter = nomeRev;
             currentFilter = 'all';
             currentTipoFilter = 'all';
-            switchTab('inventario');
+            switchTab('dashboard'); setTimeout(() => { filtrarDashboard('all'); }, 100);
 
             // Resetar chips de status e tipo para "Todos"
             ['fstatus-all','fstatus-estoque','fstatus-consignado','fstatus-vendido'].forEach(id => {
