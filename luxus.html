@@ -1407,26 +1407,7 @@
             <div id="content-inventario" class="tab-content hidden">
                 <!-- Busca e Filtros -->
                 <div class="card-light p-5 mb-5">
-                                        <div class="flex gap-3 flex-wrap mb-4">
-                        <div class="flex-1 min-w-[250px]">
-                            <input 
-                                type="text" 
-                                id="search" 
-                                placeholder="Buscar por código, descrição..." 
-                                class="w-full"
-                                oninput="renderInventario()"
-                            >
-                        </div>
-                        <button onclick="abrirModalColunas()" class="btn-secondary" title="Configurar Colunas">
-                            <i class="fas fa-columns mr-2"></i>Colunas
-                        </button>
-                        <button onclick="abrirModalNovoItem()" class="btn-primary">
-                            <i class="fas fa-plus mr-2"></i>Novo Item
-                        </button>
-                        <button onclick="loadData()" class="btn-secondary">
-                            <i class="fas fa-sync-alt mr-2"></i>Atualizar
-                        </button>
-                    </div>
+                    <!-- Linha 1: Filtros -->
                     
                     <!-- Filtros de Status -->
                     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
@@ -1446,6 +1427,22 @@
                 </div>
 
                 <!-- Tabela de Inventário -->
+                <!-- Linha de busca + ações -->
+                <div style="display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-200);">
+                    <input type="text" id="search" placeholder="Buscar por código, descrição..."
+                           style="flex:1;padding:6px 12px;border:1px solid var(--gray-300);border-radius:20px;font-size:13px;outline:none;"
+                           oninput="renderInventario()">
+                    <button onclick="abrirModalNovoItem()" class="btn-primary" style="font-size:13px;padding:6px 16px;white-space:nowrap;">
+                        <i class="fas fa-plus mr-1"></i>Novo Item
+                    </button>
+                    <button onclick="loadData()" class="btn-secondary" style="font-size:13px;padding:6px 12px;" title="Atualizar dados">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button onclick="abrirModalColunas()" class="btn-secondary" style="font-size:13px;padding:6px 12px;" title="Configurar Colunas">
+                        <i class="fas fa-columns"></i>
+                    </button>
+                </div>
+
                 <!-- Banner filtro revendedor ativo -->
                 <div id="banner-filtro-rev" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:8px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
                     <span style="font-size:13px;color:#1e40af;">
@@ -1760,6 +1757,8 @@
         let scriptUrl = localStorage.getItem('luxus_script_url') || '';
         let currentFilter = 'all';
         let currentTipoFilter = 'all';
+        let invSortCol = null;
+        let invSortDir = 'asc';
         let currentRevendedorFilter = '';
 
         // Parse seguro de valores numéricos (aceita vírgula e ponto, string ou número)
@@ -1784,7 +1783,7 @@
             'custo': { nome: 'Custo', visivel: true, ordem: 6 },
             'venda': { nome: 'Venda', visivel: true, ordem: 7 },
             'data': { nome: 'Data', visivel: true, ordem: 8 },
-            'foto': { nome: 'Foto', visivel: true, ordem: 9 }
+            'foto': { nome: 'Foto', visivel: false, ordem: 9 }
         };
 
         // ========== INICIALIZAÇÃO ==========
@@ -2168,20 +2167,22 @@
 
             const html = cats.map(cat => {
                 const catItems = items.filter(i => i.Categoria === cat);
+                const valor = catItems.reduce((s, i) => s + parseNum(i.Venda), 0);
                 const isActive = dashCatFilter === cat && (dashTipoFilter === tipo || dashTipoFilter === 'all');
                 const bgActive = '#eff6ff';
-                const bgNormal = '#f8fafc';
+                const bgNormal = 'transparent';
                 const borderActive = '#3b82f6';
                 return `
                     <div onclick="dashClicarCategoria('${tipo}','${cat.replace(/'/g,"\\'")}')"
-                         style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;
-                                border-radius:6px;cursor:pointer;transition:all 0.15s;
-                                background:${isActive ? bgActive : bgNormal};
-                                border:1.5px solid ${isActive ? borderActive : 'transparent'};"
+                         style="display:flex;align-items:center;padding:7px 4px;cursor:pointer;transition:all 0.15s;
+                                border-radius:6px;background:${isActive ? bgActive : bgNormal};
+                                border:1.5px solid ${isActive ? borderActive : 'transparent'};padding:7px 8px;"
                          onmouseover="this.style.background='#eff6ff';this.style.borderColor='#bfdbfe';"
                          onmouseout="this.style.background='${isActive ? bgActive : bgNormal}';this.style.borderColor='${isActive ? borderActive : 'transparent'}';">
-                        <span style="font-size:13px;color:${isActive ? 'var(--primary)' : 'var(--gray-700)'};font-weight:${isActive ? '600' : '400'};">${cat}</span>
-                        <span style="font-size:13px;font-weight:700;color:${catItems.length > 0 ? '#f59e0b' : 'var(--gray-400)'};">${catItems.length}</span>
+                        <span style="font-size:13px;color:${isActive ? 'var(--primary)' : 'var(--gray-700)'};font-weight:${isActive ? '600' : '400'};white-space:nowrap;">${cat}</span>
+                        <span style="flex:1;margin:0 10px;border-bottom:1px solid var(--gray-200);display:block;height:1px;align-self:center;"></span>
+                        <span style="font-size:13px;font-weight:600;color:${isActive ? 'var(--primary)' : 'var(--gray-500)'};margin-right:8px;white-space:nowrap;">${catItems.length}</span>
+                        ${valor > 0 ? `<span style="font-size:12px;font-weight:700;color:#f59e0b;white-space:nowrap;">R$ ${valor.toFixed(2)}</span>` : ''}
                     </div>
                 `;
             }).join('');
@@ -2215,7 +2216,6 @@
 
         function renderEstoqueDash() {
             const estoque = inventory.filter(i => i.Status === 'Em Estoque');
-            
             const badge = document.getElementById('badge-total-estoque');
             if (badge) badge.textContent = `${estoque.length} ${estoque.length === 1 ? 'item' : 'itens'}`;
 
@@ -2223,11 +2223,11 @@
             if (!container) return;
 
             if (estoque.length === 0) {
-                container.innerHTML = '<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:16px 0;">Nenhum item em estoque</p>';
+                container.innerHTML = '<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:16px 0;">Nenhum item em estoque</p>';
                 return;
             }
 
-            // Agrupar por tipo/categoria
+            // Agrupar por tipo · categoria
             const grupos = {};
             estoque.forEach(item => {
                 const chave = (item.Tipo || 'Geral') + (item.Categoria ? ' · ' + item.Categoria : '');
@@ -2236,35 +2236,47 @@
             });
 
             container.innerHTML = Object.entries(grupos).map(([grupo, itens]) => {
-                const valorTotal = itens.reduce((s, i) => s + parseNum(i.Venda), 0);
+                const valor = itens.reduce((s, i) => s + parseNum(i.Venda), 0);
                 return `
-                <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;overflow:hidden;">
-                    <!-- Linha do grupo -->
-                    <div onclick="dashSetFilter('estoque', {target: document.getElementById('dash-fstatus-estoque')})"
-                         style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;transition:background 0.15s;"
-                         onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='transparent'">
-                        <div>
-                            <div style="font-size:13px;font-weight:600;color:var(--gray-800);">${grupo}</div>
-                            <div style="font-size:11px;color:var(--gray-500);">${itens.length} ${itens.length===1?'item':'itens'}</div>
-                        </div>
-                        <div style="text-align:right;flex-shrink:0;">
-                            <div style="font-size:13px;font-weight:700;color:#10b981;">R$ ${valorTotal.toFixed(2)}</div>
-                            <div style="font-size:10px;color:var(--gray-400);">ver →</div>
-                        </div>
-                    </div>
-                    <!-- Mini lista dos itens -->
-                    <div style="border-top:1px solid var(--gray-200);padding:6px 12px;display:flex;flex-direction:column;gap:3px;">
-                        ${itens.slice(0,3).map(p => `
-                            <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;">
-                                <span style="color:#1e40af;font-family:monospace;font-weight:600;">${p.Codigo}</span>
-                                <span style="color:var(--gray-600);flex:1;margin:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.Descricao||'—'}</span>
-                                <span style="color:var(--gray-700);font-weight:600;flex-shrink:0;">R$ ${parseNum(p.Venda).toFixed(2)}</span>
-                            </div>
-                        `).join('')}
-                        ${itens.length > 3 ? `<div style="font-size:10px;color:var(--gray-400);text-align:center;padding-top:2px;">+${itens.length-3} mais</div>` : ''}
-                    </div>
+                <div onclick="dashClicarGrupoEstoque('${grupo.replace(/'/g,"\\'")}')"
+                     style="display:flex;align-items:center;padding:7px 8px;cursor:pointer;border-radius:6px;transition:all 0.15s;"
+                     onmouseover="this.style.background='#f0fdf4';" onmouseout="this.style.background='transparent';">
+                    <span style="font-size:13px;color:var(--gray-700);white-space:nowrap;">${grupo}</span>
+                    <span style="flex:1;margin:0 10px;border-bottom:1px solid var(--gray-200);display:block;height:1px;align-self:center;"></span>
+                    <span style="font-size:13px;font-weight:600;color:var(--gray-600);margin-right:8px;white-space:nowrap;">${itens.length}</span>
+                    ${valor > 0 ? `<span style="font-size:12px;font-weight:700;color:#10b981;white-space:nowrap;">R$ ${valor.toFixed(2)}</span>` : ''}
                 </div>`;
             }).join('');
+        }
+
+        function dashClicarGrupoEstoque(grupo) {
+            // Extrair tipo e categoria do nome do grupo (ex: "Semi Joia · Colares")
+            const partes = grupo.split(' · ');
+            const tipo = partes[0];
+            const cat  = partes[1] || '';
+
+            dashStatusFilters.clear();
+            dashStatusFilters.add('estoque');
+            dashTipoFilter = tipo !== 'Geral' ? tipo : 'all';
+            dashCatFilter  = cat;
+            dashRevFilter  = '';
+
+            // Atualizar chips status
+            ['dash-fstatus-all','dash-fstatus-estoque','dash-fstatus-consignado','dash-fstatus-vendido'].forEach(id => {
+                document.getElementById(id)?.classList.remove('active');
+            });
+            document.getElementById('dash-fstatus-estoque')?.classList.add('active');
+
+            // Atualizar chips tipo
+            ['dash-ftipo-all','dash-ftipo-sj','dash-ftipo-pf'].forEach(id => {
+                document.getElementById(id)?.classList.remove('active');
+            });
+            const tipoBtnId = tipo === 'Semi Joia' ? 'dash-ftipo-sj' : tipo === 'Perfume' ? 'dash-ftipo-pf' : 'dash-ftipo-all';
+            document.getElementById(tipoBtnId)?.classList.add('active');
+
+            renderCatChips();
+            renderDashTable();
+            document.getElementById('dash-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function renderTopRevendedores() {
@@ -2277,41 +2289,37 @@
                 return { ...rev, qtd: produtos.length, valor, produtos };
             }).filter(r => r.qtd > 0).sort((a, b) => b.valor - a.valor);
 
-            // Atualizar badge total
             const totalItens = revStats.reduce((s, r) => s + r.qtd, 0);
             const badge = document.getElementById('badge-total-cons');
             if (badge) badge.textContent = `${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`;
 
             const html = revStats.map(rev => `
-                <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;overflow:hidden;">
+                <div style="margin-bottom:2px;">
                     <!-- Linha do revendedor -->
-                    <div onclick="dashFiltrarRev('${rev.Nome}')" style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;transition:background 0.15s;"
-                         onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='transparent'">
-                        <div>
-                            <div style="font-size:13px;font-weight:600;color:var(--gray-800);">${rev.Nome}</div>
-                            <div style="font-size:11px;color:var(--gray-500);">${rev.qtd} ${rev.qtd===1?'item':'itens'} · ${rev.Percentual||30}% comissão</div>
-                        </div>
-                        <div style="text-align:right;flex-shrink:0;">
-                            <div style="font-size:13px;font-weight:700;color:#3b82f6;">R$ ${rev.valor.toFixed(2)}</div>
-                            <div style="font-size:10px;color:var(--gray-400);">ver →</div>
-                        </div>
+                    <div onclick="dashFiltrarRev('${rev.Nome}')"
+                         style="display:flex;align-items:center;padding:7px 8px;cursor:pointer;border-radius:6px;transition:all 0.15s;"
+                         onmouseover="this.style.background='#eff6ff';" onmouseout="this.style.background='transparent';">
+                        <span style="font-size:13px;font-weight:600;color:var(--gray-800);white-space:nowrap;">${rev.Nome}</span>
+                        <span style="flex:1;margin:0 10px;border-bottom:1px solid var(--gray-200);display:block;height:1px;align-self:center;"></span>
+                        <span style="font-size:13px;font-weight:600;color:var(--gray-600);margin-right:8px;white-space:nowrap;">${rev.qtd}</span>
+                        <span style="font-size:12px;font-weight:700;color:#3b82f6;white-space:nowrap;">R$ ${rev.valor.toFixed(2)}</span>
                     </div>
-                    <!-- Mini lista dos produtos consignados -->
-                    <div style="border-top:1px solid var(--gray-200);padding:6px 12px;display:flex;flex-direction:column;gap:3px;">
+                    <!-- Mini lista dos produtos — linha por linha -->
+                    <div style="padding:0 8px 4px 16px;display:flex;flex-direction:column;gap:2px;">
                         ${rev.produtos.slice(0,3).map(p => `
-                            <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;">
-                                <span style="color:#1e40af;font-family:monospace;font-weight:600;">${p.Codigo}</span>
-                                <span style="color:var(--gray-600);flex:1;margin:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.Descricao||p.Categoria||'—'}</span>
-                                <span style="color:var(--gray-700);font-weight:600;flex-shrink:0;">R$ ${parseNum(p.Venda).toFixed(2)}</span>
+                            <div style="display:flex;align-items:center;padding:2px 0;">
+                                <span style="font-size:11px;font-family:monospace;color:var(--primary);font-weight:600;white-space:nowrap;">${p.Codigo}</span>
+                                <span style="flex:1;margin:0 8px;border-bottom:1px dotted var(--gray-200);display:block;height:1px;align-self:center;"></span>
+                                <span style="font-size:11px;font-weight:600;color:var(--gray-600);white-space:nowrap;">R$ ${parseNum(p.Venda).toFixed(2)}</span>
                             </div>
                         `).join('')}
-                        ${rev.produtos.length > 3 ? `<div style="font-size:10px;color:var(--gray-400);text-align:center;padding-top:2px;">+${rev.produtos.length-3} mais</div>` : ''}
+                        ${rev.produtos.length > 3 ? `<div style="font-size:10px;color:var(--gray-400);padding-top:2px;">+${rev.produtos.length-3} mais itens</div>` : ''}
                     </div>
                 </div>
             `).join('');
 
             document.getElementById('top-revendedores').innerHTML = html ||
-                '<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:16px 0;">Nenhum produto consignado</p>';
+                '<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:16px 0;">Nenhum produto consignado</p>';
         }
 
         // ========== ENTRADA DE PRODUTOS ==========
@@ -2386,7 +2394,7 @@
                     const result = await res.json();
                     if (result.success) {
                         localStorage.removeItem('luxus_inventory_local');
-                        loadData();
+                        console.log('✅ Entrada sincronizada com servidor');
                     } else {
                         console.warn('Servidor retornou erro:', result.error);
                     }
@@ -2843,6 +2851,16 @@
         }
 
         // ========== INVENTÁRIO ==========
+        function invSortBy(col) {
+            if (invSortCol === col) {
+                invSortDir = invSortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                invSortCol = col;
+                invSortDir = 'asc';
+            }
+            renderInventario();
+        }
+
         function renderInventario() {
             const search = document.getElementById('search').value.toLowerCase();
             let filtered = inventory.filter(i => 
@@ -2870,17 +2888,34 @@
             if (currentRevendedorFilter) {
                 filtered = filtered.filter(i => (i.Revendedor || '') === currentRevendedorFilter);
             }
+
+            // Ordenação
+            if (invSortCol) {
+                const campoMap = { codigo:'Codigo', descricao:'Descricao', tipo:'Tipo', categoria:'Categoria', status:'Status', revendedor:'Revendedor', custo:'Custo', venda:'Venda', data:'Data' };
+                const campo = campoMap[invSortCol] || invSortCol;
+                const numerico = invSortCol === 'custo' || invSortCol === 'venda';
+                filtered.sort((a, b) => {
+                    let va = a[campo] ?? '', vb = b[campo] ?? '';
+                    if (numerico) { va = parseNum(va); vb = parseNum(vb); return invSortDir === 'asc' ? va - vb : vb - va; }
+                    va = String(va).toLowerCase(); vb = String(vb).toLowerCase();
+                    return invSortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+                });
+            }
             
             // Obter colunas visíveis ordenadas
             const colunasVisiveis = Object.keys(colunasConfig)
                 .filter(key => colunasConfig[key].visivel)
                 .sort((a, b) => colunasConfig[a].ordem - colunasConfig[b].ordem);
             
-            // Atualizar cabeçalho da tabela
+            // Cabeçalho com ordenação clicável
             const thead = document.querySelector('.data-table thead tr');
-            thead.innerHTML = colunasVisiveis.map(key => 
-                `<th>${colunasConfig[key].nome}</th>`
-            ).join('');
+            thead.innerHTML = colunasVisiveis.map(key => {
+                const isActive = invSortCol === key;
+                const icon = !isActive ? '<span style="opacity:0.2;margin-left:3px;">↕</span>'
+                    : invSortDir === 'asc' ? '<span style="color:var(--primary);margin-left:3px;">↑</span>'
+                    : '<span style="color:var(--primary);margin-left:3px;">↓</span>';
+                return `<th style="cursor:pointer;user-select:none;color:${isActive ? 'var(--primary)' : ''};" onclick="invSortBy('${key}')">${colunasConfig[key].nome}${icon}</th>`;
+            }).join('');
             
             // Atualizar corpo da tabela
             const tbody = document.getElementById('table-inventario');
@@ -3214,7 +3249,7 @@
             fecharModal('modal-item');
             showToast('Item salvo!', 'success');
 
-            // 3. Tentar sync com servidor
+            // 3. Tentar sync com servidor (NÃO recarregar após sync — evita sobrescrever edições)
             if (scriptUrl) {
                 try {
                     const res = await fetch(scriptUrl, {
@@ -3224,10 +3259,12 @@
                     });
                     const result = JSON.parse(await res.text());
                     if (result.success) {
-                        showToast('Sincronizado com servidor!', 'success');
-                        // Recarregar do servidor e descartar cache local
+                        // Servidor confirmou — pode limpar o cache local
+                        // MAS não recarregar: os dados em memória já estão corretos
                         localStorage.removeItem('luxus_inventory_local');
-                        loadData();
+                        console.log('✅ Sync com servidor bem-sucedido');
+                    } else {
+                        console.warn('Servidor retornou erro:', result.error);
                     }
                 } catch (err) {
                     console.warn('Offline - dados apenas no localStorage:', err.message);
@@ -4035,7 +4072,7 @@
                     'custo': { nome: 'Custo', visivel: true, ordem: 6 },
                     'venda': { nome: 'Venda', visivel: true, ordem: 7 },
                     'data': { nome: 'Data', visivel: true, ordem: 8 },
-                    'foto': { nome: 'Foto', visivel: true, ordem: 9 }
+                    'foto': { nome: 'Foto', visivel: false, ordem: 9 }
                 };
                 renderListaColunas();
                 showToast('Configuração restaurada!', 'success');
