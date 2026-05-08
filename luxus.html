@@ -246,23 +246,23 @@
         </div>
 
         <!-- 4 cards resumo -->
-        <div id="dash-cards-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem;margin-bottom:1.25rem;">
-            <div id="dash-card-semijoia" class="card-light p-5">
+        <div id="dash-cards-grid" style="display:flex;flex-wrap:wrap;justify-content:center;gap:1.25rem;margin-bottom:1.25rem;">
+            <div id="dash-card-semijoia" class="card-light p-5" style="flex:1;min-width:220px;max-width:320px;">
                 <h3 class="section-title"><i class="fas fa-ring"></i>Semi Joias</h3>
                 <div id="stats-semijoia"></div>
             </div>
-            <div id="dash-card-perfume" class="card-light p-5">
+            <div id="dash-card-perfume" class="card-light p-5" style="flex:1;min-width:220px;max-width:320px;">
                 <h3 class="section-title"><i class="fas fa-spray-can"></i>Perfumes</h3>
                 <div id="stats-perfume"></div>
             </div>
-            <div id="dash-card-estoque" class="card-light p-5">
+            <div id="dash-card-estoque" class="card-light p-5" style="flex:1;min-width:220px;max-width:320px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--gray-200);">
                     <h3 style="font-size:0.9rem;font-weight:600;color:var(--gray-700);display:flex;align-items:center;gap:6px;margin:0;"><i class="fas fa-warehouse" style="color:#10b981;"></i>Em Estoque</h3>
                     <span id="badge-total-estoque" style="font-size:11px;background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-weight:600;">0 itens</span>
                 </div>
                 <div id="lista-estoque-dash" style="display:flex;flex-direction:column;gap:5px;"></div>
             </div>
-            <div id="dash-card-consignado" class="card-light p-5">
+            <div id="dash-card-consignado" class="card-light p-5" style="flex:1;min-width:220px;max-width:320px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--gray-200);">
                     <h3 style="font-size:0.9rem;font-weight:600;color:var(--gray-700);display:flex;align-items:center;gap:6px;margin:0;"><i class="fas fa-handshake" style="color:#3b82f6;"></i>Consignado</h3>
                     <span id="badge-total-cons" style="font-size:11px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:10px;font-weight:600;">0 itens</span>
