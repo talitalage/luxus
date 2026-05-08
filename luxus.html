@@ -1535,20 +1535,52 @@
                             </div>
                         </div>
 
-                        <!-- Título da Página -->
+                        <!-- Título da Página + Logo -->
                         <div class="card-light p-5">
-                            <h3 class="section-title"><i class="fas fa-heading"></i>Título da Página</h3>
-                            <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                            <h3 class="section-title"><i class="fas fa-heading"></i>Identidade Visual</h3>
+                            <div style="display:flex;flex-direction:column;gap:0.875rem;">
+
+                                <!-- Preview -->
+                                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--gray-50);border-radius:8px;border:1px solid var(--gray-200);">
+                                    <img id="cfg-logo-preview" src="https://i.ibb.co/6R29d3Dj/luxus-logo.png"
+                                         style="height:36px;width:auto;object-fit:contain;border-radius:4px;"
+                                         onerror="this.style.display='none'">
+                                    <div>
+                                        <div id="cfg-titulo-preview" style="font-size:14px;font-weight:700;color:var(--gray-800);">LUXUS</div>
+                                        <div id="cfg-subtitulo-preview" style="font-size:11px;color:var(--gray-500);">JOIAS & PERFUMES</div>
+                                    </div>
+                                </div>
+
+                                <!-- URL da Logo -->
+                                <div>
+                                    <label style="font-size:12px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px;">URL da Logo</label>
+                                    <div style="display:flex;gap:6px;">
+                                        <input type="text" id="cfg-logo" class="w-full" placeholder="https://..." style="font-size:13px;"
+                                               oninput="previewLogo()">
+                                        <label style="cursor:pointer;" title="Carregar imagem do computador">
+                                            <input type="file" id="cfg-logo-file" accept="image/*" style="display:none;" onchange="carregarLogoArquivo(event)">
+                                            <span class="btn-secondary" style="font-size:12px;padding:6px 10px;display:flex;align-items:center;gap:4px;white-space:nowrap;cursor:pointer;">
+                                                <i class="fas fa-upload"></i>
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Cole uma URL ou faça upload de uma imagem</p>
+                                </div>
+
+                                <!-- Título -->
                                 <div>
                                     <label style="font-size:12px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px;">Título principal</label>
-                                    <input type="text" id="cfg-titulo" class="w-full" placeholder="LUXUS" style="font-size:13px;" value="LUXUS">
+                                    <input type="text" id="cfg-titulo" class="w-full" placeholder="LUXUS" style="font-size:13px;" value="LUXUS" oninput="previewTitulo()">
                                 </div>
+
+                                <!-- Subtítulo -->
                                 <div>
                                     <label style="font-size:12px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px;">Subtítulo / Campanha</label>
-                                    <input type="text" id="cfg-subtitulo" class="w-full" placeholder="JOIAS & PERFUMES" style="font-size:13px;" value="JOIAS & PERFUMES">
+                                    <input type="text" id="cfg-subtitulo" class="w-full" placeholder="JOIAS & PERFUMES" style="font-size:13px;" value="JOIAS & PERFUMES" oninput="previewTitulo()">
                                 </div>
+
                                 <button onclick="salvarTitulo()" class="btn-primary w-full" style="font-size:13px;">
-                                    <i class="fas fa-save mr-2"></i>Salvar Título
+                                    <i class="fas fa-save mr-2"></i>Salvar
                                 </button>
                             </div>
                         </div>
@@ -1793,14 +1825,69 @@
         // editarCategoria substituída por edição inline
         
         function salvarTitulo() {
-            const titulo = document.getElementById('cfg-titulo').value || 'LUXUS';
-            const subtitulo = document.getElementById('cfg-subtitulo').value || 'JOIAS & PERFUMES';
+            const titulo    = document.getElementById('cfg-titulo').value.trim() || 'LUXUS';
+            const subtitulo = document.getElementById('cfg-subtitulo').value.trim() || 'JOIAS & PERFUMES';
+            const logoUrl   = document.getElementById('cfg-logo').value.trim();
+
+            // Atualizar header
             document.getElementById('site-title-display').textContent = titulo;
             document.getElementById('site-subtitle-display').textContent = subtitulo;
             document.title = titulo + ' - Sistema de Gestão';
+
+            // Atualizar logo no header
+            const logoEl = document.querySelector('.header-dark img');
+            if (logoEl) {
+                if (logoUrl) {
+                    logoEl.src = logoUrl;
+                    logoEl.style.display = 'block';
+                } else {
+                    logoEl.style.display = 'none';
+                }
+            }
+            
+            // favicon
+            let favicon = document.querySelector("link[rel='icon']");
+            if (!favicon) { favicon = document.createElement('link'); favicon.rel = 'icon'; document.head.appendChild(favicon); }
+            if (logoUrl) favicon.href = logoUrl;
+
+            // Persistir
             localStorage.setItem('luxus_titulo', titulo);
             localStorage.setItem('luxus_subtitulo', subtitulo);
-            showToast('Título atualizado!', 'success');
+            if (logoUrl) localStorage.setItem('luxus_logo', logoUrl);
+            else localStorage.removeItem('luxus_logo');
+
+            showToast('Identidade visual salva!', 'success');
+        }
+
+        function previewLogo() {
+            const url = document.getElementById('cfg-logo').value.trim();
+            const preview = document.getElementById('cfg-logo-preview');
+            if (preview) {
+                preview.src = url || 'https://i.ibb.co/6R29d3Dj/luxus-logo.png';
+                preview.style.display = url ? 'block' : 'none';
+            }
+        }
+
+        function previewTitulo() {
+            const t = document.getElementById('cfg-titulo').value || 'LUXUS';
+            const s = document.getElementById('cfg-subtitulo').value || 'JOIAS & PERFUMES';
+            const pt = document.getElementById('cfg-titulo-preview');
+            const ps = document.getElementById('cfg-subtitulo-preview');
+            if (pt) pt.textContent = t;
+            if (ps) ps.textContent = s;
+        }
+
+        function carregarLogoArquivo(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const dataUrl = e.target.result;
+                document.getElementById('cfg-logo').value = dataUrl;
+                const preview = document.getElementById('cfg-logo-preview');
+                if (preview) { preview.src = dataUrl; preview.style.display = 'block'; }
+            };
+            reader.readAsDataURL(file);
         }
         
         function abrirEditarTitulo() {
@@ -1812,16 +1899,31 @@
         }
         
         function carregarTitulo() {
-            const titulo = localStorage.getItem('luxus_titulo');
+            const titulo    = localStorage.getItem('luxus_titulo');
             const subtitulo = localStorage.getItem('luxus_subtitulo');
+            const logoUrl   = localStorage.getItem('luxus_logo');
+
             if (titulo) {
                 document.getElementById('site-title-display').textContent = titulo;
                 document.getElementById('cfg-titulo').value = titulo;
+                document.getElementById('cfg-titulo-preview').textContent = titulo;
                 document.title = titulo + ' - Sistema de Gestão';
             }
             if (subtitulo) {
                 document.getElementById('site-subtitle-display').textContent = subtitulo;
                 document.getElementById('cfg-subtitulo').value = subtitulo;
+                document.getElementById('cfg-subtitulo-preview').textContent = subtitulo;
+            }
+            if (logoUrl) {
+                // Aplicar logo salva no header
+                const logoEl = document.querySelector('.header-dark img');
+                if (logoEl) { logoEl.src = logoUrl; logoEl.style.display = 'block'; }
+                // Preencher campo
+                const cfgLogo = document.getElementById('cfg-logo');
+                if (cfgLogo) cfgLogo.value = logoUrl;
+                // Preview
+                const preview = document.getElementById('cfg-logo-preview');
+                if (preview) { preview.src = logoUrl; preview.style.display = 'block'; }
             }
         }
 
@@ -2295,7 +2397,6 @@
 
             const html = revStats.map(rev => `
                 <div style="margin-bottom:2px;">
-                    <!-- Linha do revendedor -->
                     <div onclick="dashFiltrarRev('${rev.Nome}')"
                          style="display:flex;align-items:center;padding:7px 8px;cursor:pointer;border-radius:6px;transition:all 0.15s;"
                          onmouseover="this.style.background='#eff6ff';" onmouseout="this.style.background='transparent';">
@@ -2303,17 +2404,6 @@
                         <span style="flex:1;margin:0 10px;border-bottom:1px solid var(--gray-200);display:block;height:1px;align-self:center;"></span>
                         <span style="font-size:13px;font-weight:600;color:var(--gray-600);margin-right:8px;white-space:nowrap;">${rev.qtd}</span>
                         <span style="font-size:12px;font-weight:700;color:#3b82f6;white-space:nowrap;">R$ ${rev.valor.toFixed(2)}</span>
-                    </div>
-                    <!-- Mini lista dos produtos — linha por linha -->
-                    <div style="padding:0 8px 4px 16px;display:flex;flex-direction:column;gap:2px;">
-                        ${rev.produtos.slice(0,3).map(p => `
-                            <div style="display:flex;align-items:center;padding:2px 0;">
-                                <span style="font-size:11px;font-family:monospace;color:var(--primary);font-weight:600;white-space:nowrap;">${p.Codigo}</span>
-                                <span style="flex:1;margin:0 8px;border-bottom:1px dotted var(--gray-200);display:block;height:1px;align-self:center;"></span>
-                                <span style="font-size:11px;font-weight:600;color:var(--gray-600);white-space:nowrap;">R$ ${parseNum(p.Venda).toFixed(2)}</span>
-                            </div>
-                        `).join('')}
-                        ${rev.produtos.length > 3 ? `<div style="font-size:10px;color:var(--gray-400);padding-top:2px;">+${rev.produtos.length-3} mais itens</div>` : ''}
                     </div>
                 </div>
             `).join('');
