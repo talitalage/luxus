@@ -1092,7 +1092,7 @@
                 </div>
 
                 <!-- Segunda linha: Semi Joias | Perfumes | Estoque | Consignado -->
-                <div style="display:grid;grid-template-columns:1fr 1fr 1.4fr 1.4fr;gap:1.25rem;margin-bottom:1.25rem;">
+                <div id="dash-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.25rem;margin-bottom:1.25rem;">
 
                     <!-- Semi Joias por categoria -->
                     <div id="dash-card-semijoia" class="card-light p-5">
@@ -2285,7 +2285,7 @@
             const html = cats.map(cat => {
                 const catItems = items.filter(i => i.Categoria === cat);
                 const valor = catItems.reduce((s, i) => s + parseNum(i.Venda), 0);
-                const isActive = dashCatFilter === cat && (dashTipoFilter === tipo || dashTipoFilter === 'all');
+                const isActive = dashCatFilters.has(cat) && (dashTipoFilter === tipo || dashTipoFilter === 'all');
                 const bgActive = '#eff6ff';
                 const bgNormal = 'transparent';
                 const borderActive = '#3b82f6';
@@ -2308,17 +2308,16 @@
         }
 
         function dashClicarCategoria(tipo, cat) {
-            // Ativar tipo correspondente
             dashTipoFilter = tipo;
             ['dash-ftipo-all','dash-ftipo-sj','dash-ftipo-pf'].forEach(id => {
-                const el = document.getElementById(id); if (el) el.classList.remove('active');
+                document.getElementById(id)?.classList.remove('active');
             });
-            const tipoBtnId = tipo === 'Semi Joia' ? 'dash-ftipo-sj' : 'dash-ftipo-pf';
-            document.getElementById(tipoBtnId)?.classList.add('active');
-            document.getElementById('dash-ftipo-all')?.classList.remove('active');
+            document.getElementById(tipo === 'Semi Joia' ? 'dash-ftipo-sj' : 'dash-ftipo-pf')?.classList.add('active');
 
-            // Toggle da categoria
-            dashCatFilter = dashCatFilter === cat ? '' : cat;
+            // Toggle categoria no Set
+            if (dashCatFilters.has(cat)) dashCatFilters.delete(cat);
+            else dashCatFilters.add(cat);
+
             dashRevFilter = '';
             document.getElementById('dash-chip-rev') && (document.getElementById('dash-chip-rev').style.display = 'none');
 
@@ -2326,7 +2325,6 @@
             renderStatsPorTipo('Perfume', 'stats-perfume');
             renderCatChips();
             renderDashTable();
-            // Scroll suave para a tabela
             document.getElementById('dash-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
@@ -2375,7 +2373,7 @@
             dashStatusFilters.clear();
             dashStatusFilters.add('estoque');
             dashTipoFilter = tipo !== 'Geral' ? tipo : 'all';
-            dashCatFilter  = cat;
+            dashCatFilters.clear(); if (cat) dashCatFilters.add(cat);
             dashRevFilter  = '';
 
             // Atualizar chips status
@@ -2969,20 +2967,10 @@
             Object.entries(dashCardsVisiveis).forEach(([card, visivel]) => {
                 const el = document.getElementById('dash-card-' + card);
                 if (el) el.style.display = visivel ? '' : 'none';
-                // Sincronizar toggle na aba config
                 const toggle = document.getElementById('vis-' + card);
                 if (toggle) toggle.checked = visivel;
             });
-            // Ajustar grid conforme cards visíveis
-            const grid = document.querySelector('#content-dashboard .card-light')?.parentElement?.querySelector('[style*="grid-template-columns"]');
-            const visiveis = Object.values(dashCardsVisiveis).filter(Boolean).length;
-            const gridEl = document.getElementById('dash-card-semijoia')?.parentElement;
-            if (gridEl) {
-                if (visiveis === 4) gridEl.style.gridTemplateColumns = '1fr 1fr 1.4fr 1.4fr';
-                else if (visiveis === 3) gridEl.style.gridTemplateColumns = '1fr 1fr 1.4fr';
-                else if (visiveis === 2) gridEl.style.gridTemplateColumns = '1fr 1fr';
-                else if (visiveis === 1) gridEl.style.gridTemplateColumns = '1fr';
-            }
+            // Grid se ajusta automaticamente com auto-fill
         }
 
         function carregarVisibilidadeCards() {
@@ -4234,7 +4222,7 @@
         let dashStatusFilters = new Set();
         let dashSortCol = null;   // chave da coluna
         let dashSortDir = 'asc';  // 'asc' | 'desc'
-        let dashCatFilter = '';    // categoria selecionada // vazio = "Todos"
+        let dashCatFilters = new Set(); // categorias selecionadas (multi-select) // vazio = "Todos"
         let dashTipoFilter = 'all';
         let dashRevFilter = '';
 
@@ -4244,7 +4232,6 @@
             const container = document.getElementById('dash-chips-cat');
             if (!container) return;
 
-            // Coletar categorias visíveis conforme tipo selecionado
             let cats = new Set();
             inventory.forEach(i => {
                 if (dashTipoFilter === 'all' || i.Tipo === dashTipoFilter) {
@@ -4252,19 +4239,20 @@
                 }
             });
 
-            if (cats.size === 0) {
-                container.innerHTML = '';
-                return;
-            }
+            if (cats.size === 0) { container.innerHTML = ''; return; }
 
             container.innerHTML = [...cats].sort().map(cat => {
-                const isActive = dashCatFilter === cat;
-                return `<button class="filter-chip ${isActive ? 'active' : ''}" onclick="dashSetCat('${cat.replace(/'/g, "\'")}')">${cat}</button>`;
+                const isActive = dashCatFilters.has(cat);
+                return `<button class="filter-chip ${isActive ? 'active' : ''}" onclick="dashToggleCat('${cat.replace(/'/g, "\'")}')">${cat}</button>`;
             }).join('');
         }
 
-        function dashSetCat(cat) {
-            dashCatFilter = dashCatFilter === cat ? '' : cat; // toggle
+        function dashToggleCat(cat) {
+            if (dashCatFilters.has(cat)) {
+                dashCatFilters.delete(cat);
+            } else {
+                dashCatFilters.add(cat);
+            }
             renderCatChips();
             renderDashTable();
         }
@@ -4306,7 +4294,7 @@
             dashStatusFilters.clear();
             if (filtro !== 'all') dashStatusFilters.add(filtro);
             dashRevFilter = '';
-            dashCatFilter = '';
+            dashCatFilters.clear();
             document.getElementById('dash-chip-rev') && (document.getElementById('dash-chip-rev').style.display = 'none');
             dashTipoFilter = 'all';
             // Reset chip tipo
@@ -4331,7 +4319,7 @@
 
         function dashSetTipo(tipo, e) {
             dashTipoFilter = tipo;
-            dashCatFilter = ''; // limpar categoria ao mudar tipo
+            dashCatFilters.clear(); // limpar categorias ao mudar tipo
             ['dash-ftipo-all','dash-ftipo-sj','dash-ftipo-pf'].forEach(id => {
                 const el = document.getElementById(id); if (el) el.classList.remove('active');
             });
@@ -4343,7 +4331,7 @@
         function dashFiltrarRev(nome) {
             dashRevFilter = nome;
             dashStatusFilters.clear();
-            dashCatFilter = '';
+            dashCatFilters.clear();
             // Reset chips status
             ['dash-fstatus-all','dash-fstatus-estoque','dash-fstatus-consignado','dash-fstatus-vendido'].forEach(id => {
                 const el = document.getElementById(id); if (el) el.classList.remove('active');
@@ -4385,7 +4373,7 @@
             }
             if (dashTipoFilter && dashTipoFilter !== 'all') filtered = filtered.filter(i => i.Tipo === dashTipoFilter);
             if (dashRevFilter) filtered = filtered.filter(i => i.Revendedor === dashRevFilter);
-            if (dashCatFilter) filtered = filtered.filter(i => (i.Categoria || '') === dashCatFilter);
+            if (dashCatFilters.size > 0) filtered = filtered.filter(i => dashCatFilters.has(i.Categoria || ''));
 
             // Usar colunasConfig para respeitar visibilidade e ordem configuradas pelo usuário
             const colsVisiveis = Object.keys(colunasConfig)
