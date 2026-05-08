@@ -921,6 +921,38 @@
             background-color: var(--primary-light);
         }
 
+        
+        /* Rodapé totais da tabela */
+        .data-table tfoot tr {
+            background: var(--gray-50);
+            border-top: 2px solid var(--gray-200);
+        }
+        
+        .data-table tfoot td {
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--gray-700);
+            white-space: nowrap;
+        }
+        
+        .data-table tfoot td.total-label {
+            color: var(--gray-500);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        
+        .data-table tfoot td.total-custo {
+            color: var(--gray-700);
+            text-align: right;
+        }
+        
+        .data-table tfoot td.total-venda {
+            color: #b45309;
+            text-align: right;
+        }
+
         </style>
 </head>
 <body>
@@ -1297,19 +1329,20 @@
                         </button>
                     </div>
                     
-                                        <div class="flex gap-2 flex-wrap">
-                        <button class="filter-chip active" onclick="setFilter('all')">
-                            Todos
-                        </button>
-                        <button class="filter-chip" onclick="setFilter('estoque')">
-                            Em Estoque
-                        </button>
-                        <button class="filter-chip" onclick="setFilter('consignado')">
-                            Consignado
-                        </button>
-                        <button class="filter-chip" onclick="setFilter('vendido')">
-                            Vendidos
-                        </button>
+                    <!-- Filtros de Status -->
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                        <span style="font-size:11px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;">Status</span>
+                        <button class="filter-chip active" id="fstatus-all" onclick="setFilter('all', event)">Todos</button>
+                        <button class="filter-chip" id="fstatus-estoque" onclick="setFilter('estoque', event)">Em Estoque</button>
+                        <button class="filter-chip" id="fstatus-consignado" onclick="setFilter('consignado', event)">Consignado</button>
+                        <button class="filter-chip" id="fstatus-vendido" onclick="setFilter('vendido', event)">Vendidos</button>
+                    </div>
+                    <!-- Filtros de Tipo -->
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <span style="font-size:11px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;">Tipo</span>
+                        <button class="filter-chip active" id="ftipo-all" onclick="setTipoFilter('all', event)">Todos</button>
+                        <button class="filter-chip" id="ftipo-semijoia" onclick="setTipoFilter('Semi Joia', event)">Semi Joia</button>
+                        <button class="filter-chip" id="ftipo-perfume" onclick="setTipoFilter('Perfume', event)">Perfume</button>
                     </div>
                 </div>
 
@@ -1331,6 +1364,7 @@
                             </tr>
                         </thead>
                         <tbody id="table-inventario"></tbody>
+                        <tfoot id="tfoot-inventario"></tfoot>
                     </table>
                 </div>
             </div>
@@ -1615,6 +1649,16 @@
         let statusList = ['Em Estoque', 'Consignado', 'Vendido']; // Status padrão
         let scriptUrl = localStorage.getItem('luxus_script_url') || '';
         let currentFilter = 'all';
+        let currentTipoFilter = 'all';
+
+        // Parse seguro de valores numéricos (aceita vírgula e ponto, string ou número)
+        function parseNum(val) {
+            if (val === null || val === undefined || val === '') return 0;
+            if (typeof val === 'number') return isNaN(val) ? 0 : val;
+            const str = String(val).trim().replace(/[R$\s]/g, '').replace(',', '.');
+            const n = parseFloat(str);
+            return isNaN(n) ? 0 : n;
+        }
         let produtosConsignados = [];
         let devolucoes = [];
         
@@ -1756,15 +1800,29 @@
                     
                     if (invRes.ok) {
                         const text = await invRes.text();
-                        console.log('Inventário - Response:', text.substring(0, 200));
-                        inventory = JSON.parse(text);
+                        const parsed = JSON.parse(text);
+                        // Só usar servidor se não há pendências locais
+                        const localPendente = localStorage.getItem('luxus_inventory_local');
+                        if (localPendente) {
+                            try { inventory = JSON.parse(localPendente); }
+                            catch(e) { inventory = parsed; localStorage.removeItem('luxus_inventory_local'); }
+                        } else {
+                            inventory = parsed;
+                        }
                         console.log(`✅ ${inventory.length} itens carregados`);
                     } else {
                         throw new Error(`Status ${invRes.status}`);
                     }
                 } catch (e) {
                     console.error('❌ Erro ao carregar inventário:', e);
-                    inventory = [];
+                    // Fallback: usar dados locais se existirem
+                    const localPendente = localStorage.getItem('luxus_inventory_local');
+                    if (localPendente) {
+                        try { inventory = JSON.parse(localPendente); console.log('📦 Usando inventário local'); }
+                        catch(ex) { inventory = []; }
+                    } else {
+                        inventory = [];
+                    }
                 }
                 
                 // 2. REVENDEDORES
@@ -1778,7 +1836,6 @@
                     
                     if (revRes.ok) {
                         const text = await revRes.text();
-                        console.log('Revendedores - Response:', text.substring(0, 200));
                         revendedores = JSON.parse(text);
                         console.log(`✅ ${revendedores.length} revendedores carregados`);
                     } else {
@@ -1786,7 +1843,10 @@
                     }
                 } catch (e) {
                     console.error('❌ Erro ao carregar revendedores:', e);
-                    revendedores = [];
+                    // Fallback local
+                    const localRevs = localStorage.getItem('luxus_revendedores');
+                    if (localRevs) { try { revendedores = JSON.parse(localRevs); } catch(ex) { revendedores = []; } }
+                    else { revendedores = []; }
                 }
                 
                 // 3. CATEGORIAS
@@ -1818,26 +1878,40 @@
                     }
                 } catch (e) {
                     console.error('❌ Erro ao carregar categorias:', e);
-                    categorias = { 'Semi Joia': [], 'Perfume': [] };
+                    // Fallback local
+                    const localCats = localStorage.getItem('luxus_categorias');
+                    if (localCats) {
+                        try {
+                            const p = JSON.parse(localCats);
+                            categorias = Array.isArray(p) ? { 'Semi Joia': [], 'Perfume': [] } : p;
+                        } catch(ex) { categorias = { 'Semi Joia': [], 'Perfume': [] }; }
+                    } else {
+                        categorias = { 'Semi Joia': [], 'Perfume': [] };
+                    }
                 }
                 
-                // Atualizar interface
+                // Persistir no localStorage para uso offline
+                if (revendedores.length > 0)
+                    localStorage.setItem('luxus_revendedores', JSON.stringify(revendedores));
+                if (Object.keys(categorias).length > 0)
+                    localStorage.setItem('luxus_categorias', JSON.stringify(categorias));
+
+                // Atualizar toda a interface
                 carregarRevendedoresSelects();
                 renderDashboard();
                 renderUltimasEntradas();
+                renderRevendedores();
+                renderCategorias();
+                renderStatus();
+                renderInventario();
                 
                 // Feedback de sucesso
                 const totalItens = inventory.length + revendedores.length;
                 if (totalItens > 0) {
-                    showToast(`✅ ${inventory.length} produtos, ${revendedores.length} revendedores`, 'success');
+                    showToast(`✅ ${inventory.length} produtos · ${revendedores.length} revendedores`, 'success');
                 } else {
                     showToast('⚠️ Nenhum dado encontrado. Sistema está vazio.', 'warning');
                 }
-                
-                console.log('=== DADOS CARREGADOS COM SUCESSO ===');
-                console.log('Inventário:', inventory.length);
-                console.log('Revendedores:', revendedores.length);
-                console.log('Categorias:', categorias);
                 
             } catch (error) {
                 console.error('❌ ERRO CRÍTICO ao carregar dados:', error);
@@ -1876,9 +1950,9 @@
             const consignado = inventory.filter(i => i.Status !== 'Em Estoque' && i.Status !== 'Vendido');
             const vendido = inventory.filter(i => i.Status === 'Vendido');
             
-            const capitalEstoque = estoque.reduce((sum, i) => sum + (parseFloat(i.Custo) || 0), 0);
-            const valorConsignado = consignado.reduce((sum, i) => sum + (parseFloat(i.Venda) || 0), 0);
-            const valorVendido = vendido.reduce((sum, i) => sum + (parseFloat(i.Venda) || 0), 0);
+            const capitalEstoque = estoque.reduce((sum, i) => sum + (parseNum(i.Custo) || 0), 0);
+            const valorConsignado = consignado.reduce((sum, i) => sum + (parseNum(i.Venda) || 0), 0);
+            const valorVendido = vendido.reduce((sum, i) => sum + (parseNum(i.Venda) || 0), 0);
             
             document.getElementById('dash-total').textContent = total;
             document.getElementById('dash-capital').textContent = `R$ ${capitalEstoque.toFixed(2)}`;
@@ -1924,7 +1998,7 @@
                     return temRevendedor && naoVendido && naoEstoque;
                 });
                 
-                const valor = produtos.reduce((sum, i) => sum + (parseFloat(i.Venda) || 0), 0);
+                const valor = produtos.reduce((sum, i) => sum + (parseNum(i.Venda) || 0), 0);
                 
                 console.log(`Revendedor: ${rev.Nome} - ${produtos.length} produtos - R$ ${valor.toFixed(2)}`);
                 
@@ -2035,7 +2109,7 @@
                     </div>
                     <div class="text-sm text-gray-700">${item.Descricao}</div>
                     <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
-                        <span>R$ ${(parseFloat(item.Venda) || 0).toFixed(2)}</span>
+                        <span>R$ ${(parseNum(item.Venda) || 0).toFixed(2)}</span>
                         <span>${item.Revendedor || 'Estoque'}</span>
                     </div>
                 </div>
@@ -2072,7 +2146,7 @@
             );
             devolucoes = [];
             
-            const valorTotal = produtosConsignados.reduce((sum, i) => sum + (parseFloat(i.Venda) || 0), 0);
+            const valorTotal = produtosConsignados.reduce((sum, i) => sum + (parseNum(i.Venda) || 0), 0);
             
             document.getElementById('info-revendedor').classList.remove('hidden');
             document.getElementById('percentual-revendedor').textContent = `${rev.Percentual || 30}%`;
@@ -2211,8 +2285,8 @@
             const rev = revendedores.find(r => r.Nome === nomeRev);
             const percentual = ((rev && rev.Percentual) || 30) / 100;
             
-            const valorConsignado = produtosConsignados.reduce((sum, i) => sum + (parseFloat(i.Venda) || 0), 0);
-            const valorDevolvido = devolucoes.reduce((sum, i) => sum + (parseFloat(i.Venda) || 0), 0);
+            const valorConsignado = produtosConsignados.reduce((sum, i) => sum + (parseNum(i.Venda) || 0), 0);
+            const valorDevolvido = devolucoes.reduce((sum, i) => sum + (parseNum(i.Venda) || 0), 0);
             const valorVendido = valorConsignado - valorDevolvido;
             const comissao = valorVendido * percentual;
             const lucro = valorVendido - comissao;
@@ -2301,12 +2375,18 @@
                 (i.Categoria || '').toLowerCase().includes(search)
             );
             
+            // Filtro de status
             if (currentFilter === 'estoque') {
                 filtered = filtered.filter(i => i.Status === 'Em Estoque');
             } else if (currentFilter === 'consignado') {
                 filtered = filtered.filter(i => i.Status !== 'Em Estoque' && i.Status !== 'Vendido');
             } else if (currentFilter === 'vendido') {
                 filtered = filtered.filter(i => i.Status === 'Vendido');
+            }
+            
+            // Filtro de tipo
+            if (currentTipoFilter && currentTipoFilter !== 'all') {
+                filtered = filtered.filter(i => (i.Tipo || '') === currentTipoFilter);
             }
             
             // Obter colunas visíveis ordenadas
@@ -2324,18 +2404,22 @@
             const tbody = document.getElementById('table-inventario');
             tbody.innerHTML = '';
             
+            // Calcular totais
+            let totalCusto = 0, totalVenda = 0;
             filtered.forEach(item => {
+                totalCusto += parseNum(item.Custo) || 0;
+                totalVenda += parseNum(item.Venda) || 0;
+
                 const row = tbody.insertRow();
-                
                 colunasVisiveis.forEach(key => {
                     const td = row.insertCell();
-                    
                     switch(key) {
                         case 'codigo':
                             td.innerHTML = `<span class="code-link" onclick="editarItem(${item.rowId})">${item.Codigo}</span>`;
                             break;
                         case 'descricao':
                             td.textContent = item.Descricao || '-';
+                            td.title = item.Descricao || '';
                             break;
                         case 'tipo':
                             td.innerHTML = `<span class="category-badge">${item.Tipo || 'Geral'}</span>`;
@@ -2345,31 +2429,26 @@
                             break;
                         case 'status':
                             let statusClass = 'status-estoque', icon = '🏠';
-                            if (item.Status === 'Vendido') {
-                                statusClass = 'status-vendido';
-                                icon = '💰';
-                            } else if (item.Status !== 'Em Estoque') {
-                                statusClass = 'status-consignado';
-                                icon = '🤝';
-                            }
+                            if (item.Status === 'Vendido') { statusClass = 'status-vendido'; icon = '💰'; }
+                            else if (item.Status !== 'Em Estoque') { statusClass = 'status-consignado'; icon = '🤝'; }
                             td.innerHTML = `<span class="status-badge ${statusClass}">${icon} ${item.Status}</span>`;
                             break;
                         case 'revendedor':
                             td.textContent = item.Revendedor || '-';
                             break;
                         case 'custo':
-                            td.textContent = `R$ ${(parseFloat(item.Custo) || 0).toFixed(2)}`;
+                            td.textContent = `R$ ${(parseNum(item.Custo) || 0).toFixed(2)}`;
                             break;
                         case 'venda':
                             td.className = 'text-amber-700 font-semibold';
-                            td.textContent = `R$ ${(parseFloat(item.Venda) || 0).toFixed(2)}`;
+                            td.textContent = `R$ ${(parseNum(item.Venda) || 0).toFixed(2)}`;
                             break;
                         case 'data':
                             td.textContent = item.Data ? new Date(item.Data).toLocaleDateString('pt-BR') : '-';
                             break;
-                                                case 'foto':
+                        case 'foto':
                             if (item.Foto) {
-                                td.innerHTML = `<img src="${item.Foto}" class="foto-thumbnail" onclick="verFoto('${item.Foto}')" alt="Foto do produto">`;
+                                td.innerHTML = `<img src="${item.Foto}" class="foto-thumbnail" onclick="verFoto('${item.Foto}')" alt="Foto">`;
                             } else {
                                 td.innerHTML = `<div class="foto-placeholder"><i class="fas fa-image"></i></div>`;
                             }
@@ -2377,6 +2456,31 @@
                     }
                 });
             });
+
+            // Renderizar linha de totais no tfoot
+            const tfoot = document.getElementById('tfoot-inventario');
+            if (tfoot) {
+                const row = tfoot.insertRow();
+                colunasVisiveis.forEach(key => {
+                    const td = row.insertCell();
+                    switch(key) {
+                        case 'codigo':
+                            td.className = 'total-label';
+                            td.innerHTML = `<i class="fas fa-calculator" style="margin-right:5px;color:var(--primary);"></i>${filtered.length} ${filtered.length === 1 ? 'item' : 'itens'}`;
+                            break;
+                        case 'custo':
+                            td.className = 'total-custo';
+                            td.innerHTML = `<span style="font-size:11px;color:var(--gray-400);display:block;margin-bottom:1px;">Total Custo</span>R$ ${totalCusto.toFixed(2)}`;
+                            break;
+                        case 'venda':
+                            td.className = 'total-venda';
+                            td.innerHTML = `<span style="font-size:11px;color:var(--gray-400);display:block;margin-bottom:1px;">Total Venda</span>R$ ${totalVenda.toFixed(2)}`;
+                            break;
+                        default:
+                            td.textContent = '';
+                    }
+                });
+            }
         }
 
         
@@ -2458,10 +2562,25 @@
             });
         }
 
-        function setFilter(filter) {
+        function setFilter(filter, e) {
             currentFilter = filter;
-            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-            event.target.classList.add('active');
+            // Só remove active dos chips de status
+            ['fstatus-all','fstatus-estoque','fstatus-consignado','fstatus-vendido'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('active');
+            });
+            if (e && e.target) e.target.classList.add('active');
+            renderInventario();
+        }
+        
+        function setTipoFilter(tipo, e) {
+            currentTipoFilter = tipo;
+            // Só remove active dos chips de tipo
+            ['ftipo-all','ftipo-semijoia','ftipo-perfume'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('active');
+            });
+            if (e && e.target) e.target.classList.add('active');
             renderInventario();
         }
 
@@ -2992,12 +3111,38 @@
         }
         
         function carregarStatusSalvos() {
-            const saved = localStorage.getItem('luxus_status');
-            if (saved) {
-                statusList = JSON.parse(saved);
+            // Status
+            const savedStatus = localStorage.getItem('luxus_status');
+            if (savedStatus) statusList = JSON.parse(savedStatus);
+
+            // Categorias (fallback local)
+            const savedCats = localStorage.getItem('luxus_categorias');
+            if (savedCats) {
+                try {
+                    const parsed = JSON.parse(savedCats);
+                    // Aceitar tanto formato {Semi Joia:[], Perfume:[]} quanto array legado
+                    if (Array.isArray(parsed)) {
+                        categorias = { 'Semi Joia': [], 'Perfume': [] };
+                        parsed.forEach(c => {
+                            if (c.Tipo && categorias[c.Tipo]) categorias[c.Tipo].push(c.Nome || c.nome);
+                        });
+                    } else {
+                        categorias = parsed;
+                    }
+                } catch(e) { categorias = { 'Semi Joia': [], 'Perfume': [] }; }
             }
+
+            // Revendedores (fallback local)
+            const savedRevs = localStorage.getItem('luxus_revendedores');
+            if (savedRevs) {
+                try { revendedores = JSON.parse(savedRevs); } catch(e) { revendedores = []; }
+            }
+
             renderStatus();
+            renderCategorias();
+            renderRevendedores();
             atualizarSelectsStatus();
+            carregarRevendedoresSelects();
         }
 
         // ========== CATEGORIAS ==========
