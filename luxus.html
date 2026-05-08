@@ -1091,17 +1091,33 @@
                     </div>
                 </div>
 
-                <!-- Segunda linha: Semi Joias | Perfumes | Revendedores Consignado -->
-                <div style="display:grid;grid-template-columns:1fr 1fr 1.6fr;gap:1.25rem;margin-bottom:1.25rem;max-width:1000px;">
+                <!-- Segunda linha: Semi Joias | Perfumes | Estoque | Consignado -->
+                <div style="display:grid;grid-template-columns:1fr 1fr 1.4fr 1.4fr;gap:1.25rem;margin-bottom:1.25rem;">
+
+                    <!-- Semi Joias por categoria -->
                     <div class="card-light p-5">
                         <h3 class="section-title"><i class="fas fa-ring"></i>Semi Joias</h3>
                         <div id="stats-semijoia" class="space-y-2"></div>
                     </div>
+
+                    <!-- Perfumes por categoria -->
                     <div class="card-light p-5">
                         <h3 class="section-title"><i class="fas fa-spray-can"></i>Perfumes</h3>
                         <div id="stats-perfume" class="space-y-2"></div>
                     </div>
-                    <!-- Card Consignado expandido com revendedores -->
+
+                    <!-- Estoque detalhado -->
+                    <div class="card-light p-5">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--gray-200);">
+                            <h3 style="font-size:0.9rem;font-weight:600;color:var(--gray-700);display:flex;align-items:center;gap:6px;margin:0;">
+                                <i class="fas fa-warehouse" style="color:#10b981;font-size:0.85rem;"></i>Em Estoque
+                            </h3>
+                            <span id="badge-total-estoque" style="font-size:11px;background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-weight:600;">0 itens</span>
+                        </div>
+                        <div id="lista-estoque-dash" style="display:flex;flex-direction:column;gap:5px;"></div>
+                    </div>
+
+                    <!-- Consignado por revendedor -->
                     <div class="card-light p-5">
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--gray-200);">
                             <h3 style="font-size:0.9rem;font-weight:600;color:var(--gray-700);display:flex;align-items:center;gap:6px;margin:0;">
@@ -2118,6 +2134,9 @@
             renderStatsPorTipo('Semi Joia', 'stats-semijoia');
             renderStatsPorTipo('Perfume', 'stats-perfume');
 
+            // Estoque detalhado
+            renderEstoqueDash();
+
             // Top revendedores
             renderTopRevendedores();
 
@@ -2140,6 +2159,61 @@
             }).join('');
             
             document.getElementById(containerId).innerHTML = html || '<p class="text-gray-500 text-sm text-center py-4">Nenhuma categoria</p>';
+        }
+
+
+        function renderEstoqueDash() {
+            const estoque = inventory.filter(i => i.Status === 'Em Estoque');
+            
+            const badge = document.getElementById('badge-total-estoque');
+            if (badge) badge.textContent = `${estoque.length} ${estoque.length === 1 ? 'item' : 'itens'}`;
+
+            const container = document.getElementById('lista-estoque-dash');
+            if (!container) return;
+
+            if (estoque.length === 0) {
+                container.innerHTML = '<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:16px 0;">Nenhum item em estoque</p>';
+                return;
+            }
+
+            // Agrupar por tipo/categoria
+            const grupos = {};
+            estoque.forEach(item => {
+                const chave = (item.Tipo || 'Geral') + (item.Categoria ? ' · ' + item.Categoria : '');
+                if (!grupos[chave]) grupos[chave] = [];
+                grupos[chave].push(item);
+            });
+
+            container.innerHTML = Object.entries(grupos).map(([grupo, itens]) => {
+                const valorTotal = itens.reduce((s, i) => s + parseNum(i.Venda), 0);
+                return `
+                <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;overflow:hidden;">
+                    <!-- Linha do grupo -->
+                    <div onclick="dashSetFilter('estoque', {target: document.getElementById('dash-fstatus-estoque')})"
+                         style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;transition:background 0.15s;"
+                         onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='transparent'">
+                        <div>
+                            <div style="font-size:13px;font-weight:600;color:var(--gray-800);">${grupo}</div>
+                            <div style="font-size:11px;color:var(--gray-500);">${itens.length} ${itens.length===1?'item':'itens'}</div>
+                        </div>
+                        <div style="text-align:right;flex-shrink:0;">
+                            <div style="font-size:13px;font-weight:700;color:#10b981;">R$ ${valorTotal.toFixed(2)}</div>
+                            <div style="font-size:10px;color:var(--gray-400);">ver →</div>
+                        </div>
+                    </div>
+                    <!-- Mini lista dos itens -->
+                    <div style="border-top:1px solid var(--gray-200);padding:6px 12px;display:flex;flex-direction:column;gap:3px;">
+                        ${itens.slice(0,3).map(p => `
+                            <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;">
+                                <span style="color:#1e40af;font-family:monospace;font-weight:600;">${p.Codigo}</span>
+                                <span style="color:var(--gray-600);flex:1;margin:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.Descricao||'—'}</span>
+                                <span style="color:var(--gray-700);font-weight:600;flex-shrink:0;">R$ ${parseNum(p.Venda).toFixed(2)}</span>
+                            </div>
+                        `).join('')}
+                        ${itens.length > 3 ? `<div style="font-size:10px;color:var(--gray-400);text-align:center;padding-top:2px;">+${itens.length-3} mais</div>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
         }
 
         function renderTopRevendedores() {
