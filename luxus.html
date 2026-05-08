@@ -996,6 +996,12 @@
                     </button>
                 </nav>
                 
+                <!-- Saudação no header -->
+                <div id="header-saudacao" style="flex-shrink:0;text-align:right;display:none;">
+                    <div style="font-size:0.8rem;font-weight:600;color:rgba(255,255,255,0.9);">Olá, <span id="dashboard-username">Lu</span>! ✨</div>
+                    <div style="font-size:0.65rem;color:rgba(255,255,255,0.45);">Bem-vinda ao seu painel</div>
+                </div>
+
                 <!-- Hora + user + logout -->
                 <div style="display:flex;align-items:center;gap:0.75rem;flex-shrink:0;">
                     <span class="text-xs" style="color:rgba(255,255,255,0.6);" id="status-time">--:--</span>
@@ -1039,12 +1045,6 @@
                     </div>
                 </div>
                 
-                <!-- Saudação -->
-                <div class="card-light p-6 mb-6 text-center">
-                    <h2 class="text-3xl font-bold text-amber-600 mb-2">Olá, <span id="dashboard-username">Lu</span>! ✨</h2>
-                    <p class="text-gray-600">Bem-vinda ao seu painel de controle</p>
-                </div>
-
                 <!-- Cards de Estatísticas -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
                     <div class="stat-card cursor-pointer hover:scale-105 transition-transform" onclick="filtrarDashboard('all')">
@@ -1759,6 +1759,10 @@
             document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
             document.getElementById(`tab-${tab}`).classList.add('active');
             
+            // Mostrar saudação só no dashboard
+            const saudacaoEl = document.getElementById('header-saudacao');
+            if (saudacaoEl) saudacaoEl.style.display = tab === 'dashboard' ? 'block' : 'none';
+
             if (tab === 'entrada') {
                 document.getElementById('entrada-codigo').focus();
             } else if (tab === 'fechamento') {
@@ -1939,10 +1943,10 @@
             
             // Atualizar nome do usuário
             const username = localStorage.getItem('luxus_user') || 'Lu';
-            const dashUsername = document.getElementById('dashboard-username');
-            if (dashUsername) {
-                dashUsername.textContent = username;
-            }
+            document.querySelectorAll('#dashboard-username').forEach(el => el.textContent = username);
+            // Mostrar saudação no header
+            const saudEl = document.getElementById('header-saudacao');
+            if (saudEl) saudEl.style.display = 'block';
             
             // Cards principais
             const total = inventory.length;
@@ -2008,14 +2012,16 @@
             console.log('Revendedores com produtos:', revStats.length);
             
             const html = revStats.slice(0, 5).map(rev => `
-                <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" onclick="verProdutosRevendedor('${rev.Nome}')">
-                    <div>
-                        <div class="font-semibold text-gray-800">${rev.Nome}</div>
-                        <div class="text-xs text-gray-600">${rev.qtd} produtos • ${rev.Percentual || 30}% comissão</div>
+                <div onclick="verProdutosRevendedor('${rev.Nome}')"
+                     style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--gray-50);border-radius:6px;border:1px solid var(--gray-200);cursor:pointer;transition:background 0.15s;"
+                     onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='var(--gray-50)'">
+                    <div style="min-width:0;">
+                        <div style="font-size:13px;font-weight:600;color:var(--gray-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${rev.Nome}</div>
+                        <div style="font-size:11px;color:var(--gray-500);white-space:nowrap;">${rev.qtd} ${rev.qtd === 1 ? 'item' : 'itens'} · ${rev.Percentual || 30}% comissão</div>
                     </div>
-                    <div class="text-right">
-                        <div class="font-bold text-blue-600">R$ ${rev.valor.toFixed(2)}</div>
-                        <div class="text-[10px] text-gray-500 mt-1">👆 Ver produtos</div>
+                    <div style="text-align:right;flex-shrink:0;margin-left:8px;">
+                        <div style="font-size:13px;font-weight:700;color:#3b82f6;white-space:nowrap;">R$ ${rev.valor.toFixed(2)}</div>
+                        <div style="font-size:10px;color:var(--gray-400);white-space:nowrap;">ver produtos →</div>
                     </div>
                 </div>
             `).join('');
