@@ -984,10 +984,7 @@
                         <i class="fas fa-chart-line mr-2"></i>Dashboard
                     </button>
                     <button onclick="switchTab('entrada')" id="tab-entrada" class="nav-tab">
-                        <i class="fas fa-barcode mr-2"></i>Entrada/Saída
-                    </button>
-                    <button onclick="switchTab('fechamento')" id="tab-fechamento" class="nav-tab">
-                        <i class="fas fa-calculator mr-2"></i>Fechamento
+                        <i class="fas fa-exchange-alt mr-2"></i>Operações
                     </button>
                     <button onclick="switchTab('inventario')" id="tab-inventario" class="nav-tab">
                         <i class="fas fa-gem mr-2"></i>Inventário
@@ -1094,8 +1091,8 @@
                     </div>
                 </div>
 
-                <!-- Estatísticas por Tipo + Revendedores -->
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;max-width:960px;">
+                <!-- Segunda linha: Semi Joias | Perfumes | Revendedores Consignado -->
+                <div style="display:grid;grid-template-columns:1fr 1fr 1.6fr;gap:1.25rem;margin-bottom:1.25rem;">
                     <div class="card-light p-5">
                         <h3 class="section-title"><i class="fas fa-ring"></i>Semi Joias</h3>
                         <div id="stats-semijoia" class="space-y-2"></div>
@@ -1104,108 +1101,147 @@
                         <h3 class="section-title"><i class="fas fa-spray-can"></i>Perfumes</h3>
                         <div id="stats-perfume" class="space-y-2"></div>
                     </div>
+                    <!-- Card Consignado expandido com revendedores -->
                     <div class="card-light p-5">
-                        <h3 class="section-title"><i class="fas fa-users"></i>Revendedores Ativos</h3>
-                        <div id="top-revendedores" class="space-y-2"></div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--gray-200);">
+                            <h3 style="font-size:0.9rem;font-weight:600;color:var(--gray-700);display:flex;align-items:center;gap:6px;margin:0;">
+                                <i class="fas fa-handshake" style="color:#3b82f6;font-size:0.85rem;"></i>Consignado por Revendedor
+                            </h3>
+                            <span id="badge-total-cons" style="font-size:11px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:10px;font-weight:600;">0 itens</span>
+                        </div>
+                        <div id="top-revendedores" style="display:flex;flex-direction:column;gap:6px;"></div>
                     </div>
                 </div>
-            </div>
 
-            <!-- TAB: Entrada/Saída -->
-            <div id="content-entrada" class="tab-content hidden">
-                <div style="max-width:820px;display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
-                    <!-- Entrada de Produtos -->
-                    <div class="card-light p-6">
-                        <h3 class="section-title">
-                            <i class="fas fa-box-open"></i>Entrada de Produtos
-                        </h3>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-barcode mr-1"></i>Código do Produto
-                                </label>
-                                <input 
-                                    type="text" 
-                                    id="entrada-codigo" 
-                                    class="w-full barcode-input"
-                                    placeholder="Bipe ou digite o código"
-                                    autofocus
-                                >
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Produto</label>
-                                <select id="entrada-tipo" class="w-full">
-                                    <option value="">Selecione...</option>
-                                    <option value="Semi Joia">Semi Joia</option>
-                                    <option value="Perfume">Perfume</option>
-                                </select>
-                            </div>
-                            
-                            <div id="entrada-categoria-container" class="hidden">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
-                                <select id="entrada-categoria" class="w-full"></select>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
-                                <input type="text" id="entrada-descricao" class="w-full" placeholder="Ex: Colar Dourado">
-                            </div>
-                            
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Custo (R$)</label>
-                                    <input type="number" id="entrada-custo" class="w-full" step="0.01" placeholder="0.00">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Venda (R$)</label>
-                                    <input type="number" id="entrada-venda" class="w-full" step="0.01" placeholder="0.00">
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Revendedor (Opcional)</label>
-                                <select id="entrada-revendedor" class="w-full">
-                                    <option value="">Em Estoque</option>
-                                </select>
-                            </div>
-                            
-                            <button onclick="registrarEntrada()" class="btn-primary w-full">
-                                <i class="fas fa-check-circle mr-2"></i>Registrar Entrada
-                            </button>
-                            
-                            <button onclick="limparFormEntrada()" class="btn-secondary w-full">
-                                <i class="fas fa-eraser mr-2"></i>Limpar Campos
+                <!-- Tabela de inventário embutida no dashboard -->
+                <div class="card-light">
+                    <!-- Barra de controles -->
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--gray-200);flex-wrap:wrap;gap:10px;">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <!-- Chips de status -->
+                            <button class="filter-chip active" id="dash-fstatus-all" onclick="dashSetFilter('all',event)">Todos</button>
+                            <button class="filter-chip" id="dash-fstatus-estoque" onclick="dashSetFilter('estoque',event)">Em Estoque</button>
+                            <button class="filter-chip" id="dash-fstatus-consignado" onclick="dashSetFilter('consignado',event)">Consignado</button>
+                            <button class="filter-chip" id="dash-fstatus-vendido" onclick="dashSetFilter('vendido',event)">Vendidos</button>
+                            <div style="width:1px;height:20px;background:var(--gray-200);margin:0 4px;"></div>
+                            <!-- Chips de tipo -->
+                            <button class="filter-chip active" id="dash-ftipo-all" onclick="dashSetTipo('all',event)">Todos os tipos</button>
+                            <button class="filter-chip" id="dash-ftipo-sj" onclick="dashSetTipo('Semi Joia',event)">Semi Joia</button>
+                            <button class="filter-chip" id="dash-ftipo-pf" onclick="dashSetTipo('Perfume',event)">Perfume</button>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <input type="text" id="dash-search" placeholder="Buscar..." 
+                                   style="padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:13px;width:180px;"
+                                   oninput="renderDashTable()">
+                            <button onclick="abrirModalNovoItem()" class="btn-primary" style="font-size:13px;padding:6px 14px;">
+                                <i class="fas fa-plus mr-1"></i>Novo
                             </button>
                         </div>
                     </div>
-                    
-                    <!-- Últimas Entradas -->
-                    <div class="card-light p-6">
-                        <h3 class="section-title">
-                            <i class="fas fa-history"></i>Últimas Entradas
-                        </h3>
-                        <div id="ultimas-entradas" class="space-y-3 max-h-[600px] overflow-y-auto scrollbar-custom"></div>
+                    <!-- Banner filtro revendedor ativo (dashboard) -->
+                    <div id="dash-banner-rev" style="display:none;background:#eff6ff;border-bottom:1px solid #bfdbfe;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;">
+                        <span style="font-size:13px;color:#1e40af;">
+                            <i class="fas fa-filter" style="margin-right:6px;"></i>
+                            Revendedor: <strong id="dash-label-rev"></strong>
+                        </span>
+                        <button onclick="dashLimparRev()" style="background:none;border:none;cursor:pointer;font-size:12px;color:#3b82f6;">
+                            <i class="fas fa-times mr-1"></i>Limpar
+                        </button>
+                    </div>
+                    <!-- Tabela -->
+                    <div style="overflow-x:auto;">
+                        <table class="data-table" id="dash-table">
+                            <thead><tr id="dash-thead-row"></tr></thead>
+                            <tbody id="dash-tbody"></tbody>
+                            <tfoot id="dash-tfoot"></tfoot>
+                        </table>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB: Fechamento -->
-            <div id="content-fechamento" class="tab-content hidden">
-                <!-- Layout 3 colunas: esq=devolução | centro=resumo | dir=produtos consignados -->
-                <div style="display:grid;grid-template-columns:280px 280px 1fr;gap:1.25rem;align-items:start;">
+            <!-- TAB: Operações (Entrada + Fechamento unificados) -->
+            <div id="content-entrada" class="tab-content hidden">
+                <!-- Título com sub-abas internas -->
+                <div style="display:flex;gap:0;margin-bottom:1.25rem;background:var(--white);border:1px solid var(--gray-200);border-radius:8px;overflow:hidden;width:fit-content;">
+                    <button id="subtab-entrada-btn" onclick="switchSubtab('entrada')"
+                            style="padding:8px 20px;font-size:13px;font-weight:600;background:var(--primary);color:white;border:none;cursor:pointer;transition:all 0.2s;">
+                        <i class="fas fa-box-open mr-2"></i>Entrada de Produto
+                    </button>
+                    <button id="subtab-fechamento-btn" onclick="switchSubtab('fechamento')"
+                            style="padding:8px 20px;font-size:13px;font-weight:500;background:transparent;color:var(--gray-600);border:none;cursor:pointer;transition:all 0.2s;">
+                        <i class="fas fa-calculator mr-2"></i>Fechamento
+                    </button>
+                    <button id="subtab-historico-btn" onclick="switchSubtab('historico')"
+                            style="padding:8px 20px;font-size:13px;font-weight:500;background:transparent;color:var(--gray-600);border:none;cursor:pointer;transition:all 0.2s;">
+                        <i class="fas fa-history mr-2"></i>Histórico
+                    </button>
+                </div>
 
-                    <!-- COL 1: Seleção + Devolução + Devolvidos -->
+                <!-- SUB-ABA: Entrada -->
+                <div id="subtab-entrada" style="display:grid;grid-template-columns:360px 1fr;gap:1.25rem;align-items:start;">
+                    <div class="card-light p-5">
+                        <h3 class="section-title"><i class="fas fa-box-open"></i>Entrada de Produtos</h3>
+                        <div style="display:flex;flex-direction:column;gap:0.875rem;">
+                            <div>
+                                <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;"><i class="fas fa-barcode mr-1"></i>Código do Produto</label>
+                                <input type="text" id="entrada-codigo" class="w-full barcode-input" placeholder="Bipe ou digite o código">
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                                <div>
+                                    <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Tipo</label>
+                                    <select id="entrada-tipo" class="w-full">
+                                        <option value="">Selecione...</option>
+                                        <option value="Semi Joia">Semi Joia</option>
+                                        <option value="Perfume">Perfume</option>
+                                    </select>
+                                </div>
+                                <div id="entrada-categoria-container" class="hidden">
+                                    <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Categoria</label>
+                                    <select id="entrada-categoria" class="w-full"></select>
+                                </div>
+                            </div>
+                            <div>
+                                <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Descrição</label>
+                                <input type="text" id="entrada-descricao" class="w-full" placeholder="Ex: Colar Dourado">
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                                <div>
+                                    <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Custo (R$)</label>
+                                    <input type="number" id="entrada-custo" class="w-full" step="0.01" placeholder="0.00">
+                                </div>
+                                <div>
+                                    <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Venda (R$)</label>
+                                    <input type="number" id="entrada-venda" class="w-full" step="0.01" placeholder="0.00">
+                                </div>
+                            </div>
+                            <div>
+                                <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Revendedor (Opcional)</label>
+                                <select id="entrada-revendedor" class="w-full"><option value="">Em Estoque</option></select>
+                            </div>
+                            <button onclick="registrarEntrada()" class="btn-primary w-full" style="font-size:13px;">
+                                <i class="fas fa-check-circle mr-2"></i>Registrar Entrada
+                            </button>
+                            <button onclick="limparFormEntrada()" class="btn-secondary w-full" style="font-size:13px;">
+                                <i class="fas fa-eraser mr-2"></i>Limpar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-light p-5">
+                        <h3 class="section-title"><i class="fas fa-history"></i>Últimas Entradas</h3>
+                        <div id="ultimas-entradas" style="display:flex;flex-direction:column;gap:8px;max-height:520px;overflow-y:auto;"></div>
+                    </div>
+                </div>
+
+                <!-- SUB-ABA: Fechamento -->
+                <div id="subtab-fechamento" style="display:none;grid-template-columns:260px 260px 1fr;gap:1.25rem;align-items:start;">
+
+                    <!-- COL 1 -->
                     <div style="display:flex;flex-direction:column;gap:1rem;">
-
-                        <!-- Seleção do revendedor -->
                         <div class="card-light p-5">
                             <label style="font-size:11px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Revendedor</label>
                             <select id="fechamento-revendedor" class="w-full" onchange="carregarProdutosRevendedor()">
                                 <option value="">Escolha...</option>
                             </select>
-                            <!-- Mini resumo inline -->
                             <div id="info-revendedor" class="hidden" style="margin-top:10px;display:flex;gap:6px;">
                                 <div style="flex:1;text-align:center;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;padding:6px 4px;">
                                     <div style="font-size:10px;color:var(--gray-500);">Itens</div>
@@ -1221,8 +1257,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Input devolução -->
                         <div class="card-light p-5">
                             <h4 style="font-size:12px;font-weight:600;color:var(--gray-700);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
                                 <i class="fas fa-barcode" style="color:var(--primary);font-size:11px;"></i>Registrar Devolução
@@ -1233,8 +1267,6 @@
                                 <i class="fas fa-undo mr-2"></i>Registrar
                             </button>
                         </div>
-
-                        <!-- Lista de devolvidos -->
                         <div class="card-light p-5">
                             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                                 <h4 style="font-size:12px;font-weight:600;color:var(--gray-700);">Devolvidos</h4>
@@ -1247,10 +1279,9 @@
                         </div>
                     </div>
 
-                    <!-- COL 2: Resumo financeiro -->
+                    <!-- COL 2: Resumo -->
                     <div class="card-light p-5">
                         <h4 style="font-size:11px;font-weight:600;color:var(--gray-500);margin-bottom:14px;text-align:center;text-transform:uppercase;letter-spacing:0.5px;">Resumo do Fechamento</h4>
-                        
                         <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px;">
                             <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:var(--gray-50);border-radius:6px;border:1px solid var(--gray-200);">
                                 <span style="font-size:13px;color:var(--gray-600);">Consignado</span>
@@ -1274,13 +1305,12 @@
                                 <span id="resumo-lucro" style="font-size:1.25rem;font-weight:800;color:#059669;">R$ 0,00</span>
                             </div>
                         </div>
-
                         <button onclick="finalizarFechamento()" class="btn-primary w-full" style="font-size:13px;padding:0.7rem;">
                             <i class="fas fa-check-double mr-2"></i>Finalizar Fechamento
                         </button>
                     </div>
 
-                    <!-- COL 3: Produtos consignados do revendedor -->
+                    <!-- COL 3: Consignados -->
                     <div class="card-light p-5" id="card-consignados">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--gray-200);">
                             <h4 style="font-size:12px;font-weight:600;color:var(--gray-700);text-transform:uppercase;letter-spacing:0.5px;">
@@ -1288,17 +1318,59 @@
                             </h4>
                             <span id="badge-consignados" style="font-size:11px;background:var(--primary);color:white;padding:2px 8px;border-radius:10px;font-weight:600;">0</span>
                         </div>
-
-                        <!-- Estado vazio -->
                         <div id="consignados-empty" style="text-align:center;padding:40px 20px;">
                             <i class="fas fa-box-open" style="font-size:2rem;color:var(--gray-300);margin-bottom:10px;display:block;"></i>
-                            <p style="font-size:13px;color:var(--gray-400);">Selecione um revendedor para ver os produtos consignados</p>
+                            <p style="font-size:13px;color:var(--gray-400);">Selecione um revendedor</p>
                         </div>
-
-                        <!-- Lista de produtos -->
                         <div id="lista-consignados" style="display:flex;flex-direction:column;gap:5px;max-height:520px;overflow-y:auto;"></div>
                     </div>
+                </div>
 
+                <!-- SUB-ABA: Histórico de Fechamentos -->
+                <div id="subtab-historico" style="display:none;">
+                    <div class="card-light">
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--gray-200);flex-wrap:wrap;gap:10px;">
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <h3 style="font-size:0.9rem;font-weight:600;color:var(--gray-700);margin:0;">
+                                    <i class="fas fa-history" style="color:var(--primary);margin-right:6px;"></i>Histórico de Fechamentos
+                                </h3>
+                                <span id="badge-historico" style="font-size:11px;background:var(--gray-100);color:var(--gray-600);padding:2px 8px;border-radius:10px;font-weight:600;">0 registros</span>
+                            </div>
+                            <div style="display:flex;gap:8px;">
+                                <input type="text" id="hist-search" placeholder="Buscar revendedor..."
+                                       style="padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:13px;width:200px;"
+                                       oninput="renderHistorico()">
+                                <button onclick="exportarHistorico()" class="btn-secondary" style="font-size:13px;">
+                                    <i class="fas fa-download mr-1"></i>Exportar CSV
+                                </button>
+                                <button onclick="confirmarLimparHistorico()" style="background:none;border:1px solid var(--gray-300);padding:6px 12px;border-radius:6px;font-size:13px;color:var(--gray-500);cursor:pointer;" title="Limpar histórico">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%;border-collapse:collapse;" id="tabela-historico">
+                                <thead>
+                                    <tr style="background:var(--gray-50);border-bottom:2px solid var(--gray-200);">
+                                        <th style="padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);font-weight:600;white-space:nowrap;">Data</th>
+                                        <th style="padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);font-weight:600;">Revendedor</th>
+                                        <th style="padding:10px 14px;text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);font-weight:600;">Consignados</th>
+                                        <th style="padding:10px 14px;text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);font-weight:600;">Vendidos</th>
+                                        <th style="padding:10px 14px;text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);font-weight:600;">Devolvidos</th>
+                                        <th style="padding:10px 14px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);font-weight:600;">Valor Vendido</th>
+                                        <th style="padding:10px 14px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);font-weight:600;">Comissão</th>
+                                        <th style="padding:10px 14px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);font-weight:600;">Lucro</th>
+                                        <th style="padding:10px 14px;text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);font-weight:600;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-historico"></tbody>
+                            </table>
+                        </div>
+                        <div id="historico-empty" style="text-align:center;padding:3rem;display:none;">
+                            <i class="fas fa-history" style="font-size:2.5rem;color:var(--gray-300);display:block;margin-bottom:12px;"></i>
+                            <p style="font-size:14px;color:var(--gray-400);">Nenhum fechamento registrado ainda</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1764,6 +1836,25 @@
             if (el) el.textContent = new Date().toLocaleTimeString('pt-BR');
         }
 
+        // ========== SUB-ABAS DE OPERAÇÕES ==========
+        function switchSubtab(sub) {
+            const tabs = ['entrada', 'fechamento', 'historico'];
+            tabs.forEach(t => {
+                const el = document.getElementById('subtab-' + t);
+                if (el) el.style.display = t === sub ? 'grid' : 'none';
+                // historico usa block, não grid
+                if (t === 'historico' && el) el.style.display = t === sub ? 'block' : 'none';
+                const btn = document.getElementById('subtab-' + t + '-btn');
+                if (btn) {
+                    btn.style.background = t === sub ? 'var(--primary)' : 'transparent';
+                    btn.style.color      = t === sub ? 'white' : 'var(--gray-600)';
+                    btn.style.fontWeight = t === sub ? '600' : '500';
+                }
+            });
+            if (sub === 'fechamento') carregarRevendedoresFechamento();
+            if (sub === 'historico')  renderHistorico();
+        }
+
         // ========== NAVEGAÇÃO ==========
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -1780,9 +1871,8 @@
             }
 
             if (tab === 'entrada') {
-                document.getElementById('entrada-codigo').focus();
-            } else if (tab === 'fechamento') {
-                carregarRevendedoresFechamento();
+                setTimeout(() => { const el = document.getElementById('entrada-codigo'); if(el) el.focus(); }, 100);
+            } else if (tab === 'fechamento') { /* unificado em entrada */
             } else if (tab === 'config') {
                 renderRevendedores();
                 renderStatus();
@@ -2027,9 +2117,12 @@
             // Estatísticas por tipo
             renderStatsPorTipo('Semi Joia', 'stats-semijoia');
             renderStatsPorTipo('Perfume', 'stats-perfume');
-            
+
             // Top revendedores
             renderTopRevendedores();
+
+            // Tabela embutida
+            renderDashTable();
         }
 
         function renderStatsPorTipo(tipo, containerId) {
@@ -2050,44 +2143,50 @@
         }
 
         function renderTopRevendedores() {
-            console.log('=== RENDERIZANDO TOP REVENDEDORES ===');
-            console.log('Total revendedores:', revendedores.length);
-            console.log('Total inventário:', inventory.length);
-            
             const revStats = revendedores.map(rev => {
-                // Produtos consignados = tem revendedor e não foi vendido
-                const produtos = inventory.filter(i => {
-                    const temRevendedor = i.Revendedor && i.Revendedor === rev.Nome;
-                    const naoVendido = i.Status !== 'Vendido';
-                    const naoEstoque = i.Status !== 'Em Estoque';
-                    return temRevendedor && naoVendido && naoEstoque;
-                });
-                
-                const valor = produtos.reduce((sum, i) => sum + (parseNum(i.Venda) || 0), 0);
-                
-                console.log(`Revendedor: ${rev.Nome} - ${produtos.length} produtos - R$ ${valor.toFixed(2)}`);
-                
-                return { ...rev, qtd: produtos.length, valor };
+                const produtos = inventory.filter(i =>
+                    i.Revendedor && i.Revendedor === rev.Nome &&
+                    i.Status !== 'Vendido' && i.Status !== 'Em Estoque'
+                );
+                const valor = produtos.reduce((s, i) => s + parseNum(i.Venda), 0);
+                return { ...rev, qtd: produtos.length, valor, produtos };
             }).filter(r => r.qtd > 0).sort((a, b) => b.valor - a.valor);
-            
-            console.log('Revendedores com produtos:', revStats.length);
-            
-            const html = revStats.slice(0, 5).map(rev => `
-                <div onclick="verProdutosRevendedor('${rev.Nome}')"
-                     style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--gray-50);border-radius:6px;border:1px solid var(--gray-200);cursor:pointer;transition:background 0.15s;"
-                     onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='var(--gray-50)'">
-                    <div style="min-width:0;">
-                        <div style="font-size:13px;font-weight:600;color:var(--gray-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${rev.Nome}</div>
-                        <div style="font-size:11px;color:var(--gray-500);white-space:nowrap;">${rev.qtd} ${rev.qtd === 1 ? 'item' : 'itens'} · ${rev.Percentual || 30}% comissão</div>
+
+            // Atualizar badge total
+            const totalItens = revStats.reduce((s, r) => s + r.qtd, 0);
+            const badge = document.getElementById('badge-total-cons');
+            if (badge) badge.textContent = `${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`;
+
+            const html = revStats.map(rev => `
+                <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;overflow:hidden;">
+                    <!-- Linha do revendedor -->
+                    <div onclick="dashFiltrarRev('${rev.Nome}')" style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;transition:background 0.15s;"
+                         onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='transparent'">
+                        <div>
+                            <div style="font-size:13px;font-weight:600;color:var(--gray-800);">${rev.Nome}</div>
+                            <div style="font-size:11px;color:var(--gray-500);">${rev.qtd} ${rev.qtd===1?'item':'itens'} · ${rev.Percentual||30}% comissão</div>
+                        </div>
+                        <div style="text-align:right;flex-shrink:0;">
+                            <div style="font-size:13px;font-weight:700;color:#3b82f6;">R$ ${rev.valor.toFixed(2)}</div>
+                            <div style="font-size:10px;color:var(--gray-400);">ver →</div>
+                        </div>
                     </div>
-                    <div style="text-align:right;flex-shrink:0;margin-left:8px;">
-                        <div style="font-size:13px;font-weight:700;color:#3b82f6;white-space:nowrap;">R$ ${rev.valor.toFixed(2)}</div>
-                        <div style="font-size:10px;color:var(--gray-400);white-space:nowrap;">ver produtos →</div>
+                    <!-- Mini lista dos produtos consignados -->
+                    <div style="border-top:1px solid var(--gray-200);padding:6px 12px;display:flex;flex-direction:column;gap:3px;">
+                        ${rev.produtos.slice(0,3).map(p => `
+                            <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;">
+                                <span style="color:#1e40af;font-family:monospace;font-weight:600;">${p.Codigo}</span>
+                                <span style="color:var(--gray-600);flex:1;margin:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.Descricao||p.Categoria||'—'}</span>
+                                <span style="color:var(--gray-700);font-weight:600;flex-shrink:0;">R$ ${parseNum(p.Venda).toFixed(2)}</span>
+                            </div>
+                        `).join('')}
+                        ${rev.produtos.length > 3 ? `<div style="font-size:10px;color:var(--gray-400);text-align:center;padding-top:2px;">+${rev.produtos.length-3} mais</div>` : ''}
                     </div>
                 </div>
             `).join('');
-            
-            document.getElementById('top-revendedores').innerHTML = html || '<p class="text-gray-500 text-sm text-center py-4">Nenhum revendedor com produtos consignados</p>';
+
+            document.getElementById('top-revendedores').innerHTML = html ||
+                '<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:16px 0;">Nenhum produto consignado</p>';
         }
 
         // ========== ENTRADA DE PRODUTOS ==========
@@ -2395,7 +2494,36 @@
             // ── 2. Persistir no localStorage ──
             persistirInventarioLocal();
 
-            // ── 3. Resetar tela ──
+            // ── 3. Calcular valores finais para o histórico ──
+            const rev = revendedores.find(r => r.Nome === nomeRev);
+            const percentual = ((rev && rev.Percentual) || 30) / 100;
+            const valorConsignado = produtosConsignados.reduce((s, i) => s + parseNum(i.Venda), 0);
+            const valorDevolvido  = devolvidos.reduce((s, i) => s + parseNum(i.Venda), 0);
+            const valorVendido    = valorConsignado - valorDevolvido;
+            const comissao        = valorVendido * percentual;
+            const lucro           = valorVendido - comissao;
+
+            // Salvar no histórico
+            const registro = {
+                id:             Date.now(),
+                data:           new Date().toISOString(),
+                revendedor:     nomeRev,
+                percentual:     (rev && rev.Percentual) || 30,
+                qtdConsignados: produtosConsignados.length,
+                qtdVendidos:    vendidos.length,
+                qtdDevolvidos:  devolvidos.length,
+                valorConsignado,
+                valorDevolvido,
+                valorVendido,
+                comissao,
+                lucro,
+                itensVendidos:  vendidos.map(i => ({ Codigo: i.Codigo, Descricao: i.Descricao, Venda: i.Venda })),
+                itensDevolvidos: devolvidos.map(i => ({ Codigo: i.Codigo, Descricao: i.Descricao, Venda: i.Venda }))
+            };
+            historicFechamentos.unshift(registro); // mais recente primeiro
+            localStorage.setItem('luxus_historico', JSON.stringify(historicFechamentos));
+
+            // ── 4. Resetar tela ──
             document.getElementById('fechamento-revendedor').value = '';
             document.getElementById('info-revendedor').classList.add('hidden');
             produtosConsignados = [];
@@ -2404,9 +2532,9 @@
             document.getElementById('lista-devolucoes-empty').style.display = 'block';
             atualizarResumoFechamento();
             renderInventario();
-            showToast('Fechamento concluído!', 'success');
+            showToast('Fechamento concluído e salvo no histórico!', 'success');
 
-            // ── 4. Tentar sync com servidor em background ──
+            // ── 5. Tentar sync com servidor em background ──
             if (scriptUrl) {
                 try {
                     for (const item of vendidos) {
@@ -2430,6 +2558,144 @@
                     console.warn('Fechamento salvo localmente, servidor indisponível:', err.message);
                 }
             }
+        }
+
+
+        // ========== HISTÓRICO DE FECHAMENTOS ==========
+        function renderHistorico() {
+            const search = (document.getElementById('hist-search')?.value || '').toLowerCase();
+            const filtered = historicFechamentos.filter(r =>
+                r.revendedor.toLowerCase().includes(search)
+            );
+
+            const badge = document.getElementById('badge-historico');
+            if (badge) badge.textContent = `${historicFechamentos.length} registro${historicFechamentos.length !== 1 ? 's' : ''}`;
+
+            const tbody = document.getElementById('tbody-historico');
+            const empty = document.getElementById('historico-empty');
+            if (!tbody) return;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                if (empty) empty.style.display = 'block';
+                return;
+            }
+            if (empty) empty.style.display = 'none';
+
+            tbody.innerHTML = filtered.map(r => {
+                const data = new Date(r.data);
+                const dataFmt = data.toLocaleDateString('pt-BR');
+                const horaFmt = data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                return `
+                <tr style="border-bottom:1px solid var(--gray-200);transition:background 0.15s;" onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background='white'">
+                    <td style="padding:10px 14px;white-space:nowrap;">
+                        <div style="font-size:13px;font-weight:600;color:var(--gray-800);">${dataFmt}</div>
+                        <div style="font-size:11px;color:var(--gray-400);">${horaFmt}</div>
+                    </td>
+                    <td style="padding:10px 14px;">
+                        <div style="font-size:13px;font-weight:600;color:var(--gray-800);">${r.revendedor}</div>
+                        <div style="font-size:11px;color:var(--gray-400);">${r.percentual}% comissão</div>
+                    </td>
+                    <td style="padding:10px 14px;text-align:center;">
+                        <span style="font-size:13px;font-weight:600;color:var(--gray-700);">${r.qtdConsignados}</span>
+                    </td>
+                    <td style="padding:10px 14px;text-align:center;">
+                        <span style="font-size:13px;font-weight:700;color:#059669;">${r.qtdVendidos}</span>
+                    </td>
+                    <td style="padding:10px 14px;text-align:center;">
+                        <span style="font-size:13px;color:var(--gray-500);">${r.qtdDevolvidos}</span>
+                    </td>
+                    <td style="padding:10px 14px;text-align:right;">
+                        <span style="font-size:13px;font-weight:700;color:#b45309;">R$ ${r.valorVendido.toFixed(2)}</span>
+                    </td>
+                    <td style="padding:10px 14px;text-align:right;">
+                        <span style="font-size:13px;font-weight:600;color:#6d28d9;">R$ ${r.comissao.toFixed(2)}</span>
+                    </td>
+                    <td style="padding:10px 14px;text-align:right;">
+                        <span style="font-size:14px;font-weight:700;color:#059669;">R$ ${r.lucro.toFixed(2)}</span>
+                    </td>
+                    <td style="padding:10px 14px;text-align:center;">
+                        <button onclick="verDetalhesFechamento(${r.id})" style="background:none;border:1px solid var(--gray-300);padding:3px 10px;border-radius:5px;font-size:11px;color:var(--primary);cursor:pointer;" title="Ver detalhes">
+                            <i class="fas fa-eye mr-1"></i>Ver
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            // Linha de totais
+            const totalVendido  = filtered.reduce((s, r) => s + r.valorVendido, 0);
+            const totalComissao = filtered.reduce((s, r) => s + r.comissao, 0);
+            const totalLucro    = filtered.reduce((s, r) => s + r.lucro, 0);
+            const totalVendidos = filtered.reduce((s, r) => s + r.qtdVendidos, 0);
+            tbody.innerHTML += `
+                <tr style="background:var(--gray-50);border-top:2px solid var(--gray-200);">
+                    <td colspan="2" style="padding:10px 14px;font-size:12px;font-weight:600;color:var(--gray-600);">
+                        <i class="fas fa-calculator" style="color:var(--primary);margin-right:5px;"></i>${filtered.length} fechamento${filtered.length !== 1 ? 's' : ''}
+                    </td>
+                    <td colspan="2" style="padding:10px 14px;text-align:center;font-size:13px;font-weight:700;color:#059669;">${totalVendidos} vendidos</td>
+                    <td style="padding:10px 14px;"></td>
+                    <td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:700;color:#b45309;">R$ ${totalVendido.toFixed(2)}</td>
+                    <td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:700;color:#6d28d9;">R$ ${totalComissao.toFixed(2)}</td>
+                    <td style="padding:10px 14px;text-align:right;font-size:14px;font-weight:800;color:#059669;">R$ ${totalLucro.toFixed(2)}</td>
+                    <td></td>
+                </tr>`;
+        }
+
+        function verDetalhesFechamento(id) {
+            const r = historicFechamentos.find(x => x.id === id);
+            if (!r) return;
+            const data = new Date(r.data).toLocaleString('pt-BR');
+            let detalhes = `FECHAMENTO — ${r.revendedor}\nData: ${data}\n\n`;
+            detalhes += `Consignados: ${r.qtdConsignados} | Vendidos: ${r.qtdVendidos} | Devolvidos: ${r.qtdDevolvidos}\n`;
+            detalhes += `Valor Vendido: R$ ${r.valorVendido.toFixed(2)}\n`;
+            detalhes += `Comissão (${r.percentual}%): R$ ${r.comissao.toFixed(2)}\n`;
+            detalhes += `Lucro Luxus: R$ ${r.lucro.toFixed(2)}\n\n`;
+            if (r.itensVendidos?.length) {
+                detalhes += `ITENS VENDIDOS:\n`;
+                r.itensVendidos.forEach(i => { detalhes += `  ${i.Codigo} — ${i.Descricao||'—'} — R$ ${parseNum(i.Venda).toFixed(2)}\n`; });
+            }
+            if (r.itensDevolvidos?.length) {
+                detalhes += `\nITENS DEVOLVIDOS:\n`;
+                r.itensDevolvidos.forEach(i => { detalhes += `  ${i.Codigo} — ${i.Descricao||'—'}\n`; });
+            }
+            alert(detalhes);
+        }
+
+        function exportarHistorico() {
+            if (historicFechamentos.length === 0) { showToast('Nenhum histórico para exportar', 'warning'); return; }
+            const header = ['Data','Hora','Revendedor','Comissão %','Consignados','Vendidos','Devolvidos','Valor Vendido','Comissão R$','Lucro R$'];
+            const rows = historicFechamentos.map(r => {
+                const d = new Date(r.data);
+                return [
+                    d.toLocaleDateString('pt-BR'),
+                    d.toLocaleTimeString('pt-BR'),
+                    r.revendedor,
+                    r.percentual + '%',
+                    r.qtdConsignados,
+                    r.qtdVendidos,
+                    r.qtdDevolvidos,
+                    'R$ ' + r.valorVendido.toFixed(2),
+                    'R$ ' + r.comissao.toFixed(2),
+                    'R$ ' + r.lucro.toFixed(2)
+                ].join(';');
+            });
+            const csv = [header.join(';'), ...rows].join('\n');
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `historico-fechamentos-${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('CSV exportado!', 'success');
+        }
+
+        function confirmarLimparHistorico() {
+            if (!confirm('Limpar todo o histórico de fechamentos? Esta ação não pode ser desfeita.')) return;
+            historicFechamentos = [];
+            localStorage.removeItem('luxus_historico');
+            renderHistorico();
+            showToast('Histórico limpo!', 'success');
         }
 
         // ========== INVENTÁRIO ==========
@@ -3642,10 +3908,131 @@
         }
         
         // Filtrar dashboard e ir para inventário
+        // Filtros da tabela do dashboard (independentes do inventário)
+        let historicFechamentos = JSON.parse(localStorage.getItem('luxus_historico') || '[]');
+
+        let dashFilter = 'all';
+        let dashTipoFilter = 'all';
+        let dashRevFilter = '';
+
         function filtrarDashboard(filtro) {
-            currentFilter = filtro;
-            switchTab('inventario');
-            renderInventario();
+            dashFilter = filtro;
+            dashRevFilter = '';
+            dashTipoFilter = 'all';
+            // Atualizar chips
+            ['dash-fstatus-all','dash-fstatus-estoque','dash-fstatus-consignado','dash-fstatus-vendido'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('active');
+            });
+            const chipId = filtro === 'all' ? 'dash-fstatus-all' : filtro === 'estoque' ? 'dash-fstatus-estoque' : filtro === 'consignado' ? 'dash-fstatus-consignado' : 'dash-fstatus-vendido';
+            const chip = document.getElementById(chipId);
+            if (chip) chip.classList.add('active');
+            // Limpar banner revendedor
+            const banner = document.getElementById('dash-banner-rev');
+            if (banner) banner.style.display = 'none';
+            renderDashTable();
+            // Scroll até a tabela
+            const t = document.getElementById('dash-table');
+            if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function dashSetFilter(filtro, e) {
+            dashFilter = filtro;
+            ['dash-fstatus-all','dash-fstatus-estoque','dash-fstatus-consignado','dash-fstatus-vendido'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.classList.remove('active');
+            });
+            if (e && e.target) e.target.classList.add('active');
+            renderDashTable();
+        }
+
+        function dashSetTipo(tipo, e) {
+            dashTipoFilter = tipo;
+            ['dash-ftipo-all','dash-ftipo-sj','dash-ftipo-pf'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.classList.remove('active');
+            });
+            if (e && e.target) e.target.classList.add('active');
+            renderDashTable();
+        }
+
+        function dashFiltrarRev(nome) {
+            dashRevFilter = nome;
+            dashFilter = 'all';
+            // Reset chips
+            ['dash-fstatus-all','dash-fstatus-estoque','dash-fstatus-consignado','dash-fstatus-vendido'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.classList.remove('active');
+            });
+            const el = document.getElementById('dash-fstatus-all'); if (el) el.classList.add('active');
+            // Mostrar banner
+            const banner = document.getElementById('dash-banner-rev');
+            const label = document.getElementById('dash-label-rev');
+            if (banner) { banner.style.display = 'flex'; }
+            if (label) label.textContent = nome;
+            renderDashTable();
+            const t = document.getElementById('dash-table');
+            if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function dashLimparRev() {
+            dashRevFilter = '';
+            const banner = document.getElementById('dash-banner-rev');
+            if (banner) banner.style.display = 'none';
+            renderDashTable();
+        }
+
+        function renderDashTable() {
+            const search = (document.getElementById('dash-search')?.value || '').toLowerCase();
+            let filtered = inventory.filter(i =>
+                String(i.Codigo).toLowerCase().includes(search) ||
+                (i.Descricao||'').toLowerCase().includes(search) ||
+                (i.Revendedor||'').toLowerCase().includes(search)
+            );
+            if (dashFilter === 'estoque')     filtered = filtered.filter(i => i.Status === 'Em Estoque');
+            else if (dashFilter === 'consignado') filtered = filtered.filter(i => i.Status !== 'Em Estoque' && i.Status !== 'Vendido');
+            else if (dashFilter === 'vendido') filtered = filtered.filter(i => i.Status === 'Vendido');
+            if (dashTipoFilter && dashTipoFilter !== 'all') filtered = filtered.filter(i => i.Tipo === dashTipoFilter);
+            if (dashRevFilter) filtered = filtered.filter(i => i.Revendedor === dashRevFilter);
+
+            // Cabeçalho
+            const thead = document.getElementById('dash-thead-row');
+            if (thead) thead.innerHTML = ['Código','Descrição','Tipo','Status','Revendedor','Custo','Venda'].map(h =>
+                `<th style="padding:0.75rem 0.75rem;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);font-weight:600;background:var(--gray-50);border-bottom:2px solid var(--gray-200);">${h}</th>`
+            ).join('');
+
+            // Body
+            const tbody = document.getElementById('dash-tbody');
+            if (!tbody) return;
+            
+            let totalCusto = 0, totalVenda = 0;
+            tbody.innerHTML = filtered.map(item => {
+                totalCusto += parseNum(item.Custo);
+                totalVenda += parseNum(item.Venda);
+                const cor = getCorStatus(item.Status);
+                const hex = cor.replace('#','');
+                const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
+                return `<tr style="border-bottom:1px solid var(--gray-200);transition:background 0.15s;" onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background='white'">
+                    <td style="padding:0.75rem;font-family:monospace;font-size:12px;font-weight:700;color:var(--primary);cursor:pointer;" onclick="editarItem(${item.rowId})">${item.Codigo}</td>
+                    <td style="padding:0.75rem;font-size:13px;color:var(--gray-700);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.Descricao||'—'}</td>
+                    <td style="padding:0.75rem;"><span style="font-size:11px;background:var(--gray-100);color:var(--gray-600);padding:2px 8px;border-radius:4px;">${item.Tipo||'Geral'}</span></td>
+                    <td style="padding:0.75rem;">
+                        <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px 3px 6px;border-radius:20px;font-size:12px;font-weight:500;background:rgba(${r},${g},${b},0.12);border:1px solid rgba(${r},${g},${b},0.3);color:${cor};white-space:nowrap;">
+                            <span style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0;"></span>${item.Status}
+                        </span>
+                    </td>
+                    <td style="padding:0.75rem;font-size:13px;color:var(--gray-600);">${item.Revendedor||'—'}</td>
+                    <td style="padding:0.75rem;font-size:13px;color:var(--gray-700);text-align:right;">R$ ${parseNum(item.Custo).toFixed(2)}</td>
+                    <td style="padding:0.75rem;font-size:13px;font-weight:700;color:#b45309;text-align:right;">R$ ${parseNum(item.Venda).toFixed(2)}</td>
+                </tr>`;
+            }).join('') || `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--gray-400);font-size:13px;">Nenhum item encontrado</td></tr>`;
+
+            // Tfoot
+            const tfoot = document.getElementById('dash-tfoot');
+            if (tfoot) tfoot.innerHTML = `<tr style="background:var(--gray-50);border-top:2px solid var(--gray-200);">
+                <td colspan="5" style="padding:0.75rem;font-size:13px;font-weight:600;color:var(--gray-600);">
+                    <i class="fas fa-calculator" style="color:var(--primary);margin-right:6px;"></i>${filtered.length} ${filtered.length===1?'item':'itens'}
+                </td>
+                <td style="padding:0.75rem;font-size:13px;font-weight:600;color:var(--gray-700);text-align:right;">R$ ${totalCusto.toFixed(2)}</td>
+                <td style="padding:0.75rem;font-size:13px;font-weight:700;color:#b45309;text-align:right;">R$ ${totalVenda.toFixed(2)}</td>
+            </tr>`;
         }
         
         function verProdutosRevendedor(nomeRev) {
