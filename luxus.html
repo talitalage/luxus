@@ -1095,19 +1095,19 @@
                 <div style="display:grid;grid-template-columns:1fr 1fr 1.4fr 1.4fr;gap:1.25rem;margin-bottom:1.25rem;">
 
                     <!-- Semi Joias por categoria -->
-                    <div class="card-light p-5">
+                    <div id="dash-card-semijoia" class="card-light p-5">
                         <h3 class="section-title"><i class="fas fa-ring"></i>Semi Joias</h3>
                         <div id="stats-semijoia" class="space-y-2"></div>
                     </div>
 
                     <!-- Perfumes por categoria -->
-                    <div class="card-light p-5">
+                    <div id="dash-card-perfume" class="card-light p-5">
                         <h3 class="section-title"><i class="fas fa-spray-can"></i>Perfumes</h3>
                         <div id="stats-perfume" class="space-y-2"></div>
                     </div>
 
                     <!-- Estoque detalhado -->
-                    <div class="card-light p-5">
+                    <div id="dash-card-estoque" class="card-light p-5">
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--gray-200);">
                             <h3 style="font-size:0.9rem;font-weight:600;color:var(--gray-700);display:flex;align-items:center;gap:6px;margin:0;">
                                 <i class="fas fa-warehouse" style="color:#10b981;font-size:0.85rem;"></i>Em Estoque
@@ -1118,7 +1118,7 @@
                     </div>
 
                     <!-- Consignado por revendedor -->
-                    <div class="card-light p-5">
+                    <div id="dash-card-consignado" class="card-light p-5">
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--gray-200);">
                             <h3 style="font-size:0.9rem;font-weight:600;color:var(--gray-700);display:flex;align-items:center;gap:6px;margin:0;">
                                 <i class="fas fa-handshake" style="color:#3b82f6;font-size:0.85rem;"></i>Consignado por Revendedor
@@ -1432,14 +1432,14 @@
                     <input type="text" id="search" placeholder="Buscar por código, descrição..."
                            style="flex:1;padding:6px 12px;border:1px solid var(--gray-300);border-radius:20px;font-size:13px;outline:none;"
                            oninput="renderInventario()">
-                    <button onclick="abrirModalNovoItem()" class="btn-primary" style="font-size:13px;padding:6px 16px;white-space:nowrap;">
-                        <i class="fas fa-plus mr-1"></i>Novo Item
+                    <button onclick="abrirModalNovoItem()" class="btn-primary" style="font-size:13px;padding:6px 16px;white-space:nowrap;gap:6px;display:inline-flex;align-items:center;">
+                        <i class="fas fa-plus"></i> Novo Item
                     </button>
-                    <button onclick="loadData()" class="btn-secondary" style="font-size:13px;padding:6px 12px;" title="Atualizar dados">
-                        <i class="fas fa-sync-alt"></i>
+                    <button onclick="loadData()" class="btn-secondary" style="font-size:13px;padding:6px 14px;display:inline-flex;align-items:center;gap:6px;" title="Atualizar dados">
+                        <i class="fas fa-sync-alt"></i> Atualizar
                     </button>
-                    <button onclick="abrirModalColunas()" class="btn-secondary" style="font-size:13px;padding:6px 12px;" title="Configurar Colunas">
-                        <i class="fas fa-columns"></i>
+                    <button onclick="abrirModalColunas()" class="btn-secondary" style="font-size:13px;padding:6px 14px;display:inline-flex;align-items:center;gap:6px;" title="Configurar Colunas">
+                        <i class="fas fa-columns"></i> Colunas
                     </button>
                 </div>
 
@@ -1532,6 +1532,42 @@
                                 <button onclick="addCategoria('Perfume')" class="btn-primary" style="padding:0.5rem 0.75rem;">
                                     <i class="fas fa-plus"></i>
                                 </button>
+                            </div>
+                        </div>
+
+                        <!-- Visibilidade do Dashboard -->
+                        <div class="card-light p-5">
+                            <h3 class="section-title"><i class="fas fa-eye"></i>Visibilidade do Dashboard</h3>
+                            <p style="font-size:12px;color:var(--gray-500);margin-bottom:12px;">Escolha quais cards exibir na página inicial.</p>
+                            <div style="display:flex;flex-direction:column;gap:10px;">
+                                <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+                                    <span style="font-size:13px;color:var(--gray-700);"><i class="fas fa-ring" style="color:var(--primary);margin-right:6px;font-size:11px;"></i>Semi Joias</span>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="vis-semijoia" checked onchange="toggleDashCard('semijoia', this.checked)">
+                                        <span class="toggle-slider"></span>
+                                    </div>
+                                </label>
+                                <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+                                    <span style="font-size:13px;color:var(--gray-700);"><i class="fas fa-spray-can" style="color:var(--primary);margin-right:6px;font-size:11px;"></i>Perfumes</span>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="vis-perfume" checked onchange="toggleDashCard('perfume', this.checked)">
+                                        <span class="toggle-slider"></span>
+                                    </div>
+                                </label>
+                                <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+                                    <span style="font-size:13px;color:var(--gray-700);"><i class="fas fa-warehouse" style="color:#10b981;margin-right:6px;font-size:11px;"></i>Em Estoque</span>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="vis-estoque" checked onchange="toggleDashCard('estoque', this.checked)">
+                                        <span class="toggle-slider"></span>
+                                    </div>
+                                </label>
+                                <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+                                    <span style="font-size:13px;color:var(--gray-700);"><i class="fas fa-handshake" style="color:#3b82f6;margin-right:6px;font-size:11px;"></i>Consignado por Revendedor</span>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="vis-consignado" checked onchange="toggleDashCard('consignado', this.checked)">
+                                        <span class="toggle-slider"></span>
+                                    </div>
+                                </label>
                             </div>
                         </div>
 
@@ -1943,6 +1979,7 @@
             carregarStatusSalvos();
             carregarConfigColunas();
             carregarTitulo();
+            carregarVisibilidadeCards();
 
             // Preencher campo de URL com valor salvo
             const urlInput = document.getElementById('config-script-url');
@@ -2938,6 +2975,40 @@
             localStorage.removeItem('luxus_historico');
             renderHistorico();
             showToast('Histórico limpo!', 'success');
+        }
+
+
+        // ========== VISIBILIDADE DOS CARDS DO DASHBOARD ==========
+        let dashCardsVisiveis = JSON.parse(localStorage.getItem('luxus_dash_cards') || '{"semijoia":true,"perfume":true,"estoque":true,"consignado":true}');
+
+        function toggleDashCard(card, visivel) {
+            dashCardsVisiveis[card] = visivel;
+            localStorage.setItem('luxus_dash_cards', JSON.stringify(dashCardsVisiveis));
+            aplicarVisibilidadeCards();
+        }
+
+        function aplicarVisibilidadeCards() {
+            Object.entries(dashCardsVisiveis).forEach(([card, visivel]) => {
+                const el = document.getElementById('dash-card-' + card);
+                if (el) el.style.display = visivel ? '' : 'none';
+                // Sincronizar toggle na aba config
+                const toggle = document.getElementById('vis-' + card);
+                if (toggle) toggle.checked = visivel;
+            });
+            // Ajustar grid conforme cards visíveis
+            const grid = document.querySelector('#content-dashboard .card-light')?.parentElement?.querySelector('[style*="grid-template-columns"]');
+            const visiveis = Object.values(dashCardsVisiveis).filter(Boolean).length;
+            const gridEl = document.getElementById('dash-card-semijoia')?.parentElement;
+            if (gridEl) {
+                if (visiveis === 4) gridEl.style.gridTemplateColumns = '1fr 1fr 1.4fr 1.4fr';
+                else if (visiveis === 3) gridEl.style.gridTemplateColumns = '1fr 1fr 1.4fr';
+                else if (visiveis === 2) gridEl.style.gridTemplateColumns = '1fr 1fr';
+                else if (visiveis === 1) gridEl.style.gridTemplateColumns = '1fr';
+            }
+        }
+
+        function carregarVisibilidadeCards() {
+            aplicarVisibilidadeCards();
         }
 
         // ========== INVENTÁRIO ==========
