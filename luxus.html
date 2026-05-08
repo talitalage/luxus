@@ -2427,12 +2427,32 @@
                         case 'categoria':
                             td.textContent = item.Categoria || '-';
                             break;
-                        case 'status':
-                            let statusClass = 'status-estoque', icon = '🏠';
-                            if (item.Status === 'Vendido') { statusClass = 'status-vendido'; icon = '💰'; }
-                            else if (item.Status !== 'Em Estoque') { statusClass = 'status-consignado'; icon = '🤝'; }
-                            td.innerHTML = `<span class="status-badge ${statusClass}">${icon} ${item.Status}</span>`;
+                        case 'status': {
+                            const cor = getCorStatus(item.Status);
+                            // Cor de fundo: a cor do status com 12% de opacidade
+                            const hex = cor.replace('#','');
+                            const r = parseInt(hex.slice(0,2),16);
+                            const g = parseInt(hex.slice(2,4),16);
+                            const b = parseInt(hex.slice(4,6),16);
+                            td.innerHTML = `
+                                <span style="
+                                    display:inline-flex;
+                                    align-items:center;
+                                    gap:5px;
+                                    padding:3px 10px 3px 6px;
+                                    border-radius:20px;
+                                    font-size:12px;
+                                    font-weight:500;
+                                    background:rgba(${r},${g},${b},0.12);
+                                    border:1px solid rgba(${r},${g},${b},0.3);
+                                    color:${cor};
+                                    white-space:nowrap;
+                                ">
+                                    <span style="width:7px;height:7px;border-radius:50%;background:${cor};flex-shrink:0;"></span>
+                                    ${item.Status}
+                                </span>`;
                             break;
+                        }
                         case 'revendedor':
                             td.textContent = item.Revendedor || '-';
                             break;
@@ -2787,56 +2807,69 @@
 
         async function salvarRevendedor() {
             const rowId = document.getElementById('rev-rowid').value;
+            const nome = document.getElementById('rev-nome').value.trim();
+            if (!nome) { showToast('Informe o nome do revendedor', 'warning'); return; }
+
             const data = {
                 action: rowId ? 'editRevendedor' : 'addRevendedor',
-                nome: document.getElementById('rev-nome').value,
-                contato: document.getElementById('rev-contato').value,
+                nome,
+                contato: document.getElementById('rev-contato').value.trim(),
                 percentual: parseFloat(document.getElementById('rev-percentual').value) || 30
             };
-            
             if (rowId) data.rowId = parseInt(rowId);
-            
-            try {
-                const res = await fetch(scriptUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                const result = await res.json();
-                
-                if (result.success) {
-                    showToast('Revendedor salvo com sucesso!', 'success');
-                    fecharModal('modal-revendedor');
-                    loadData();
-                } else {
-                    showToast('Erro: ' + result.error, 'error');
+
+            // 1. Atualizar localmente imediato
+            if (rowId) {
+                const idx = revendedores.findIndex(r => r.rowId == rowId);
+                if (idx !== -1) {
+                    revendedores[idx] = { ...revendedores[idx], Nome: data.nome, Contato: data.contato, Percentual: data.percentual };
                 }
-            } catch (error) {
-                showToast('Erro ao salvar revendedor', 'error');
+            } else {
+                revendedores.push({ rowId: Date.now(), Nome: data.nome, Contato: data.contato, Percentual: data.percentual });
+            }
+
+            localStorage.setItem('luxus_revendedores', JSON.stringify(revendedores));
+            fecharModal('modal-revendedor');
+            renderRevendedores();
+            carregarRevendedoresSelects();
+            showToast('Revendedor salvo!', 'success');
+
+            // 2. Sync em background
+            if (scriptUrl) {
+                try {
+                    const res = await fetch(scriptUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        localStorage.removeItem('luxus_revendedores');
+                        loadData();
+                    }
+                } catch (err) {
+                    console.warn('Revendedor salvo localmente:', err.message);
+                }
             }
         }
 
         async function excluirRevendedor(rowId) {
             if (!confirm('Excluir este revendedor?')) return;
-            
-            try {
-                const res = await fetch(scriptUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'delRevendedor', rowId })
-                });
-                
-                const result = await res.json();
-                
-                if (result.success) {
-                    showToast('Revendedor excluído', 'success');
-                    loadData();
-                } else {
-                    showToast('Erro ao excluir', 'error');
-                }
-            } catch (error) {
-                showToast('Erro ao excluir revendedor', 'error');
+
+            revendedores = revendedores.filter(r => r.rowId !== rowId);
+            localStorage.setItem('luxus_revendedores', JSON.stringify(revendedores));
+            renderRevendedores();
+            carregarRevendedoresSelects();
+            showToast('Revendedor excluído!', 'success');
+
+            if (scriptUrl) {
+                try {
+                    await fetch(scriptUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'delRevendedor', rowId })
+                    });
+                } catch (err) { console.warn('Offline:', err.message); }
             }
         }
 
