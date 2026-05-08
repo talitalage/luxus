@@ -1886,30 +1886,32 @@
 
         // ========== NAVEGAÇÃO ==========
         function switchTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`content-${tab}`).classList.remove('hidden');
-            
-            document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
-            document.getElementById(`tab-${tab}`).classList.add('active');
-            
-            // Limpar filtro de revendedor ao sair do inventário
-            if (tab !== 'inventario' && currentRevendedorFilter) {
-                currentRevendedorFilter = '';
-                const banner = document.getElementById('banner-filtro-rev');
-                if (banner) banner.style.display = 'none';
-            }
+            // Fechamento foi unificado na aba entrada
+            if (tab === 'fechamento') { tab = 'entrada'; }
+            // Inventário foi unificado no dashboard
+            if (tab === 'inventario') { tab = 'dashboard'; }
 
+            // Esconder todos os conteúdos
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+
+            // Mostrar o conteúdo da aba (com proteção)
+            const content = document.getElementById(`content-${tab}`);
+            if (content) content.classList.remove('hidden');
+
+            // Atualizar nav tabs (com proteção)
+            document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+            const tabBtn = document.getElementById(`tab-${tab}`);
+            if (tabBtn) tabBtn.classList.add('active');
+
+            // Ações por aba
             if (tab === 'entrada') {
                 setTimeout(() => { const el = document.getElementById('entrada-codigo'); if(el) el.focus(); }, 100);
-            } else if (tab === 'fechamento') { /* unificado em entrada */
             } else if (tab === 'config') {
                 renderRevendedores();
                 renderStatus();
                 renderCategorias();
             } else if (tab === 'dashboard') {
                 renderDashboard();
-            } else if (tab === 'inventario') {
-                renderInventario();
             }
         }
 
@@ -2167,14 +2169,17 @@
             const html = cats.map(cat => {
                 const catItems = items.filter(i => i.Categoria === cat);
                 const isActive = dashCatFilter === cat && (dashTipoFilter === tipo || dashTipoFilter === 'all');
+                const bgActive = '#eff6ff';
+                const bgNormal = '#f8fafc';
+                const borderActive = '#3b82f6';
                 return `
-                    <div onclick="dashClicarCategoria('${tipo}','${cat.replace(/'/g,"\'")}')"
+                    <div onclick="dashClicarCategoria('${tipo}','${cat.replace(/'/g,"\\'")}')"
                          style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;
                                 border-radius:6px;cursor:pointer;transition:all 0.15s;
-                                background:${isActive ? '#eff6ff' : 'var(--gray-50)'};
-                                border:1.5px solid ${isActive ? 'var(--primary)' : 'transparent'};"
+                                background:${isActive ? bgActive : bgNormal};
+                                border:1.5px solid ${isActive ? borderActive : 'transparent'};"
                          onmouseover="this.style.background='#eff6ff';this.style.borderColor='#bfdbfe';"
-                         onmouseout="this.style.background='${isActive ? '#eff6ff' : 'var(--gray-50)';}';this.style.borderColor='${isActive ? 'var(--primary)' : 'transparent'}';">
+                         onmouseout="this.style.background='${isActive ? bgActive : bgNormal}';this.style.borderColor='${isActive ? borderActive : 'transparent'}';">
                         <span style="font-size:13px;color:${isActive ? 'var(--primary)' : 'var(--gray-700)'};font-weight:${isActive ? '600' : '400'};">${cat}</span>
                         <span style="font-size:13px;font-weight:700;color:${catItems.length > 0 ? '#f59e0b' : 'var(--gray-400)'};">${catItems.length}</span>
                     </div>
