@@ -1195,8 +1195,9 @@ function renderDashboard() {
     var labelVendido = document.getElementById('label-vendido-sub');
     if (labelVendido) labelVendido.textContent = (c.vendas.lucro ? 'Lucro · ' : 'Receita · ') + periodoLabel;
 
-    renderStatsPorTipo('Semi Joia','stats-semijoia');
-    renderStatsPorTipo('Perfume','stats-perfume');
+    // Sempre usa o inventário completo para os cards de categoria
+    renderStatsPorTipo('Semi Joia', 'stats-semijoia');
+    renderStatsPorTipo('Perfume',   'stats-perfume');
     renderEstoqueDash();
     renderTopRevendedores();
     renderCatChips();
@@ -1205,10 +1206,37 @@ function renderDashboard() {
 
 function renderStatsPorTipo(tipo, containerId) {
     var items = inventory.filter(function(i){ return i.Tipo === tipo; });
-    var cats  = categorias[tipo] || [];
-    var html  = '';
-    cats.forEach(function(cat) {
-        var ci = items.filter(function(i){ return i.Categoria === cat; });
+
+    // Usa as categorias que realmente existem nos itens do inventário
+    // (evita divergência entre nome cadastrado e nome salvo no item)
+    var catsNoInventario = {};
+    items.forEach(function(i){
+        var c = i.Categoria || '—';
+        if (!catsNoInventario[c]) catsNoInventario[c] = [];
+        catsNoInventario[c].push(i);
+    });
+
+    // Ordena: primeiro pelas categorias cadastradas (na ordem delas), depois eventuais extras
+    var catsCadastradas = categorias[tipo] || [];
+    var ordenadas = [];
+    catsCadastradas.forEach(function(c){
+        // Tenta match exato, depois case-insensitive
+        var key = catsNoInventario[c] ? c
+                : Object.keys(catsNoInventario).find(function(k){ return k.toLowerCase() === c.toLowerCase(); });
+        if (key && ordenadas.indexOf(key) === -1) ordenadas.push(key);
+    });
+    // Categorias que estão nos itens mas não nas cadastradas
+    Object.keys(catsNoInventario).forEach(function(c){
+        if (ordenadas.indexOf(c) === -1) ordenadas.push(c);
+    });
+    // Categorias cadastradas sem nenhum item (mostrar com 0)
+    catsCadastradas.forEach(function(c){
+        if (ordenadas.indexOf(c) === -1) ordenadas.push(c);
+    });
+
+    var html = '';
+    ordenadas.forEach(function(cat) {
+        var ci = catsNoInventario[cat] || [];
         var v  = ci.reduce(function(s,i){ return s+parseNum(i.Venda); },0);
         var isAct = dashCatFilters.has(cat) && (dashTipoFilter === tipo || dashTipoFilter === 'all');
         html += '<div onclick="dashClicarCategoria(\'' + tipo.replace(/'/g,"\\'") + '\',\'' + cat.replace(/'/g,"\\'") + '\')"'
@@ -1441,8 +1469,8 @@ function renderDashTable() {
                 else if(k==='categoria') cells+='<td style="'+base+'color:var(--gray-700);">'+(item.Categoria||'—')+'</td>';
                 else if(k==='status') cells+='<td style="'+base+'"><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px 3px 6px;border-radius:20px;font-size:12px;font-weight:500;background:rgba('+cr+','+cg+','+cb+',0.12);border:1px solid rgba('+cr+','+cg+','+cb+',0.3);color:'+cor+';"><span style="width:6px;height:6px;border-radius:50%;background:'+cor+';flex-shrink:0;"></span>'+item.Status+'</span></td>';
                 else if(k==='revendedor') cells+='<td style="'+base+'color:var(--gray-600);">'+(item.Revendedor||'—')+'</td>';
-                else if(k==='custo') cells+='<td style="'+base+'text-align:right;color:var(--gray-700);">R$ '+parseNum(item.Custo).toFixed(2)+'</td>';
-                else if(k==='venda') cells+='<td style="'+base+'text-align:right;font-weight:700;color:#b45309;">R$ '+parseNum(item.Venda).toFixed(2)+'</td>';
+                else if(k==='custo') cells+='<td style="'+base+'color:var(--gray-700);">R$ '+parseNum(item.Custo).toFixed(2)+'</td>';
+                else if(k==='venda') cells+='<td style="'+base+'font-weight:700;color:#b45309;">R$ '+parseNum(item.Venda).toFixed(2)+'</td>';
                 else if(k==='data') cells+='<td style="'+base+'color:var(--gray-600);">'+(item.Data?new Date(item.Data).toLocaleDateString('pt-BR'):'—')+'</td>';
                 else if(k==='foto') cells+= item.Foto?'<td style="'+base+'text-align:center;"><img src="'+item.Foto+'" style="width:36px;height:36px;object-fit:cover;border-radius:4px;border:1px solid var(--gray-200);" onclick="verFoto(\''+item.Foto+'\')"></td>':'<td style="'+base+'text-align:center;"><div class="foto-placeholder"><i class="fas fa-image"></i></div></td>';
                 else cells+='<td style="'+base+'">—</td>';
