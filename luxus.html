@@ -2460,6 +2460,7 @@
             // Renderizar linha de totais no tfoot
             const tfoot = document.getElementById('tfoot-inventario');
             if (tfoot) {
+                tfoot.innerHTML = ''; // limpar antes de renderizar
                 const row = tfoot.insertRow();
                 colunasVisiveis.forEach(key => {
                     const td = row.insertCell();
