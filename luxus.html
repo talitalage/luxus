@@ -771,11 +771,11 @@
         }
     
         
-        /* Tabela com colunas redimensionáveis e sem quebra */
+        /* Tabela responsiva com larguras mínimas */
         .data-table {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed; /* Força larguras fixas */
+            table-layout: auto; /* Responsivo: ajusta ao conteúdo */
         }
         
         .data-table th,
@@ -785,45 +785,44 @@
             vertical-align: middle;
             overflow: hidden;
             text-overflow: ellipsis;
-            white-space: nowrap; /* Sem quebra de linha */
+            white-space: nowrap;
         }
         
-        /* Larguras ajustadas - proporcionais */
+        /* Larguras MÍNIMAS por coluna — crescem conforme conteúdo */
         .data-table th:nth-child(1), 
-        .data-table td:nth-child(1) { width: 110px; } /* Código - aumentado */
+        .data-table td:nth-child(1) { min-width: 100px; } /* Código */
         
         .data-table th:nth-child(2), 
-        .data-table td:nth-child(2) { width: 200px; } /* Descrição - reduzido */
+        .data-table td:nth-child(2) { min-width: 120px; width: 20%; } /* Descrição — ocupa mais espaço */
         
         .data-table th:nth-child(3), 
-        .data-table td:nth-child(3) { width: 90px; } /* Tipo */
+        .data-table td:nth-child(3) { min-width: 80px; } /* Tipo */
         
         .data-table th:nth-child(4), 
-        .data-table td:nth-child(4) { width: 110px; } /* Categoria */
+        .data-table td:nth-child(4) { min-width: 90px; } /* Categoria */
         
         .data-table th:nth-child(5), 
-        .data-table td:nth-child(5) { width: 150px; } /* Status */
+        .data-table td:nth-child(5) { min-width: 120px; } /* Status */
         
         .data-table th:nth-child(6), 
-        .data-table td:nth-child(6) { width: 110px; } /* Revendedor */
+        .data-table td:nth-child(6) { min-width: 100px; } /* Revendedor */
         
         .data-table th:nth-child(7), 
-        .data-table td:nth-child(7) { width: 100px; text-align: right; } /* Custo */
+        .data-table td:nth-child(7) { min-width: 85px; text-align: right; } /* Custo */
         
         .data-table th:nth-child(8), 
-        .data-table td:nth-child(8) { width: 100px; text-align: right; } /* Venda */
+        .data-table td:nth-child(8) { min-width: 85px; text-align: right; } /* Venda */
         
         .data-table th:nth-child(9), 
-        .data-table td:nth-child(9) { width: 110px; } /* Data */
+        .data-table td:nth-child(9) { min-width: 95px; } /* Data */
         
         .data-table th:nth-child(10), 
-        .data-table td:nth-child(10) { width: 60px; text-align: center; } /* Foto */
+        .data-table td:nth-child(10) { min-width: 55px; width: 55px; text-align: center; } /* Foto */
         
-        /* Headers redimensionáveis */
+        /* Headers com handle de resize */
         .data-table th {
             position: relative;
-            resize: horizontal;
-            overflow: auto;
+            overflow: hidden;
         }
         
         .data-table th:hover {
@@ -930,18 +929,19 @@
         }
         
         .data-table tfoot td {
-            padding: 0.75rem 1rem;
+            padding: 0.875rem 0.75rem; /* igual ao th/td */
             font-weight: 600;
-            font-size: 13px;
+            font-size: 14px;           /* igual ao body da tabela */
             color: var(--gray-700);
             white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .data-table tfoot td.total-label {
-            color: var(--gray-500);
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
+            color: var(--gray-600);
+            font-size: 14px;
+            font-weight: 600;
         }
         
         .data-table tfoot td.total-custo {
@@ -951,6 +951,7 @@
         
         .data-table tfoot td.total-venda {
             color: #b45309;
+            font-weight: 700;
             text-align: right;
         }
 
@@ -960,26 +961,25 @@
     <div class="container" style="overflow-x:hidden;max-width:100vw;">
         <!-- Header compacto -->
         <div class="header-dark">
-            <div style="max-width:1280px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;gap:1rem;">
-                <!-- Logo + Título editável -->
+            <div style="max-width:1280px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;gap:1.25rem;width:100%;">
+                <!-- Logo + Título -->
                 <div style="display:flex;align-items:center;gap:0.75rem;cursor:pointer;flex-shrink:0;" onclick="switchTab('dashboard')">
-                    <!-- Logo só com o frasco, fundo transparente -->
                     <img src="https://i.ibb.co/6R29d3Dj/luxus-logo.png" alt="Luxus"
-                         style="height:42px;width:auto;object-fit:contain;filter:drop-shadow(0 1px 4px rgba(0,0,0,0.3));"
+                         style="height:38px;width:auto;object-fit:contain;filter:drop-shadow(0 1px 4px rgba(0,0,0,0.3));"
                          onerror="this.style.display='none'">
                     <div>
-                        <div style="display:flex;align-items:center;gap:0.5rem;">
-                            <span id="site-title-display" style="color:white;font-weight:600;font-size:1rem;letter-spacing:0.5px;">LUXUS</span>
-                            <button onclick="event.stopPropagation();abrirEditarTitulo()" style="background:transparent;border:none;cursor:pointer;padding:2px 4px;opacity:0.5;" title="Editar título">
-                                <i class="fas fa-pen" style="color:white;font-size:9px;"></i>
+                        <div style="display:flex;align-items:center;gap:0.4rem;">
+                            <span id="site-title-display" style="color:white;font-weight:600;font-size:0.95rem;letter-spacing:0.5px;">LUXUS</span>
+                            <button onclick="event.stopPropagation();abrirEditarTitulo()" style="background:transparent;border:none;cursor:pointer;padding:2px;opacity:0.45;" title="Editar título">
+                                <i class="fas fa-pen" style="color:white;font-size:8px;"></i>
                             </button>
                         </div>
-                        <div id="site-subtitle-display" style="font-size:0.65rem;color:rgba(255,255,255,0.5);letter-spacing:1px;">JOIAS & PERFUMES</div>
+                        <div id="site-subtitle-display" style="font-size:0.6rem;color:rgba(255,255,255,0.45);letter-spacing:1px;">JOIAS & PERFUMES</div>
                     </div>
                 </div>
-                
-                <!-- Nav tabs -->
-                <nav style="display:flex;flex:1;border-bottom:none;">
+
+                <!-- Nav tabs — centralizado -->
+                <nav style="display:flex;align-items:center;justify-content:center;flex:1;">
                     <button onclick="switchTab('dashboard')" id="tab-dashboard" class="nav-tab active">
                         <i class="fas fa-chart-line mr-2"></i>Dashboard
                     </button>
@@ -996,17 +996,15 @@
                         <i class="fas fa-cog mr-2"></i>Configurações
                     </button>
                 </nav>
-                
-                <!-- Saudação no header -->
-                <div id="header-saudacao" style="flex-shrink:0;text-align:right;display:none;">
-                    <div style="font-size:0.8rem;font-weight:600;color:rgba(255,255,255,0.9);">Olá, <span id="dashboard-username">Lu</span>! ✨</div>
-                    <div style="font-size:0.65rem;color:rgba(255,255,255,0.45);">Bem-vinda ao seu painel</div>
-                </div>
 
-                <!-- Hora + user + logout -->
+                <!-- Saudação (sempre visível) + Hora + Logout -->
                 <div style="display:flex;align-items:center;gap:0.75rem;flex-shrink:0;">
-                    <span class="text-xs" style="color:rgba(255,255,255,0.6);" id="status-time">--:--</span>
-                    <button onclick="logout()" style="background:rgba(239,68,68,0.2);border:none;cursor:pointer;padding:6px 10px;border-radius:6px;color:rgba(252,165,165,1);transition:all 0.2s;" title="Sair" onmouseover="this.style.background='rgba(239,68,68,0.4)'" onmouseout="this.style.background='rgba(239,68,68,0.2)'">
+                    <div id="header-saudacao" style="text-align:right;">
+                        <div style="font-size:0.8rem;font-weight:600;color:rgba(255,255,255,0.9);">Olá, <span id="dashboard-username">Lu</span>! ✨</div>
+                        <div style="font-size:0.6rem;color:rgba(255,255,255,0.4);">Bem-vinda ao seu painel</div>
+                    </div>
+                    <span style="font-size:0.75rem;color:rgba(255,255,255,0.5);" id="status-time">--:--</span>
+                    <button onclick="logout()" style="background:rgba(239,68,68,0.2);border:none;cursor:pointer;padding:6px 10px;border-radius:6px;color:rgba(252,165,165,1);transition:all 0.2s;flex-shrink:0;" title="Sair" onmouseover="this.style.background='rgba(239,68,68,0.4)'" onmouseout="this.style.background='rgba(239,68,68,0.2)'">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
                 </div>
@@ -1771,10 +1769,6 @@
             document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
             document.getElementById(`tab-${tab}`).classList.add('active');
             
-            // Mostrar saudação só no dashboard
-            const saudacaoEl = document.getElementById('header-saudacao');
-            if (saudacaoEl) saudacaoEl.style.display = tab === 'dashboard' ? 'block' : 'none';
-
             // Limpar filtro de revendedor ao sair do inventário
             if (tab !== 'inventario' && currentRevendedorFilter) {
                 currentRevendedorFilter = '';
@@ -2010,9 +2004,7 @@
             // Atualizar nome do usuário
             const username = localStorage.getItem('luxus_user') || 'Lu';
             document.querySelectorAll('#dashboard-username').forEach(el => el.textContent = username);
-            // Mostrar saudação no header
-            const saudEl = document.getElementById('header-saudacao');
-            if (saudEl) saudEl.style.display = 'block';
+
             
             // Cards principais
             const total = inventory.length;
