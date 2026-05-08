@@ -1005,7 +1005,6 @@
                 <!-- Hora + user + logout -->
                 <div style="display:flex;align-items:center;gap:0.75rem;flex-shrink:0;">
                     <span class="text-xs" style="color:rgba(255,255,255,0.6);" id="status-time">--:--</span>
-                    <span class="text-sm font-medium text-white" id="user-name">Lu</span>
                     <button onclick="logout()" style="background:rgba(239,68,68,0.2);border:none;cursor:pointer;padding:6px 10px;border-radius:6px;color:rgba(252,165,165,1);transition:all 0.2s;" title="Sair" onmouseover="this.style.background='rgba(239,68,68,0.4)'" onmouseout="this.style.background='rgba(239,68,68,0.2)'">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
@@ -1347,6 +1346,17 @@
                 </div>
 
                 <!-- Tabela de Inventário -->
+                <!-- Banner filtro revendedor ativo -->
+                <div id="banner-filtro-rev" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:8px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+                    <span style="font-size:13px;color:#1e40af;">
+                        <i class="fas fa-filter" style="margin-right:6px;"></i>
+                        Filtrando por revendedor: <strong id="label-filtro-rev"></strong>
+                    </span>
+                    <button onclick="limparFiltroRevendedor()" style="background:none;border:none;cursor:pointer;font-size:12px;color:#3b82f6;" onmouseover="this.style.color='#1e40af'" onmouseout="this.style.color='#3b82f6'">
+                        <i class="fas fa-times mr-1"></i>Limpar filtro
+                    </button>
+                </div>
+
                 <div class="card-light overflow-x-auto scrollbar-custom">
                     <table class="data-table">
                         <thead>
@@ -1650,6 +1660,7 @@
         let scriptUrl = localStorage.getItem('luxus_script_url') || '';
         let currentFilter = 'all';
         let currentTipoFilter = 'all';
+        let currentRevendedorFilter = '';
 
         // Parse seguro de valores numéricos (aceita vírgula e ponto, string ou número)
         function parseNum(val) {
@@ -1762,6 +1773,13 @@
             // Mostrar saudação só no dashboard
             const saudacaoEl = document.getElementById('header-saudacao');
             if (saudacaoEl) saudacaoEl.style.display = tab === 'dashboard' ? 'block' : 'none';
+
+            // Limpar filtro de revendedor ao sair do inventário
+            if (tab !== 'inventario' && currentRevendedorFilter) {
+                currentRevendedorFilter = '';
+                const banner = document.getElementById('banner-filtro-rev');
+                if (banner) banner.style.display = 'none';
+            }
 
             if (tab === 'entrada') {
                 document.getElementById('entrada-codigo').focus();
@@ -2394,6 +2412,11 @@
             if (currentTipoFilter && currentTipoFilter !== 'all') {
                 filtered = filtered.filter(i => (i.Tipo || '') === currentTipoFilter);
             }
+
+            // Filtro de revendedor (vindo do dashboard)
+            if (currentRevendedorFilter) {
+                filtered = filtered.filter(i => (i.Revendedor || '') === currentRevendedorFilter);
+            }
             
             // Obter colunas visíveis ordenadas
             const colunasVisiveis = Object.keys(colunasConfig)
@@ -2512,7 +2535,7 @@
 
         
         // ========== REDIMENSIONAMENTO DE COLUNAS ==========
-        // Larguras salvas por índice de coluna
+        // Salvo por CHAVE da coluna (tipo, codigo, etc) — não por índice
         let colunasLarguras = JSON.parse(localStorage.getItem('luxus_larguras') || '{}');
 
         function salvarLarguras() {
@@ -2523,8 +2546,15 @@
             const table = document.querySelector('.data-table');
             if (!table) return;
             const headers = table.querySelectorAll('th');
+            // Colunas visíveis na ordem atual
+            const colunasVisiveis = Object.keys(colunasConfig)
+                .filter(k => colunasConfig[k].visivel)
+                .sort((a, b) => colunasConfig[a].ordem - colunasConfig[b].ordem);
+
             headers.forEach((header, index) => {
-                const w = colunasLarguras[index];
+                const key = colunasVisiveis[index];
+                if (!key) return;
+                const w = colunasLarguras[key];
                 if (w) {
                     header.style.width = w + 'px';
                     table.querySelectorAll(`td:nth-child(${index + 1})`).forEach(td => td.style.width = w + 'px');
@@ -2536,15 +2566,19 @@
             const table = document.querySelector('.data-table');
             if (!table) return;
 
-            // Remover resizers antigos para evitar duplicatas ao re-renderizar
             table.querySelectorAll('.column-resizer').forEach(r => r.remove());
 
             const headers = table.querySelectorAll('th');
-
-            // Aplicar larguras salvas antes de adicionar handles
             aplicarLargurasSalvas();
 
+            // Colunas visíveis na ordem atual (para mapear índice → chave)
+            const colunasVisiveis = Object.keys(colunasConfig)
+                .filter(k => colunasConfig[k].visivel)
+                .sort((a, b) => colunasConfig[a].ordem - colunasConfig[b].ordem);
+
             headers.forEach((header, index) => {
+                const colKey = colunasVisiveis[index]; // chave estável, ex: 'tipo', 'codigo'
+
                 const resizer = document.createElement('div');
                 resizer.className = 'column-resizer';
                 resizer.style.cssText = 'position:absolute;right:0;top:0;bottom:0;width:5px;cursor:col-resize;z-index:1;background:transparent;';
@@ -2562,7 +2596,6 @@
                     startX = e.pageX;
                     startWidth = header.offsetWidth;
 
-                    // Linha visual de arraste
                     const line = document.createElement('div');
                     line.style.cssText = `position:fixed;top:0;bottom:0;width:2px;background:#3b82f6;opacity:0.6;z-index:9999;pointer-events:none;left:${e.clientX}px;`;
                     document.body.appendChild(line);
@@ -2578,9 +2611,11 @@
                         document.removeEventListener('mousemove', onMouseMove);
                         document.removeEventListener('mouseup', onMouseUp);
                         line.remove();
-                        // Salvar no localStorage
-                        colunasLarguras[index] = header.offsetWidth;
-                        salvarLarguras();
+                        // Salvar pela CHAVE da coluna, não pelo índice
+                        if (colKey) {
+                            colunasLarguras[colKey] = header.offsetWidth;
+                            salvarLarguras();
+                        }
                     };
 
                     document.addEventListener('mousemove', onMouseMove);
@@ -3564,17 +3599,43 @@
             renderInventario();
         }
         
-        // Ver produtos de um revendedor específico
         function verProdutosRevendedor(nomeRev) {
-            // Ir para o inventário e filtrar por esse revendedor
+            currentRevendedorFilter = nomeRev;
+            currentFilter = 'all';
+            currentTipoFilter = 'all';
             switchTab('inventario');
-            
-            // Filtrar produtos desse revendedor
-            const search = document.getElementById('search');
-            if (search) {
-                search.value = nomeRev;
-                renderInventario();
+
+            // Resetar chips de status e tipo para "Todos"
+            ['fstatus-all','fstatus-estoque','fstatus-consignado','fstatus-vendido'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('active');
+            });
+            const fAll = document.getElementById('fstatus-all');
+            if (fAll) fAll.classList.add('active');
+
+            ['ftipo-all','ftipo-semijoia','ftipo-perfume'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('active');
+            });
+            const ftAll = document.getElementById('ftipo-all');
+            if (ftAll) ftAll.classList.add('active');
+
+            // Mostrar banner
+            const banner = document.getElementById('banner-filtro-rev');
+            const label = document.getElementById('label-filtro-rev');
+            if (banner && label) {
+                label.textContent = nomeRev;
+                banner.style.display = 'flex';
             }
+
+            renderInventario();
+        }
+
+        function limparFiltroRevendedor() {
+            currentRevendedorFilter = '';
+            const banner = document.getElementById('banner-filtro-rev');
+            if (banner) banner.style.display = 'none';
+            renderInventario();
         }
     </script>
 </body>
