@@ -665,12 +665,110 @@
                 </div>
             </div>
 
-            <!-- COL 2: Revendedores -->
-            <div class="card-light p-5">
-                <h3 class="section-title"><i class="fas fa-users"></i>Revendedores</h3>
-                <div id="lista-revendedores" class="space-y-2 mb-4 max-h-80 overflow-y-auto scrollbar-custom"></div>
-                <input type="text" id="busca-revendedor" class="w-full" placeholder="Buscar revendedor..." oninput="renderRevendedores()" style="font-size:13px;margin-bottom:8px;">
-                <button onclick="abrirModalRevendedor()" class="btn-primary w-full" style="font-size:13px;"><i class="fas fa-plus" style="margin-right:6px;"></i>Novo Revendedor</button>
+            <!-- COL 2: Revendedores + Config Cards -->
+            <div style="display:flex;flex-direction:column;gap:1.25rem;">
+
+                <div class="card-light p-5">
+                    <h3 class="section-title"><i class="fas fa-users"></i>Revendedores</h3>
+                    <div id="lista-revendedores" class="space-y-2 mb-4 max-h-80 overflow-y-auto scrollbar-custom"></div>
+                    <input type="text" id="busca-revendedor" class="w-full" placeholder="Buscar revendedor..." oninput="renderRevendedores()" style="font-size:13px;margin-bottom:8px;">
+                    <button onclick="abrirModalRevendedor()" class="btn-primary w-full" style="font-size:13px;"><i class="fas fa-plus" style="margin-right:6px;"></i>Novo Revendedor</button>
+                </div>
+
+                <!-- Configuração dos Cards do Dashboard -->
+                <div class="card-light p-5">
+                    <h3 class="section-title"><i class="fas fa-sliders-h"></i>Configurar Cards</h3>
+
+                    <!-- Abinhas internas -->
+                    <div style="display:flex;gap:0;margin-bottom:1rem;background:var(--gray-100);border-radius:8px;padding:3px;">
+                        <button id="cfgcard-tab-total"      onclick="switchCfgCard('total')"      style="flex:1;padding:5px 0;font-size:11px;font-weight:600;background:var(--white);color:var(--primary);border:none;cursor:pointer;border-radius:6px;transition:all 0.2s;">Total</button>
+                        <button id="cfgcard-tab-vendas"     onclick="switchCfgCard('vendas')"     style="flex:1;padding:5px 0;font-size:11px;font-weight:500;background:transparent;color:var(--gray-500);border:none;cursor:pointer;border-radius:6px;transition:all 0.2s;">Vendas</button>
+                        <button id="cfgcard-tab-consignado" onclick="switchCfgCard('consignado')" style="flex:1;padding:5px 0;font-size:11px;font-weight:500;background:transparent;color:var(--gray-500);border:none;cursor:pointer;border-radius:6px;transition:all 0.2s;">Consignado</button>
+                        <button id="cfgcard-tab-capital"    onclick="switchCfgCard('capital')"    style="flex:1;padding:5px 0;font-size:11px;font-weight:500;background:transparent;color:var(--gray-500);border:none;cursor:pointer;border-radius:6px;transition:all 0.2s;">Capital</button>
+                    </div>
+
+                    <!-- Card: Total -->
+                    <div id="cfgcard-total" style="display:flex;flex-direction:column;gap:10px;">
+                        <p style="font-size:12px;color:var(--gray-500);">Exibe o total de peças cadastradas no sistema.</p>
+                        <label style="font-size:12px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px;">Filtrar por tipo</label>
+                        <select id="cfg-total-tipo" class="w-full" style="font-size:13px;" onchange="salvarCfgCards()">
+                            <option value="all">Todos (Semi Joia + Perfume)</option>
+                            <option value="Semi Joia">Apenas Semi Joias</option>
+                            <option value="Perfume">Apenas Perfumes</option>
+                        </select>
+                        <label style="font-size:12px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px;">Filtrar por status</label>
+                        <select id="cfg-total-status" class="w-full" style="font-size:13px;" onchange="salvarCfgCards()">
+                            <option value="all">Todos os status</option>
+                            <option value="Em Estoque">Apenas Em Estoque</option>
+                            <option value="Consignado">Apenas Consignado</option>
+                            <option value="Vendido">Apenas Vendido</option>
+                        </select>
+                    </div>
+
+                    <!-- Card: Vendas -->
+                    <div id="cfgcard-vendas" style="display:none;flex-direction:column;gap:10px;">
+                        <label style="font-size:12px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px;">Período</label>
+                        <select id="cfg-vendas-periodo" class="w-full" style="font-size:13px;" onchange="salvarCfgCards()">
+                            <option value="0">Todo o histórico</option>
+                            <option value="7">Últimos 7 dias</option>
+                            <option value="30" selected>Últimos 30 dias</option>
+                            <option value="90">Últimos 90 dias</option>
+                            <option value="365">Últimos 12 meses</option>
+                            <option value="mes">Mês atual</option>
+                        </select>
+                        <label style="font-size:12px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px;">Filtrar por revendedor</label>
+                        <select id="cfg-vendas-revendedor" class="w-full" style="font-size:13px;" onchange="salvarCfgCards()">
+                            <option value="">Todos os revendedores</option>
+                        </select>
+                        <label style="font-size:12px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px;">Filtrar por tipo</label>
+                        <select id="cfg-vendas-tipo" class="w-full" style="font-size:13px;" onchange="salvarCfgCards()">
+                            <option value="all">Todos (Semi Joia + Perfume)</option>
+                            <option value="Semi Joia">Apenas Semi Joias</option>
+                            <option value="Perfume">Apenas Perfumes</option>
+                        </select>
+                        <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-top:4px;">
+                            <span style="font-size:13px;color:var(--gray-700);">Mostrar lucro em vez de receita</span>
+                            <div class="toggle-switch"><input type="checkbox" id="cfg-vendas-lucro" onchange="salvarCfgCards()"><span class="toggle-slider"></span></div>
+                        </label>
+                    </div>
+
+                    <!-- Card: Consignado -->
+                    <div id="cfgcard-consignado" style="display:none;flex-direction:column;gap:10px;">
+                        <p style="font-size:12px;color:var(--gray-500);">Exibe o valor total dos produtos atualmente com revendedores.</p>
+                        <label style="font-size:12px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px;">Filtrar por revendedor</label>
+                        <select id="cfg-cons-revendedor" class="w-full" style="font-size:13px;" onchange="salvarCfgCards()">
+                            <option value="">Todos os revendedores</option>
+                        </select>
+                        <label style="font-size:12px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px;">Filtrar por tipo</label>
+                        <select id="cfg-cons-tipo" class="w-full" style="font-size:13px;" onchange="salvarCfgCards()">
+                            <option value="all">Todos (Semi Joia + Perfume)</option>
+                            <option value="Semi Joia">Apenas Semi Joias</option>
+                            <option value="Perfume">Apenas Perfumes</option>
+                        </select>
+                        <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-top:4px;">
+                            <span style="font-size:13px;color:var(--gray-700);">Mostrar valor de custo</span>
+                            <div class="toggle-switch"><input type="checkbox" id="cfg-cons-custo" onchange="salvarCfgCards()"><span class="toggle-slider"></span></div>
+                        </label>
+                    </div>
+
+                    <!-- Card: Capital -->
+                    <div id="cfgcard-capital" style="display:none;flex-direction:column;gap:10px;">
+                        <p style="font-size:12px;color:var(--gray-500);">Exibe o capital investido nos produtos em estoque.</p>
+                        <label style="font-size:12px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px;">Filtrar por tipo</label>
+                        <select id="cfg-capital-tipo" class="w-full" style="font-size:13px;" onchange="salvarCfgCards()">
+                            <option value="all">Todos (Semi Joia + Perfume)</option>
+                            <option value="Semi Joia">Apenas Semi Joias</option>
+                            <option value="Perfume">Apenas Perfumes</option>
+                        </select>
+                        <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-top:4px;">
+                            <span style="font-size:13px;color:var(--gray-700);">Mostrar valor de venda em vez de custo</span>
+                            <div class="toggle-switch"><input type="checkbox" id="cfg-capital-venda" onchange="salvarCfgCards()"><span class="toggle-slider"></span></div>
+                        </label>
+                    </div>
+
+                    <div style="height:1px;background:var(--gray-200);margin:12px 0;"></div>
+                    <button onclick="salvarCfgCards()" class="btn-primary w-full" style="font-size:13px;"><i class="fas fa-save" style="margin-right:6px;"></i>Aplicar ao Dashboard</button>
+                </div>
             </div>
 
             <!-- COL 3 -->
@@ -875,7 +973,7 @@ function switchTab(tab) {
     if (tab === 'entrada') {
         setTimeout(function(){ var c = document.getElementById('entrada-codigo'); if(c){c.removeAttribute('readonly');c.removeAttribute('disabled');c.focus();} }, 100);
     } else if (tab === 'config') {
-        renderRevendedores(); renderStatus(); renderCategorias();
+        renderRevendedores(); renderStatus(); renderCategorias(); carregarCfgCards();
     } else if (tab === 'dashboard') {
         renderDashboard();
     } else if (tab === 'relatorio') {
@@ -971,19 +1069,131 @@ async function loadData() {
     }
 }
 
+// ===== CONFIG CARDS =====
+var cfgCards = JSON.parse(localStorage.getItem('luxus_cfg_cards') || '{"total":{"tipo":"all","status":"all"},"vendas":{"periodo":"30","revendedor":"","tipo":"all","lucro":false},"consignado":{"revendedor":"","tipo":"all","custo":false},"capital":{"tipo":"all","venda":false}}');
+
+function switchCfgCard(tab) {
+    ['total','vendas','consignado','capital'].forEach(function(t) {
+        var panel = document.getElementById('cfgcard-'+t);
+        var btn   = document.getElementById('cfgcard-tab-'+t);
+        if (!panel || !btn) return;
+        var ativo = t === tab;
+        panel.style.display   = ativo ? 'flex' : 'none';
+        btn.style.background  = ativo ? 'var(--white)' : 'transparent';
+        btn.style.color       = ativo ? 'var(--primary)' : 'var(--gray-500)';
+        btn.style.fontWeight  = ativo ? '600' : '500';
+    });
+}
+
+function carregarCfgCards() {
+    // Preencher selects de revendedor
+    var opts = '<option value="">Todos os revendedores</option>';
+    revendedores.forEach(function(r){ opts += '<option value="'+r.Nome+'">'+r.Nome+'</option>'; });
+    var sv = document.getElementById('cfg-vendas-revendedor');
+    var sc = document.getElementById('cfg-cons-revendedor');
+    if (sv) sv.innerHTML = opts;
+    if (sc) sc.innerHTML = opts;
+
+    // Aplicar valores salvos
+    var c = cfgCards;
+    function setVal(id, val) { var e = document.getElementById(id); if(e) e.value = val; }
+    function setChk(id, val) { var e = document.getElementById(id); if(e) e.checked = val; }
+
+    setVal('cfg-total-tipo',         c.total.tipo);
+    setVal('cfg-total-status',       c.total.status);
+    setVal('cfg-vendas-periodo',     c.vendas.periodo);
+    setVal('cfg-vendas-revendedor',  c.vendas.revendedor);
+    setVal('cfg-vendas-tipo',        c.vendas.tipo);
+    setChk('cfg-vendas-lucro',       c.vendas.lucro);
+    setVal('cfg-cons-revendedor',    c.consignado.revendedor);
+    setVal('cfg-cons-tipo',          c.consignado.tipo);
+    setChk('cfg-cons-custo',         c.consignado.custo);
+    setVal('cfg-capital-tipo',       c.capital.tipo);
+    setChk('cfg-capital-venda',      c.capital.venda);
+}
+
+function salvarCfgCards() {
+    function getVal(id) { var e=document.getElementById(id); return e?e.value:''; }
+    function getChk(id) { var e=document.getElementById(id); return e?e.checked:false; }
+    cfgCards = {
+        total:      { tipo: getVal('cfg-total-tipo'),        status: getVal('cfg-total-status') },
+        vendas:     { periodo: getVal('cfg-vendas-periodo'), revendedor: getVal('cfg-vendas-revendedor'), tipo: getVal('cfg-vendas-tipo'), lucro: getChk('cfg-vendas-lucro') },
+        consignado: { revendedor: getVal('cfg-cons-revendedor'), tipo: getVal('cfg-cons-tipo'), custo: getChk('cfg-cons-custo') },
+        capital:    { tipo: getVal('cfg-capital-tipo'),      venda: getChk('cfg-capital-venda') }
+    };
+    localStorage.setItem('luxus_cfg_cards', JSON.stringify(cfgCards));
+    renderDashboard();
+    showToast('Cards atualizados!', 'success');
+}
+
 // ===== DASHBOARD =====
 function renderDashboard() {
     var alerta = document.getElementById('alerta-sem-dados');
     if (alerta) alerta.classList.toggle('hidden', inventory.length > 0 || revendedores.length > 0);
 
-    var estoque = inventory.filter(function(i){ return i.Status === 'Em Estoque'; });
-    var consig  = inventory.filter(function(i){ return i.Status !== 'Em Estoque' && i.Status !== 'Vendido'; });
-    var vendido = inventory.filter(function(i){ return i.Status === 'Vendido'; });
+    var c = cfgCards;
 
-    document.getElementById('dash-total').textContent     = inventory.length;
-    document.getElementById('dash-capital').textContent   = 'R$ ' + estoque.reduce(function(s,i){ return s+parseNum(i.Custo); },0).toFixed(2);
-    document.getElementById('dash-consignado').textContent= 'R$ ' + consig.reduce(function(s,i){ return s+parseNum(i.Venda); },0).toFixed(2);
-    document.getElementById('dash-vendido').textContent   = 'R$ ' + vendido.reduce(function(s,i){ return s+parseNum(i.Venda); },0).toFixed(2);
+    // ── Card Total ──
+    var itemsTotal = inventory.filter(function(i){
+        if (c.total.tipo   !== 'all' && i.Tipo   !== c.total.tipo)   return false;
+        if (c.total.status !== 'all' && i.Status !== c.total.status) return false;
+        return true;
+    });
+    document.getElementById('dash-total').textContent = itemsTotal.length;
+
+    // ── Card Capital ──
+    var itemsCapital = inventory.filter(function(i){
+        if (i.Status !== 'Em Estoque') return false;
+        if (c.capital.tipo !== 'all' && i.Tipo !== c.capital.tipo) return false;
+        return true;
+    });
+    var valorCapital = itemsCapital.reduce(function(s,i){ return s + parseNum(c.capital.venda ? i.Venda : i.Custo); }, 0);
+    document.getElementById('dash-capital').textContent = 'R$ ' + valorCapital.toFixed(2);
+    // Atualizar label do card
+    var lblCapital = document.querySelector('#dash-capital')?.closest('.stat-card')?.querySelector('p:last-of-type');
+
+    // ── Card Consignado ──
+    var itemsCons = inventory.filter(function(i){
+        if (i.Status === 'Em Estoque' || i.Status === 'Vendido') return false;
+        if (c.consignado.revendedor && i.Revendedor !== c.consignado.revendedor) return false;
+        if (c.consignado.tipo !== 'all' && i.Tipo !== c.consignado.tipo) return false;
+        return true;
+    });
+    var valorCons = itemsCons.reduce(function(s,i){ return s + parseNum(c.consignado.custo ? i.Custo : i.Venda); }, 0);
+    document.getElementById('dash-consignado').textContent = 'R$ ' + valorCons.toFixed(2);
+
+    // ── Card Vendas ──
+    var agora = new Date();
+    var dataIniVendas = null;
+    if (c.vendas.periodo === 'mes') {
+        dataIniVendas = new Date(agora.getFullYear(), agora.getMonth(), 1);
+    } else if (parseInt(c.vendas.periodo) > 0) {
+        dataIniVendas = new Date();
+        dataIniVendas.setDate(dataIniVendas.getDate() - parseInt(c.vendas.periodo));
+        dataIniVendas.setHours(0,0,0,0);
+    }
+    var itemsVendas = inventory.filter(function(i){
+        if (i.Status !== 'Vendido') return false;
+        if (c.vendas.revendedor && i.Revendedor !== c.vendas.revendedor) return false;
+        if (c.vendas.tipo !== 'all' && i.Tipo !== c.vendas.tipo) return false;
+        if (dataIniVendas && i.Data && new Date(i.Data) < dataIniVendas) return false;
+        return true;
+    });
+    var receitaVendas = itemsVendas.reduce(function(s,i){ return s + parseNum(i.Venda); }, 0);
+    var custoVendas   = itemsVendas.reduce(function(s,i){ return s + parseNum(i.Custo);  }, 0);
+    var valorVendas   = c.vendas.lucro ? (receitaVendas - custoVendas) : receitaVendas;
+    document.getElementById('dash-vendido').textContent = 'R$ ' + valorVendas.toFixed(2);
+
+    // Atualizar sublabel do card vendas com período
+    var periodoLabel = '';
+    if      (c.vendas.periodo === 'mes') periodoLabel = 'Mês atual';
+    else if (c.vendas.periodo === '7')   periodoLabel = 'Últimos 7 dias';
+    else if (c.vendas.periodo === '30')  periodoLabel = 'Últimos 30 dias';
+    else if (c.vendas.periodo === '90')  periodoLabel = 'Últimos 90 dias';
+    else if (c.vendas.periodo === '365') periodoLabel = 'Últimos 12 meses';
+    else                                  periodoLabel = 'Todo o histórico';
+    var labelVendido = document.getElementById('label-vendido-sub');
+    if (labelVendido) labelVendido.textContent = (c.vendas.lucro ? 'Lucro · ' : 'Receita · ') + periodoLabel;
 
     renderStatsPorTipo('Semi Joia','stats-semijoia');
     renderStatsPorTipo('Perfume','stats-perfume');
