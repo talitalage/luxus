@@ -1131,51 +1131,51 @@
 
                 <!-- Tabela de inventário embutida no dashboard -->
                 <div class="card-light">
-                    <!-- Barra de filtros unificada -->
-                    <div style="padding:12px 16px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-                        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                            <!-- Status -->
-                            <span style="font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.5px;margin-right:2px;">Status</span>
-                            <button class="filter-chip active" id="dash-fstatus-all" onclick="dashToggleStatus('all')">Todos</button>
-                            <button class="filter-chip" id="dash-fstatus-estoque" onclick="dashToggleStatus('estoque')">Em Estoque</button>
-                            <button class="filter-chip" id="dash-fstatus-consignado" onclick="dashToggleStatus('consignado')">Consignado</button>
-                            <button class="filter-chip" id="dash-fstatus-vendido" onclick="dashToggleStatus('vendido')">Vendidos</button>
+                    <!-- Linha 1: Filtros -->
+                    <div style="padding:10px 16px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;flex-wrap:wrap;gap:6px;">
+                        <!-- Status -->
+                        <span style="font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.5px;">Status</span>
+                        <button class="filter-chip active" id="dash-fstatus-all" onclick="dashToggleStatus('all')">Todos</button>
+                        <button class="filter-chip" id="dash-fstatus-estoque" onclick="dashToggleStatus('estoque')">Em Estoque</button>
+                        <button class="filter-chip" id="dash-fstatus-consignado" onclick="dashToggleStatus('consignado')">Consignado</button>
+                        <button class="filter-chip" id="dash-fstatus-vendido" onclick="dashToggleStatus('vendido')">Vendidos</button>
 
+                        <div style="width:1px;height:16px;background:var(--gray-200);margin:0 4px;"></div>
+
+                        <!-- Tipo -->
+                        <span style="font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.5px;">Tipo</span>
+                        <button class="filter-chip active" id="dash-ftipo-all" onclick="dashSetTipo('all',event)">Todos</button>
+                        <button class="filter-chip" id="dash-ftipo-sj" onclick="dashSetTipo('Semi Joia',event)">Semi Joia</button>
+                        <button class="filter-chip" id="dash-ftipo-pf" onclick="dashSetTipo('Perfume',event)">Perfume</button>
+
+                        <div style="width:1px;height:16px;background:var(--gray-200);margin:0 4px;"></div>
+
+                        <!-- Categoria — dinâmico -->
+                        <span style="font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.5px;">Categoria</span>
+                        <div id="dash-chips-cat" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+
+                        <!-- Chip revendedor ativo -->
+                        <div id="dash-chip-rev" style="display:none;align-items:center;">
                             <div style="width:1px;height:16px;background:var(--gray-200);margin:0 4px;"></div>
-
-                            <!-- Tipo -->
-                            <span style="font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.5px;margin-right:2px;">Tipo</span>
-                            <button class="filter-chip active" id="dash-ftipo-all" onclick="dashSetTipo('all',event)">Todos</button>
-                            <button class="filter-chip" id="dash-ftipo-sj" onclick="dashSetTipo('Semi Joia',event)">Semi Joia</button>
-                            <button class="filter-chip" id="dash-ftipo-pf" onclick="dashSetTipo('Perfume',event)">Perfume</button>
-
-                            <div style="width:1px;height:16px;background:var(--gray-200);margin:0 4px;"></div>
-
-                            <!-- Categoria — dinâmico -->
-                            <span style="font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.5px;margin-right:2px;">Categoria</span>
-                            <div id="dash-chips-cat" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
-
-                            <!-- Chip revendedor ativo (inline, sem banner separado) -->
-                            <div id="dash-chip-rev" style="display:none;align-items:center;">
-                                <div style="width:1px;height:16px;background:var(--gray-200);margin:0 4px;"></div>
-                                <button class="filter-chip active" style="display:flex;align-items:center;gap:4px;background:#dbeafe;color:#1e40af;border-color:#93c5fd;" onclick="dashLimparRev()">
-                                    <i class="fas fa-user" style="font-size:9px;"></i>
-                                    <span id="dash-label-rev">—</span>
-                                    <i class="fas fa-times" style="font-size:9px;opacity:0.7;"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <input type="text" id="dash-search" placeholder="Buscar..."
-                                   style="padding:5px 10px;border:1px solid var(--gray-300);border-radius:20px;font-size:12px;width:160px;outline:none;"
-                                   oninput="renderDashTable()">
-                            <button onclick="abrirModalColunas()" class="btn-secondary" style="font-size:12px;padding:5px 10px;" title="Configurar colunas">
-                                <i class="fas fa-columns mr-1"></i>Colunas
-                            </button>
-                            <button onclick="abrirModalNovoItem()" class="btn-primary" style="font-size:12px;padding:5px 12px;">
-                                <i class="fas fa-plus mr-1"></i>Novo
+                            <button class="filter-chip active" style="display:flex;align-items:center;gap:5px;background:#dbeafe;color:#1e40af;border-color:#93c5fd;" onclick="dashLimparRev()">
+                                <i class="fas fa-user" style="font-size:9px;"></i>
+                                <span id="dash-label-rev">—</span>
+                                <i class="fas fa-times" style="font-size:9px;opacity:0.7;"></i>
                             </button>
                         </div>
+                    </div>
+
+                    <!-- Linha 2: Busca + Ações -->
+                    <div style="padding:10px 16px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;gap:8px;">
+                        <input type="text" id="dash-search" placeholder="Buscar..."
+                               style="flex:1;padding:6px 12px;border:1px solid var(--gray-300);border-radius:20px;font-size:13px;outline:none;"
+                               oninput="renderDashTable()">
+                        <button onclick="abrirModalNovoItem()" class="btn-primary" style="font-size:13px;padding:6px 14px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
+                            <i class="fas fa-plus"></i> Novo
+                        </button>
+                        <button onclick="abrirModalColunas()" class="btn-secondary" style="font-size:13px;padding:6px 14px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;" title="Configurar colunas">
+                            <i class="fas fa-columns"></i> Colunas
+                        </button>
                     </div>
                     <!-- Tabela -->
                     <div style="overflow-x:auto;">
@@ -1478,105 +1478,15 @@
 
             <!-- TAB: Configurações -->
             <div id="content-config" class="tab-content hidden">
-                <!-- 3 colunas -->
                 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;align-items:start;max-width:1100px;overflow:hidden;">
 
-                    <!-- Col 1: Revendedores -->
-                    <div class="card-light p-5">
-                        <h3 class="section-title"><i class="fas fa-users"></i>Revendedores</h3>
-                        <div id="lista-revendedores" class="space-y-2 mb-4 max-h-80 overflow-y-auto scrollbar-custom"></div>
-                        <input type="text" id="busca-revendedor" class="w-full mb-2" placeholder="Buscar revendedor..." oninput="renderRevendedores()" style="font-size:13px;">
-                        <button onclick="abrirModalRevendedor()" class="btn-primary w-full" style="font-size:13px;">
-                            <i class="fas fa-plus mr-2"></i>Novo Revendedor
-                        </button>
-                    </div>
-
-                    <!-- Col 2: Status + Categorias -->
+                    <!-- COL 1: Identidade Visual → Conexão → Visibilidade -->
                     <div style="display:flex;flex-direction:column;gap:1.25rem;">
 
-                        <!-- Status dos Produtos -->
-                        <div class="card-light p-5">
-                            <h3 class="section-title"><i class="fas fa-tag"></i>Status dos Produtos</h3>
-                            <div id="lista-status" class="space-y-2 mb-3"></div>
-                            <div style="display:flex;gap:0.5rem;">
-                                <input type="text" id="novo-status" class="flex-1" placeholder="Novo status..." onkeypress="if(event.key==='Enter') addStatus()" style="font-size:13px;">
-                                <button onclick="addStatus()" class="btn-primary" style="padding:0.5rem 0.75rem;">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                            <p style="font-size:11px;color:var(--gray-500);margin-top:0.5rem;">Padrão: Em Estoque, Consignado, Vendido</p>
-                        </div>
-
-                        <!-- Categorias Semi Joias -->
-                        <div class="card-light p-5">
-                            <h3 class="section-title"><i class="fas fa-ring"></i>Semi Joias</h3>
-                            <div id="categorias-semijoia" class="space-y-2 mb-3"></div>
-                            <div style="display:flex;gap:0.5rem;">
-                                <input type="text" id="nova-cat-semijoia" class="flex-1" placeholder="Nova categoria..." onkeypress="if(event.key==='Enter') addCategoria('Semi Joia')" style="font-size:13px;">
-                                <button onclick="addCategoria('Semi Joia')" class="btn-primary" style="padding:0.5rem 0.75rem;">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Col 3: Perfumes + Conexão -->
-                    <div style="display:flex;flex-direction:column;gap:1.25rem;">
-
-                        <!-- Categorias Perfumes -->
-                        <div class="card-light p-5">
-                            <h3 class="section-title"><i class="fas fa-spray-can"></i>Perfumes</h3>
-                            <div id="categorias-perfume" class="space-y-2 mb-3"></div>
-                            <div style="display:flex;gap:0.5rem;">
-                                <input type="text" id="nova-cat-perfume" class="flex-1" placeholder="Nova categoria..." onkeypress="if(event.key==='Enter') addCategoria('Perfume')" style="font-size:13px;">
-                                <button onclick="addCategoria('Perfume')" class="btn-primary" style="padding:0.5rem 0.75rem;">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Visibilidade do Dashboard -->
-                        <div class="card-light p-5">
-                            <h3 class="section-title"><i class="fas fa-eye"></i>Visibilidade do Dashboard</h3>
-                            <p style="font-size:12px;color:var(--gray-500);margin-bottom:12px;">Escolha quais cards exibir na página inicial.</p>
-                            <div style="display:flex;flex-direction:column;gap:10px;">
-                                <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
-                                    <span style="font-size:13px;color:var(--gray-700);"><i class="fas fa-ring" style="color:var(--primary);margin-right:6px;font-size:11px;"></i>Semi Joias</span>
-                                    <div class="toggle-switch">
-                                        <input type="checkbox" id="vis-semijoia" checked onchange="toggleDashCard('semijoia', this.checked)">
-                                        <span class="toggle-slider"></span>
-                                    </div>
-                                </label>
-                                <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
-                                    <span style="font-size:13px;color:var(--gray-700);"><i class="fas fa-spray-can" style="color:var(--primary);margin-right:6px;font-size:11px;"></i>Perfumes</span>
-                                    <div class="toggle-switch">
-                                        <input type="checkbox" id="vis-perfume" checked onchange="toggleDashCard('perfume', this.checked)">
-                                        <span class="toggle-slider"></span>
-                                    </div>
-                                </label>
-                                <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
-                                    <span style="font-size:13px;color:var(--gray-700);"><i class="fas fa-warehouse" style="color:#10b981;margin-right:6px;font-size:11px;"></i>Em Estoque</span>
-                                    <div class="toggle-switch">
-                                        <input type="checkbox" id="vis-estoque" checked onchange="toggleDashCard('estoque', this.checked)">
-                                        <span class="toggle-slider"></span>
-                                    </div>
-                                </label>
-                                <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
-                                    <span style="font-size:13px;color:var(--gray-700);"><i class="fas fa-handshake" style="color:#3b82f6;margin-right:6px;font-size:11px;"></i>Consignado por Revendedor</span>
-                                    <div class="toggle-switch">
-                                        <input type="checkbox" id="vis-consignado" checked onchange="toggleDashCard('consignado', this.checked)">
-                                        <span class="toggle-slider"></span>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Título da Página + Logo -->
+                        <!-- Identidade Visual -->
                         <div class="card-light p-5">
                             <h3 class="section-title"><i class="fas fa-heading"></i>Identidade Visual</h3>
                             <div style="display:flex;flex-direction:column;gap:0.875rem;">
-
-                                <!-- Preview -->
                                 <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--gray-50);border-radius:8px;border:1px solid var(--gray-200);">
                                     <img id="cfg-logo-preview" src="https://i.ibb.co/6R29d3Dj/luxus-logo.png"
                                          style="height:36px;width:auto;object-fit:contain;border-radius:4px;"
@@ -1586,35 +1496,27 @@
                                         <div id="cfg-subtitulo-preview" style="font-size:11px;color:var(--gray-500);">JOIAS & PERFUMES</div>
                                     </div>
                                 </div>
-
-                                <!-- URL da Logo -->
                                 <div>
                                     <label style="font-size:12px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px;">URL da Logo</label>
                                     <div style="display:flex;gap:6px;">
-                                        <input type="text" id="cfg-logo" class="w-full" placeholder="https://..." style="font-size:13px;"
-                                               oninput="previewLogo()">
-                                        <label style="cursor:pointer;" title="Carregar imagem do computador">
+                                        <input type="text" id="cfg-logo" class="w-full" placeholder="https://..." style="font-size:13px;" oninput="previewLogo()">
+                                        <label style="cursor:pointer;" title="Upload do computador">
                                             <input type="file" id="cfg-logo-file" accept="image/*" style="display:none;" onchange="carregarLogoArquivo(event)">
-                                            <span class="btn-secondary" style="font-size:12px;padding:6px 10px;display:flex;align-items:center;gap:4px;white-space:nowrap;cursor:pointer;">
+                                            <span class="btn-secondary" style="font-size:12px;padding:6px 10px;display:flex;align-items:center;cursor:pointer;">
                                                 <i class="fas fa-upload"></i>
                                             </span>
                                         </label>
                                     </div>
-                                    <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Cole uma URL ou faça upload de uma imagem</p>
+                                    <p style="font-size:11px;color:var(--gray-400);margin-top:4px;">Cole uma URL ou faça upload</p>
                                 </div>
-
-                                <!-- Título -->
                                 <div>
                                     <label style="font-size:12px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px;">Título principal</label>
                                     <input type="text" id="cfg-titulo" class="w-full" placeholder="LUXUS" style="font-size:13px;" value="LUXUS" oninput="previewTitulo()">
                                 </div>
-
-                                <!-- Subtítulo -->
                                 <div>
                                     <label style="font-size:12px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px;">Subtítulo / Campanha</label>
                                     <input type="text" id="cfg-subtitulo" class="w-full" placeholder="JOIAS & PERFUMES" style="font-size:13px;" value="JOIAS & PERFUMES" oninput="previewTitulo()">
                                 </div>
-
                                 <button onclick="salvarTitulo()" class="btn-primary w-full" style="font-size:13px;">
                                     <i class="fas fa-save mr-2"></i>Salvar
                                 </button>
@@ -1649,7 +1551,83 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Visibilidade do Dashboard -->
+                        <div class="card-light p-5">
+                            <h3 class="section-title"><i class="fas fa-eye"></i>Visibilidade do Dashboard</h3>
+                            <p style="font-size:12px;color:var(--gray-500);margin-bottom:12px;">Escolha quais cards exibir na página inicial.</p>
+                            <div style="display:flex;flex-direction:column;gap:10px;">
+                                <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+                                    <span style="font-size:13px;color:var(--gray-700);"><i class="fas fa-ring" style="color:var(--primary);margin-right:6px;font-size:11px;"></i>Semi Joias</span>
+                                    <div class="toggle-switch"><input type="checkbox" id="vis-semijoia" checked onchange="toggleDashCard('semijoia', this.checked)"><span class="toggle-slider"></span></div>
+                                </label>
+                                <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+                                    <span style="font-size:13px;color:var(--gray-700);"><i class="fas fa-spray-can" style="color:var(--primary);margin-right:6px;font-size:11px;"></i>Perfumes</span>
+                                    <div class="toggle-switch"><input type="checkbox" id="vis-perfume" checked onchange="toggleDashCard('perfume', this.checked)"><span class="toggle-slider"></span></div>
+                                </label>
+                                <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+                                    <span style="font-size:13px;color:var(--gray-700);"><i class="fas fa-warehouse" style="color:#10b981;margin-right:6px;font-size:11px;"></i>Em Estoque</span>
+                                    <div class="toggle-switch"><input type="checkbox" id="vis-estoque" checked onchange="toggleDashCard('estoque', this.checked)"><span class="toggle-slider"></span></div>
+                                </label>
+                                <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+                                    <span style="font-size:13px;color:var(--gray-700);"><i class="fas fa-handshake" style="color:#3b82f6;margin-right:6px;font-size:11px;"></i>Consignado por Revendedor</span>
+                                    <div class="toggle-switch"><input type="checkbox" id="vis-consignado" checked onchange="toggleDashCard('consignado', this.checked)"><span class="toggle-slider"></span></div>
+                                </label>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- COL 2: Revendedores -->
+                    <div class="card-light p-5">
+                        <h3 class="section-title"><i class="fas fa-users"></i>Revendedores</h3>
+                        <div id="lista-revendedores" class="space-y-2 mb-4 max-h-80 overflow-y-auto scrollbar-custom"></div>
+                        <input type="text" id="busca-revendedor" class="w-full mb-2" placeholder="Buscar revendedor..." oninput="renderRevendedores()" style="font-size:13px;">
+                        <button onclick="abrirModalRevendedor()" class="btn-primary w-full" style="font-size:13px;">
+                            <i class="fas fa-plus mr-2"></i>Novo Revendedor
+                        </button>
+                    </div>
+
+                    <!-- COL 3: Status + Semi Joias + Perfumes -->
+                    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+
+                        <!-- Status dos Produtos -->
+                        <div class="card-light p-5">
+                            <h3 class="section-title"><i class="fas fa-tag"></i>Status dos Produtos</h3>
+                            <div id="lista-status" class="space-y-2 mb-3"></div>
+                            <div style="display:flex;gap:0.5rem;">
+                                <input type="text" id="novo-status" class="flex-1" placeholder="Novo status..." onkeypress="if(event.key==='Enter') addStatus()" style="font-size:13px;">
+                                <button onclick="addStatus()" class="btn-primary" style="padding:0.5rem 0.75rem;">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <p style="font-size:11px;color:var(--gray-500);margin-top:0.5rem;">Padrão: Em Estoque, Consignado, Vendido</p>
+                        </div>
+
+                        <!-- Categorias Semi Joias -->
+                        <div class="card-light p-5">
+                            <h3 class="section-title"><i class="fas fa-ring"></i>Semi Joias</h3>
+                            <div id="categorias-semijoia" class="space-y-2 mb-3"></div>
+                            <div style="display:flex;gap:0.5rem;">
+                                <input type="text" id="nova-cat-semijoia" class="flex-1" placeholder="Nova categoria..." onkeypress="if(event.key==='Enter') addCategoria('Semi Joia')" style="font-size:13px;">
+                                <button onclick="addCategoria('Semi Joia')" class="btn-primary" style="padding:0.5rem 0.75rem;">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Categorias Perfumes -->
+                        <div class="card-light p-5">
+                            <h3 class="section-title"><i class="fas fa-spray-can"></i>Perfumes</h3>
+                            <div id="categorias-perfume" class="space-y-2 mb-3"></div>
+                            <div style="display:flex;gap:0.5rem;">
+                                <input type="text" id="nova-cat-perfume" class="flex-1" placeholder="Nova categoria..." onkeypress="if(event.key==='Enter') addCategoria('Perfume')" style="font-size:13px;">
+                                <button onclick="addCategoria('Perfume')" class="btn-primary" style="padding:0.5rem 0.75rem;">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
