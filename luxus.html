@@ -1726,39 +1726,42 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Verificar login
             const loggedIn = localStorage.getItem('luxus_logged_in');
-            const username = localStorage.getItem('luxus_user');
-            
+            const username = localStorage.getItem('luxus_user') || 'Lu';
+
             if (!loggedIn) {
                 window.location.href = 'config.html';
                 return;
             }
-            
-            // Atualizar nome do usuário
-            if (username) {
-                document.getElementById('user-name').textContent = username;
-            }
-            
-            // Carregar configurações
+
+            // Atualizar saudação com nome do usuário
+            document.querySelectorAll('#dashboard-username').forEach(el => el.textContent = username);
+
+            // Carregar configurações locais
             carregarStatusSalvos();
             carregarConfigColunas();
             carregarTitulo();
-            
-            document.getElementById('config-script-url').value = scriptUrl;
+
+            // Preencher campo de URL com valor salvo
+            const urlInput = document.getElementById('config-script-url');
+            if (urlInput) urlInput.value = scriptUrl;
+
+            // Carregar dados do servidor ou ir para config
             if (scriptUrl) {
                 loadData();
             } else {
                 switchTab('config');
                 showToast('Configure a URL do Google Apps Script', 'warning');
             }
+
+            // Relógio — iniciar imediatamente e atualizar a cada segundo
             updateTime();
             setInterval(updateTime, 1000);
         });
 
         function updateTime() {
-            const now = new Date();
-            document.getElementById('status-time').textContent = now.toLocaleTimeString('pt-BR');
+            const el = document.getElementById('status-time');
+            if (el) el.textContent = new Date().toLocaleTimeString('pt-BR');
         }
 
         // ========== NAVEGAÇÃO ==========
@@ -3316,11 +3319,17 @@
         function salvarConfiguracao() {
             const url = document.getElementById('config-script-url').value.trim();
             if (!url) { showToast('Digite a URL primeiro', 'warning'); return; }
+
+            // Salvar no localStorage IMEDIATAMENTE
             localStorage.setItem('luxus_script_url', url);
             scriptUrl = url;
-            showToast('URL salva! Carregando dados...', 'success');
-            // Carregar e permanecer na aba config
-            loadData().then(() => switchTab('config')).catch(() => switchTab('config'));
+            showToast('✅ URL salva com sucesso!', 'success');
+
+            // Carregar dados e voltar para config após
+            (async () => {
+                try { await loadData(); } catch(e) { console.warn(e); }
+                switchTab('config');
+            })();
         }
         
         async function testarConexao() {
