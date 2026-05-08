@@ -1042,53 +1042,67 @@
                 
                 <!-- Cards de Estatísticas -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6" style="width:100%;">
-                    <div class="stat-card cursor-pointer hover:scale-105 transition-transform" onclick="filtrarDashboard('all')">
-                        <div class="flex justify-between items-start mb-3">
-                            <div class="bg-amber-100 p-3 rounded-xl">
-                                <i class="fas fa-gem text-amber-600 text-xl"></i>
+
+                    <div class="stat-card cursor-pointer" onclick="filtrarDashboard('all')">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <p style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Peças no Sistema</p>
+                                <div class="bg-amber-100 p-3 rounded-xl" style="display:inline-flex;">
+                                    <i class="fas fa-gem text-amber-600 text-xl"></i>
+                                </div>
                             </div>
-                            <span class="text-xs text-gray-500 uppercase">Total</span>
-                        </div>
-                        <h3 id="dash-total" class="text-3xl font-bold mb-1 text-gray-800">0</h3>
-                        <p class="text-xs text-gray-600">Peças no Sistema</p>
-                        
-                    </div>
-                    
-                    <div class="stat-card cursor-pointer hover:scale-105 transition-transform" onclick="filtrarDashboard('estoque')">
-                        <div class="flex justify-between items-start mb-3">
-                            <div class="bg-green-100 p-3 rounded-xl">
-                                <i class="fas fa-warehouse text-green-600 text-xl"></i>
+                            <div style="text-align:right;">
+                                <p style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Total</p>
+                                <h3 id="dash-total" style="font-size:2rem;font-weight:700;color:var(--gray-800);line-height:1;">0</h3>
                             </div>
-                            <span class="text-xs text-gray-500 uppercase">Em Estoque</span>
                         </div>
-                        <h3 id="dash-capital" class="text-2xl font-bold mb-1 text-green-600">R$ 0</h3>
-                        <p class="text-xs text-gray-600">Capital Investido</p>
-                        
                     </div>
-                    
-                    <div class="stat-card cursor-pointer hover:scale-105 transition-transform" onclick="filtrarDashboard('consignado')">
-                        <div class="flex justify-between items-start mb-3">
-                            <div class="bg-blue-100 p-3 rounded-xl">
-                                <i class="fas fa-handshake text-blue-600 text-xl"></i>
+
+                    <div class="stat-card cursor-pointer" onclick="filtrarDashboard('estoque')">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <p style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Capital Investido</p>
+                                <div class="bg-green-100 p-3 rounded-xl" style="display:inline-flex;">
+                                    <i class="fas fa-warehouse text-green-600 text-xl"></i>
+                                </div>
                             </div>
-                            <span class="text-xs text-gray-500 uppercase">Consignado</span>
-                        </div>
-                        <h3 id="dash-consignado" class="text-2xl font-bold mb-1 text-blue-600">R$ 0</h3>
-                        <p class="text-xs text-gray-600">Com Revendedores</p>
-                        
-                    </div>
-                    
-                    <div class="stat-card cursor-pointer hover:scale-105 transition-transform" onclick="filtrarDashboard('vendido')">
-                        <div class="flex justify-between items-start mb-3">
-                            <div class="bg-red-100 p-3 rounded-xl">
-                                <i class="fas fa-dollar-sign text-red-600 text-xl"></i>
+                            <div style="text-align:right;">
+                                <p style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Em Estoque</p>
+                                <h3 id="dash-capital" style="font-size:1.5rem;font-weight:700;color:#10b981;line-height:1;">R$ 0</h3>
                             </div>
-                            <span class="text-xs text-gray-500 uppercase">Vendido</span>
                         </div>
-                        <h3 id="dash-vendido" class="text-2xl font-bold mb-1 text-red-600">R$ 0</h3>
-                        <p class="text-xs text-gray-600">Total em Vendas</p>
-                        
                     </div>
+
+                    <div class="stat-card cursor-pointer" onclick="filtrarDashboard('consignado')">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <p style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Com Revendedores</p>
+                                <div class="bg-blue-100 p-3 rounded-xl" style="display:inline-flex;">
+                                    <i class="fas fa-handshake text-blue-600 text-xl"></i>
+                                </div>
+                            </div>
+                            <div style="text-align:right;">
+                                <p style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Consignado</p>
+                                <h3 id="dash-consignado" style="font-size:1.5rem;font-weight:700;color:#3b82f6;line-height:1;">R$ 0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card cursor-pointer" onclick="filtrarDashboard('vendido')">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <p style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Total em Vendas</p>
+                                <div class="bg-red-100 p-3 rounded-xl" style="display:inline-flex;">
+                                    <i class="fas fa-dollar-sign text-red-600 text-xl"></i>
+                                </div>
+                            </div>
+                            <div style="text-align:right;">
+                                <p style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Vendido</p>
+                                <h3 id="dash-vendido" style="font-size:1.5rem;font-weight:700;color:#14b8a6;line-height:1;">R$ 0</h3>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- Segunda linha + Tabela: mesmo container -->
