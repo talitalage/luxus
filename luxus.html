@@ -1041,7 +1041,7 @@
                 </div>
                 
                 <!-- Cards de Estatísticas -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6" style="width:100%;">
                     <div class="stat-card cursor-pointer hover:scale-105 transition-transform" onclick="filtrarDashboard('all')">
                         <div class="flex justify-between items-start mb-3">
                             <div class="bg-amber-100 p-3 rounded-xl">
@@ -1091,7 +1091,7 @@
                     </div>
                 </div>
 
-                <!-- Segunda linha: Semi Joias | Perfumes | Estoque | Consignado -->
+                <!-- Segunda linha + Tabela: mesmo container -->
                 <div id="dash-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.25rem;margin-bottom:1.25rem;">
 
                     <!-- Semi Joias por categoria -->
@@ -1186,6 +1186,7 @@
                         </table>
                     </div>
                 </div>
+                </div><!-- /wrapper cards+tabela -->
             </div>
 
             <!-- TAB: Operações (Entrada + Fechamento unificados) -->
