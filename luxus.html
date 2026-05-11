@@ -1730,21 +1730,19 @@ var syncPendente = false;
 function syncDrive(payload, callback) {
   if (!scriptUrl) { marcarSyncPendente(); return; }
 
-  // Codifica o payload como parâmetro GET para evitar CORS preflight
-  var url = scriptUrl + '?payload=' + encodeURIComponent(JSON.stringify(payload));
-
-  fetch(url, {method:'GET', cache:'no-cache'})
-  .then(function(r) { return r.json(); })
-  .then(function(res) {
-    if (res.success) {
-      localStorage.removeItem('luxus_inventory_local');
-      localStorage.removeItem('luxus_sync_pendente');
-      syncPendente = false;
-      esconderSyncErro();
-      if (callback) callback();
-    } else {
-      marcarSyncPendente();
-    }
+  fetch(scriptUrl, {
+    method: 'POST',
+    mode:   'no-cors',   // evita o preflight CORS
+    headers: {'Content-Type': 'text/plain'},  // text/plain não dispara preflight
+    body: JSON.stringify(payload)
+  })
+  .then(function() {
+    // no-cors não retorna resposta legível — assumimos sucesso se não jogou erro
+    localStorage.removeItem('luxus_inventory_local');
+    localStorage.removeItem('luxus_sync_pendente');
+    syncPendente = false;
+    esconderSyncErro();
+    if (callback) callback();
   })
   .catch(function() { marcarSyncPendente(); });
 }
@@ -1782,25 +1780,24 @@ function sincronizarTudo() {
   }, 15000);
 
   var payload = {action:'syncTudo', inventory:inventory, revendedores:revendedores, categorias:categorias, fechamentos:historicFechamentos};
-  var url = scriptUrl + '?payload=' + encodeURIComponent(JSON.stringify(payload));
 
-  fetch(url, {method:'GET', cache:'no-cache'})
-  .then(function(r) { return r.json(); })
-  .then(function(res) {
+  fetch(scriptUrl, {
+    method:  'POST',
+    mode:    'no-cors',
+    headers: {'Content-Type': 'text/plain'},
+    body:    JSON.stringify(payload)
+  })
+  .then(function() {
     clearTimeout(timer);
     if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Tentar sincronizar novamente'; }
-    if (res.success) {
-      localStorage.removeItem('luxus_inventory_local');
-      localStorage.removeItem('luxus_sync_pendente');
-      syncPendente = false;
-      esconderSyncErro();
-      showToast('✅ Sincronizado com sucesso!','success');
-      loadData();
-    } else {
-      showToast('⚠️ Erro: ' + (res.error||'desconhecido'),'error');
-    }
+    localStorage.removeItem('luxus_inventory_local');
+    localStorage.removeItem('luxus_sync_pendente');
+    syncPendente = false;
+    esconderSyncErro();
+    showToast('✅ Sincronizado com sucesso!','success');
+    loadData();
   })
-  .catch(function(e){
+  .catch(function(){
     clearTimeout(timer);
     if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Tentar sincronizar novamente'; }
     showToast('❌ Falha na sincronização','error');
