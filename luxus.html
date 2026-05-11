@@ -877,9 +877,12 @@ function loadData() {
     }
 
     // Categorias
-    if (dados.categorias && typeof dados.categorias === 'object') {
-      categorias = dados.categorias;
-      localStorage.setItem('luxus_categorias', JSON.stringify(categorias));
+    if (dados.categorias && typeof dados.categorias === 'object' && !Array.isArray(dados.categorias)) {
+      var temCats = Object.values(dados.categorias).some(function(arr) { return arr && arr.length > 0; });
+      if (temCats) {
+        categorias = dados.categorias;
+        localStorage.setItem('luxus_categorias', JSON.stringify(categorias));
+      }
     }
 
     // Fechamentos — agora vêm do Drive também
