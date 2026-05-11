@@ -1728,12 +1728,12 @@ function exportarRelatorioCSV(){
 var syncPendente = false;
 
 function syncDrive(payload, callback) {
-  if (!scriptUrl) {
-    // Sem URL configurada — marca como pendente
-    marcarSyncPendente();
-    return;
-  }
-  fetch(scriptUrl, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
+  if (!scriptUrl) { marcarSyncPendente(); return; }
+
+  // Codifica o payload como parâmetro GET para evitar CORS preflight
+  var url = scriptUrl + '?payload=' + encodeURIComponent(JSON.stringify(payload));
+
+  fetch(url, {method:'GET', cache:'no-cache'})
   .then(function(r) { return r.json(); })
   .then(function(res) {
     if (res.success) {
@@ -1776,16 +1776,15 @@ function sincronizarTudo() {
   var btn = document.getElementById('btn-sync');
   if (btn) { btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner animate-spin" style="margin-right:6px;"></i>Sincronizando...'; }
 
-  // Timeout de 15s
   var timer = setTimeout(function(){
     if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Tentar sincronizar novamente'; }
     showToast('⚠️ Tempo esgotado. Verifique a conexão.','warning');
   }, 15000);
 
-  fetch(scriptUrl, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
-    action:'syncTudo', inventory:inventory, revendedores:revendedores,
-    categorias:categorias, fechamentos:historicFechamentos
-  })})
+  var payload = {action:'syncTudo', inventory:inventory, revendedores:revendedores, categorias:categorias, fechamentos:historicFechamentos};
+  var url = scriptUrl + '?payload=' + encodeURIComponent(JSON.stringify(payload));
+
+  fetch(url, {method:'GET', cache:'no-cache'})
   .then(function(r) { return r.json(); })
   .then(function(res) {
     clearTimeout(timer);
