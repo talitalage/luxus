@@ -1775,13 +1775,36 @@ function sincronizarTudo() {
   if (!scriptUrl) { showToast('Configure a URL do servidor primeiro','warning'); return; }
   var btn = document.getElementById('btn-sync');
   if (btn) { btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner animate-spin" style="margin-right:6px;"></i>Sincronizando...'; }
-  syncDrive({
+
+  // Timeout de 15s
+  var timer = setTimeout(function(){
+    if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Tentar sincronizar novamente'; }
+    showToast('⚠️ Tempo esgotado. Verifique a conexão.','warning');
+  }, 15000);
+
+  fetch(scriptUrl, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
     action:'syncTudo', inventory:inventory, revendedores:revendedores,
     categorias:categorias, fechamentos:historicFechamentos
-  }, function() {
-    showToast('✅ Tudo sincronizado com o Drive!','success');
+  })})
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    clearTimeout(timer);
     if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Tentar sincronizar novamente'; }
-    loadData();
+    if (res.success) {
+      localStorage.removeItem('luxus_inventory_local');
+      localStorage.removeItem('luxus_sync_pendente');
+      syncPendente = false;
+      esconderSyncErro();
+      showToast('✅ Sincronizado com sucesso!','success');
+      loadData();
+    } else {
+      showToast('⚠️ Erro: ' + (res.error||'desconhecido'),'error');
+    }
+  })
+  .catch(function(e){
+    clearTimeout(timer);
+    if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Tentar sincronizar novamente'; }
+    showToast('❌ Falha na sincronização','error');
   });
 }
 
@@ -1829,7 +1852,41 @@ function carregarLogoArquivo(e){var f=e.target.files[0];if(!f)return;var r=new F
 function abrirEditarTitulo(){switchTab('config');setTimeout(function(){var e=document.getElementById('cfg-titulo');if(e){e.focus();e.select();}},200);}
 function carregarTitulo(){var t=localStorage.getItem('luxus_titulo');var s=localStorage.getItem('luxus_subtitulo');var l=localStorage.getItem('luxus_logo');if(t){document.getElementById('site-title-display').textContent=t;var ct=document.getElementById('cfg-titulo');if(ct)ct.value=t;var ctp=document.getElementById('cfg-titulo-preview');if(ctp)ctp.textContent=t;document.title=t+' - Sistema de Gestão';}if(s){document.getElementById('site-subtitle-display').textContent=s;var cs=document.getElementById('cfg-subtitulo');if(cs)cs.value=s;var csp=document.getElementById('cfg-subtitulo-preview');if(csp)csp.textContent=s;}if(l){var logo=document.querySelector('.header-dark img');if(logo){logo.src=l;logo.style.display='block';}var cl=document.getElementById('cfg-logo');if(cl)cl.value=l;var pr=document.getElementById('cfg-logo-preview');if(pr){pr.src=l;pr.style.display='block';}}}
 function salvarConfiguracao(){var url=document.getElementById('config-script-url').value.trim();if(!url){showToast('Digite a URL primeiro','warning');return;}localStorage.setItem('luxus_script_url',url);scriptUrl=url;showToast('✅ URL salva!','success');loadData();}
-function testarConexao(){var url=document.getElementById('config-script-url').value.trim();var btn=document.getElementById('btn-testar');if(!url){showConfigStatus('Digite a URL primeiro','error');return;}if(!url.includes('script.google.com')||!url.includes('/exec')){showConfigStatus('URL inválida. Deve ser do Google Apps Script','error');return;}btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner animate-spin" style="margin-right:6px;"></i>Testando...';fetch(url+'?action=getInventario',{method:'GET',cache:'no-cache'}).then(function(r){return r.text();}).then(function(t){var data=JSON.parse(t);if(Array.isArray(data)||data.status==='success'){showConfigStatus('✓ Conexão bem-sucedida! '+(Array.isArray(data)?data.length+' itens encontrados':'Servidor online'),'success');}else{showConfigStatus('Resposta inesperada do servidor','error');}}).catch(function(){showConfigStatus('Erro ao conectar. Verifique a URL e as permissões.','error');}).finally(function(){btn.disabled=false;btn.innerHTML='<i class="fas fa-plug" style="margin-right:6px;"></i>Testar';});}
+function testarConexao(){
+  var url=document.getElementById('config-script-url').value.trim();
+  var btn=document.getElementById('btn-testar');
+  if(!url){showConfigStatus('Digite a URL primeiro','error');return;}
+  if(!url.includes('script.google.com')||!url.includes('/exec')){showConfigStatus('URL inválida. Deve ser do Google Apps Script','error');return;}
+  btn.disabled=true;
+  btn.innerHTML='<i class="fas fa-spinner animate-spin" style="margin-right:6px;"></i>Testando...';
+
+  // Timeout de 10s
+  var timer = setTimeout(function(){
+    btn.disabled=false;
+    btn.innerHTML='<i class="fas fa-plug" style="margin-right:6px;"></i>Testar';
+    showConfigStatus('Tempo esgotado. Verifique a URL e as permissões.','error');
+  }, 10000);
+
+  fetch(url+'?action=getTudo', {method:'GET', cache:'no-cache'})
+  .then(function(r){return r.text();})
+  .then(function(t){
+    clearTimeout(timer);
+    var data = JSON.parse(t);
+    // getTudo retorna objeto com inventory, revendedores, etc.
+    var inv  = Array.isArray(data.inventory)    ? data.inventory.length    : 0;
+    var revs = Array.isArray(data.revendedores)  ? data.revendedores.length : 0;
+    var fechs= Array.isArray(data.fechamentos)   ? data.fechamentos.length  : 0;
+    showConfigStatus('✓ Conexão bem-sucedida! ' + inv + ' produto(s) · ' + revs + ' revendedor(es) · ' + fechs + ' fechamento(s)','success');
+  })
+  .catch(function(){
+    clearTimeout(timer);
+    showConfigStatus('Erro ao conectar. Verifique a URL e as permissões do script.','error');
+  })
+  .finally(function(){
+    btn.disabled=false;
+    btn.innerHTML='<i class="fas fa-plug" style="margin-right:6px;"></i>Testar';
+  });
+}
 function showConfigStatus(msg,type){var d=document.getElementById('config-status');if(!d)return;var map={success:'background:#f0fdf4;color:#166534;border:1px solid #86efac;',error:'background:#fef2f2;color:#991b1b;border:1px solid #fca5a5;',loading:'background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;'};d.style.cssText='display:block;font-size:13px;padding:.75rem;border-radius:8px;'+(map[type]||map.loading);d.innerHTML='<i class="fas '+(type==='success'?'fa-check-circle':type==='error'?'fa-exclamation-circle':'fa-spinner animate-spin')+'" style="margin-right:6px;"></i>'+msg;if(type!=='loading')setTimeout(function(){d.style.display='none';},5000);}
 
 // =====================================================
