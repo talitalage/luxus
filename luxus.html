@@ -1002,72 +1002,67 @@ function switchSubtab(sub) {
 }
 
 // ===== LOAD DATA =====
-async function loadData() {
+function loadData() {
     if (!scriptUrl) { showToast('Configure a URL do servidor','warning'); return; }
     showToast('Carregando dados...','info');
-    try {
-        // Inventário
-        try {
-            var r1 = await fetch(scriptUrl + '?action=getInventario', {method:'GET',cache:'no-cache'});
-            if (r1.ok) {
-                var raw = JSON.parse(await r1.text());
-                var normalizar = function(item) {
-                    var obj = Object.assign({}, item);
-                    return {
-                        rowId: obj.rowId||obj.RowId||obj.id||0,
-                        Codigo: obj.Codigo||obj.codigo||'',
-                        Descricao: obj.Descricao||obj.descricao||'',
-                        Tipo: obj.Tipo||obj.tipo||'',
-                        Categoria: obj.Categoria||obj.categoria||'',
-                        Status: obj.Status||obj.status||'Em Estoque',
-                        Revendedor: obj.Revendedor||obj.revendedor||'',
-                        Custo: parseNum(obj.Custo||obj.custo||0),
-                        Venda: parseNum(obj.Venda||obj.venda||0),
-                        Foto: obj.Foto||obj.foto||'',
-                        Data: obj.Data||obj.data||''
-                    };
-                };
-                var parsed = Array.isArray(raw) ? raw.map(normalizar) : [];
-                var local = localStorage.getItem('luxus_inventory_local');
-                if (local) { try { inventory = JSON.parse(local); } catch(e){ inventory = parsed; localStorage.removeItem('luxus_inventory_local'); } }
-                else { inventory = parsed; }
-            } else throw new Error('status ' + r1.status);
-        } catch(e) {
-            var lp = localStorage.getItem('luxus_inventory_local');
-            if (lp) { try { inventory = JSON.parse(lp); } catch(ex){ inventory = []; } } else inventory = [];
-        }
-        // Revendedores
-        try {
-            var r2 = await fetch(scriptUrl + '?action=getRevendedores', {method:'GET',cache:'no-cache'});
-            if (r2.ok) { revendedores = JSON.parse(await r2.text()); }
-            else throw new Error();
-        } catch(e) {
-            var lr = localStorage.getItem('luxus_revendedores');
-            if (lr) { try { revendedores = JSON.parse(lr); } catch(ex){ revendedores = []; } } else revendedores = [];
-        }
-        // Categorias
-        try {
-            var r3 = await fetch(scriptUrl + '?action=getCategorias', {method:'GET',cache:'no-cache'});
-            if (r3.ok) {
-                var catData = JSON.parse(await r3.text());
-                categorias = {'Semi Joia':[],'Perfume':[]};
-                if (Array.isArray(catData)) catData.forEach(function(c){ if(c.Tipo && categorias[c.Tipo]) categorias[c.Tipo].push(c.Nome||c.nome); });
-            } else throw new Error();
-        } catch(e) {
-            var lc = localStorage.getItem('luxus_categorias');
-            if (lc) { try { var p = JSON.parse(lc); categorias = Array.isArray(p) ? {'Semi Joia':[],'Perfume':[]} : p; } catch(ex){ categorias = {'Semi Joia':[],'Perfume':[]}; } }
-        }
-        if (revendedores.length > 0) localStorage.setItem('luxus_revendedores', JSON.stringify(revendedores));
-        if (Object.keys(categorias).length > 0) localStorage.setItem('luxus_categorias', JSON.stringify(categorias));
+    var inv, revs, cats;
+    function finalizar() {
+        if (inv===undefined||revs===undefined||cats===undefined) return;
+        if(revs.length>0) localStorage.setItem('luxus_revendedores',JSON.stringify(revs));
+        if(Object.keys(cats).length>0) localStorage.setItem('luxus_categorias',JSON.stringify(cats));
         carregarRevendedoresSelects();
         renderDashboard();
         renderUltimasEntradas();
-        showToast('✅ ' + inventory.length + ' produtos · ' + revendedores.length + ' revendedores','success');
-    } catch(err) {
-        showToast('❌ Erro ao conectar. Verifique a URL.','error');
-        inventory = []; revendedores = []; categorias = {'Semi Joia':[],'Perfume':[]};
-        renderDashboard();
+        showToast('✅ '+inv.length+' produtos · '+revs.length+' revendedores','success');
     }
+    // Inventário
+    fetch(scriptUrl+'?action=getInventario',{method:'GET',cache:'no-cache'})
+    .then(function(r){return r.text();})
+    .then(function(t){
+        var raw=JSON.parse(t);
+        var normalizar=function(item){
+            var obj=Object.assign({},item);
+            return {rowId:obj.rowId||obj.RowId||obj.id||0,Codigo:obj.Codigo||obj.codigo||'',Descricao:obj.Descricao||obj.descricao||'',Tipo:obj.Tipo||obj.tipo||'',Categoria:obj.Categoria||obj.categoria||'',Status:obj.Status||obj.status||'Em Estoque',Revendedor:obj.Revendedor||obj.revendedor||'',Custo:parseNum(obj.Custo||obj.custo||0),Venda:parseNum(obj.Venda||obj.venda||0),Foto:obj.Foto||obj.foto||'',Data:obj.Data||obj.data||''};
+        };
+        var parsed=Array.isArray(raw)?raw.map(normalizar):[];
+        var lp=localStorage.getItem('luxus_inventory_local');
+        inv=lp?JSON.parse(lp):parsed;
+        inventory=inv;
+        finalizar();
+    }).catch(function(){
+        var lp=localStorage.getItem('luxus_inventory_local');
+        inv=lp?JSON.parse(lp):[];
+        inventory=inv;
+        finalizar();
+    });
+    // Revendedores
+    fetch(scriptUrl+'?action=getRevendedores',{method:'GET',cache:'no-cache'})
+    .then(function(r){return r.text();})
+    .then(function(t){
+        revs=JSON.parse(t);
+        revendedores=revs;
+        finalizar();
+    }).catch(function(){
+        var lr=localStorage.getItem('luxus_revendedores');
+        revs=lr?JSON.parse(lr):[];
+        revendedores=revs;
+        finalizar();
+    });
+    // Categorias
+    fetch(scriptUrl+'?action=getCategorias',{method:'GET',cache:'no-cache'})
+    .then(function(r){return r.text();})
+    .then(function(t){
+        var catData=JSON.parse(t);
+        cats={'Semi Joia':[],'Perfume':[]};
+        if(Array.isArray(catData)) catData.forEach(function(c){if(c.Tipo&&cats[c.Tipo])cats[c.Tipo].push(c.Nome||c.nome);});
+        categorias=cats;
+        finalizar();
+    }).catch(function(){
+        var lc=localStorage.getItem('luxus_categorias');
+        cats=lc?JSON.parse(lc):{'Semi Joia':[],'Perfume':[]};
+        categorias=cats;
+        finalizar();
+    });
 }
 
 // ===== CONFIG CARDS =====
@@ -2179,95 +2174,42 @@ function verificarPendentes() {
     var info    = document.getElementById('sync-info');
     var btnSync = document.getElementById('btn-sync');
     if (!badge) return;
-
     var local = localStorage.getItem('luxus_inventory_local');
-    var localItems = local ? JSON.parse(local) : null;
-
-    if (!localItems) {
-        badge.style.background = '#d1fae5'; badge.style.color = '#065f46';
-        badge.textContent = '✓ Sincronizado';
-        if (info) info.textContent = 'Todos os dados estão na planilha.';
-        if (btnSync) btnSync.disabled = true;
-        return;
+    if (!local) {
+        badge.style.background='#d1fae5'; badge.style.color='#065f46';
+        badge.textContent='✓ Sincronizado';
+        if(info) info.textContent='Todos os dados estão na planilha.';
+        if(btnSync) btnSync.disabled=true;
+    } else {
+        var n = JSON.parse(local).length;
+        badge.style.background='#fef3c7'; badge.style.color='#92400e';
+        badge.textContent=n+' item(s) local(is)';
+        if(info) info.textContent='Há '+n+' item(s) salvos localmente que podem não estar na planilha.';
+        if(btnSync) btnSync.disabled=false;
     }
-
-    // Compara com o que veio do servidor
-    var diff = localItems.length;
-    badge.style.background = '#fef3c7'; badge.style.color = '#92400e';
-    badge.textContent = diff + ' item(s) local(is)';
-    if (info) info.textContent = 'Há ' + diff + ' item(s) salvos localmente que podem não estar na planilha. Clique em "Enviar tudo" para sincronizar.';
-    if (btnSync) btnSync.disabled = false;
 }
 
-async function sincronizarTudo() {
+function sincronizarTudo() {
     if (!scriptUrl) { showToast('Configure a URL do servidor primeiro','warning'); return; }
-
     var btn = document.getElementById('btn-sync');
-    if (btn) { btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner animate-spin" style="margin-right:6px;"></i>Sincronizando...'; }
-
-    showToast('Sincronizando ' + inventory.length + ' item(s)...','info');
-
-    try {
-        // Envia o inventário completo em uma única requisição
-        var payload = {
-            action: 'syncInventario',
-            items: inventory.map(function(item){
-                return {
-                    codigo:     item.Codigo     || '',
-                    descricao:  item.Descricao  || '',
-                    tipo:       item.Tipo       || '',
-                    categoria:  item.Categoria  || '',
-                    custo:      parseNum(item.Custo),
-                    venda:      parseNum(item.Venda),
-                    status:     item.Status     || 'Em Estoque',
-                    revendedor: item.Revendedor || '',
-                    foto:       item.Foto       || '',
-                    data:       item.Data       || ''
-                };
-            })
-        };
-
-        var res    = await fetch(scriptUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
-        var result = await res.json();
-
-        if (result.success) {
+    if(btn){ btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner animate-spin" style="margin-right:6px;"></i>Sincronizando...'; }
+    var promessas = inventory.map(function(item){
+        var p = {action:'addInventario',codigo:item.Codigo||'',descricao:item.Descricao||'',tipo:item.Tipo||'',categoria:item.Categoria||'',custo:parseNum(item.Custo),venda:parseNum(item.Venda),status:item.Status||'Em Estoque',revendedor:item.Revendedor||'',foto:item.Foto||''};
+        return fetch(scriptUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}).then(function(r){return r.json();}).catch(function(){return {success:false};});
+    });
+    Promise.all(promessas).then(function(resultados){
+        var ok=resultados.filter(function(r){return r.success;}).length;
+        var erros=resultados.length-ok;
+        if(btn){ btn.disabled=false; btn.innerHTML='<i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Enviar tudo para a planilha'; }
+        if(erros===0){
             localStorage.removeItem('luxus_inventory_local');
-            showToast('✅ ' + inventory.length + ' item(s) sincronizado(s)!','success');
+            showToast('✅ '+ok+' item(s) sincronizado(s)!','success');
             verificarPendentes();
-            await loadData();
+            loadData();
         } else {
-            // Fallback: tenta item a item sem bloquear UI
-            showToast('Sync em lote falhou, tentando item a item...','warning');
-            var promessas = inventory.map(function(item){
-                var p = {
-                    action:'addInventario',
-                    codigo:item.Codigo||'', descricao:item.Descricao||'',
-                    tipo:item.Tipo||'', categoria:item.Categoria||'',
-                    custo:parseNum(item.Custo), venda:parseNum(item.Venda),
-                    status:item.Status||'Em Estoque', revendedor:item.Revendedor||'', foto:item.Foto||''
-                };
-                return fetch(scriptUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)})
-                    .then(function(r){ return r.json(); })
-                    .catch(function(){ return {success:false}; });
-            });
-            var resultados = await Promise.all(promessas);
-            var ok   = resultados.filter(function(r){ return r.success; }).length;
-            var erros= resultados.length - ok;
-            if (erros === 0) {
-                localStorage.removeItem('luxus_inventory_local');
-                showToast('✅ ' + ok + ' item(s) enviado(s)!','success');
-                verificarPendentes();
-                await loadData();
-            } else {
-                showToast('⚠️ ' + ok + ' ok, ' + erros + ' erro(s). Verifique o console.','warning');
-            }
+            showToast('⚠️ '+ok+' ok, '+erros+' erro(s). Verifique o console.','warning');
         }
-    } catch(e) {
-        console.error('Erro na sincronização:', e);
-        showToast('❌ Erro ao sincronizar: ' + e.message,'error');
-    } finally {
-        if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Enviar tudo para a planilha'; }
-    }
+    });
 }var d=document.getElementById('config-status');d.classList.remove('hidden');var map={success:'background:#f0fdf4;color:#166534;border:1px solid #86efac;',error:'background:#fef2f2;color:#991b1b;border:1px solid #fca5a5;',loading:'background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;'};d.style.cssText='font-size:13px;padding:0.75rem;border-radius:8px;'+(map[type]||map.loading);var icons={success:'fa-check-circle',error:'fa-exclamation-circle',loading:'fa-spinner animate-spin'};d.innerHTML='<i class="fas '+(icons[type]||'fa-info-circle')+'" style="margin-right:6px;"></i>'+msg;if(type!=='loading')setTimeout(function(){d.classList.add('hidden');},5000);}
 
 // ===== COLUNAS =====
