@@ -1341,10 +1341,8 @@ function registrarEntrada() {
   renderDashboard();
   showToast('Produto registrado!','success');
   if (scriptUrl) {
-    fetch(scriptUrl, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
-    .then(function(r) { return r.json(); })
-    .then(function(res) { if (res.success) { localStorage.removeItem('luxus_inventory_local'); showToast('Sincronizado com a planilha!','success'); } })
-    .catch(function() {});
+    syncDrive({action:'addInventario', codigo:codigo, descricao:descricao, tipo:tipo,
+      categoria:categoria, custo:custo, venda:venda, status:status, revendedor:revendedor||'', foto:''});
   }
 }
 
@@ -1724,43 +1722,66 @@ function exportarRelatorioCSV(){
 // =====================================================
 // CONFIGURAÇÕES
 // =====================================================
-function verificarPendentes(){
-  var badge=document.getElementById('badge-local');var info=document.getElementById('sync-info');var btnSync=document.getElementById('btn-sync');if(!badge)return;
-  var local=localStorage.getItem('luxus_inventory_local');
-  if(!local){badge.style.cssText='background:#d1fae5;color:#065f46;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;';badge.textContent='✓ Sincronizado';if(info)info.textContent='Todos os dados estão na planilha.';if(btnSync)btnSync.disabled=true;}
-  else{var n=JSON.parse(local).length;badge.style.cssText='background:#fef3c7;color:#92400e;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;';badge.textContent=n+' item(s) pendente(s)';if(info)info.textContent='Há '+n+' item(s) salvos localmente. Clique em "Enviar tudo" para sincronizar.';if(btnSync)btnSync.disabled=false;}
-}
+// =====================================================
+// SYNC — automático, silencioso
+// =====================================================
+var syncPendente = false;
 
-function sincronizarTudo(){
-  if(!scriptUrl){showToast('Configure a URL do servidor primeiro','warning');return;}
-  var btn=document.getElementById('btn-sync');
-  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner animate-spin" style="margin-right:6px;"></i>Sincronizando...';}
-
-  // Envia o estado completo para o Drive via syncTudo
-  var payload = {
-    action:       'syncTudo',
-    inventory:    inventory,
-    revendedores: revendedores,
-    categorias:   categorias,
-    fechamentos:  historicFechamentos
-  };
-
+function syncDrive(payload, callback) {
+  if (!scriptUrl) {
+    // Sem URL configurada — marca como pendente
+    marcarSyncPendente();
+    return;
+  }
   fetch(scriptUrl, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
   .then(function(r) { return r.json(); })
   .then(function(res) {
-    if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Enviar tudo para a planilha';}
-    if(res.success){
+    if (res.success) {
       localStorage.removeItem('luxus_inventory_local');
-      showToast('✅ Tudo sincronizado com o Drive!','success');
-      verificarPendentes();
-      loadData();
+      localStorage.removeItem('luxus_sync_pendente');
+      syncPendente = false;
+      esconderSyncErro();
+      if (callback) callback();
     } else {
-      showToast('⚠️ Erro: ' + (res.error||'desconhecido'),'error');
+      marcarSyncPendente();
     }
   })
-  .catch(function(e){
-    if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Enviar tudo para a planilha';}
-    showToast('❌ Erro ao sincronizar: ' + e.message,'error');
+  .catch(function() { marcarSyncPendente(); });
+}
+
+function marcarSyncPendente() {
+  syncPendente = true;
+  localStorage.setItem('luxus_sync_pendente', '1');
+  var container = document.getElementById('sync-erro-container');
+  var badge     = document.getElementById('badge-local');
+  var info      = document.getElementById('sync-info');
+  var n         = inventory.length;
+  if (container) container.style.display = 'block';
+  if (badge)     badge.textContent = n + ' item(s) pendente(s)';
+  if (info)      info.textContent  = n + ' item(s) não foram salvos no Drive. Clique para tentar novamente.';
+}
+
+function esconderSyncErro() {
+  var container = document.getElementById('sync-erro-container');
+  if (container) container.style.display = 'none';
+}
+
+function verificarPendentes() {
+  var pendente = localStorage.getItem('luxus_sync_pendente');
+  if (pendente) marcarSyncPendente(); else esconderSyncErro();
+}
+
+function sincronizarTudo() {
+  if (!scriptUrl) { showToast('Configure a URL do servidor primeiro','warning'); return; }
+  var btn = document.getElementById('btn-sync');
+  if (btn) { btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner animate-spin" style="margin-right:6px;"></i>Sincronizando...'; }
+  syncDrive({
+    action:'syncTudo', inventory:inventory, revendedores:revendedores,
+    categorias:categorias, fechamentos:historicFechamentos
+  }, function() {
+    showToast('✅ Tudo sincronizado com o Drive!','success');
+    if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Tentar sincronizar novamente'; }
+    loadData();
   });
 }
 
@@ -1934,7 +1955,12 @@ function salvarItem(){
   if(rowId){var idx=inventory.findIndex(function(i){return i.rowId==rowId;});if(idx!==-1)inventory[idx]=Object.assign(inventory[idx],{Codigo:payload.codigo,Descricao:payload.descricao,Tipo:payload.tipo,Categoria:payload.categoria,Custo:payload.custo,Venda:payload.venda,Status:payload.status,Revendedor:payload.revendedor,Foto:payload.foto});}
   else{inventory.push({rowId:Date.now(),Codigo:payload.codigo,Descricao:payload.descricao,Tipo:payload.tipo,Categoria:payload.categoria,Custo:payload.custo,Venda:payload.venda,Status:payload.status,Revendedor:payload.revendedor,Foto:payload.foto,Data:new Date().toISOString()});}
   persistirInventarioLocal();renderDashboard();fecharModal('modal-item');showToast('Item salvo!','success');
-  if(scriptUrl){fetch(scriptUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(function(r){return r.text();}).then(function(t){var res=JSON.parse(t);if(res.success){localStorage.removeItem('luxus_inventory_local');showToast('Sincronizado com a planilha!','success');}else{showToast('Salvo localmente (erro no servidor)','warning');}}).catch(function(){showToast('Salvo localmente (sem conexão)','warning');});}
+  if (scriptUrl) {
+    syncDrive({action: payload.rowId ? 'editInventario' : 'addInventario',
+      rowId:payload.rowId, codigo:payload.codigo, descricao:payload.descricao,
+      tipo:payload.tipo, categoria:payload.categoria, custo:payload.custo,
+      venda:payload.venda, status:payload.status, revendedor:payload.revendedor, foto:payload.foto});
+  }
 }
 
 function excluirItem(){
