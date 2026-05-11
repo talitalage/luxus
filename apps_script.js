@@ -104,7 +104,9 @@ function doGet(e) {
 function doPost(e) {
   var result;
   try {
-    var data  = JSON.parse(e.postData.contents);
+    // Aceita tanto application/json quanto text/plain (no-cors)
+    var raw = e.postData ? e.postData.contents : '{}';
+    var data  = JSON.parse(raw);
     var dados = lerDados();
     result = processarAcao(data, dados);
   } catch(err) {
@@ -244,14 +246,42 @@ function processarAcao(data, dados) {
       result = { success: true, id: fech.id };
 
     // ── SYNC COMPLETO (sobrescreve tudo) ──
-    } else if (action === 'syncTudo') {
-      // Recebe o estado completo do localStorage e salva no Drive
+    } else if (action === 'salvarIdentidade') {
+      if (data.titulo)    dados.titulo    = data.titulo;
+      if (data.subtitulo) dados.subtitulo = data.subtitulo;
+      if (data.logo !== undefined) dados.logo = data.logo;
+      salvarDados(dados);
+      result = { success: true };
+
+    } else if (action === 'salvarStatus') {
+      if (Array.isArray(data.statusList)) dados.statusList  = data.statusList;
+      if (data.statusCores) dados.statusCores = data.statusCores;
+      salvarDados(dados);
+      result = { success: true };
+
+    } else if (action === 'renomearCategoria') {
+      var tipoR = data.tipo; var antigo = data.nomeAtual; var novo = data.nomeNovo;
+      if (dados.categorias[tipoR]) {
+        var idxR = dados.categorias[tipoR].indexOf(antigo);
+        if (idxR !== -1) {
+          dados.categorias[tipoR][idxR] = novo;
+          // Atualizar itens do inventário
+          dados.inventory.forEach(function(item) {
+            if (item.Tipo === tipoR && item.Categoria === antigo) item.Categoria = novo;
+          });
+          salvarDados(dados);
+        }
+      }
+      result = { success: true };
       if (data.inventory)    dados.inventory    = data.inventory;
       if (data.revendedores) dados.revendedores = data.revendedores;
       if (data.categorias)   dados.categorias   = data.categorias;
       if (data.fechamentos)  dados.fechamentos  = data.fechamentos;
+      if (data.titulo)       dados.titulo       = data.titulo;
+      if (data.subtitulo)    dados.subtitulo    = data.subtitulo;
+      if (data.logo)         dados.logo         = data.logo;
       salvarDados(dados);
-      result = { success: true, msg: 'Sync completo realizado' };
+      result = { success: true };
 
     } else {
     result = { success: false, error: 'Ação não reconhecida: ' + action };
