@@ -725,24 +725,12 @@ function getColsVisiveis() {
 // INIT
 // =====================================================
 document.addEventListener('DOMContentLoaded', function() {
-  // Carregar preferências
+  // Carregar preferências de UI (não dados)
   var ls = localStorage.getItem('luxus_status');
   if (ls) try { statusList = JSON.parse(ls); } catch(e) {}
 
   var lsc = localStorage.getItem('luxus_status_cores');
   if (lsc) try { statusCores = JSON.parse(lsc); } catch(e) {}
-
-  var lcat = localStorage.getItem('luxus_categorias');
-  if (lcat) try { var p = JSON.parse(lcat); categorias = Array.isArray(p) ? {'Semi Joia':[],'Perfume':[]} : p; } catch(e) {}
-
-  var lrev = localStorage.getItem('luxus_revendedores');
-  if (lrev) try { revendedores = JSON.parse(lrev); } catch(e) {}
-
-  var linv = localStorage.getItem('luxus_inventory_local');
-  if (linv) try { inventory = JSON.parse(linv); } catch(e) {}
-
-  var lhist = localStorage.getItem('luxus_historico');
-  if (lhist) try { historicFechamentos = JSON.parse(lhist); } catch(e) {}
 
   var lcfg = localStorage.getItem('luxus_cfg_cards');
   if (lcfg) try { cfgCards = JSON.parse(lcfg); } catch(e) {}
@@ -753,6 +741,9 @@ document.addEventListener('DOMContentLoaded', function() {
   var lcol = localStorage.getItem('luxus_colunas');
   if (lcol) try { colunasConfig = JSON.parse(lcol); } catch(e) {}
 
+  var lhist = localStorage.getItem('luxus_historico');
+  if (lhist) try { historicFechamentos = JSON.parse(lhist); } catch(e) {}
+
   scriptUrl = localStorage.getItem('luxus_script_url') || '';
 
   // Aplicar título salvo
@@ -762,14 +753,6 @@ document.addEventListener('DOMContentLoaded', function() {
   var ui = document.getElementById('config-script-url');
   if (ui) ui.value = scriptUrl;
 
-  // Revendedores nos selects
-  carregarRevendedoresSelects();
-
-  // Renderizar dashboard com dados locais
-  renderDashboard();
-  renderUltimasEntradas();
-  aplicarVisibilidadeCards();
-
   // Listener tipo → categoria (Entrada)
   var tipoSel = document.getElementById('entrada-tipo');
   if (tipoSel) tipoSel.addEventListener('change', onChangeTipoEntrada);
@@ -778,16 +761,19 @@ document.addEventListener('DOMContentLoaded', function() {
   updateTime();
   setInterval(updateTime, 1000);
 
-  // Tentar carregar do servidor em background
-  if (scriptUrl) loadData();
-
-  // Checar autenticação (se tiver config.html separado)
-  // var loggedIn = localStorage.getItem('luxus_logged_in');
-  // if (!loggedIn) { window.location.href = 'config.html'; return; }
-
   var usr = localStorage.getItem('luxus_user') || 'Lu';
   var el = document.getElementById('header-username');
   if (el) el.textContent = usr;
+
+  aplicarVisibilidadeCards();
+
+  // Carregar dados do Drive (fonte de verdade)
+  if (scriptUrl) {
+    loadData();
+  } else {
+    switchTab('config');
+    showToast('Configure a URL do Google Apps Script', 'warning');
+  }
 });
 
 function updateTime() {
@@ -1782,7 +1768,16 @@ function sincronizarTudo() {
     showToast('⚠️ Tempo esgotado. Verifique a conexão.','warning');
   }, 15000);
 
-  var payload = {action:'syncTudo', inventory:inventory, revendedores:revendedores, categorias:categorias, fechamentos:historicFechamentos};
+  var payload = {
+    action:       'syncTudo',
+    inventory:    inventory,
+    revendedores: revendedores,
+    categorias:   categorias,
+    fechamentos:  historicFechamentos,
+    titulo:       localStorage.getItem('luxus_titulo')    || '',
+    subtitulo:    localStorage.getItem('luxus_subtitulo') || '',
+    logo:         localStorage.getItem('luxus_logo')      || ''
+  };
 
   fetch(scriptUrl, {
     method:  'POST',
