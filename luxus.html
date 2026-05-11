@@ -2203,41 +2203,70 @@ async function sincronizarTudo() {
     if (!scriptUrl) { showToast('Configure a URL do servidor primeiro','warning'); return; }
 
     var btn = document.getElementById('btn-sync');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner animate-spin" style="margin-right:6px;"></i>Sincronizando...'; }
+    if (btn) { btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner animate-spin" style="margin-right:6px;"></i>Sincronizando...'; }
 
-    var erros = 0;
-    var ok    = 0;
+    showToast('Sincronizando ' + inventory.length + ' item(s)...','info');
 
-    for (var i = 0; i < inventory.length; i++) {
-        var item = inventory[i];
+    try {
+        // Envia o inventário completo em uma única requisição
         var payload = {
-            action:     'addInventario',
-            codigo:     item.Codigo,
-            descricao:  item.Descricao  || '',
-            tipo:       item.Tipo       || '',
-            categoria:  item.Categoria  || '',
-            custo:      parseNum(item.Custo),
-            venda:      parseNum(item.Venda),
-            status:     item.Status     || 'Em Estoque',
-            revendedor: item.Revendedor || '',
-            foto:       item.Foto       || ''
+            action: 'syncInventario',
+            items: inventory.map(function(item){
+                return {
+                    codigo:     item.Codigo     || '',
+                    descricao:  item.Descricao  || '',
+                    tipo:       item.Tipo       || '',
+                    categoria:  item.Categoria  || '',
+                    custo:      parseNum(item.Custo),
+                    venda:      parseNum(item.Venda),
+                    status:     item.Status     || 'Em Estoque',
+                    revendedor: item.Revendedor || '',
+                    foto:       item.Foto       || '',
+                    data:       item.Data       || ''
+                };
+            })
         };
-        try {
-            var res    = await fetch(scriptUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
-            var result = await res.json();
-            if (result.success) ok++; else erros++;
-        } catch(e) { erros++; }
-    }
 
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Enviar tudo para a planilha'; }
+        var res    = await fetch(scriptUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+        var result = await res.json();
 
-    if (erros === 0) {
-        localStorage.removeItem('luxus_inventory_local');
-        showToast('✅ ' + ok + ' item(s) enviado(s) com sucesso!', 'success');
-        verificarPendentes();
-        loadData(); // recarrega da planilha para confirmar
-    } else {
-        showToast('⚠️ ' + ok + ' enviado(s), ' + erros + ' erro(s). Verifique o console (F12).', 'warning');
+        if (result.success) {
+            localStorage.removeItem('luxus_inventory_local');
+            showToast('✅ ' + inventory.length + ' item(s) sincronizado(s)!','success');
+            verificarPendentes();
+            await loadData();
+        } else {
+            // Fallback: tenta item a item sem bloquear UI
+            showToast('Sync em lote falhou, tentando item a item...','warning');
+            var promessas = inventory.map(function(item){
+                var p = {
+                    action:'addInventario',
+                    codigo:item.Codigo||'', descricao:item.Descricao||'',
+                    tipo:item.Tipo||'', categoria:item.Categoria||'',
+                    custo:parseNum(item.Custo), venda:parseNum(item.Venda),
+                    status:item.Status||'Em Estoque', revendedor:item.Revendedor||'', foto:item.Foto||''
+                };
+                return fetch(scriptUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)})
+                    .then(function(r){ return r.json(); })
+                    .catch(function(){ return {success:false}; });
+            });
+            var resultados = await Promise.all(promessas);
+            var ok   = resultados.filter(function(r){ return r.success; }).length;
+            var erros= resultados.length - ok;
+            if (erros === 0) {
+                localStorage.removeItem('luxus_inventory_local');
+                showToast('✅ ' + ok + ' item(s) enviado(s)!','success');
+                verificarPendentes();
+                await loadData();
+            } else {
+                showToast('⚠️ ' + ok + ' ok, ' + erros + ' erro(s). Verifique o console.','warning');
+            }
+        }
+    } catch(e) {
+        console.error('Erro na sincronização:', e);
+        showToast('❌ Erro ao sincronizar: ' + e.message,'error');
+    } finally {
+        if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Enviar tudo para a planilha'; }
     }
 }var d=document.getElementById('config-status');d.classList.remove('hidden');var map={success:'background:#f0fdf4;color:#166534;border:1px solid #86efac;',error:'background:#fef2f2;color:#991b1b;border:1px solid #fca5a5;',loading:'background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;'};d.style.cssText='font-size:13px;padding:0.75rem;border-radius:8px;'+(map[type]||map.loading);var icons={success:'fa-check-circle',error:'fa-exclamation-circle',loading:'fa-spinner animate-spin'};d.innerHTML='<i class="fas '+(icons[type]||'fa-info-circle')+'" style="margin-right:6px;"></i>'+msg;if(type!=='loading')setTimeout(function(){d.classList.add('hidden');},5000);}
 
