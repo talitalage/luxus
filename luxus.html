@@ -828,6 +828,7 @@
             <input type="hidden" id="edit-foto">
             <div style="display:flex;gap:0.75rem;padding-top:1rem;">
                 <button onclick="fecharModal('modal-item')" class="btn-secondary" style="flex:1;"><i class="fas fa-times" style="margin-right:6px;"></i>Cancelar</button>
+                <button id="btn-excluir-item" onclick="excluirItem()" class="btn-secondary" style="flex:1;color:#dc2626;border-color:#fca5a5;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='var(--white)'"><i class="fas fa-trash" style="margin-right:6px;"></i>Excluir</button>
                 <button onclick="salvarItem()" class="btn-primary" style="flex:1;"><i class="fas fa-check" style="margin-right:6px;"></i>Salvar</button>
             </div>
         </div>
@@ -973,7 +974,7 @@ function switchTab(tab) {
     if (tab === 'entrada') {
         setTimeout(function(){ var c = document.getElementById('entrada-codigo'); if(c){c.removeAttribute('readonly');c.removeAttribute('disabled');c.focus();} }, 100);
     } else if (tab === 'config') {
-        renderRevendedores(); renderStatus(); renderCategorias(); carregarCfgCards();
+        renderRevendedores(); renderStatus(); renderCategorias(); carregarCfgCards(); verificarPendentes();
     } else if (tab === 'dashboard') {
         renderDashboard();
     } else if (tab === 'relatorio') {
@@ -1983,6 +1984,9 @@ function abrirModalNovoItem(){
     document.getElementById('edit-status').value='Em Estoque';
     document.getElementById('edit-revendedor').value='';
     document.getElementById('edit-codigo').removeAttribute('readonly');
+    // Ocultar botão excluir em novo item
+    var btnEx=document.getElementById('btn-excluir-item');
+    if(btnEx) btnEx.style.display='none';
     abrirModal('modal-item');
 }
 
@@ -2000,7 +2004,28 @@ function editarItem(rowId){
     if(item.Revendedor&&item.Status!=='Vendido'&&item.Status!=='Em Estoque') status='Consignado';
     document.getElementById('edit-status').value=status;
     document.getElementById('edit-revendedor').value=item.Revendedor||'';
+    // Mostrar botão excluir apenas em edição
+    var btnEx=document.getElementById('btn-excluir-item');
+    if(btnEx) btnEx.style.display='';
     carregarCategoriasEdit(); atualizarCampoRevendedorEdit(); abrirModal('modal-item');
+}
+
+async function excluirItem(){
+    var rowId=document.getElementById('edit-rowid').value;
+    if(!rowId){fecharModal('modal-item');return;}
+    var item=inventory.find(function(i){return i.rowId==rowId;});
+    if(!confirm('Excluir o produto '+(item?item.Codigo:rowId)+'? Esta ação não pode ser desfeita.'))return;
+    inventory=inventory.filter(function(i){return i.rowId!=rowId;});
+    persistirInventarioLocal();
+    fecharModal('modal-item');
+    renderDashboard();
+    showToast('Produto excluído!','success');
+    if(scriptUrl){
+        try{
+            await fetch(scriptUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delInventario',rowId:parseInt(rowId)})});
+            localStorage.removeItem('luxus_inventory_local');
+        }catch(e){console.warn('Offline:',e.message);}
+    }
 }
 
 function carregarCategoriasEdit(){
@@ -2149,7 +2174,72 @@ function abrirEditarTitulo(){switchTab('config');setTimeout(function(){var e=doc
 function carregarTitulo(){var t=localStorage.getItem('luxus_titulo');var s=localStorage.getItem('luxus_subtitulo');var l=localStorage.getItem('luxus_logo');if(t){document.getElementById('site-title-display').textContent=t;document.getElementById('cfg-titulo').value=t;document.getElementById('cfg-titulo-preview').textContent=t;document.title=t+' - Sistema de Gestão';}if(s){document.getElementById('site-subtitle-display').textContent=s;document.getElementById('cfg-subtitulo').value=s;document.getElementById('cfg-subtitulo-preview').textContent=s;}if(l){var logo=document.querySelector('.header-dark img');if(logo){logo.src=l;logo.style.display='block';}var cl=document.getElementById('cfg-logo');if(cl)cl.value=l;var pr=document.getElementById('cfg-logo-preview');if(pr){pr.src=l;pr.style.display='block';}}}
 function salvarConfiguracao(){var url=document.getElementById('config-script-url').value.trim();if(!url){showToast('Digite a URL primeiro','warning');return;}localStorage.setItem('luxus_script_url',url);scriptUrl=url;showToast('✅ URL salva com sucesso!','success');loadData();}
 async function testarConexao(){var url=document.getElementById('config-script-url').value.trim();var btn=document.getElementById('btn-testar');var statusDiv=document.getElementById('config-status');if(!url){showConfigStatus('Digite a URL primeiro!','error');return;}if(!url.includes('script.google.com')||!url.includes('/exec')){showConfigStatus('URL inválida! Deve ser uma URL do Google Apps Script','error');return;}btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner animate-spin" style="margin-right:6px;"></i>Testando...';showConfigStatus('Conectando ao servidor...','loading');try{var ctrl=new AbortController();var tid=setTimeout(function(){ctrl.abort();},10000);var res=await fetch(url+'?action=getInventario',{signal:ctrl.signal,method:'GET',cache:'no-cache'});clearTimeout(tid);var text=await res.text();var data=JSON.parse(text);if(res.ok&&(Array.isArray(data)||data.status==='success')){showConfigStatus('✓ Conexão bem-sucedida! '+(Array.isArray(data)?data.length+' itens encontrados':'Servidor online'),'success');}else{throw new Error('Resposta inválida');}}catch(e){var msg='Erro ao conectar. ';if(e.name==='AbortError')msg+='Tempo limite excedido. ';msg+='Verifique a URL e as permissões.';showConfigStatus(msg,'error');}finally{btn.disabled=false;btn.innerHTML='<i class="fas fa-plug" style="margin-right:6px;"></i>Testar';}}
-function showConfigStatus(msg,type){var d=document.getElementById('config-status');d.classList.remove('hidden');var map={success:'background:#f0fdf4;color:#166534;border:1px solid #86efac;',error:'background:#fef2f2;color:#991b1b;border:1px solid #fca5a5;',loading:'background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;'};d.style.cssText='font-size:13px;padding:0.75rem;border-radius:8px;'+(map[type]||map.loading);var icons={success:'fa-check-circle',error:'fa-exclamation-circle',loading:'fa-spinner animate-spin'};d.innerHTML='<i class="fas '+(icons[type]||'fa-info-circle')+'" style="margin-right:6px;"></i>'+msg;if(type!=='loading')setTimeout(function(){d.classList.add('hidden');},5000);}
+function verificarPendentes() {
+    var badge   = document.getElementById('badge-local');
+    var info    = document.getElementById('sync-info');
+    var btnSync = document.getElementById('btn-sync');
+    if (!badge) return;
+
+    var local = localStorage.getItem('luxus_inventory_local');
+    var localItems = local ? JSON.parse(local) : null;
+
+    if (!localItems) {
+        badge.style.background = '#d1fae5'; badge.style.color = '#065f46';
+        badge.textContent = '✓ Sincronizado';
+        if (info) info.textContent = 'Todos os dados estão na planilha.';
+        if (btnSync) btnSync.disabled = true;
+        return;
+    }
+
+    // Compara com o que veio do servidor
+    var diff = localItems.length;
+    badge.style.background = '#fef3c7'; badge.style.color = '#92400e';
+    badge.textContent = diff + ' item(s) local(is)';
+    if (info) info.textContent = 'Há ' + diff + ' item(s) salvos localmente que podem não estar na planilha. Clique em "Enviar tudo" para sincronizar.';
+    if (btnSync) btnSync.disabled = false;
+}
+
+async function sincronizarTudo() {
+    if (!scriptUrl) { showToast('Configure a URL do servidor primeiro','warning'); return; }
+
+    var btn = document.getElementById('btn-sync');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner animate-spin" style="margin-right:6px;"></i>Sincronizando...'; }
+
+    var erros = 0;
+    var ok    = 0;
+
+    for (var i = 0; i < inventory.length; i++) {
+        var item = inventory[i];
+        var payload = {
+            action:     'addInventario',
+            codigo:     item.Codigo,
+            descricao:  item.Descricao  || '',
+            tipo:       item.Tipo       || '',
+            categoria:  item.Categoria  || '',
+            custo:      parseNum(item.Custo),
+            venda:      parseNum(item.Venda),
+            status:     item.Status     || 'Em Estoque',
+            revendedor: item.Revendedor || '',
+            foto:       item.Foto       || ''
+        };
+        try {
+            var res    = await fetch(scriptUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+            var result = await res.json();
+            if (result.success) ok++; else erros++;
+        } catch(e) { erros++; }
+    }
+
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Enviar tudo para a planilha'; }
+
+    if (erros === 0) {
+        localStorage.removeItem('luxus_inventory_local');
+        showToast('✅ ' + ok + ' item(s) enviado(s) com sucesso!', 'success');
+        verificarPendentes();
+        loadData(); // recarrega da planilha para confirmar
+    } else {
+        showToast('⚠️ ' + ok + ' enviado(s), ' + erros + ' erro(s). Verifique o console (F12).', 'warning');
+    }
+}var d=document.getElementById('config-status');d.classList.remove('hidden');var map={success:'background:#f0fdf4;color:#166534;border:1px solid #86efac;',error:'background:#fef2f2;color:#991b1b;border:1px solid #fca5a5;',loading:'background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;'};d.style.cssText='font-size:13px;padding:0.75rem;border-radius:8px;'+(map[type]||map.loading);var icons={success:'fa-check-circle',error:'fa-exclamation-circle',loading:'fa-spinner animate-spin'};d.innerHTML='<i class="fas '+(icons[type]||'fa-info-circle')+'" style="margin-right:6px;"></i>'+msg;if(type!=='loading')setTimeout(function(){d.classList.add('hidden');},5000);}
 
 // ===== COLUNAS =====
 function carregarConfigColunas(){var s=localStorage.getItem('luxus_colunas');if(s)colunasConfig=JSON.parse(s);}
