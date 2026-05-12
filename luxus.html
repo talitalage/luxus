@@ -613,6 +613,8 @@ function showToast(msg,type){
 // =====================================================
 document.addEventListener('DOMContentLoaded', function() {
   // Preferências de UI (por dispositivo — ok ficar no localStorage)
+  var lsc=localStorage.getItem('luxus_status_cores'); if(lsc)try{statusCores=JSON.parse(lsc);}catch(e){}
+  var lst=localStorage.getItem('luxus_status');       if(lst)try{statusList=JSON.parse(lst);}catch(e){}
   var lcfg=localStorage.getItem('luxus_cfg_cards');   if(lcfg)try{cfgCards=JSON.parse(lcfg);}catch(e){}
   var ldcv=localStorage.getItem('luxus_dash_cards');  if(ldcv)try{dashCardsVisiveis=JSON.parse(ldcv);}catch(e){}
   var lcol=localStorage.getItem('luxus_colunas');     if(lcol)try{colunasConfig=JSON.parse(lcol);}catch(e){}
@@ -651,15 +653,15 @@ function loadData() {
     var d=JSON.parse(t);
     if(Array.isArray(d.inventory))    inventory=d.inventory;
     if(Array.isArray(d.revendedores)) revendedores=d.revendedores;
-    if(d.categoria&&!Array.isArray(d.categoria)) categorias=d.categoria;
+    if(d.categorias&&!Array.isArray(d.categorias)) categorias=d.categorias;
     if(Array.isArray(d.fechamentos))  historicFechamentos=d.fechamentos;
     // Identidade visual
     if(d.titulo)    {localStorage.setItem('luxus_titulo',d.titulo);   document.getElementById('site-title-display').textContent=d.titulo;document.title=d.titulo+' - Sistema de Gestão';}
     if(d.subtitulo) {localStorage.setItem('luxus_subtitulo',d.subtitulo);document.getElementById('site-subtitle-display').textContent=d.subtitulo;}
     if(d.logo)      {localStorage.setItem('luxus_logo',d.logo);var hlogo=document.getElementById('header-logo');if(hlogo){hlogo.src=d.logo;hlogo.style.display='block';}}
     // Status e cores (sincronizados pelo Drive também)
-    if(Array.isArray(d.statusList))  {statusList=d.statusList;}
-    if(d.statusCores&&typeof d.statusCores==='object'){statusCores=d.statusCores;}
+    if(Array.isArray(d.statusList))  {statusList=d.statusList;  localStorage.setItem('luxus_status',JSON.stringify(statusList));}
+    if(d.statusCores&&typeof d.statusCores==='object'){statusCores=d.statusCores;localStorage.setItem('luxus_status_cores',JSON.stringify(statusCores));}
     carregarRevendedoresSelects();
     renderDashboard();
     renderUltimasEntradas();
@@ -935,7 +937,7 @@ function renderCategorias(){
 }
 function ativarEdicaoCat(safe,tipo,cat){var label=document.getElementById('cat-label-'+safe);if(!label)return;var input=document.createElement('input');input.type='text';input.value=cat;input.style.cssText='flex:1;font-size:13px;padding:2px 6px!important;border:1px solid var(--primary)!important;border-radius:4px!important;outline:none;width:100%;';input.onblur=function(){confirmarEdicaoCat(input,tipo,cat);};input.onkeydown=function(e){if(e.key==='Enter')confirmarEdicaoCat(input,tipo,cat);if(e.key==='Escape')renderCategorias();};label.replaceWith(input);input.focus();input.select();}
 function confirmarEdicaoCat(input,tipo,catAtual){var nova=input.value.trim();if(!nova||nova===catAtual){renderCategorias();return;}var arr=categorias[tipo]||[];var idx=arr.indexOf(catAtual);if(idx!==-1){inventory.forEach(function(item){if(item.Tipo===tipo&&item.Categoria===catAtual)item.Categoria=nova;});arr[idx]=nova;categorias[tipo]=arr;renderCategorias();showToast('Categoria renomeada!','success');syncDrive({action:'renomearCategoria',tipo:tipo,nomeAtual:catAtual,nomeNovo:nova});}}
-function addCategoria(tipo){var inputId=tipo==='Semi Joia'?'nova-cat-semijoia':'nova-cat-perfume';var nome=document.getElementById(inputId).value.trim();if(!nome)return;if(!categorias[tipo])categorias[tipo]=[];if(categorias[tipo].includes(nome)){showToast('Categoria já existe','warning');return;}categorias[tipo].push(nome);document.getElementById(inputId).value='';renderCategorias();showToast('Categoria adicionada!','success');syncDrive({action:'addCategoria',tipo:tipo,nome:nome});}
+function addCategoria(tipo){var inputId=tipo==='Semi Joia'?'nova-cat-semijoia':'nova-cat-perfume';var nome=document.getElementById(inputId).value.trim();if(!nome)return;if(!categorias[tipo])categorias[tipo]=[];var jaExiste=categorias[tipo].some(function(c){return c.toLowerCase()===nome.toLowerCase();});if(jaExiste){showToast('Categoria já existe','warning');return;}categorias[tipo].push(nome);document.getElementById(inputId).value='';renderCategorias();showToast('Categoria adicionada!','success');syncDrive({action:'addCategoria',tipo:tipo,nome:nome});}
 function excluirCategoria(tipo,nome){if(!confirm('Excluir a categoria "'+nome+'"?'))return;categorias[tipo]=categorias[tipo].filter(function(c){return c!==nome;});renderCategorias();showToast('Categoria excluída','success');syncDrive({action:'delCategoria',tipo:tipo,nome:nome});}
 
 // =====================================================
@@ -953,10 +955,10 @@ function renderStatus(){
   });
   var el=document.getElementById('lista-status');if(el)el.innerHTML=html;
 }
-function addStatus(){var inp=document.getElementById('novo-status');var v=inp.value.trim();if(!v){showToast('Digite o nome do status','warning');return;}if(statusList.includes(v)){showToast('Este status já existe','warning');return;}statusList.push(v);inp.value='';renderStatus();showToast('Status adicionado!','success');syncDrive({action:'salvarStatus',statusList:statusList,statusCores:statusCores});}
-function removerStatus(status){if(confirm('Remover o status "'+status+'"?')){var usando=inventory.filter(function(i){return i.Status===status;});if(usando.length>0){showToast('Não é possível remover. '+usando.length+' produto(s) usando este status.','error');return;}statusList=statusList.filter(function(s){return s!==status;});renderStatus();showToast('Status removido!','success');syncDrive({action:'salvarStatus',statusList:statusList,statusCores:statusCores});}}
+function addStatus(){var inp=document.getElementById('novo-status');var v=inp.value.trim();if(!v){showToast('Digite o nome do status','warning');return;}if(statusList.includes(v)){showToast('Este status já existe','warning');return;}statusList.push(v);localStorage.setItem('luxus_status',JSON.stringify(statusList));inp.value='';renderStatus();showToast('Status adicionado!','success');syncDrive({action:'salvarStatus',statusList:statusList,statusCores:statusCores});}
+function removerStatus(status){if(confirm('Remover o status "'+status+'"?')){var usando=inventory.filter(function(i){return i.Status===status;});if(usando.length>0){showToast('Não é possível remover. '+usando.length+' produto(s) usando este status.','error');return;}statusList=statusList.filter(function(s){return s!==status;});localStorage.setItem('luxus_status',JSON.stringify(statusList));renderStatus();showToast('Status removido!','success');syncDrive({action:'salvarStatus',statusList:statusList,statusCores:statusCores});}}
 function abrirColorPicker(sid,status){var old=document.getElementById('colorpicker-popup');if(old)old.remove();var cores=['#10b981','#3b82f6','#14b8a6','#ef4444','#f59e0b','#8b5cf6','#ec4899','#64748b','#0ea5e9','#f97316'];var corAtual=getCorStatus(status);var popup=document.createElement('div');popup.id='colorpicker-popup';popup.style.cssText='position:fixed;background:white;border:1px solid var(--gray-200);border-radius:10px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:9999;width:200px;';var bolas='';cores.forEach(function(c){bolas+='<div onclick="aplicarCorStatus(\''+status+'\',\''+c+'\')" style="width:24px;height:24px;border-radius:50%;background:'+c+';cursor:pointer;border:'+(c===corAtual?'3px solid #1e40af':'2px solid transparent')+';box-shadow:0 1px 3px rgba(0,0,0,.2);" onmouseover="this.style.transform=\'scale(1.2)\'" onmouseout="this.style.transform=\'scale(1)\'"></div>';});popup.innerHTML='<div style="font-size:11px;font-weight:600;color:var(--gray-500);margin-bottom:8px;text-transform:uppercase;">Cor do status</div><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px;">'+bolas+'</div><div style="display:flex;align-items:center;gap:6px;"><label style="font-size:11px;color:var(--gray-500);">Personalizar:</label><input type="color" value="'+corAtual+'" oninput="aplicarCorStatus(\''+status+'\',this.value)" style="width:32px;height:24px;border:none!important;padding:0!important;cursor:pointer;border-radius:4px!important;"></div>';document.body.appendChild(popup);var row=document.getElementById('row-status-'+sid);if(row){var rect=row.getBoundingClientRect();popup.style.top=(rect.bottom+6)+'px';popup.style.left=rect.left+'px';}setTimeout(function(){document.addEventListener('click',function fechar(e){if(!popup.contains(e.target)){popup.remove();document.removeEventListener('click',fechar);}});},100);}
-function aplicarCorStatus(status,cor){statusCores[status]=cor;renderStatus();var old=document.getElementById('colorpicker-popup');if(old)old.remove();// Sincronizar cores no Drive
+function aplicarCorStatus(status,cor){statusCores[status]=cor;localStorage.setItem('luxus_status_cores',JSON.stringify(statusCores));renderStatus();var old=document.getElementById('colorpicker-popup');if(old)old.remove();// Sincronizar cores no Drive
 syncDrive({action:'salvarStatus',statusList:statusList,statusCores:statusCores});}
 
 // =====================================================
