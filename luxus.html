@@ -613,8 +613,6 @@ function showToast(msg,type){
 // =====================================================
 document.addEventListener('DOMContentLoaded', function() {
   // Preferências de UI (por dispositivo — ok ficar no localStorage)
-  var lsc=localStorage.getItem('luxus_status_cores'); if(lsc)try{statusCores=JSON.parse(lsc);}catch(e){}
-  var lst=localStorage.getItem('luxus_status');       if(lst)try{statusList=JSON.parse(lst);}catch(e){}
   var lcfg=localStorage.getItem('luxus_cfg_cards');   if(lcfg)try{cfgCards=JSON.parse(lcfg);}catch(e){}
   var ldcv=localStorage.getItem('luxus_dash_cards');  if(ldcv)try{dashCardsVisiveis=JSON.parse(ldcv);}catch(e){}
   var lcol=localStorage.getItem('luxus_colunas');     if(lcol)try{colunasConfig=JSON.parse(lcol);}catch(e){}
@@ -660,11 +658,13 @@ function loadData() {
     if(d.subtitulo) {localStorage.setItem('luxus_subtitulo',d.subtitulo);document.getElementById('site-subtitle-display').textContent=d.subtitulo;}
     if(d.logo)      {localStorage.setItem('luxus_logo',d.logo);var hlogo=document.getElementById('header-logo');if(hlogo){hlogo.src=d.logo;hlogo.style.display='block';}}
     // Status e cores (sincronizados pelo Drive também)
-    if(Array.isArray(d.statusList))  {statusList=d.statusList;  localStorage.setItem('luxus_status',JSON.stringify(statusList));}
-    if(d.statusCores&&typeof d.statusCores==='object'){statusCores=d.statusCores;localStorage.setItem('luxus_status_cores',JSON.stringify(statusCores));}
+    if(Array.isArray(d.statusList))  {statusList=d.statusList;}
+    if(d.statusCores&&typeof d.statusCores==='object'){statusCores=d.statusCores;}
     carregarRevendedoresSelects();
     renderDashboard();
     renderUltimasEntradas();
+    renderStatus();
+    renderCategorias();
     aplicarVisibilidadeCards();
     showToast('✅ '+inventory.length+' produto(s) carregado(s)','success');
   })
@@ -920,32 +920,20 @@ function renderCategorias(){
   ['Semi Joia','Perfume'].forEach(function(tipo){
     var cid=tipo==='Semi Joia'?'categorias-semijoia':'categorias-perfume';
     var cats=categorias[tipo]||[];
-    var el=document.getElementById(cid);
-    if(!el)return;
-    if(cats.length===0){
-      el.innerHTML='<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:8px 0;">Nenhuma categoria</p>';
-      return;
-    }
-    var html='<div style="display:flex;flex-wrap:wrap;gap:6px;padding:2px 0;">';
+    var html='';
     cats.forEach(function(cat,idx){
       var safe=tipo.replace(' ','_')+'_'+idx;
-      var tipoEsc=tipo.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      var catEsc=cat.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      var count=inventory.filter(function(i){return i.Tipo===tipo&&i.Categoria===cat;}).length;
-      html+='<div id="chip-'+safe+'" style="display:inline-flex;align-items:center;gap:5px;background:var(--gray-100);border:1px solid var(--gray-200);border-radius:20px;padding:4px 10px 4px 12px;transition:all .15s;" '
-          +'onmouseover="this.style.borderColor=\'var(--primary-light)\';this.style.background=\'#eff6ff\'" '
-          +'onmouseout="this.style.borderColor=\'var(--gray-200)\';this.style.background=\'var(--gray-100)\'">'
-          +'<span id="cat-label-'+safe+'" style="font-size:12px;font-weight:500;color:var(--gray-700);">'+cat+'</span>'
-          +(count>0?'<span style="font-size:10px;font-weight:600;color:var(--gray-500);background:var(--gray-200);border-radius:10px;padding:0 5px;min-width:16px;text-align:center;">'+count+'</span>':'')
-          +'<button onclick="ativarEdicaoCat(\''+safe+'\',\''+tipoEsc+'\',\''+catEsc+'\')" title="Renomear" style="background:none;border:none;cursor:pointer;color:var(--gray-300);padding:0;line-height:1;margin-left:1px;" onmouseover="this.style.color=\'#3b82f6\'" onmouseout="this.style.color=\'var(--gray-300)\'"><i class="fas fa-pen" style="font-size:9px;"></i></button>'
-          +'<button onclick="excluirCategoria(\''+tipoEsc+'\',\''+catEsc+'\')" title="Excluir" style="background:none;border:none;cursor:pointer;color:var(--gray-300);padding:0;line-height:1;" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'var(--gray-300)\'"><i class="fas fa-times" style="font-size:10px;"></i></button>'
-          +'</div>';
+      html+='<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:white;border:1px solid var(--gray-200);border-radius:6px;">'
+           +'<span id="cat-label-'+safe+'" style="flex:1;font-size:13px;color:var(--gray-700);">'+cat+'</span>'
+           +'<button onclick="ativarEdicaoCat(\''+safe+'\',\''+tipo.replace(/'/g,"\\'")+'\',\''+cat.replace(/'/g,"\\'")+'\''+')" style="background:none;border:none;cursor:pointer;color:var(--gray-300);" onmouseover="this.style.color=\'#3b82f6\'" onmouseout="this.style.color=\'var(--gray-300)\'"><i class="fas fa-pen" style="font-size:11px;"></i></button>'
+           +'<button onclick="excluirCategoria(\''+tipo.replace(/'/g,"\\'")+'\',\''+cat.replace(/'/g,"\\'")+'\''+')" style="background:none;border:none;cursor:pointer;color:var(--gray-300);" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'var(--gray-300)\'"><i class="fas fa-times" style="font-size:11px;"></i></button>'
+           +'</div>';
     });
-    html+='</div>';
-    el.innerHTML=html;
+    var el=document.getElementById(cid);
+    if(el)el.innerHTML=html||'<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:12px 0;">Nenhuma categoria</p>';
   });
 }
-function ativarEdicaoCat(safe,tipo,cat){var chip=document.getElementById('chip-'+safe);if(!chip)return;var input=document.createElement('input');input.type='text';input.value=cat;input.style.cssText='font-size:12px;font-weight:500;padding:0 4px!important;border:1px solid var(--primary)!important;border-radius:4px!important;outline:none;width:90px;min-width:60px;';input.onblur=function(){confirmarEdicaoCat(input,tipo,cat);};input.onkeydown=function(e){if(e.key==='Enter')confirmarEdicaoCat(input,tipo,cat);if(e.key==='Escape')renderCategorias();};chip.innerHTML='';chip.style.borderColor='var(--primary)';chip.style.background='#eff6ff';chip.appendChild(input);input.focus();input.select();}
+function ativarEdicaoCat(safe,tipo,cat){var label=document.getElementById('cat-label-'+safe);if(!label)return;var input=document.createElement('input');input.type='text';input.value=cat;input.style.cssText='flex:1;font-size:13px;padding:2px 6px!important;border:1px solid var(--primary)!important;border-radius:4px!important;outline:none;width:100%;';input.onblur=function(){confirmarEdicaoCat(input,tipo,cat);};input.onkeydown=function(e){if(e.key==='Enter')confirmarEdicaoCat(input,tipo,cat);if(e.key==='Escape')renderCategorias();};label.replaceWith(input);input.focus();input.select();}
 function confirmarEdicaoCat(input,tipo,catAtual){var nova=input.value.trim();if(!nova||nova===catAtual){renderCategorias();return;}var arr=categorias[tipo]||[];var idx=arr.indexOf(catAtual);if(idx!==-1){inventory.forEach(function(item){if(item.Tipo===tipo&&item.Categoria===catAtual)item.Categoria=nova;});arr[idx]=nova;categorias[tipo]=arr;renderCategorias();showToast('Categoria renomeada!','success');syncDrive({action:'renomearCategoria',tipo:tipo,nomeAtual:catAtual,nomeNovo:nova});}}
 function addCategoria(tipo){var inputId=tipo==='Semi Joia'?'nova-cat-semijoia':'nova-cat-perfume';var nome=document.getElementById(inputId).value.trim();if(!nome)return;if(!categorias[tipo])categorias[tipo]=[];if(categorias[tipo].includes(nome)){showToast('Categoria já existe','warning');return;}categorias[tipo].push(nome);document.getElementById(inputId).value='';renderCategorias();showToast('Categoria adicionada!','success');syncDrive({action:'addCategoria',tipo:tipo,nome:nome});}
 function excluirCategoria(tipo,nome){if(!confirm('Excluir a categoria "'+nome+'"?'))return;categorias[tipo]=categorias[tipo].filter(function(c){return c!==nome;});renderCategorias();showToast('Categoria excluída','success');syncDrive({action:'delCategoria',tipo:tipo,nome:nome});}
@@ -965,10 +953,10 @@ function renderStatus(){
   });
   var el=document.getElementById('lista-status');if(el)el.innerHTML=html;
 }
-function addStatus(){var inp=document.getElementById('novo-status');var v=inp.value.trim();if(!v){showToast('Digite o nome do status','warning');return;}if(statusList.includes(v)){showToast('Este status já existe','warning');return;}statusList.push(v);localStorage.setItem('luxus_status',JSON.stringify(statusList));inp.value='';renderStatus();showToast('Status adicionado!','success');syncDrive({action:'salvarStatus',statusList:statusList,statusCores:statusCores});}
-function removerStatus(status){if(confirm('Remover o status "'+status+'"?')){var usando=inventory.filter(function(i){return i.Status===status;});if(usando.length>0){showToast('Não é possível remover. '+usando.length+' produto(s) usando este status.','error');return;}statusList=statusList.filter(function(s){return s!==status;});localStorage.setItem('luxus_status',JSON.stringify(statusList));renderStatus();showToast('Status removido!','success');syncDrive({action:'salvarStatus',statusList:statusList,statusCores:statusCores});}}
+function addStatus(){var inp=document.getElementById('novo-status');var v=inp.value.trim();if(!v){showToast('Digite o nome do status','warning');return;}if(statusList.includes(v)){showToast('Este status já existe','warning');return;}statusList.push(v);inp.value='';renderStatus();showToast('Status adicionado!','success');syncDrive({action:'salvarStatus',statusList:statusList,statusCores:statusCores});}
+function removerStatus(status){if(confirm('Remover o status "'+status+'"?')){var usando=inventory.filter(function(i){return i.Status===status;});if(usando.length>0){showToast('Não é possível remover. '+usando.length+' produto(s) usando este status.','error');return;}statusList=statusList.filter(function(s){return s!==status;});renderStatus();showToast('Status removido!','success');syncDrive({action:'salvarStatus',statusList:statusList,statusCores:statusCores});}}
 function abrirColorPicker(sid,status){var old=document.getElementById('colorpicker-popup');if(old)old.remove();var cores=['#10b981','#3b82f6','#14b8a6','#ef4444','#f59e0b','#8b5cf6','#ec4899','#64748b','#0ea5e9','#f97316'];var corAtual=getCorStatus(status);var popup=document.createElement('div');popup.id='colorpicker-popup';popup.style.cssText='position:fixed;background:white;border:1px solid var(--gray-200);border-radius:10px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:9999;width:200px;';var bolas='';cores.forEach(function(c){bolas+='<div onclick="aplicarCorStatus(\''+status+'\',\''+c+'\')" style="width:24px;height:24px;border-radius:50%;background:'+c+';cursor:pointer;border:'+(c===corAtual?'3px solid #1e40af':'2px solid transparent')+';box-shadow:0 1px 3px rgba(0,0,0,.2);" onmouseover="this.style.transform=\'scale(1.2)\'" onmouseout="this.style.transform=\'scale(1)\'"></div>';});popup.innerHTML='<div style="font-size:11px;font-weight:600;color:var(--gray-500);margin-bottom:8px;text-transform:uppercase;">Cor do status</div><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px;">'+bolas+'</div><div style="display:flex;align-items:center;gap:6px;"><label style="font-size:11px;color:var(--gray-500);">Personalizar:</label><input type="color" value="'+corAtual+'" oninput="aplicarCorStatus(\''+status+'\',this.value)" style="width:32px;height:24px;border:none!important;padding:0!important;cursor:pointer;border-radius:4px!important;"></div>';document.body.appendChild(popup);var row=document.getElementById('row-status-'+sid);if(row){var rect=row.getBoundingClientRect();popup.style.top=(rect.bottom+6)+'px';popup.style.left=rect.left+'px';}setTimeout(function(){document.addEventListener('click',function fechar(e){if(!popup.contains(e.target)){popup.remove();document.removeEventListener('click',fechar);}});},100);}
-function aplicarCorStatus(status,cor){statusCores[status]=cor;localStorage.setItem('luxus_status_cores',JSON.stringify(statusCores));renderStatus();var old=document.getElementById('colorpicker-popup');if(old)old.remove();// Sincronizar cores no Drive
+function aplicarCorStatus(status,cor){statusCores[status]=cor;renderStatus();var old=document.getElementById('colorpicker-popup');if(old)old.remove();// Sincronizar cores no Drive
 syncDrive({action:'salvarStatus',statusList:statusList,statusCores:statusCores});}
 
 // =====================================================
