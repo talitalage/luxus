@@ -613,8 +613,6 @@ function showToast(msg,type){
 // =====================================================
 document.addEventListener('DOMContentLoaded', function() {
   // Preferências de UI (por dispositivo — ok ficar no localStorage)
-  var lsc=localStorage.getItem('luxus_status_cores'); if(lsc)try{statusCores=JSON.parse(lsc);}catch(e){}
-  var lst=localStorage.getItem('luxus_status');       if(lst)try{statusList=JSON.parse(lst);}catch(e){}
   var lcfg=localStorage.getItem('luxus_cfg_cards');   if(lcfg)try{cfgCards=JSON.parse(lcfg);}catch(e){}
   var ldcv=localStorage.getItem('luxus_dash_cards');  if(ldcv)try{dashCardsVisiveis=JSON.parse(ldcv);}catch(e){}
   var lcol=localStorage.getItem('luxus_colunas');     if(lcol)try{colunasConfig=JSON.parse(lcol);}catch(e){}
@@ -632,7 +630,11 @@ document.addEventListener('DOMContentLoaded', function() {
   var tipoSel=document.getElementById('entrada-tipo');
   if(tipoSel)tipoSel.addEventListener('change',onChangeTipoEntrada);
 
+  var tabs=['dashboard','entrada','relatorio','config'];
+  var hashTab=(location.hash||'').replace('#','');
+
   if(scriptUrl){
+    if(tabs.indexOf(hashTab)!==-1){switchTab(hashTab);}
     loadData();
   } else {
     switchTab('config');
@@ -690,6 +692,7 @@ function switchTab(tab){
   document.querySelectorAll('.nav-tab').forEach(function(el){el.classList.remove('active');});
   var c=document.getElementById('content-'+tab); if(c)c.classList.add('active');
   var b=document.getElementById('tab-'+tab);     if(b)b.classList.add('active');
+  history.replaceState(null,'','#'+tab);
   if(tab==='entrada'){setTimeout(function(){var c=document.getElementById('entrada-codigo');if(c){c.removeAttribute('readonly');c.focus();}},100);}
   else if(tab==='config'){renderRevendedores();renderStatus();renderCategorias();carregarCfgCards();}
   else if(tab==='dashboard'){renderDashboard();}
@@ -919,9 +922,11 @@ function carregarRevendedoresSelects(){var opts='<option value="">Em Estoque</op
 // CATEGORIAS
 // =====================================================
 function renderCategorias(){
+  console.log('[renderCategorias] categorias=', JSON.stringify(categorias));
   ['Semi Joia','Perfume'].forEach(function(tipo){
     var cid=tipo==='Semi Joia'?'categorias-semijoia':'categorias-perfume';
     var cats=categorias[tipo]||[];
+    console.log('[renderCategorias] tipo='+tipo+' cats='+JSON.stringify(cats)+' el='+document.getElementById(cid));
     var html='';
     cats.forEach(function(cat,idx){
       var safe=tipo.replace(' ','_')+'_'+idx;
