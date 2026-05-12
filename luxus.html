@@ -922,11 +922,9 @@ function carregarRevendedoresSelects(){var opts='<option value="">Em Estoque</op
 // CATEGORIAS
 // =====================================================
 function renderCategorias(){
-  console.log('[renderCategorias] categorias=', JSON.stringify(categorias));
   ['Semi Joia','Perfume'].forEach(function(tipo){
     var cid=tipo==='Semi Joia'?'categorias-semijoia':'categorias-perfume';
-    var cats=categorias[tipo]||[];
-    console.log('[renderCategorias] tipo='+tipo+' cats='+JSON.stringify(cats)+' el='+document.getElementById(cid));
+    var cats=(categorias[tipo]||[]).slice().sort(function(a,b){return a.localeCompare(b,'pt-BR');});
     var html='';
     cats.forEach(function(cat,idx){
       var safe=tipo.replace(' ','_')+'_'+idx;
