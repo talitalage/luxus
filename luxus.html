@@ -651,7 +651,7 @@ function loadData() {
     var d=JSON.parse(t);
     if(Array.isArray(d.inventory))    inventory=d.inventory;
     if(Array.isArray(d.revendedores)) revendedores=d.revendedores;
-    if(d.categorias&&!Array.isArray(d.categorias)) categorias=d.categorias;
+    if(d.categoria&&!Array.isArray(d.categoria)) categorias=d.categoria;
     if(Array.isArray(d.fechamentos))  historicFechamentos=d.fechamentos;
     // Identidade visual
     if(d.titulo)    {localStorage.setItem('luxus_titulo',d.titulo);   document.getElementById('site-title-display').textContent=d.titulo;document.title=d.titulo+' - Sistema de Gestão';}
