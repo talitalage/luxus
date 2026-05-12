@@ -923,6 +923,32 @@ function renderDashTable(){
     if(Object.keys(dashCatFilters).length>0&&!dashCatFilters[i.Categoria||''])return false;
     return true;
   });
+
+  // Atualizar cards com base nos itens filtrados
+  var isFiltered=search||keys.length>0||dashTipoFilter!=='all'||dashRevFilter||Object.keys(dashCatFilters).length>0;
+  if(isFiltered){
+    var c=cfgCards;
+    var fTotal=filtered;
+    document.getElementById('dash-total').textContent=fTotal.length;
+    var fCap=filtered.filter(function(i){return i.Status==='Em Estoque';});
+    document.getElementById('dash-capital').textContent=fmt(fCap.reduce(function(s,i){return s+pN(c.capital.venda?i.Venda:i.Custo);},0));
+    var fCons=filtered.filter(function(i){return i.Status!=='Em Estoque'&&i.Status!=='Vendido';});
+    document.getElementById('dash-consignado').textContent=fmt(fCons.reduce(function(s,i){return s+pN(c.consignado.custo?i.Custo:i.Venda);},0));
+    var fVend=filtered.filter(function(i){return i.Status==='Vendido';});
+    var recV=fVend.reduce(function(s,i){return s+pN(i.Venda);},0),cusV=fVend.reduce(function(s,i){return s+pN(i.Custo);},0);
+    document.getElementById('dash-vendido').textContent=fmt(c.vendas.lucro?recV-cusV:recV);
+    // Indicador visual de filtro ativo
+    ['dash-total','dash-capital','dash-consignado','dash-vendido'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el&&el.parentElement){el.parentElement.style.outline='2px solid #bfdbfe';el.parentElement.style.outlineOffset='0px';}
+    });
+  } else {
+    ['dash-total','dash-capital','dash-consignado','dash-vendido'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el&&el.parentElement){el.parentElement.style.outline='none';}
+    });
+    renderDashboard();return;
+  }
   var cols=getColsVisiveis();
   var campoMap={codigo:'Codigo',descricao:'Descricao',tipo:'Tipo',categoria:'Categoria',status:'Status',revendedor:'Revendedor',custo:'Custo',venda:'Venda',data:'Data'};
   if(dashSortCol){var isNum=dashSortCol==='custo'||dashSortCol==='venda';var campo=campoMap[dashSortCol]||dashSortCol;filtered.sort(function(a,b){var va=a[campo]||'',vb=b[campo]||'';if(isNum){return dashSortDir==='asc'?pN(va)-pN(vb):pN(vb)-pN(va);}va=String(va).toLowerCase();vb=String(vb).toLowerCase();return dashSortDir==='asc'?va.localeCompare(vb):vb.localeCompare(va);});}
