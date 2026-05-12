@@ -920,20 +920,32 @@ function renderCategorias(){
   ['Semi Joia','Perfume'].forEach(function(tipo){
     var cid=tipo==='Semi Joia'?'categorias-semijoia':'categorias-perfume';
     var cats=categorias[tipo]||[];
-    var html='';
+    var el=document.getElementById(cid);
+    if(!el)return;
+    if(cats.length===0){
+      el.innerHTML='<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:8px 0;">Nenhuma categoria</p>';
+      return;
+    }
+    var html='<div style="display:flex;flex-wrap:wrap;gap:6px;padding:2px 0;">';
     cats.forEach(function(cat,idx){
       var safe=tipo.replace(' ','_')+'_'+idx;
-      html+='<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:white;border:1px solid var(--gray-200);border-radius:6px;">'
-           +'<span id="cat-label-'+safe+'" style="flex:1;font-size:13px;color:var(--gray-700);">'+cat+'</span>'
-           +'<button onclick="ativarEdicaoCat(\''+safe+'\',\''+tipo.replace(/'/g,"\\'")+'\',\''+cat.replace(/'/g,"\\'")+'\''+')" style="background:none;border:none;cursor:pointer;color:var(--gray-300);" onmouseover="this.style.color=\'#3b82f6\'" onmouseout="this.style.color=\'var(--gray-300)\'"><i class="fas fa-pen" style="font-size:11px;"></i></button>'
-           +'<button onclick="excluirCategoria(\''+tipo.replace(/'/g,"\\'")+'\',\''+cat.replace(/'/g,"\\'")+'\''+')" style="background:none;border:none;cursor:pointer;color:var(--gray-300);" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'var(--gray-300)\'"><i class="fas fa-times" style="font-size:11px;"></i></button>'
-           +'</div>';
+      var tipoEsc=tipo.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      var catEsc=cat.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      var count=inventory.filter(function(i){return i.Tipo===tipo&&i.Categoria===cat;}).length;
+      html+='<div id="chip-'+safe+'" style="display:inline-flex;align-items:center;gap:5px;background:var(--gray-100);border:1px solid var(--gray-200);border-radius:20px;padding:4px 10px 4px 12px;transition:all .15s;" '
+          +'onmouseover="this.style.borderColor=\'var(--primary-light)\';this.style.background=\'#eff6ff\'" '
+          +'onmouseout="this.style.borderColor=\'var(--gray-200)\';this.style.background=\'var(--gray-100)\'">'
+          +'<span id="cat-label-'+safe+'" style="font-size:12px;font-weight:500;color:var(--gray-700);">'+cat+'</span>'
+          +(count>0?'<span style="font-size:10px;font-weight:600;color:var(--gray-500);background:var(--gray-200);border-radius:10px;padding:0 5px;min-width:16px;text-align:center;">'+count+'</span>':'')
+          +'<button onclick="ativarEdicaoCat(\''+safe+'\',\''+tipoEsc+'\',\''+catEsc+'\')" title="Renomear" style="background:none;border:none;cursor:pointer;color:var(--gray-300);padding:0;line-height:1;margin-left:1px;" onmouseover="this.style.color=\'#3b82f6\'" onmouseout="this.style.color=\'var(--gray-300)\'"><i class="fas fa-pen" style="font-size:9px;"></i></button>'
+          +'<button onclick="excluirCategoria(\''+tipoEsc+'\',\''+catEsc+'\')" title="Excluir" style="background:none;border:none;cursor:pointer;color:var(--gray-300);padding:0;line-height:1;" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'var(--gray-300)\'"><i class="fas fa-times" style="font-size:10px;"></i></button>'
+          +'</div>';
     });
-    var el=document.getElementById(cid);
-    if(el)el.innerHTML=html||'<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:12px 0;">Nenhuma categoria</p>';
+    html+='</div>';
+    el.innerHTML=html;
   });
 }
-function ativarEdicaoCat(safe,tipo,cat){var label=document.getElementById('cat-label-'+safe);if(!label)return;var input=document.createElement('input');input.type='text';input.value=cat;input.style.cssText='flex:1;font-size:13px;padding:2px 6px!important;border:1px solid var(--primary)!important;border-radius:4px!important;outline:none;width:100%;';input.onblur=function(){confirmarEdicaoCat(input,tipo,cat);};input.onkeydown=function(e){if(e.key==='Enter')confirmarEdicaoCat(input,tipo,cat);if(e.key==='Escape')renderCategorias();};label.replaceWith(input);input.focus();input.select();}
+function ativarEdicaoCat(safe,tipo,cat){var chip=document.getElementById('chip-'+safe);if(!chip)return;var input=document.createElement('input');input.type='text';input.value=cat;input.style.cssText='font-size:12px;font-weight:500;padding:0 4px!important;border:1px solid var(--primary)!important;border-radius:4px!important;outline:none;width:90px;min-width:60px;';input.onblur=function(){confirmarEdicaoCat(input,tipo,cat);};input.onkeydown=function(e){if(e.key==='Enter')confirmarEdicaoCat(input,tipo,cat);if(e.key==='Escape')renderCategorias();};chip.innerHTML='';chip.style.borderColor='var(--primary)';chip.style.background='#eff6ff';chip.appendChild(input);input.focus();input.select();}
 function confirmarEdicaoCat(input,tipo,catAtual){var nova=input.value.trim();if(!nova||nova===catAtual){renderCategorias();return;}var arr=categorias[tipo]||[];var idx=arr.indexOf(catAtual);if(idx!==-1){inventory.forEach(function(item){if(item.Tipo===tipo&&item.Categoria===catAtual)item.Categoria=nova;});arr[idx]=nova;categorias[tipo]=arr;renderCategorias();showToast('Categoria renomeada!','success');syncDrive({action:'renomearCategoria',tipo:tipo,nomeAtual:catAtual,nomeNovo:nova});}}
 function addCategoria(tipo){var inputId=tipo==='Semi Joia'?'nova-cat-semijoia':'nova-cat-perfume';var nome=document.getElementById(inputId).value.trim();if(!nome)return;if(!categorias[tipo])categorias[tipo]=[];if(categorias[tipo].includes(nome)){showToast('Categoria já existe','warning');return;}categorias[tipo].push(nome);document.getElementById(inputId).value='';renderCategorias();showToast('Categoria adicionada!','success');syncDrive({action:'addCategoria',tipo:tipo,nome:nome});}
 function excluirCategoria(tipo,nome){if(!confirm('Excluir a categoria "'+nome+'"?'))return;categorias[tipo]=categorias[tipo].filter(function(c){return c!==nome;});renderCategorias();showToast('Categoria excluída','success');syncDrive({action:'delCategoria',tipo:tipo,nome:nome});}
