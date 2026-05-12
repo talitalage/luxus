@@ -113,7 +113,8 @@ body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.75rem
         <div style="font-size:.6rem;color:rgba(255,255,255,.4);">Bem-vinda ao seu painel</div>
       </div>
       <span id="status-time" style="font-size:.75rem;color:rgba(255,255,255,.5);">--:--</span>
-      <button onclick="logout()" style="background:rgba(239,68,68,.2);border:none;cursor:pointer;padding:6px 10px;border-radius:6px;color:rgba(252,165,165,1);" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
+      <span id="sync-status" style="font-size:.7rem;color:rgba(255,255,255,0);transition:all .4s;display:flex;align-items:center;gap:3px;"></span>
+      <button onclick="loadData()" style="background:rgba(255,255,255,.1);border:none;cursor:pointer;padding:6px 10px;border-radius:6px;color:rgba(255,255,255,.8);" title="Sincronizar"><i class="fas fa-sync-alt"></i></button>
     </div>
   </div>
 </div>
@@ -592,6 +593,81 @@ body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.75rem
   </div>
 </div>
 
+<!-- MODAL ASSINATURA FECHAMENTO -->
+<div id="modal-assinatura" class="modal-overlay">
+  <div class="modal-content" style="max-width:640px;width:95%;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="font-size:1.25rem;font-weight:700;color:var(--gray-800);">Recibo de Fechamento</h3>
+      <button onclick="fecharModal('modal-assinatura')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- Recibo -->
+    <div id="recibo-conteudo" style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:1.25rem;margin-bottom:1rem;font-size:13px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--gray-200);">
+        <div>
+          <div id="recibo-titulo" style="font-size:1.1rem;font-weight:700;color:var(--gray-800);"></div>
+          <div id="recibo-subtitulo" style="font-size:11px;color:var(--gray-500);"></div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;color:var(--gray-500);">Fechamento</div>
+          <div id="recibo-data" style="font-size:12px;font-weight:600;color:var(--gray-700);"></div>
+        </div>
+      </div>
+      <div style="margin-bottom:.75rem;">
+        <div style="font-size:11px;color:var(--gray-500);margin-bottom:2px;">Revendedor</div>
+        <div id="recibo-revendedor" style="font-weight:600;color:var(--gray-800);font-size:14px;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.75rem;">
+        <div style="background:white;border:1px solid var(--gray-200);border-radius:8px;padding:.6rem;text-align:center;">
+          <div style="font-size:10px;color:var(--gray-400);margin-bottom:2px;">Consignados</div>
+          <div id="recibo-consignados" style="font-weight:700;font-size:1.1rem;color:var(--gray-800);"></div>
+        </div>
+        <div style="background:white;border:1px solid var(--gray-200);border-radius:8px;padding:.6rem;text-align:center;">
+          <div style="font-size:10px;color:var(--gray-400);margin-bottom:2px;">Vendidos</div>
+          <div id="recibo-vendidos" style="font-weight:700;font-size:1.1rem;color:#10b981;"></div>
+        </div>
+        <div style="background:white;border:1px solid var(--gray-200);border-radius:8px;padding:.6rem;text-align:center;">
+          <div style="font-size:10px;color:var(--gray-400);margin-bottom:2px;">Devolvidos</div>
+          <div id="recibo-devolvidos" style="font-weight:700;font-size:1.1rem;color:#3b82f6;"></div>
+        </div>
+      </div>
+      <div style="background:white;border:1px solid var(--gray-200);border-radius:8px;padding:.75rem;margin-bottom:.5rem;">
+        <div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="color:var(--gray-500);">Total vendido</span><span id="recibo-total" style="font-weight:600;color:var(--gray-800);"></span></div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="color:var(--gray-500);">Comissão (<span id="recibo-pct"></span>%)</span><span id="recibo-comissao" style="font-weight:600;color:#f59e0b;"></span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0 3px;border-top:1px solid var(--gray-100);margin-top:4px;"><span style="font-weight:700;color:var(--gray-700);">A receber (loja)</span><span id="recibo-lucro" style="font-weight:700;color:#10b981;font-size:15px;"></span></div>
+      </div>
+      <!-- Itens vendidos -->
+      <div id="recibo-itens-bloco" style="margin-top:.5rem;">
+        <div style="font-size:11px;font-weight:600;color:var(--gray-500);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Itens vendidos</div>
+        <div id="recibo-itens" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+      </div>
+      <!-- Área de assinatura no recibo -->
+      <div style="margin-top:1rem;padding-top:.75rem;border-top:1px dashed var(--gray-300);">
+        <div style="font-size:11px;color:var(--gray-400);margin-bottom:4px;">Assinatura do revendedor</div>
+        <img id="recibo-assinatura-img" style="display:none;max-height:60px;border-bottom:1px solid var(--gray-300);">
+        <div id="recibo-assinatura-vazio" style="height:40px;border-bottom:1px solid var(--gray-800);"></div>
+        <div style="font-size:10px;color:var(--gray-400);margin-top:4px;" id="recibo-nome-ass"></div>
+      </div>
+    </div>
+
+    <!-- Canvas de assinatura -->
+    <div style="margin-bottom:.75rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <label style="font-size:13px;font-weight:500;color:var(--gray-700);">Assine abaixo</label>
+        <button onclick="limparAssinatura()" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--gray-400);" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--gray-400)'"><i class="fas fa-undo" style="margin-right:4px;"></i>Limpar</button>
+      </div>
+      <canvas id="canvas-assinatura" style="width:100%;height:120px;border:1.5px solid var(--gray-300);border-radius:8px;background:white;touch-action:none;cursor:crosshair;display:block;"></canvas>
+    </div>
+
+    <!-- Ações -->
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+      <button onclick="fecharModal('modal-assinatura')" class="btn-secondary" style="flex:1;min-width:120px;"><i class="fas fa-times" style="margin-right:6px;"></i>Fechar</button>
+      <button onclick="compartilharWhatsApp()" class="btn-secondary" style="flex:1;min-width:120px;color:#25D366;border-color:#25D366;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='white'"><i class="fab fa-whatsapp" style="margin-right:6px;"></i>WhatsApp</button>
+      <button onclick="baixarRecibo()" class="btn-primary" style="flex:1;min-width:120px;"><i class="fas fa-download" style="margin-right:6px;"></i>Baixar imagem</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast"><i id="toast-icon" class="fas fa-check-circle" style="font-size:1.25rem;color:#059669;"></i><span id="toast-msg" style="font-weight:500;color:var(--gray-800);"></span></div>
 
 <script>
@@ -609,7 +685,7 @@ var scriptUrl        = '';
 // Preferências de UI (ficam no localStorage — são por dispositivo)
 var cfgCards         = {'total':{'tipo':'all','status':'all'},'vendas':{'periodo':'30','revendedor':'','tipo':'all','lucro':false},'consignado':{'revendedor':'','tipo':'all','custo':false},'capital':{'tipo':'all','venda':false}};
 var dashCardsVisiveis= {'semijoia':true,'perfume':true,'estoque':true,'consignado':true};
-var colunasConfig    = {'codigo':{nome:'Código',visivel:true,ordem:0},'descricao':{nome:'Descrição',visivel:true,ordem:1},'tipo':{nome:'Tipo',visivel:true,ordem:2},'categoria':{nome:'Categoria',visivel:true,ordem:3},'status':{nome:'Status',visivel:true,ordem:4},'revendedor':{nome:'Revendedor',visivel:true,ordem:5},'custo':{nome:'Custo',visivel:true,ordem:6},'venda':{nome:'Venda',visivel:true,ordem:7},'data':{nome:'Data',visivel:true,ordem:8},'foto':{nome:'Foto',visivel:false,ordem:9}};
+var colunasConfig    = {'codigo':{nome:'Código',visivel:true,ordem:0},'descricao':{nome:'Descrição',visivel:true,ordem:1},'tipo':{nome:'Tipo',visivel:true,ordem:2},'categoria':{nome:'Categoria',visivel:true,ordem:3},'status':{nome:'Status',visivel:true,ordem:4},'revendedor':{nome:'Revendedor',visivel:true,ordem:5},'custo':{nome:'Custo',visivel:true,ordem:6},'venda':{nome:'Venda',visivel:true,ordem:7},'data':{nome:'Data',visivel:true,ordem:8}};
 
 var dashStatusFilters= {};
 var dashTipoFilter   = 'all';
@@ -653,8 +729,7 @@ document.addEventListener('DOMContentLoaded', function() {
   scriptUrl=localStorage.getItem('luxus_script_url')||'';
   var ui=document.getElementById('config-script-url'); if(ui)ui.value=scriptUrl;
 
-  var usr=localStorage.getItem('luxus_user')||'Lu';
-  var el=document.getElementById('header-username'); if(el)el.textContent=usr;
+  var el=document.getElementById('header-username'); if(el)el.textContent='Lu';
 
   aplicarVisibilidadeCards();
   updateTime();
@@ -711,10 +786,27 @@ function loadData() {
 // =====================================================
 // SYNC — envia ao Drive após cada operação
 // =====================================================
+function showSyncStatus(ok){
+  var el=document.getElementById('sync-status');
+  if(!el)return;
+  if(ok){
+    el.innerHTML='<i class="fas fa-check-circle"></i> sincronizado';
+    el.style.color='rgba(134,239,172,1)';
+  } else {
+    el.innerHTML='<i class="fas fa-exclamation-circle"></i> erro ao sincronizar';
+    el.style.color='rgba(252,165,165,1)';
+  }
+  clearTimeout(el._t);
+  el._t=setTimeout(function(){el.style.color='rgba(255,255,255,0)';},4000);
+}
+
 function syncDrive(payload){
   if(!scriptUrl)return;
+  var el=document.getElementById('sync-status');
+  if(el){el.innerHTML='<i class="fas fa-sync-alt animate-spin"></i> sincronizando';el.style.color='rgba(255,255,255,.5)';}
   fetch(scriptUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)})
-  .catch(function(){});
+  .then(function(){showSyncStatus(true);})
+  .catch(function(){showSyncStatus(false);});
 }
 
 // =====================================================
@@ -778,6 +870,7 @@ function renderStatsPorTipo(tipo,cid){
   cats.forEach(function(c){var key=grupos[c]?c:Object.keys(grupos).find(function(k){return k.toLowerCase()===c.toLowerCase();});if(key&&ordem.indexOf(key)===-1)ordem.push(key);});
   Object.keys(grupos).forEach(function(c){if(ordem.indexOf(c)===-1)ordem.push(c);});
   cats.forEach(function(c){if(ordem.indexOf(c)===-1)ordem.push(c);});
+  ordem.sort(function(a,b){if(a==='—')return 1;if(b==='—')return -1;return a.localeCompare(b,'pt-BR');});
   var html='';
   ordem.forEach(function(cat){
     var ci=grupos[cat]||[];var v=ci.reduce(function(s,i){return s+pN(i.Venda);},0);
@@ -852,7 +945,218 @@ function renderDevolucoes(){var el=document.getElementById('lista-devolucoes');v
 function removerDevolucao(idx){devolucoes.splice(idx,1);renderDevolucoes();atualizarResumoFechamento();}
 function limparDevolucoes(){if(!devolucoes.length)return;if(confirm('Limpar todas as devoluções?')){devolucoes=[];renderDevolucoes();atualizarResumoFechamento();}}
 function atualizarResumoFechamento(){var nome=document.getElementById('fechamento-revendedor').value;if(!nome)return;var rev=revendedores.find(function(r){return r.Nome===nome;});var pct=((rev&&rev.Percentual)||30)/100;var vc=produtosConsignados.reduce(function(s,i){return s+pN(i.Venda);},0);var vd=devolucoes.reduce(function(s,i){return s+pN(i.Venda);},0);var vv=vc-vd;var com=vv*pct;var luc=vv-com;document.getElementById('resumo-consignado').textContent=fmt(vc);document.getElementById('resumo-devolvido').textContent=fmt(vd);document.getElementById('resumo-vendido').textContent=fmt(vv);document.getElementById('resumo-comissao').textContent=fmt(com);document.getElementById('resumo-lucro').textContent=fmt(luc);}
-function finalizarFechamento(){var nome=document.getElementById('fechamento-revendedor').value;if(!nome){showToast('Selecione um revendedor','warning');return;}if(!devolucoes.length&&produtosConsignados.length>0){if(!confirm('Nenhuma devolução. Tudo foi vendido. Continuar?'))return;}if(!confirm('Confirmar fechamento?'))return;var vendidos=produtosConsignados.filter(function(p){return!devolucoes.find(function(d){return d.Codigo===p.Codigo;});});var devolvidos=devolucoes.slice();vendidos.forEach(function(item){var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});if(idx!==-1){inventory[idx].Status='Vendido';inventory[idx].Revendedor=nome;}});devolvidos.forEach(function(item){var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});if(idx!==-1){inventory[idx].Status='Em Estoque';inventory[idx].Revendedor='';}});var rev=revendedores.find(function(r){return r.Nome===nome;});var pct=((rev&&rev.Percentual)||30)/100;var vc=produtosConsignados.reduce(function(s,i){return s+pN(i.Venda);},0);var vd=devolvidos.reduce(function(s,i){return s+pN(i.Venda);},0);var vv=vc-vd;var com=vv*pct;var luc=vv-com;var reg={id:Date.now(),data:new Date().toISOString(),revendedor:nome,percentual:(rev&&rev.Percentual)||30,qtdConsignados:produtosConsignados.length,qtdVendidos:vendidos.length,qtdDevolvidos:devolvidos.length,valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,itensVendidos:vendidos.map(function(i){return{Codigo:i.Codigo,Descricao:i.Descricao,Venda:i.Venda};}),itensDevolvidos:devolvidos.map(function(i){return{Codigo:i.Codigo,Descricao:i.Descricao,Venda:i.Venda};})};historicFechamentos.unshift(reg);document.getElementById('fechamento-revendedor').value='';document.getElementById('info-revendedor').style.display='none';produtosConsignados=[];devolucoes=[];document.getElementById('lista-devolucoes').innerHTML='';document.getElementById('lista-devolucoes-empty').style.display='block';atualizarResumoFechamento();renderConsignados();renderDashboard();showToast('Fechamento concluído!','success');syncDrive({action:'addFechamento',revendedor:nome,percentual:(rev&&rev.Percentual)||30,qtdConsignados:reg.qtdConsignados,qtdVendidos:reg.qtdVendidos,qtdDevolvidos:reg.qtdDevolvidos,valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,itensVendidos:reg.itensVendidos,itensDevolvidos:reg.itensDevolvidos});vendidos.forEach(function(item){syncDrive({action:'editInventario',rowId:item.rowId,status:'Vendido',revendedor:nome});});devolvidos.forEach(function(item){syncDrive({action:'editInventario',rowId:item.rowId,status:'Em Estoque',revendedor:''});});}
+// =====================================================
+// ASSINATURA & RECIBO
+// =====================================================
+var _assinaturaCtx=null, _assinaturaDesenhando=false, _assinaturaDados=null, _reciboFechamento=null;
+
+function initCanvasAssinatura(){
+  var c=document.getElementById('canvas-assinatura');
+  if(!c)return;
+  // ajusta resolução real vs CSS
+  var rect=c.getBoundingClientRect();
+  c.width=rect.width*2; c.height=rect.height*2;
+  _assinaturaCtx=c.getContext('2d');
+  _assinaturaCtx.scale(2,2);
+  _assinaturaCtx.strokeStyle='#1e293b';
+  _assinaturaCtx.lineWidth=2;
+  _assinaturaCtx.lineCap='round';
+  _assinaturaCtx.lineJoin='round';
+
+  function pos(e){
+    var r=c.getBoundingClientRect();
+    var src=e.touches?e.touches[0]:e;
+    return{x:src.clientX-r.left, y:src.clientY-r.top};
+  }
+  c.onmousedown=c.ontouchstart=function(e){e.preventDefault();_assinaturaDesenhando=true;var p=pos(e);_assinaturaCtx.beginPath();_assinaturaCtx.moveTo(p.x,p.y);};
+  c.onmousemove=c.ontouchmove=function(e){e.preventDefault();if(!_assinaturaDesenhando)return;var p=pos(e);_assinaturaCtx.lineTo(p.x,p.y);_assinaturaCtx.stroke();};
+  c.onmouseup=c.ontouchend=function(){_assinaturaDesenhando=false;_assinaturaDados=c.toDataURL('image/png');};
+}
+
+function limparAssinatura(){
+  var c=document.getElementById('canvas-assinatura');
+  if(!c||!_assinaturaCtx)return;
+  _assinaturaCtx.clearRect(0,0,c.width,c.height);
+  _assinaturaDados=null;
+  var img=document.getElementById('recibo-assinatura-img');
+  var vazio=document.getElementById('recibo-assinatura-vazio');
+  if(img){img.style.display='none';}
+  if(vazio){vazio.style.display='block';}
+}
+
+function abrirModalAssinatura(reg){
+  _reciboFechamento=reg;
+  _assinaturaDados=null;
+
+  // Preencher recibo
+  var titulo=localStorage.getItem('luxus_titulo')||'LUXUS';
+  var subtitulo=localStorage.getItem('luxus_subtitulo')||'JOIAS & PERFUMES';
+  document.getElementById('recibo-titulo').textContent=titulo;
+  document.getElementById('recibo-subtitulo').textContent=subtitulo;
+  document.getElementById('recibo-data').textContent=new Date(reg.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('recibo-revendedor').textContent=reg.revendedor;
+  document.getElementById('recibo-consignados').textContent=reg.qtdConsignados;
+  document.getElementById('recibo-vendidos').textContent=reg.qtdVendidos;
+  document.getElementById('recibo-devolvidos').textContent=reg.qtdDevolvidos;
+  document.getElementById('recibo-total').textContent=fmt(reg.valorVendido);
+  document.getElementById('recibo-pct').textContent=reg.percentual;
+  document.getElementById('recibo-comissao').textContent=fmt(reg.comissao);
+  document.getElementById('recibo-lucro').textContent=fmt(reg.lucro);
+  document.getElementById('recibo-nome-ass').textContent=reg.revendedor;
+
+  var itensEl=document.getElementById('recibo-itens');
+  if(itensEl){
+    itensEl.innerHTML=(reg.itensVendidos||[]).map(function(i){
+      return '<span style="background:var(--gray-100);border:1px solid var(--gray-200);border-radius:4px;padding:2px 7px;font-size:11px;color:var(--gray-700);">'+i.Codigo+'</span>';
+    }).join('');
+  }
+
+  // Reset assinatura área
+  var img=document.getElementById('recibo-assinatura-img');
+  var vazio=document.getElementById('recibo-assinatura-vazio');
+  if(img)img.style.display='none';
+  if(vazio)vazio.style.display='block';
+
+  abrirModal('modal-assinatura');
+  setTimeout(initCanvasAssinatura, 100);
+}
+
+function baixarRecibo(){
+  // Cola assinatura no recibo antes de capturar
+  if(_assinaturaDados){
+    var img=document.getElementById('recibo-assinatura-img');
+    var vazio=document.getElementById('recibo-assinatura-vazio');
+    if(img){img.src=_assinaturaDados;img.style.display='block';}
+    if(vazio)vazio.style.display='none';
+  }
+
+  // Usa html2canvas se disponível, senão gera via canvas simples
+  var el=document.getElementById('recibo-conteudo');
+  if(window.html2canvas){
+    html2canvas(el,{scale:2,backgroundColor:'#f8fafc',useCORS:true}).then(function(canvas){
+      var a=document.createElement('a');
+      a.download='recibo-'+(_reciboFechamento?_reciboFechamento.revendedor.replace(/\s/g,'_'):'fechamento')+'-'+new Date().toISOString().slice(0,10)+'.png';
+      a.href=canvas.toDataURL('image/png');
+      a.click();
+      showToast('Recibo salvo!','success');
+    });
+  } else {
+    gerarReciboCanvas();
+  }
+}
+
+function gerarReciboCanvas(){
+  var reg=_reciboFechamento;
+  if(!reg)return;
+  var W=640,H=520;
+  var c=document.createElement('canvas');
+  c.width=W*2;c.height=H*2;
+  var ctx=c.getContext('2d');
+  ctx.scale(2,2);
+
+  // fundo
+  ctx.fillStyle='#f8fafc';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#1e40af';ctx.fillRect(0,0,W,48);
+
+  // cabeçalho
+  ctx.fillStyle='#fff';ctx.font='bold 16px sans-serif';ctx.fillText(localStorage.getItem('luxus_titulo')||'LUXUS',16,30);
+  ctx.font='11px sans-serif';ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillText(localStorage.getItem('luxus_subtitulo')||'JOIAS & PERFUMES',16,44);
+  ctx.textAlign='right';ctx.fillStyle='rgba(255,255,255,.8)';ctx.font='11px sans-serif';
+  ctx.fillText(new Date(reg.data).toLocaleDateString('pt-BR'),W-16,30);
+  ctx.fillText('Recibo de Fechamento',W-16,44);
+  ctx.textAlign='left';
+
+  // revendedor
+  ctx.fillStyle='#64748b';ctx.font='11px sans-serif';ctx.fillText('Revendedor',16,72);
+  ctx.fillStyle='#1f2937';ctx.font='bold 15px sans-serif';ctx.fillText(reg.revendedor,16,90);
+
+  // cards qtd
+  var cards=[['Consignados',reg.qtdConsignados,'#1e40af'],['Vendidos',reg.qtdVendidos,'#10b981'],['Devolvidos',reg.qtdDevolvidos,'#3b82f6']];
+  cards.forEach(function(cd,i){
+    var x=16+i*200,y=106,cw=190,ch=50;
+    ctx.fillStyle='#fff';ctx.strokeStyle='#e2e8f0';ctx.lineWidth=1;
+    roundRect(ctx,x,y,cw,ch,6);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#94a3b8';ctx.font='10px sans-serif';ctx.fillText(cd[0],x+cw/2,y+16,cw-8);
+    ctx.fillStyle=cd[2];ctx.font='bold 22px sans-serif';ctx.textAlign='center';ctx.fillText(cd[1],x+cw/2,y+38);ctx.textAlign='left';
+  });
+
+  // valores
+  var vy=172;
+  ctx.fillStyle='#fff';ctx.strokeStyle='#e2e8f0';ctx.lineWidth=1;
+  roundRect(ctx,16,vy,W-32,100,6);ctx.fill();ctx.stroke();
+  function linha(label,valor,color,y){
+    ctx.fillStyle='#64748b';ctx.font='13px sans-serif';ctx.fillText(label,28,y);
+    ctx.fillStyle=color||'#1f2937';ctx.font='bold 13px sans-serif';ctx.textAlign='right';ctx.fillText(valor,W-28,y);ctx.textAlign='left';
+  }
+  linha('Total vendido',fmt(reg.valorVendido),'#1f2937',vy+22);
+  linha('Comissão ('+reg.percentual+'%)',fmt(reg.comissao),'#f59e0b',vy+44);
+  ctx.strokeStyle='#e2e8f0';ctx.beginPath();ctx.moveTo(28,vy+54);ctx.lineTo(W-28,vy+54);ctx.stroke();
+  linha('A receber (loja)',fmt(reg.lucro),'#10b981',vy+76);
+
+  // itens vendidos
+  ctx.fillStyle='#64748b';ctx.font='bold 10px sans-serif';ctx.fillText('ITENS VENDIDOS',16,292);
+  var ix=16,iy=300;
+  (reg.itensVendidos||[]).forEach(function(item){
+    var tw=ctx.measureText(item.Codigo).width+16;
+    if(ix+tw>W-16){ix=16;iy+=22;}
+    ctx.fillStyle='#f1f5f9';ctx.strokeStyle='#e2e8f0';ctx.lineWidth=1;
+    roundRect(ctx,ix,iy,tw,18,4);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#334155';ctx.font='10px sans-serif';ctx.fillText(item.Codigo,ix+8,iy+13);
+    ix+=tw+6;
+  });
+
+  // assinatura
+  var ay=H-90;
+  ctx.strokeStyle='#cbd5e1';ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(16,ay-8);ctx.lineTo(W-16,ay-8);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#94a3b8';ctx.font='10px sans-serif';ctx.fillText('Assinatura do revendedor',16,ay+4);
+  if(_assinaturaDados){
+    var imgAss=new Image();
+    imgAss.onload=function(){
+      ctx.drawImage(imgAss,16,ay+10,200,50);
+      _downloadCanvas(c,reg);
+    };
+    imgAss.src=_assinaturaDados;
+    return;
+  }
+  ctx.strokeStyle='#1f2937';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(16,ay+56);ctx.lineTo(240,ay+56);ctx.stroke();
+  ctx.fillStyle='#334155';ctx.font='11px sans-serif';ctx.fillText(reg.revendedor,16,ay+70);
+  _downloadCanvas(c,reg);
+}
+
+function _downloadCanvas(c,reg){
+  var a=document.createElement('a');
+  a.download='recibo-'+(reg?reg.revendedor.replace(/\s/g,'_'):'fechamento')+'-'+new Date().toISOString().slice(0,10)+'.png';
+  a.href=c.toDataURL('image/png');
+  a.click();
+  showToast('Recibo salvo!','success');
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+function compartilharWhatsApp(){
+  var reg=_reciboFechamento;
+  if(!reg)return;
+  var rev=revendedores.find(function(r){return r.Nome===reg.revendedor;});
+  var contato=rev&&rev.Contato?rev.Contato.replace(/\D/g,''):'';
+  var msg='*Recibo de Fechamento — '+(localStorage.getItem('luxus_titulo')||'LUXUS')+'*\n\n'
+    +'Revendedor: '+reg.revendedor+'\n'
+    +'Data: '+new Date(reg.data).toLocaleDateString('pt-BR')+'\n\n'
+    +'Consignados: '+reg.qtdConsignados+'\n'
+    +'Vendidos: '+reg.qtdVendidos+'\n'
+    +'Devolvidos: '+reg.qtdDevolvidos+'\n\n'
+    +'Total vendido: '+fmt(reg.valorVendido)+'\n'
+    +'Comissão ('+reg.percentual+'%): '+fmt(reg.comissao)+'\n'
+    +'*A receber (loja): '+fmt(reg.lucro)+'*\n\n'
+    +'_Itens vendidos: '+(reg.itensVendidos||[]).map(function(i){return i.Codigo;}).join(', ')+'_';
+  var url='https://wa.me/'+(contato?'55'+contato:'')+'?text='+encodeURIComponent(msg);
+  window.open(url,'_blank');
+}
+
+function finalizarFechamento(){var nome=document.getElementById('fechamento-revendedor').value;if(!nome){showToast('Selecione um revendedor','warning');return;}if(!devolucoes.length&&produtosConsignados.length>0){if(!confirm('Nenhuma devolução. Tudo foi vendido. Continuar?'))return;}if(!confirm('Confirmar fechamento?'))return;var vendidos=produtosConsignados.filter(function(p){return!devolucoes.find(function(d){return d.Codigo===p.Codigo;});});var devolvidos=devolucoes.slice();vendidos.forEach(function(item){var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});if(idx!==-1){inventory[idx].Status='Vendido';inventory[idx].Revendedor=nome;}});devolvidos.forEach(function(item){var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});if(idx!==-1){inventory[idx].Status='Em Estoque';inventory[idx].Revendedor='';}});var rev=revendedores.find(function(r){return r.Nome===nome;});var pct=((rev&&rev.Percentual)||30)/100;var vc=produtosConsignados.reduce(function(s,i){return s+pN(i.Venda);},0);var vd=devolvidos.reduce(function(s,i){return s+pN(i.Venda);},0);var vv=vc-vd;var com=vv*pct;var luc=vv-com;var reg={id:Date.now(),data:new Date().toISOString(),revendedor:nome,percentual:(rev&&rev.Percentual)||30,qtdConsignados:produtosConsignados.length,qtdVendidos:vendidos.length,qtdDevolvidos:devolvidos.length,valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,itensVendidos:vendidos.map(function(i){return{Codigo:i.Codigo,Descricao:i.Descricao,Venda:i.Venda};}),itensDevolvidos:devolvidos.map(function(i){return{Codigo:i.Codigo,Descricao:i.Descricao,Venda:i.Venda};})};historicFechamentos.unshift(reg);document.getElementById('fechamento-revendedor').value='';document.getElementById('info-revendedor').style.display='none';produtosConsignados=[];devolucoes=[];document.getElementById('lista-devolucoes').innerHTML='';document.getElementById('lista-devolucoes-empty').style.display='block';atualizarResumoFechamento();renderConsignados();renderDashboard();showToast('Fechamento concluído!','success');syncDrive({action:'addFechamento',revendedor:nome,percentual:(rev&&rev.Percentual)||30,qtdConsignados:reg.qtdConsignados,qtdVendidos:reg.qtdVendidos,qtdDevolvidos:reg.qtdDevolvidos,valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,itensVendidos:reg.itensVendidos,itensDevolvidos:reg.itensDevolvidos});vendidos.forEach(function(item){syncDrive({action:'editInventario',rowId:item.rowId,status:'Vendido',revendedor:nome});});devolvidos.forEach(function(item){syncDrive({action:'editInventario',rowId:item.rowId,status:'Em Estoque',revendedor:''});});setTimeout(function(){abrirModalAssinatura(reg);},400);}
 
 // =====================================================
 // HISTÓRICO
@@ -1012,12 +1316,12 @@ function verFoto(url){if(url)window.open(url,'_blank');}
 // COLUNAS
 // =====================================================
 function abrirModalColunas(){renderListaColunas();abrirModal('modal-colunas');}
-function renderListaColunas(){var cols=Object.keys(colunasConfig).sort(function(a,b){return colunasConfig[a].ordem-colunasConfig[b].ordem;});var html='';cols.forEach(function(key){html+='<div style="display:flex;align-items:center;gap:12px;padding:.75rem;background:white;border-radius:8px;border:1px solid var(--gray-200);cursor:move;" draggable="true" data-coluna="'+key+'"><i class="fas fa-grip-vertical" style="color:var(--gray-400);"></i><span style="flex:1;font-weight:500;color:var(--gray-700);user-select:none;">'+colunasConfig[key].nome+'</span><label class="toggle-switch"><input type="checkbox"'+(colunasConfig[key].visivel?' checked':'')+' onchange="toggleColuna(\''+key+'\')"><span class="toggle-slider"></span></label></div>';});var el=document.getElementById('lista-colunas');if(el){el.innerHTML=html;initDragAndDrop();}}
+function renderListaColunas(){var cols=Object.keys(colunasConfig).filter(function(k){return k!=='foto';}).sort(function(a,b){return colunasConfig[a].ordem-colunasConfig[b].ordem;});var html='';cols.forEach(function(key){html+='<div style="display:flex;align-items:center;gap:12px;padding:.75rem;background:white;border-radius:8px;border:1px solid var(--gray-200);cursor:move;" draggable="true" data-coluna="'+key+'"><i class="fas fa-grip-vertical" style="color:var(--gray-400);"></i><span style="flex:1;font-weight:500;color:var(--gray-700);user-select:none;">'+colunasConfig[key].nome+'</span><label class="toggle-switch"><input type="checkbox"'+(colunasConfig[key].visivel?' checked':'')+' onchange="toggleColuna(\''+key+'\')"><span class="toggle-slider"></span></label></div>';});var el=document.getElementById('lista-colunas');if(el){el.innerHTML=html;initDragAndDrop();}}
 function initDragAndDrop(){var items=document.querySelectorAll('[draggable="true"]');var dragged=null;items.forEach(function(item){item.addEventListener('dragstart',function(e){dragged=this;this.style.opacity='.4';e.dataTransfer.effectAllowed='move';});item.addEventListener('dragend',function(){this.style.opacity='1';});item.addEventListener('dragover',function(e){e.preventDefault();this.style.borderColor='#3b82f6';this.style.background='#eff6ff';});item.addEventListener('dragleave',function(){this.style.borderColor='var(--gray-200)';this.style.background='white';});item.addEventListener('drop',function(e){e.preventDefault();this.style.borderColor='var(--gray-200)';this.style.background='white';if(dragged!==this){var all=Array.from(document.querySelectorAll('[draggable="true"]'));var di=all.indexOf(dragged);var ti=all.indexOf(this);if(di<ti)this.parentNode.insertBefore(dragged,this.nextSibling);else this.parentNode.insertBefore(dragged,this);atualizarOrdemColunas();}});});}
 function atualizarOrdemColunas(){document.querySelectorAll('[draggable="true"]').forEach(function(item,i){colunasConfig[item.dataset.coluna].ordem=i;});}
 function toggleColuna(key){colunasConfig[key].visivel=!colunasConfig[key].visivel;}
 function aplicarColunas(){atualizarOrdemColunas();localStorage.setItem('luxus_colunas',JSON.stringify(colunasConfig));renderDashboard();fecharModal('modal-colunas');showToast('Colunas aplicadas!','success');}
-function restaurarColunasPadrao(){if(confirm('Restaurar configuração padrão?')){colunasConfig={'codigo':{nome:'Código',visivel:true,ordem:0},'descricao':{nome:'Descrição',visivel:true,ordem:1},'tipo':{nome:'Tipo',visivel:true,ordem:2},'categoria':{nome:'Categoria',visivel:true,ordem:3},'status':{nome:'Status',visivel:true,ordem:4},'revendedor':{nome:'Revendedor',visivel:true,ordem:5},'custo':{nome:'Custo',visivel:true,ordem:6},'venda':{nome:'Venda',visivel:true,ordem:7},'data':{nome:'Data',visivel:true,ordem:8},'foto':{nome:'Foto',visivel:false,ordem:9}};renderListaColunas();showToast('Configuração restaurada!','success');}}
+function restaurarColunasPadrao(){if(confirm('Restaurar configuração padrão?')){colunasConfig={'codigo':{nome:'Código',visivel:true,ordem:0},'descricao':{nome:'Descrição',visivel:true,ordem:1},'tipo':{nome:'Tipo',visivel:true,ordem:2},'categoria':{nome:'Categoria',visivel:true,ordem:3},'status':{nome:'Status',visivel:true,ordem:4},'revendedor':{nome:'Revendedor',visivel:true,ordem:5},'custo':{nome:'Custo',visivel:true,ordem:6},'venda':{nome:'Venda',visivel:true,ordem:7},'data':{nome:'Data',visivel:true,ordem:8}};renderListaColunas();showToast('Configuração restaurada!','success');}}
 
 // =====================================================
 // MISC
@@ -1038,7 +1342,6 @@ function setDevice(mode){
   }
 }
 
-function logout(){if(confirm('Deseja sair do sistema?')){localStorage.removeItem('luxus_logged_in');localStorage.removeItem('luxus_user');window.location.href='config.html';}}
 function carregarTitulo(){}// mantida por compatibilidade — agora aplicarIdentidade() faz o trabalho
 </script>
 </body>
