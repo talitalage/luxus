@@ -1056,11 +1056,24 @@ function renderDashTable(){
       if(el&&el.parentElement){el.parentElement.style.outline='2px solid #bfdbfe';el.parentElement.style.outlineOffset='0px';}
     });
   } else {
+    // Sem filtro — restaura cards com valores totais sem chamar renderDashboard (evita loop)
     ['dash-total','dash-capital','dash-consignado','dash-vendido'].forEach(function(id){
       var el=document.getElementById(id);
       if(el&&el.parentElement){el.parentElement.style.outline='none';}
     });
-    renderDashboard();return;
+    var c=cfgCards;
+    var itemsTotal=inventory.filter(function(i){return(c.total.tipo==='all'||i.Tipo===c.total.tipo)&&(c.total.status==='all'||i.Status===c.total.status);});
+    document.getElementById('dash-total').textContent=itemsTotal.length;
+    var itemsCap=inventory.filter(function(i){return i.Status==='Em Estoque'&&(c.capital.tipo==='all'||i.Tipo===c.capital.tipo);});
+    document.getElementById('dash-capital').textContent=fmt(itemsCap.reduce(function(s,i){return s+pN(c.capital.venda?i.Venda:i.Custo);},0));
+    var itemsCons=inventory.filter(function(i){return i.Status!=='Em Estoque'&&i.Status!=='Vendido'&&(!c.consignado.revendedor||i.Revendedor===c.consignado.revendedor)&&(c.consignado.tipo==='all'||i.Tipo===c.consignado.tipo);});
+    document.getElementById('dash-consignado').textContent=fmt(itemsCons.reduce(function(s,i){return s+pN(c.consignado.custo?i.Custo:i.Venda);},0));
+    var agora=new Date(),dataIniV=null;
+    if(c.vendas.periodo==='mes'){dataIniV=new Date(agora.getFullYear(),agora.getMonth(),1);}
+    else if(parseInt(c.vendas.periodo)>0){dataIniV=new Date();dataIniV.setDate(dataIniV.getDate()-parseInt(c.vendas.periodo));dataIniV.setHours(0,0,0,0);}
+    var itemsV=inventory.filter(function(i){return i.Status==='Vendido'&&(!c.vendas.revendedor||i.Revendedor===c.vendas.revendedor)&&(c.vendas.tipo==='all'||i.Tipo===c.vendas.tipo)&&(!dataIniV||!i.DataVenda&&!i.Data||new Date(i.DataVenda||i.Data)>=dataIniV);});
+    var recV=itemsV.reduce(function(s,i){return s+pN(i.Venda);},0),cusV=itemsV.reduce(function(s,i){return s+pN(i.Custo);},0);
+    document.getElementById('dash-vendido').textContent=fmt(c.vendas.lucro?recV-cusV:recV);
   }
   var cols=getColsVisiveis();
   var campoMap={codigo:'Codigo',descricao:'Descricao',tipo:'Tipo',categoria:'Categoria',status:'Status',revendedor:'Revendedor',custo:'Custo',venda:'Venda',data:'Data'};
