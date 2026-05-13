@@ -48,8 +48,9 @@ input[type=hidden]{display:none!important;}
 .data-table tbody tr:hover{background:var(--gray-50);}
 .data-table tfoot tr{background:var(--gray-50);border-top:2px solid var(--gray-200);}
 .data-table tfoot td{padding:.75rem;font-weight:600;font-size:13px;}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:none;justify-content:center;align-items:center;z-index:1000;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:none;justify-content:center;align-items:flex-start;padding-top:5vh;z-index:1000;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .modal-overlay.open{display:flex;}
+.modal-content{background:white;border-radius:14px;padding:1.5rem;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .modal-content{background:var(--white);border-radius:16px;padding:2rem;max-width:580px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 40px rgba(0,0,0,.15);}
 .toggle-switch{position:relative;display:inline-block;width:44px;height:24px;}
 .toggle-switch input{opacity:0;width:0;height:0;}
@@ -199,6 +200,7 @@ body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.75rem
     <div style="padding:10px 16px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;gap:8px;">
       <input type="text" id="dash-search" placeholder="Buscar..." style="flex:1;border-radius:20px!important;font-size:13px;" oninput="renderDashTable()">
       <button onclick="abrirModalNovoItem()" class="btn-primary" style="padding:6px 14px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;"><i class="fas fa-plus"></i>Novo</button>
+      <button onclick="abrirVendaAvulsa()" class="btn-secondary" style="padding:6px 14px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;color:#10b981;border-color:#10b981;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='white'"><i class="fas fa-cash-register"></i>Venda avulsa</button>
       <button onclick="abrirModalColunas()" class="btn-secondary" style="padding:6px 14px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;"><i class="fas fa-columns"></i>Colunas</button>
     </div>
     <div style="overflow-x:auto;">
@@ -670,6 +672,61 @@ body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.75rem
 </div>
 
 <!-- MODAL RECIBOS SALVOS -->
+<!-- MODAL VENDA AVULSA -->
+<div id="modal-venda-avulsa" class="modal-overlay">
+  <div class="modal-content" style="max-width:480px;width:95%;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+      <h3 style="font-size:1.1rem;font-weight:700;color:var(--gray-800);"><i class="fas fa-cash-register" style="color:var(--primary);margin-right:8px;"></i>Venda Avulsa</h3>
+      <button onclick="fecharModal('modal-venda-avulsa')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>
+    </div>
+    <div style="margin-bottom:.75rem;">
+      <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Código do produto *</label>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <input id="avulsa-codigo" type="text" placeholder="Bipe ou digite o código..." style="flex:1;font-family:var(--font-mono);" oninput="buscarItemAvulsa()" onkeydown="if(event.key==='Enter')buscarItemAvulsa()">
+        <button onclick="buscarItemAvulsa()" class="btn-secondary" style="padding:.5rem .75rem;"><i class="fas fa-search"></i></button>
+      </div>
+    </div>
+    <div id="avulsa-item-card" style="display:none;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:1rem;margin-bottom:.75rem;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem;">
+        <div>
+          <div id="avulsa-item-nome" style="font-weight:600;color:var(--gray-800);font-size:14px;"></div>
+          <div id="avulsa-item-tipo" style="font-size:12px;color:var(--gray-500);margin-top:2px;"></div>
+        </div>
+        <div id="avulsa-item-status-badge"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+        <div style="background:white;border:1px solid var(--gray-200);border-radius:6px;padding:.5rem;text-align:center;">
+          <div style="font-size:10px;color:var(--gray-400);">Custo</div>
+          <div id="avulsa-item-custo" style="font-weight:600;font-size:13px;color:var(--gray-700);"></div>
+        </div>
+        <div style="background:white;border:1px solid var(--gray-200);border-radius:6px;padding:.5rem;text-align:center;">
+          <div style="font-size:10px;color:var(--gray-400);">Preço de venda</div>
+          <div id="avulsa-item-venda" style="font-weight:700;font-size:13px;color:#10b981;"></div>
+        </div>
+      </div>
+    </div>
+    <div id="avulsa-erro" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:.75rem;font-size:13px;color:#dc2626;margin-bottom:.75rem;"></div>
+    <div id="avulsa-form" style="display:none;">
+      <div style="margin-bottom:.75rem;">
+        <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Valor de venda (R$)</label>
+        <input id="avulsa-valor" type="number" step="0.01" placeholder="0,00" style="width:100%;margin-top:4px;font-size:15px;font-weight:600;">
+      </div>
+      <div style="margin-bottom:1rem;">
+        <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Observação (opcional)</label>
+        <input id="avulsa-obs" type="text" placeholder="Ex: desconto aplicado, pagamento à vista..." style="width:100%;margin-top:4px;">
+      </div>
+      <div style="display:flex;gap:.75rem;">
+        <button onclick="fecharModal('modal-venda-avulsa')" class="btn-secondary" style="flex:1;">Cancelar</button>
+        <button onclick="confirmarVendaAvulsa()" class="btn-primary" style="flex:1;"><i class="fas fa-check" style="margin-right:6px;"></i>Confirmar venda</button>
+      </div>
+    </div>
+    <div id="avulsa-inicial" style="text-align:center;padding:1rem 0;color:var(--gray-400);font-size:13px;">
+      <i class="fas fa-barcode" style="font-size:2rem;display:block;margin-bottom:.5rem;"></i>
+      Bipe ou digite o código do produto para iniciar
+    </div>
+  </div>
+</div>
+
 <div id="modal-recibos" class="modal-overlay">
   <div class="modal-content" style="max-width:680px;width:95%;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
@@ -717,7 +774,15 @@ function pN(v){if(v===null||v===undefined||v==='')return 0;if(typeof v==='number
 function fmt(v){return 'R$ '+pN(v).toFixed(2);}
 function getCorStatus(s){return statusCores[s]||'#64748b';}
 function getColsVisiveis(){return Object.keys(colunasConfig).filter(function(k){return colunasConfig[k].visivel;}).sort(function(a,b){return colunasConfig[a].ordem-colunasConfig[b].ordem;});}
-function abrirModal(id){document.getElementById(id).classList.add('open');}
+function abrirModal(id){
+  var el=document.getElementById(id);
+  el.classList.add('open');
+  // Foca o primeiro campo editável para ativar o teclado no tablet
+  setTimeout(function(){
+    var first=el.querySelector('input:not([type=hidden]):not([readonly]),select,textarea');
+    if(first){first.focus();}
+  },150);
+}
 function fecharModal(id){document.getElementById(id).classList.remove('open');}
 
 function showToast(msg,type){
@@ -1422,6 +1487,76 @@ syncDrive({action:'salvarStatus',statusList:statusList,statusCores:statusCores})
 // =====================================================
 // MODAL ITEM
 // =====================================================
+// =====================================================
+// VENDA AVULSA
+// =====================================================
+var _avulsaItem=null;
+
+function abrirVendaAvulsa(){
+  _avulsaItem=null;
+  document.getElementById('avulsa-codigo').value='';
+  document.getElementById('avulsa-valor').value='';
+  document.getElementById('avulsa-obs').value='';
+  document.getElementById('avulsa-item-card').style.display='none';
+  document.getElementById('avulsa-form').style.display='none';
+  document.getElementById('avulsa-erro').style.display='none';
+  document.getElementById('avulsa-inicial').style.display='block';
+  abrirModal('modal-venda-avulsa');
+}
+
+function buscarItemAvulsa(){
+  var codigo=(document.getElementById('avulsa-codigo').value||'').trim().toUpperCase();
+  if(!codigo)return;
+  var item=inventory.find(function(i){return (i.Codigo||'').toUpperCase()===codigo;});
+  document.getElementById('avulsa-inicial').style.display='none';
+  document.getElementById('avulsa-erro').style.display='none';
+  document.getElementById('avulsa-item-card').style.display='none';
+  document.getElementById('avulsa-form').style.display='none';
+
+  if(!item){
+    document.getElementById('avulsa-erro').style.display='block';
+    document.getElementById('avulsa-erro').textContent='Produto "'+codigo+'" não encontrado no inventário.';
+    return;
+  }
+  if(item.Status==='Vendido'){
+    document.getElementById('avulsa-erro').style.display='block';
+    document.getElementById('avulsa-erro').textContent='Este produto já foi vendido.';
+    return;
+  }
+  _avulsaItem=item;
+  document.getElementById('avulsa-item-nome').textContent=item.Descricao||item.Codigo;
+  document.getElementById('avulsa-item-tipo').textContent=(item.Tipo||'')+(item.Categoria?' · '+item.Categoria:'')+(item.Revendedor?' · Com: '+item.Revendedor:'');
+  document.getElementById('avulsa-item-custo').textContent=fmt(item.Custo||0);
+  document.getElementById('avulsa-item-venda').textContent=fmt(item.Venda||0);
+  var cor=item.Status==='Em Estoque'?'#10b981':'#f59e0b';
+  document.getElementById('avulsa-item-status-badge').innerHTML='<span style="background:'+(item.Status==='Em Estoque'?'#f0fdf4':'#fffbeb')+';color:'+cor+';border:1px solid '+cor+';border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600;">'+item.Status+'</span>';
+  document.getElementById('avulsa-valor').value=item.Venda||'';
+  document.getElementById('avulsa-item-card').style.display='block';
+  document.getElementById('avulsa-form').style.display='block';
+  document.getElementById('avulsa-valor').focus();
+}
+
+function confirmarVendaAvulsa(){
+  if(!_avulsaItem){showToast('Nenhum produto selecionado','warning');return;}
+  var valor=parseFloat(document.getElementById('avulsa-valor').value)||0;
+  if(!valor){showToast('Informe o valor de venda','warning');return;}
+  if(!confirm('Confirmar venda de "'+(_avulsaItem.Descricao||_avulsaItem.Codigo)+'" por '+fmt(valor)+'?'))return;
+
+  var dataVenda=new Date().toISOString();
+  var idx=inventory.findIndex(function(i){return i.rowId===_avulsaItem.rowId;});
+  if(idx!==-1){
+    inventory[idx].Status='Vendido';
+    inventory[idx].Venda=valor;
+    inventory[idx].DataVenda=dataVenda;
+    if(inventory[idx].Status!=='Em Estoque')inventory[idx].Revendedor='';
+  }
+  syncDrive({action:'editInventario',rowId:_avulsaItem.rowId,status:'Vendido',venda:valor,revendedor:'',dataVenda:dataVenda});
+  fecharModal('modal-venda-avulsa');
+  renderDashboard();
+  showToast('Venda registrada — '+(_avulsaItem.Descricao||_avulsaItem.Codigo),'success');
+  _avulsaItem=null;
+}
+
 function abrirModalNovoItem(){var rowId=document.getElementById('edit-rowid');if(rowId)rowId.value='';['edit-codigo','edit-descricao','edit-tipo','edit-categoria','edit-custo','edit-venda','edit-foto'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});document.getElementById('edit-status').value='Em Estoque';document.getElementById('edit-revendedor').value='';var titulo=document.getElementById('modal-item-titulo');if(titulo)titulo.textContent='Novo Item';var btnEx=document.getElementById('btn-excluir-item');if(btnEx)btnEx.style.display='none';var ec=document.getElementById('edit-codigo');if(ec){ec.removeAttribute('readonly');ec.removeAttribute('disabled');}abrirModal('modal-item');}
 function editarItem(rowId){var item=inventory.find(function(i){return i.rowId===rowId;});if(!item)return;document.getElementById('edit-rowid').value=rowId;document.getElementById('edit-codigo').value=item.Codigo||'';document.getElementById('edit-descricao').value=item.Descricao||'';document.getElementById('edit-tipo').value=item.Tipo||'';document.getElementById('edit-categoria').value=item.Categoria||'';document.getElementById('edit-custo').value=item.Custo||'';document.getElementById('edit-venda').value=item.Venda||'';document.getElementById('edit-foto').value=item.Foto||'';var status=item.Status;if(item.Revendedor&&item.Status!=='Vendido'&&item.Status!=='Em Estoque')status='Consignado';document.getElementById('edit-status').value=status;document.getElementById('edit-revendedor').value=item.Revendedor||'';var titulo=document.getElementById('modal-item-titulo');if(titulo)titulo.textContent='Editar Item';var btnEx=document.getElementById('btn-excluir-item');if(btnEx)btnEx.style.display='';carregarCategoriasEdit();atualizarCampoRevendedorEdit();abrirModal('modal-item');}
 function carregarCategoriasEdit(){var tipo=document.getElementById('edit-tipo').value;var sel=document.getElementById('edit-categoria');var opts='<option value="">Sem categoria</option>';if(tipo&&categorias[tipo])categorias[tipo].forEach(function(c){opts+='<option value="'+c+'">'+c+'</option>';});sel.innerHTML=opts;}
