@@ -910,17 +910,23 @@ function syncDrive(payload){
   if(!scriptUrl)return;
   var el=document.getElementById('sync-status');
   if(el){el.innerHTML='<i class="fas fa-sync-alt animate-spin"></i> sincronizando';el.style.color='rgba(255,255,255,.5)';}
-
-  // GET+payload: evita problemas de CORS e bloqueio iOS Safari com POST no-cors
-  var url=scriptUrl+'?payload='+encodeURIComponent(JSON.stringify(payload));
-  fetch(url,{method:'GET',cache:'no-cache'})
-  .then(function(r){return r.json();})
-  .then(function(res){
-    showSyncStatus(res&&res.success!==false);
-    // Atualiza cache local após sync bem-sucedido
+  // POST no-cors: não lê resposta mas funciona em todos os browsers/dispositivos
+  fetch(scriptUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)})
+  .then(function(){
+    showSyncStatus(true);
     try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos}));}catch(e){}
   })
   .catch(function(){showSyncStatus(false);});
+}
+
+function syncDriveComCallback(payload, callback){
+  if(!scriptUrl)return;
+  // Para operações que precisam de retorno (ex: salvarRecibo), usa GET via payload
+  var encoded=encodeURIComponent(JSON.stringify(payload));
+  fetch(scriptUrl+'?payload='+encoded,{method:'GET',cache:'no-cache'})
+  .then(function(r){return r.text();})
+  .then(function(t){var res={};try{res=JSON.parse(t);}catch(e){}if(callback)callback(res);})
+  .catch(function(){if(callback)callback(null);});
 }
 
 // =====================================================
@@ -1397,14 +1403,6 @@ function finalizarFechamento(){var nome=document.getElementById('fechamento-reve
 
 function excluirFechamento(id){if(!confirm('Excluir este fechamento?'))return;historicFechamentos=historicFechamentos.filter(function(f){return String(f.id)!==String(id);});renderHistorico();syncDrive({action:'delFechamento',id:id});showToast('Fechamento excluido','success');}
 function renderHistorico(){var search=(document.getElementById('hist-search')?document.getElementById('hist-search').value:'').toLowerCase();var filtered=historicFechamentos.filter(function(r){return r.revendedor.toLowerCase().includes(search);});var badge=document.getElementById('badge-historico');if(badge)badge.textContent=historicFechamentos.length+' registro'+(historicFechamentos.length!==1?'s':'');var tbody=document.getElementById('tbody-historico');var empty=document.getElementById('historico-empty');if(!tbody)return;if(!filtered.length){tbody.innerHTML='';if(empty)empty.style.display='block';return;}if(empty)empty.style.display='none';var html='';filtered.forEach(function(r){var d=new Date(r.data);html+='<tr style="border-bottom:1px solid var(--gray-200);" onmouseover="this.style.background=\'var(--gray-50)\'" onmouseout="this.style.background=\'white\'"><td style="padding:10px 14px;white-space:nowrap;"><div style="font-size:13px;font-weight:600;color:var(--gray-800);">'+d.toLocaleDateString('pt-BR')+'</div><div style="font-size:11px;color:var(--gray-400);">'+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+'</div></td><td style="padding:10px 14px;"><div style="font-size:13px;font-weight:600;">'+r.revendedor+'</div><div style="font-size:11px;color:var(--gray-400);">'+r.percentual+'% comissão</div></td><td style="padding:10px 14px;text-align:center;font-size:13px;font-weight:600;">'+r.qtdConsignados+'</td><td style="padding:10px 14px;text-align:center;font-size:13px;font-weight:700;color:#059669;">'+r.qtdVendidos+'</td><td style="padding:10px 14px;text-align:center;font-size:13px;color:var(--gray-500);">'+r.qtdDevolvidos+'</td><td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:700;color:#b45309;">'+fmt(r.valorVendido)+'</td><td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:600;color:#6d28d9;">'+fmt(r.comissao)+'</td><td style="padding:10px 14px;text-align:right;font-size:14px;font-weight:700;color:#059669;">'+fmt(r.lucro)+'</td><td style="padding:10px 14px;text-align:center;"><button onclick="verDetalhesFechamento('+r.id+')" style="background:none;border:1px solid var(--gray-300);padding:3px 10px;border-radius:5px;font-size:11px;color:var(--primary);cursor:pointer;"><i class="fas fa-eye" style="margin-right:4px;"></i>Ver</button> <button onclick=\"excluirFechamento('+r.id+'  )\" style=\"background:none;border:1px solid #fca5a5;padding:3px 8px;border-radius:5px;font-size:11px;color:#dc2626;cursor:pointer;\"><i class=\"fas fa-trash\"></i></button></td></tr>';});var tv=filtered.reduce(function(s,r){return s+r.valorVendido;},0);var tc=filtered.reduce(function(s,r){return s+r.comissao;},0);var tl=filtered.reduce(function(s,r){return s+r.lucro;},0);var tvv=filtered.reduce(function(s,r){return s+r.qtdVendidos;},0);html+='<tr style="background:var(--gray-50);border-top:2px solid var(--gray-200);"><td colspan="2" style="padding:10px 14px;font-size:12px;font-weight:600;color:var(--gray-600);">'+filtered.length+' fechamento'+(filtered.length!==1?'s':'')+'</td><td colspan="2" style="padding:10px 14px;text-align:center;font-size:13px;font-weight:700;color:#059669;">'+tvv+' vendidos</td><td></td><td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:700;color:#b45309;">'+fmt(tv)+'</td><td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:700;color:#6d28d9;">'+fmt(tc)+'</td><td style="padding:10px 14px;text-align:right;font-size:14px;font-weight:800;color:#059669;">'+fmt(tl)+'</td><td></td></tr>';tbody.innerHTML=html;}
-function syncDriveComCallback(payload, callback){
-  if(!scriptUrl)return;
-  var url=scriptUrl+'?payload='+encodeURIComponent(JSON.stringify(payload));
-  fetch(url,{method:'GET',cache:'no-cache'})
-  .then(function(r){return r.json();})
-  .then(function(res){if(callback)callback(res);})
-  .catch(function(){if(callback)callback(null);});
-}
 
 function verDetalhesFechamento(id){
   var r=historicFechamentos.find(function(x){return x.id===id;});
