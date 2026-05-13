@@ -883,7 +883,8 @@ function loadData() {
     showSyncStatus(true);
     showToast('✅ '+inventory.length+' produto(s) carregado(s)','success');
   })
-  .catch(function(){
+  .catch(function(e){
+    console.warn('loadData erro:', e);
     showSyncStatus(false);
     if(!cache)showToast('⚠️ Sem conexão com o Drive','warning');
   });
@@ -910,13 +911,17 @@ function syncDrive(payload){
   if(!scriptUrl)return;
   var el=document.getElementById('sync-status');
   if(el){el.innerHTML='<i class="fas fa-sync-alt animate-spin"></i> sincronizando';el.style.color='rgba(255,255,255,.5)';}
-  // POST no-cors: não lê resposta mas funciona em todos os browsers/dispositivos
   fetch(scriptUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)})
   .then(function(){
+    // no-cors sempre resolve — resposta opaca é comportamento normal
     showSyncStatus(true);
     try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos}));}catch(e){}
   })
-  .catch(function(){showSyncStatus(false);});
+  .catch(function(e){
+    // Só chega aqui se houver erro de rede real (offline, DNS, etc)
+    console.warn('syncDrive erro de rede:', e);
+    showSyncStatus(false);
+  });
 }
 
 function syncDriveComCallback(payload, callback){
