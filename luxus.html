@@ -215,10 +215,60 @@ body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.75rem
 
 <!-- OPERAÇÕES -->
 <div id="content-entrada" class="tab-content">
-  <div style="display:flex;gap:0;margin-bottom:1.25rem;background:var(--white);border:1px solid var(--gray-200);border-radius:8px;overflow:hidden;width:fit-content;">
+  <div style="display:flex;gap:0;margin-bottom:1.25rem;background:var(--white);border:1px solid var(--gray-200);border-radius:8px;overflow:hidden;width:fit-content;flex-wrap:wrap;">
+    <button id="subtab-entrega-btn"    onclick="switchSubtab('entrega')"    style="padding:8px 20px;font-size:13px;font-weight:500;background:transparent;color:var(--gray-600);border:none;cursor:pointer;"><i class="fas fa-hand-holding" style="margin-right:6px;"></i>Entrega</button>
     <button id="subtab-entrada-btn"    onclick="switchSubtab('entrada')"    style="padding:8px 20px;font-size:13px;font-weight:600;background:var(--primary);color:#fff;border:none;cursor:pointer;"><i class="fas fa-box-open" style="margin-right:6px;"></i>Entrada de Produto</button>
     <button id="subtab-fechamento-btn" onclick="switchSubtab('fechamento')" style="padding:8px 20px;font-size:13px;font-weight:500;background:transparent;color:var(--gray-600);border:none;cursor:pointer;"><i class="fas fa-calculator" style="margin-right:6px;"></i>Fechamento</button>
+    <button id="subtab-financeiro-btn" onclick="switchSubtab('financeiro')" style="padding:8px 20px;font-size:13px;font-weight:500;background:transparent;color:var(--gray-600);border:none;cursor:pointer;"><i class="fas fa-dollar-sign" style="margin-right:6px;"></i>Financeiro</button>
     <button id="subtab-historico-btn"  onclick="switchSubtab('historico')"  style="padding:8px 20px;font-size:13px;font-weight:500;background:transparent;color:var(--gray-600);border:none;cursor:pointer;"><i class="fas fa-history" style="margin-right:6px;"></i>Histórico</button>
+  </div>
+
+  <!-- ENTREGA -->
+  <div id="subtab-entrega" class="grid-entrada" style="display:none;grid-template-columns:360px 1fr;gap:1.25rem;align-items:start;">
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+      <div class="card-light" style="padding:1.25rem;">
+        <h3 class="section-title"><i class="fas fa-hand-holding"></i>Nova Entrega</h3>
+        <div style="display:flex;flex-direction:column;gap:.875rem;">
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Revendedor</label>
+            <select id="entrega-revendedor" onchange="onChangeEntregaRevendedor()"><option value="">Escolha...</option></select>
+          </div>
+          <div id="entrega-link-box" style="display:none;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:.75rem;">
+            <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px;">Link da maleta do revendedor</div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input id="entrega-link" readonly style="font-size:11px;flex:1;background:white!important;">
+              <button onclick="copiarLink()" class="btn-secondary" style="padding:6px 10px;font-size:12px;" title="Copiar link"><i class="fas fa-copy"></i></button>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;"><i class="fas fa-barcode" style="margin-right:4px;"></i>Bipe os itens da maleta</label>
+            <input type="text" id="entrega-codigo" class="barcode-input" placeholder="Código do produto — Enter" onkeydown="if(event.key==='Enter')adicionarEntrega()">
+          </div>
+          <button onclick="adicionarEntrega()" class="btn-secondary" style="width:100%;"><i class="fas fa-plus" style="margin-right:6px;"></i>Adicionar item</button>
+        </div>
+      </div>
+      <div class="card-light" style="padding:1.25rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <h4 style="font-size:12px;font-weight:600;color:var(--gray-700);">Itens na maleta <span id="entrega-count" style="background:var(--primary);color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;">0</span></h4>
+          <button onclick="limparEntrega()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--gray-400);" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--gray-400)'"><i class="fas fa-trash" style="margin-right:4px;"></i>Limpar</button>
+        </div>
+        <div id="lista-entrega" style="display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto;"></div>
+        <p id="lista-entrega-empty" style="font-size:12px;color:var(--gray-400);text-align:center;padding:12px 0;">Nenhum item bipado</p>
+        <div id="entrega-resumo" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--gray-200);">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+            <span style="color:var(--gray-600);">Valor total (venda)</span>
+            <span id="entrega-valor-total" style="font-weight:700;color:var(--primary);">R$ 0,00</span>
+          </div>
+        </div>
+      </div>
+      <button onclick="confirmarEntrega()" class="btn-primary" style="width:100%;padding:.75rem;"><i class="fas fa-paper-plane" style="margin-right:6px;"></i>Confirmar entrega e gerar documento</button>
+    </div>
+    <div class="card-light" style="padding:1.25rem;">
+      <h3 class="section-title"><i class="fas fa-history"></i>Últimas Entregas</h3>
+      <div id="lista-ultimas-entregas" style="display:flex;flex-direction:column;gap:8px;max-height:580px;overflow-y:auto;">
+        <p style="font-size:13px;color:var(--gray-400);text-align:center;padding:2rem 0;">Nenhuma entrega registrada.</p>
+      </div>
+    </div>
   </div>
   <div id="subtab-entrada" class="grid-entrada" style="display:grid;grid-template-columns:360px 1fr;gap:1.25rem;align-items:start;">
     <div class="card-light" style="padding:1.25rem;">
@@ -277,6 +327,27 @@ body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.75rem
         <div style="display:flex;justify-content:space-between;padding:11px 12px;background:#d1fae5;border-radius:6px;border:2px solid #6ee7b7;"><span style="font-size:13px;font-weight:700;color:#065f46;">Lucro Luxus</span><span id="resumo-lucro" style="font-size:1.25rem;font-weight:800;color:#059669;">R$ 0,00</span></div>
       </div>
       <button onclick="finalizarFechamento()" class="btn-primary" style="width:100%;padding:.7rem;"><i class="fas fa-check-double" style="margin-right:6px;"></i>Finalizar Fechamento</button>
+      <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--gray-200);">
+        <h4 style="font-size:12px;font-weight:600;color:var(--gray-700);margin-bottom:.75rem;"><i class="fas fa-money-bill-wave" style="color:#10b981;margin-right:6px;"></i>Condições de Pagamento</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem;">
+          <div>
+            <label style="font-size:11px;color:var(--gray-500);display:block;margin-bottom:3px;">Parcelas</label>
+            <select id="fechamento-parcelas" onchange="calcularParcelas()" style="font-size:13px;">
+              <option value="1">À vista</option>
+              <option value="2">2x</option>
+              <option value="3">3x</option>
+              <option value="4">4x</option>
+              <option value="5">5x</option>
+              <option value="6">6x</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--gray-500);display:block;margin-bottom:3px;">Valor por parcela</label>
+            <input type="number" id="fechamento-valor-parcela" step="0.01" placeholder="R$ 0,00" style="font-size:13px;" oninput="calcularTotalParcelas()">
+          </div>
+        </div>
+        <div id="fechamento-parcelas-preview" style="font-size:12px;color:var(--gray-500);background:var(--gray-50);border-radius:6px;padding:.5rem .75rem;display:none;"></div>
+      </div>
     </div>
     <div class="card-light" style="padding:1.25rem;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--gray-200);">
@@ -317,6 +388,29 @@ body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.75rem
         </table>
       </div>
       <div id="historico-empty" style="text-align:center;padding:3rem;display:none;"><i class="fas fa-history" style="font-size:2.5rem;color:var(--gray-300);display:block;margin-bottom:12px;"></i><p style="font-size:14px;color:var(--gray-400);">Nenhum fechamento registrado ainda</p></div>
+    </div>
+  </div>
+
+  <!-- FINANCEIRO -->
+  <div id="subtab-financeiro" style="display:none;">
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem;">
+      <div class="stat-card" style="flex:1;min-width:160px;">
+        <div style="font-size:12px;color:var(--gray-500);">Total em aberto</div>
+        <div id="fin-total-aberto" style="font-size:1.5rem;font-weight:700;color:#ef4444;">R$ 0,00</div>
+      </div>
+      <div class="stat-card" style="flex:1;min-width:160px;">
+        <div style="font-size:12px;color:var(--gray-500);">Revendedores com dívida</div>
+        <div id="fin-count-devedores" style="font-size:1.5rem;font-weight:700;color:#f59e0b;">0</div>
+      </div>
+      <div class="stat-card" style="flex:1;min-width:160px;">
+        <div style="font-size:12px;color:var(--gray-500);">Total recebido</div>
+        <div id="fin-total-recebido" style="font-size:1.5rem;font-weight:700;color:#10b981;">R$ 0,00</div>
+      </div>
+    </div>
+    <div id="fin-lista" style="display:flex;flex-direction:column;gap:1rem;"></div>
+    <div id="fin-empty" style="text-align:center;padding:3rem;display:none;">
+      <i class="fas fa-check-circle" style="font-size:2.5rem;color:#10b981;display:block;margin-bottom:12px;"></i>
+      <p style="font-size:14px;color:var(--gray-400);">Nenhuma dívida em aberto</p>
     </div>
   </div>
 </div>
@@ -591,6 +685,85 @@ body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.75rem
     <div style="display:flex;gap:.75rem;padding-top:1rem;border-top:1px solid var(--gray-200);">
       <button onclick="restaurarColunasPadrao()" class="btn-secondary" style="flex:1;font-size:13px;">Restaurar padrão</button>
       <button onclick="aplicarColunas()" class="btn-primary" style="flex:1;"><i class="fas fa-check" style="margin-right:6px;"></i>Aplicar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ENTREGA -->
+<div id="modal-entrega" class="modal-overlay">
+  <div class="modal-content" style="max-width:640px;width:95%;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="font-size:1.1rem;font-weight:700;color:var(--gray-800);"><i class="fas fa-hand-holding" style="color:var(--primary);margin-right:8px;"></i>Documento de Entrega</h3>
+      <button onclick="fecharModal('modal-entrega')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="entrega-doc" style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:1.25rem;margin-bottom:1rem;font-size:13px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--gray-200);">
+        <div>
+          <div id="entrega-doc-titulo" style="font-size:1.1rem;font-weight:700;color:var(--gray-800);"></div>
+          <div id="entrega-doc-subtitulo" style="font-size:11px;color:var(--gray-500);"></div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;color:var(--gray-500);">Entrega</div>
+          <div id="entrega-doc-data" style="font-size:12px;font-weight:600;color:var(--gray-700);"></div>
+        </div>
+      </div>
+      <div style="margin-bottom:.75rem;">
+        <div style="font-size:11px;color:var(--gray-500);margin-bottom:2px;">Revendedor</div>
+        <div id="entrega-doc-rev" style="font-weight:600;color:var(--gray-800);font-size:14px;"></div>
+      </div>
+      <div id="entrega-doc-itens-wrap" style="margin-bottom:.75rem;">
+        <div style="font-size:11px;font-weight:600;color:var(--gray-500);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Itens entregues</div>
+        <div id="entrega-doc-itens" style="display:flex;flex-direction:column;gap:4px;"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:.75rem;padding-top:.5rem;border-top:1px solid var(--gray-200);">
+          <span style="font-size:12px;font-weight:600;color:var(--gray-600);">Total de itens</span>
+          <span id="entrega-doc-total" style="font-size:13px;font-weight:700;color:var(--primary);"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;">
+          <span style="font-size:12px;color:var(--gray-500);">Valor total (venda)</span>
+          <span id="entrega-doc-valor" style="font-size:13px;font-weight:700;color:#10b981;"></span>
+        </div>
+      </div>
+      <div style="margin-top:1rem;padding-top:.75rem;border-top:1px dashed var(--gray-300);">
+        <div style="font-size:11px;color:var(--gray-400);margin-bottom:4px;">Assinatura do revendedor — confirmo o recebimento dos itens acima</div>
+        <img id="entrega-ass-img" style="display:none;max-height:60px;border-bottom:1px solid var(--gray-300);">
+        <div id="entrega-ass-vazio" style="height:40px;border-bottom:1px solid var(--gray-800);"></div>
+        <div id="entrega-ass-nome" style="font-size:10px;color:var(--gray-400);margin-top:4px;"></div>
+      </div>
+    </div>
+    <div style="margin-bottom:.75rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <label style="font-size:13px;font-weight:500;color:var(--gray-700);">Assine abaixo</label>
+        <button onclick="limparAssEntrega()" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--gray-400);" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--gray-400)'"><i class="fas fa-undo" style="margin-right:4px;"></i>Limpar</button>
+      </div>
+      <canvas id="canvas-entrega" style="width:100%;height:110px;border:1.5px solid var(--gray-300);border-radius:8px;background:white;touch-action:none;cursor:crosshair;display:block;"></canvas>
+    </div>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+      <button onclick="fecharModal('modal-entrega')" class="btn-secondary" style="flex:1;min-width:120px;">Fechar</button>
+      <button onclick="compartilharEntregaWhatsApp()" class="btn-secondary" style="flex:1;min-width:120px;color:#25D366;border-color:#25D366;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='white'"><i class="fab fa-whatsapp" style="margin-right:6px;"></i>WhatsApp</button>
+      <button onclick="baixarEntrega()" class="btn-primary" style="flex:1;min-width:120px;"><i class="fas fa-download" style="margin-right:6px;"></i>Baixar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PAGAMENTO PARCELA -->
+<div id="modal-pagamento" class="modal-overlay">
+  <div class="modal-content" style="max-width:420px;width:95%;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="font-size:1.1rem;font-weight:700;color:var(--gray-800);">Registrar Pagamento</h3>
+      <button onclick="fecharModal('modal-pagamento')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="pagamento-info" style="background:var(--gray-50);border-radius:8px;padding:.75rem;margin-bottom:.75rem;font-size:13px;"></div>
+    <div style="margin-bottom:.75rem;">
+      <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Valor recebido (R$)</label>
+      <input type="number" id="pagamento-valor" step="0.01" placeholder="0,00" style="margin-top:4px;">
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Observação (opcional)</label>
+      <input type="text" id="pagamento-obs" placeholder="Ex: Pago via Pix" style="margin-top:4px;">
+    </div>
+    <div style="display:flex;gap:.75rem;">
+      <button onclick="fecharModal('modal-pagamento')" class="btn-secondary" style="flex:1;">Cancelar</button>
+      <button onclick="confirmarPagamento()" class="btn-primary" style="flex:1;"><i class="fas fa-check" style="margin-right:6px;"></i>Confirmar</button>
     </div>
   </div>
 </div>
@@ -949,15 +1122,371 @@ function switchTab(tab){
   else if(tab==='relatorio'){initRelatorio();}
 }
 
+// =====================================================
+// ENTREGA
+// =====================================================
+var itensEntrega = [];
+var _entregaAss = null, _entregaAssCtx = null, _entregaAssDesenhando = false;
+var _entregaDoc = null;
+
+function onChangeEntregaRevendedor() {
+  var sel = document.getElementById('entrega-revendedor');
+  var revNome = sel.options[sel.selectedIndex]?.text || '';
+  var revId = sel.value;
+  itensEntrega = [];
+  renderListaEntrega();
+  var box = document.getElementById('entrega-link-box');
+  var linkEl = document.getElementById('entrega-link');
+  if (revId && box && linkEl) {
+    var base = window.location.href.replace('luxus.html', 'revendedor.html').split('?')[0].split('#')[0];
+    var url = base + '?rev=' + revId + '&script=' + encodeURIComponent(scriptUrl);
+    linkEl.value = url;
+    box.style.display = 'block';
+  } else if (box) {
+    box.style.display = 'none';
+  }
+}
+
+function copiarLink() {
+  var el = document.getElementById('entrega-link');
+  if (!el) return;
+  navigator.clipboard.writeText(el.value).then(function() { showToast('Link copiado!', 'success'); });
+}
+
+function adicionarEntrega() {
+  var codigo = (document.getElementById('entrega-codigo').value || '').trim().toUpperCase();
+  if (!codigo) return;
+  var revSel = document.getElementById('entrega-revendedor');
+  if (!revSel.value) { showToast('Selecione o revendedor primeiro', 'warning'); return; }
+  var item = inventory.find(function(i) { return (i.Codigo || '').toUpperCase() === codigo; });
+  if (!item) { showToast('Código não encontrado: ' + codigo, 'warning'); document.getElementById('entrega-codigo').value = ''; return; }
+  if (item.Status !== 'Em Estoque') { showToast('Item não está em estoque: ' + codigo, 'warning'); document.getElementById('entrega-codigo').value = ''; return; }
+  if (itensEntrega.find(function(i) { return i.rowId === item.rowId; })) { showToast('Item já adicionado', 'warning'); document.getElementById('entrega-codigo').value = ''; return; }
+  itensEntrega.push(item);
+  document.getElementById('entrega-codigo').value = '';
+  document.getElementById('entrega-codigo').focus();
+  renderListaEntrega();
+}
+
+function renderListaEntrega() {
+  var lista = document.getElementById('lista-entrega');
+  var empty = document.getElementById('lista-entrega-empty');
+  var count = document.getElementById('entrega-count');
+  var resumo = document.getElementById('entrega-resumo');
+  var valorTotal = document.getElementById('entrega-valor-total');
+  count.textContent = itensEntrega.length;
+  if (itensEntrega.length === 0) { lista.innerHTML = ''; empty.style.display = 'block'; resumo.style.display = 'none'; return; }
+  empty.style.display = 'none';
+  resumo.style.display = 'block';
+  var total = itensEntrega.reduce(function(s, i) { return s + (parseFloat(i.Venda) || 0); }, 0);
+  valorTotal.textContent = 'R$ ' + total.toLocaleString('pt-BR', {minimumFractionDigits:2});
+  lista.innerHTML = itensEntrega.map(function(item, idx) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;">'
+      + '<span style="font-family:monospace;font-size:11px;color:var(--primary);font-weight:600;">' + item.Codigo + '</span>'
+      + '<span style="flex:1;font-size:12px;color:var(--gray-700);">' + (item.Descricao || '—') + '</span>'
+      + '<span style="font-size:11px;color:#10b981;font-weight:600;">R$' + (parseFloat(item.Venda)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span>'
+      + '<button onclick="removerEntrega(' + idx + ')" style="background:none;border:none;cursor:pointer;color:var(--gray-300);" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'var(--gray-300)\'"><i class="fas fa-times"></i></button>'
+      + '</div>';
+  }).join('');
+}
+
+function removerEntrega(idx) { itensEntrega.splice(idx, 1); renderListaEntrega(); }
+function limparEntrega() { itensEntrega = []; renderListaEntrega(); }
+
+function confirmarEntrega() {
+  var revSel = document.getElementById('entrega-revendedor');
+  if (!revSel.value) { showToast('Selecione o revendedor', 'warning'); return; }
+  if (itensEntrega.length === 0) { showToast('Adicione ao menos um item', 'warning'); return; }
+  var revNome = revSel.options[revSel.selectedIndex].text;
+  if (!confirm('Confirmar entrega de ' + itensEntrega.length + ' item(s) para ' + revNome + '?')) return;
+
+  var dataEntrega = new Date().toISOString();
+  // Atualiza inventário local
+  itensEntrega.forEach(function(item) {
+    var idx = inventory.findIndex(function(i) { return i.rowId === item.rowId; });
+    if (idx !== -1) { inventory[idx].Status = 'Consignado'; inventory[idx].Revendedor = revNome; }
+    syncDrive({ action: 'editInventario', rowId: item.rowId, status: 'Consignado', revendedor: revNome });
+  });
+
+  // Monta documento
+  _entregaDoc = {
+    id: Date.now(),
+    data: dataEntrega,
+    revendedor: revNome,
+    revendedorId: revSel.value,
+    itens: itensEntrega.slice(),
+    totalItens: itensEntrega.length,
+    valorTotal: itensEntrega.reduce(function(s, i) { return s + (parseFloat(i.Venda)||0); }, 0)
+  };
+
+  // Salva no Drive
+  syncDrive({ action: 'addEntrega', entrega: _entregaDoc });
+
+  abrirModalEntrega(_entregaDoc);
+  itensEntrega = [];
+  renderListaEntrega();
+  renderDashboard();
+  renderUltimasEntregas();
+  showToast('Entrega confirmada!', 'success');
+}
+
+function abrirModalEntrega(doc) {
+  document.getElementById('entrega-doc-titulo').textContent = localStorage.getItem('luxus_titulo') || 'LUXUS';
+  document.getElementById('entrega-doc-subtitulo').textContent = localStorage.getItem('luxus_subtitulo') || 'JOIAS & PERFUMES';
+  document.getElementById('entrega-doc-data').textContent = new Date(doc.data).toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('entrega-doc-rev').textContent = doc.revendedor;
+  document.getElementById('entrega-doc-total').textContent = doc.totalItens + ' item(s)';
+  document.getElementById('entrega-doc-valor').textContent = 'R$ ' + doc.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits:2});
+  document.getElementById('entrega-ass-nome').textContent = doc.revendedor;
+  document.getElementById('entrega-ass-img').style.display = 'none';
+  document.getElementById('entrega-ass-vazio').style.display = 'block';
+  var itensEl = document.getElementById('entrega-doc-itens');
+  itensEl.innerHTML = doc.itens.map(function(i) {
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 6px;background:white;border:1px solid var(--gray-200);border-radius:4px;">'
+      + '<span style="font-family:monospace;font-size:11px;color:var(--primary);margin-right:8px;">' + i.Codigo + '</span>'
+      + '<span style="flex:1;font-size:12px;color:var(--gray-700);">' + (i.Descricao||'—') + '</span>'
+      + '<span style="font-size:11px;color:var(--gray-500);">' + (i.Tipo||'') + (i.Categoria?' · '+i.Categoria:'') + '</span>'
+      + '</div>';
+  }).join('');
+  _entregaAss = null;
+  abrirModal('modal-entrega');
+  setTimeout(initCanvasEntrega, 150);
+}
+
+function initCanvasEntrega() {
+  var c = document.getElementById('canvas-entrega');
+  if (!c) return;
+  var rect = c.getBoundingClientRect();
+  c.width = rect.width * 2; c.height = rect.height * 2;
+  _entregaAssCtx = c.getContext('2d');
+  _entregaAssCtx.scale(2,2);
+  _entregaAssCtx.strokeStyle = '#1e293b'; _entregaAssCtx.lineWidth = 2; _entregaAssCtx.lineCap = 'round'; _entregaAssCtx.lineJoin = 'round';
+  function pos(e) { var r=c.getBoundingClientRect(),s=e.touches?e.touches[0]:e; return{x:s.clientX-r.left,y:s.clientY-r.top}; }
+  c.onmousedown = c.ontouchstart = function(e){e.preventDefault();_entregaAssDesenhando=true;var p=pos(e);_entregaAssCtx.beginPath();_entregaAssCtx.moveTo(p.x,p.y);};
+  c.onmousemove = c.ontouchmove = function(e){e.preventDefault();if(!_entregaAssDesenhando)return;var p=pos(e);_entregaAssCtx.lineTo(p.x,p.y);_entregaAssCtx.stroke();};
+  c.onmouseup = c.ontouchend = function(){_entregaAssDesenhando=false;_entregaAss=c.toDataURL('image/png');};
+}
+
+function limparAssEntrega() {
+  var c = document.getElementById('canvas-entrega');
+  if (c && _entregaAssCtx) _entregaAssCtx.clearRect(0,0,c.width,c.height);
+  _entregaAss = null;
+}
+
+function baixarEntrega() {
+  if (_entregaAss) {
+    var img = document.getElementById('entrega-ass-img');
+    var vazio = document.getElementById('entrega-ass-vazio');
+    img.src = _entregaAss; img.style.display = 'block'; vazio.style.display = 'none';
+  }
+  var doc = _entregaDoc;
+  if (!doc) return;
+  // Gera canvas do documento
+  var W=640, H=400+doc.itens.length*28;
+  var c = document.createElement('canvas');
+  c.width=W*2; c.height=H*2;
+  var ctx=c.getContext('2d'); ctx.scale(2,2);
+  ctx.fillStyle='#f8fafc'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#1e40af'; ctx.fillRect(0,0,W,48);
+  ctx.fillStyle='#fff'; ctx.font='bold 15px sans-serif'; ctx.fillText(localStorage.getItem('luxus_titulo')||'LUXUS',16,30);
+  ctx.font='11px sans-serif'; ctx.fillStyle='rgba(255,255,255,.7)'; ctx.fillText('Documento de Entrega',16,44);
+  ctx.textAlign='right'; ctx.fillStyle='rgba(255,255,255,.8)';
+  ctx.fillText(new Date(doc.data).toLocaleDateString('pt-BR'),W-16,30);
+  ctx.fillText(doc.revendedor,W-16,44); ctx.textAlign='left';
+  var y=70;
+  ctx.fillStyle='#64748b'; ctx.font='11px sans-serif'; ctx.fillText('Revendedor',16,y);
+  ctx.fillStyle='#1f2937'; ctx.font='bold 14px sans-serif'; ctx.fillText(doc.revendedor,16,y+16); y+=40;
+  ctx.fillStyle='#64748b'; ctx.font='bold 10px sans-serif'; ctx.fillText('ITENS ENTREGUES',16,y); y+=14;
+  doc.itens.forEach(function(item) {
+    ctx.fillStyle='#fff'; ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=1;
+    roundRect(ctx,16,y,W-32,22,4); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#1e40af'; ctx.font='bold 10px sans-serif'; ctx.fillText(item.Codigo,24,y+15);
+    ctx.fillStyle='#334155'; ctx.font='12px sans-serif'; ctx.fillText(item.Descricao||'—',90,y+15);
+    var cat=[item.Tipo,item.Categoria].filter(Boolean).join(' · ');
+    ctx.fillStyle='#94a3b8'; ctx.font='10px sans-serif'; ctx.textAlign='right'; ctx.fillText(cat,W-24,y+15); ctx.textAlign='left';
+    y+=26;
+  });
+  y+=10;
+  ctx.fillStyle='#e2e8f0'; ctx.fillRect(16,y,W-32,1); y+=14;
+  ctx.fillStyle='#334155'; ctx.font='bold 12px sans-serif'; ctx.fillText('Total: '+doc.totalItens+' item(s)',16,y);
+  ctx.textAlign='right'; ctx.fillStyle='#10b981'; ctx.fillText('R$ '+doc.valorTotal.toLocaleString('pt-BR',{minimumFractionDigits:2}),W-16,y); ctx.textAlign='left'; y+=30;
+  ctx.strokeStyle='#cbd5e1'; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(16,y); ctx.lineTo(W-16,y); ctx.stroke(); ctx.setLineDash([]); y+=10;
+  ctx.fillStyle='#94a3b8'; ctx.font='10px sans-serif'; ctx.fillText('Assinatura do revendedor — confirmo o recebimento',16,y+12); y+=26;
+  if (_entregaAss) {
+    var imgAss=new Image();
+    imgAss.onload=function(){ctx.drawImage(imgAss,16,y,200,50);finalDownloadEntrega(c,doc);};
+    imgAss.src=_entregaAss; return;
+  }
+  ctx.strokeStyle='#1f2937'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(16,y+50); ctx.lineTo(240,y+50); ctx.stroke();
+  ctx.fillStyle='#334155'; ctx.font='11px sans-serif'; ctx.fillText(doc.revendedor,16,y+64);
+  finalDownloadEntrega(c,doc);
+}
+
+function finalDownloadEntrega(c,doc) {
+  var dataUrl=c.toDataURL('image/png');
+  var d=new Date(doc.data);
+  var nome='entrega_'+d.getFullYear()+(d.getMonth()+1).toString().padStart(2,'0')+d.getDate().toString().padStart(2,'0')+'_'+doc.revendedor.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'')+'.png';
+  syncDrive({action:'salvarRecibo',nomeArquivo:nome,imagemBase64:dataUrl});
+  var a=document.createElement('a'); a.download=nome; a.href=dataUrl; a.click();
+  showToast('Documento salvo!','success');
+}
+
+function compartilharEntregaWhatsApp() {
+  var doc=_entregaDoc; if(!doc)return;
+  var rev=revendedores.find(function(r){return r.Nome===doc.revendedor;});
+  var contato=rev&&rev.Contato?rev.Contato.replace(/\D/g,''):'';
+  var msg='*Documento de Entrega — '+(localStorage.getItem('luxus_titulo')||'LUXUS')+'*\n\n'
+    +'Revendedor: '+doc.revendedor+'\n'
+    +'Data: '+new Date(doc.data).toLocaleDateString('pt-BR')+'\n'
+    +'Total de itens: '+doc.totalItens+'\n'
+    +'Valor total: R$ '+doc.valorTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})+'\n\n'
+    +'*Itens:*\n'+doc.itens.map(function(i){return '  '+i.Codigo+' — '+(i.Descricao||'—');}).join('\n');
+  window.open('https://wa.me/'+(contato?'55'+contato:'')+'?text='+encodeURIComponent(msg),'_blank');
+}
+
+function renderUltimasEntregas() {
+  var el=document.getElementById('lista-ultimas-entregas'); if(!el)return;
+  var entregas=(historicFechamentos||[]).filter(function(f){return f.tipo==='entrega';}).slice(0,20);
+  if(!entregas.length){el.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:2rem 0;">Nenhuma entrega registrada.</p>';return;}
+  el.innerHTML=entregas.map(function(e){
+    return '<div style="display:flex;align-items:center;gap:10px;padding:.75rem;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;">'
+      +'<div style="width:34px;height:34px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;color:#185FA5;flex-shrink:0;">'+(e.revendedor||'?').slice(0,2).toUpperCase()+'</div>'
+      +'<div style="flex:1;"><div style="font-size:13px;font-weight:500;">'+e.revendedor+'</div><div style="font-size:11px;color:var(--gray-500);">'+new Date(e.data).toLocaleDateString('pt-BR')+' · '+e.totalItens+' item(s)</div></div>'
+      +'<span style="font-size:12px;font-weight:600;color:#10b981;">R$ '+((e.valorTotal||0).toLocaleString('pt-BR',{minimumFractionDigits:2}))+'</span>'
+      +'</div>';
+  }).join('');
+}
+
+// =====================================================
+// PARCELAS NO FECHAMENTO
+// =====================================================
+function calcularParcelas() {
+  var n=parseInt(document.getElementById('fechamento-parcelas').value)||1;
+  var resumoLucro=document.getElementById('resumo-lucro');
+  if(!resumoLucro)return;
+  var lucro=parseFloat(resumoLucro.textContent.replace(/[^0-9,]/g,'').replace(',','.'))||0;
+  if(lucro>0&&n>1){
+    var parc=(lucro/n);
+    document.getElementById('fechamento-valor-parcela').value=parc.toFixed(2);
+    atualizarPreviewParcelas(n,parc);
+  }
+}
+
+function calcularTotalParcelas() {
+  var n=parseInt(document.getElementById('fechamento-parcelas').value)||1;
+  var v=parseFloat(document.getElementById('fechamento-valor-parcela').value)||0;
+  atualizarPreviewParcelas(n,v);
+}
+
+function atualizarPreviewParcelas(n,v) {
+  var el=document.getElementById('fechamento-parcelas-preview');
+  if(!el)return;
+  if(n<=1){el.style.display='none';return;}
+  el.style.display='block';
+  el.textContent=n+'x de R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2})+' = R$ '+(n*v).toLocaleString('pt-BR',{minimumFractionDigits:2})+' total';
+}
+
+// =====================================================
+// FINANCEIRO
+// =====================================================
+var _pagamentoAtual = null;
+
+function renderFinanceiro() {
+  var devedores = revendedores.map(function(r) {
+    var dividas = (r.dividas || []).filter(function(d) { return !d.pago; });
+    var totalAberto = dividas.reduce(function(s,d){ return s + (parseFloat(d.valor)||0); }, 0);
+    var totalPago = (r.dividas||[]).filter(function(d){return d.pago;}).reduce(function(s,d){return s+(parseFloat(d.valorPago)||0);},0);
+    return { rev: r, dividas: dividas, totalAberto: totalAberto, totalPago: totalPago };
+  }).filter(function(x) { return x.dividas.length > 0 || (x.rev.dividas||[]).some(function(d){return d.pago;}); });
+
+  var totalGeral = devedores.reduce(function(s,x){return s+x.totalAberto;},0);
+  var totalRecebido = devedores.reduce(function(s,x){return s+x.totalPago;},0);
+  var countDev = devedores.filter(function(x){return x.totalAberto>0;}).length;
+
+  document.getElementById('fin-total-aberto').textContent = 'R$ '+totalGeral.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  document.getElementById('fin-count-devedores').textContent = countDev;
+  document.getElementById('fin-total-recebido').textContent = 'R$ '+totalRecebido.toLocaleString('pt-BR',{minimumFractionDigits:2});
+
+  var lista = document.getElementById('fin-lista');
+  var empty = document.getElementById('fin-empty');
+  if (!devedores.length) { lista.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  lista.innerHTML = devedores.map(function(x) {
+    var r=x.rev;
+    var html='<div class="card-light" style="padding:1.25rem;">'
+      +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;">'
+      +'<div style="width:40px;height:40px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#185FA5;flex-shrink:0;">'+(r.Nome||'?').slice(0,2).toUpperCase()+'</div>'
+      +'<div style="flex:1;"><div style="font-weight:600;font-size:14px;">'+r.Nome+'</div><div style="font-size:12px;color:var(--gray-500);">'+r.Contato+'</div></div>'
+      +'<div style="text-align:right;"><div style="font-size:11px;color:var(--gray-500);">Em aberto</div>'
+      +(x.totalAberto>0?'<div style="font-size:1.1rem;font-weight:700;color:#ef4444;">R$ '+x.totalAberto.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>':'<div style="font-size:1.1rem;font-weight:700;color:#10b981;">Quitado ✓</div>')
+      +'</div></div>';
+
+    if ((r.dividas||[]).length) {
+      html += '<div style="display:flex;flex-direction:column;gap:6px;">';
+      (r.dividas||[]).forEach(function(d,di) {
+        var pago=d.pago;
+        html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:'+(pago?'#f0fdf4':'#fef2f2')+';border:1px solid '+(pago?'#bbf7d0':'#fecaca')+';border-radius:6px;">'
+          +'<i class="fas '+(pago?'fa-check-circle':'fa-clock')+'" style="color:'+(pago?'#10b981':'#ef4444')+'"></i>'
+          +'<div style="flex:1;"><div style="font-size:12px;font-weight:500;color:var(--gray-700);">'+d.descricao+'</div>'
+          +'<div style="font-size:11px;color:var(--gray-500);">'+new Date(d.data).toLocaleDateString('pt-BR')+(d.obs?' · '+d.obs:'')+'</div></div>'
+          +'<div style="text-align:right;"><div style="font-size:13px;font-weight:700;color:'+(pago?'#10b981':'#ef4444')+';">R$ '+(parseFloat(d.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>'
+          +(pago?'<div style="font-size:10px;color:#10b981;">Pago</div>':'')
+          +'</div>'
+          +(!pago?'<button onclick="abrirPagamento(\''+r.rowId+'\','+di+')" class="btn-primary" style="padding:4px 10px;font-size:12px;">Pagar</button>':'')
+          +'</div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }).join('');
+}
+
+function abrirPagamento(revId, diIdx) {
+  var rev = revendedores.find(function(r){return String(r.rowId)===String(revId);});
+  if (!rev||!rev.dividas||!rev.dividas[diIdx]) return;
+  var d = rev.dividas[diIdx];
+  _pagamentoAtual = { revId: revId, diIdx: diIdx, divida: d };
+  document.getElementById('pagamento-info').innerHTML =
+    '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--gray-600);">Revendedor</span><strong>'+rev.Nome+'</strong></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--gray-600);">Descrição</span><span>'+d.descricao+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;"><span style="color:var(--gray-600);">Valor em aberto</span><strong style="color:#ef4444;">R$ '+(parseFloat(d.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</strong></div>';
+  document.getElementById('pagamento-valor').value = d.valor || '';
+  document.getElementById('pagamento-obs').value = '';
+  abrirModal('modal-pagamento');
+}
+
+function confirmarPagamento() {
+  if (!_pagamentoAtual) return;
+  var valor = parseFloat(document.getElementById('pagamento-valor').value)||0;
+  var obs = document.getElementById('pagamento-obs').value;
+  if (!valor) { showToast('Informe o valor recebido','warning'); return; }
+  var rev = revendedores.find(function(r){return String(r.rowId)===String(_pagamentoAtual.revId);});
+  if (!rev) return;
+  rev.dividas[_pagamentoAtual.diIdx].pago = true;
+  rev.dividas[_pagamentoAtual.diIdx].valorPago = valor;
+  rev.dividas[_pagamentoAtual.diIdx].dataPagamento = new Date().toISOString();
+  rev.dividas[_pagamentoAtual.diIdx].obs = obs;
+  syncDrive({ action: 'editRevendedor', rowId: rev.rowId, dividas: rev.dividas });
+  fecharModal('modal-pagamento');
+  renderFinanceiro();
+  showToast('Pagamento registrado!', 'success');
+  _pagamentoAtual = null;
+}
+
 function switchSubtab(sub){
-  var tabs=['entrada','fechamento','historico'];
+  var tabs=['entrega','entrada','fechamento','financeiro','historico'];
   tabs.forEach(function(t){
-    var el=document.getElementById('subtab-'+t);if(el)el.style.display=(t===sub)?(t==='historico'?'block':'grid'):'none';
+    var el=document.getElementById('subtab-'+t);
+    if(el)el.style.display=(t===sub)?(t==='historico'||t==='financeiro'?'block':(t==='entrega'||t==='entrada'?'grid':'block')):'none';
     var btn=document.getElementById('subtab-'+t+'-btn');
     if(btn){btn.style.background=(t===sub)?'var(--primary)':'transparent';btn.style.color=(t===sub)?'#fff':'var(--gray-600)';btn.style.fontWeight=(t===sub)?'600':'500';}
   });
   if(sub==='fechamento')carregarRevendedoresFechamento();
   if(sub==='historico')renderHistorico();
+  if(sub==='financeiro')renderFinanceiro();
+  if(sub==='entrega'){renderUltimasEntregas();carregarSelectEntrega();}
 }
 
 // =====================================================
@@ -1413,7 +1942,55 @@ function compartilharWhatsApp(){
   window.open(url,'_blank');
 }
 
-function finalizarFechamento(){var nome=document.getElementById('fechamento-revendedor').value;if(!nome){showToast('Selecione um revendedor','warning');return;}if(!devolucoes.length&&produtosConsignados.length>0){if(!confirm('Nenhuma devolução. Tudo foi vendido. Continuar?'))return;}if(!confirm('Confirmar fechamento?'))return;var vendidos=produtosConsignados.filter(function(p){return!devolucoes.find(function(d){return d.Codigo===p.Codigo;});});var devolvidos=devolucoes.slice();var dataVenda=new Date().toISOString();vendidos.forEach(function(item){var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});if(idx!==-1){inventory[idx].Status='Vendido';inventory[idx].Revendedor=nome;inventory[idx].DataVenda=dataVenda;}});devolvidos.forEach(function(item){var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});if(idx!==-1){inventory[idx].Status='Em Estoque';inventory[idx].Revendedor='';inventory[idx].DataVenda='';}});var rev=revendedores.find(function(r){return r.Nome===nome;});var pct=((rev&&rev.Percentual)||30)/100;var vc=produtosConsignados.reduce(function(s,i){return s+pN(i.Venda);},0);var vd=devolvidos.reduce(function(s,i){return s+pN(i.Venda);},0);var vv=vc-vd;var com=vv*pct;var luc=vv-com;var reg={id:Date.now(),data:new Date().toISOString(),revendedor:nome,percentual:(rev&&rev.Percentual)||30,qtdConsignados:produtosConsignados.length,qtdVendidos:vendidos.length,qtdDevolvidos:devolvidos.length,valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,itensVendidos:vendidos.map(function(i){return{Codigo:i.Codigo,Descricao:i.Descricao,Venda:i.Venda};}),itensDevolvidos:devolvidos.map(function(i){return{Codigo:i.Codigo,Descricao:i.Descricao,Venda:i.Venda};})};historicFechamentos.unshift(reg);document.getElementById('fechamento-revendedor').value='';document.getElementById('info-revendedor').style.display='none';produtosConsignados=[];devolucoes=[];document.getElementById('lista-devolucoes').innerHTML='';document.getElementById('lista-devolucoes-empty').style.display='block';atualizarResumoFechamento();renderConsignados();renderDashboard();showToast('Fechamento concluído!','success');syncDrive({action:'addFechamento',revendedor:nome,percentual:(rev&&rev.Percentual)||30,qtdConsignados:reg.qtdConsignados,qtdVendidos:reg.qtdVendidos,qtdDevolvidos:reg.qtdDevolvidos,valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,itensVendidos:reg.itensVendidos,itensDevolvidos:reg.itensDevolvidos});vendidos.forEach(function(item){syncDrive({action:'editInventario',rowId:item.rowId,status:'Vendido',revendedor:nome,dataVenda:dataVenda});});devolvidos.forEach(function(item){syncDrive({action:'editInventario',rowId:item.rowId,status:'Em Estoque',revendedor:'',dataVenda:''});});setTimeout(function(){abrirModalAssinatura(reg);},400);}
+function finalizarFechamento(){
+  var nome=document.getElementById('fechamento-revendedor').value;
+  if(!nome){showToast('Selecione um revendedor','warning');return;}
+  if(!devolucoes.length&&produtosConsignados.length>0){if(!confirm('Nenhuma devolução. Tudo foi vendido. Continuar?'))return;}
+  if(!confirm('Confirmar fechamento?'))return;
+  var vendidos=produtosConsignados.filter(function(p){return!devolucoes.find(function(d){return d.Codigo===p.Codigo;});});
+  var devolvidos=devolucoes.slice();
+  var dataVenda=new Date().toISOString();
+  vendidos.forEach(function(item){var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});if(idx!==-1){inventory[idx].Status='Vendido';inventory[idx].Revendedor=nome;inventory[idx].DataVenda=dataVenda;}});
+  devolvidos.forEach(function(item){var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});if(idx!==-1){inventory[idx].Status='Em Estoque';inventory[idx].Revendedor='';inventory[idx].DataVenda='';}});
+  var rev=revendedores.find(function(r){return r.Nome===nome;});
+  var pct=((rev&&rev.Percentual)||30)/100;
+  var vc=produtosConsignados.reduce(function(s,i){return s+pN(i.Venda);},0);
+  var vd=devolvidos.reduce(function(s,i){return s+pN(i.Venda);},0);
+  var vv=vc-vd;var com=vv*pct;var luc=vv-com;
+
+  // Parcelas
+  var nParc=parseInt(document.getElementById('fechamento-parcelas').value)||1;
+  var vParc=parseFloat(document.getElementById('fechamento-valor-parcela').value)||luc;
+  var dividas=[];
+  if(com>0){
+    for(var p=1;p<=nParc;p++){
+      dividas.push({id:Date.now()+p,data:dataVenda,descricao:'Parcela '+p+'/'+nParc+' — Fechamento '+new Date().toLocaleDateString('pt-BR'),valor:vParc,pago:false,tipo:'comissao'});
+    }
+    // Registra dívida no revendedor
+    if(rev){
+      if(!rev.dividas)rev.dividas=[];
+      dividas.forEach(function(d){rev.dividas.push(d);});
+      syncDrive({action:'editRevendedor',rowId:rev.rowId,dividas:rev.dividas});
+    }
+  }
+
+  var reg={id:Date.now(),data:dataVenda,revendedor:nome,percentual:(rev&&rev.Percentual)||30,qtdConsignados:produtosConsignados.length,qtdVendidos:vendidos.length,qtdDevolvidos:devolvidos.length,valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,nParcelas:nParc,valorParcela:vParc,itensVendidos:vendidos.map(function(i){return{Codigo:i.Codigo,Descricao:i.Descricao,Venda:i.Venda};}),itensDevolvidos:devolvidos.map(function(i){return{Codigo:i.Codigo,Descricao:i.Descricao,Venda:i.Venda};})};
+  historicFechamentos.unshift(reg);
+  document.getElementById('fechamento-revendedor').value='';
+  document.getElementById('info-revendedor').style.display='none';
+  produtosConsignados=[];devolucoes=[];
+  document.getElementById('lista-devolucoes').innerHTML='';
+  document.getElementById('lista-devolucoes-empty').style.display='block';
+  document.getElementById('fechamento-parcelas').value='1';
+  document.getElementById('fechamento-valor-parcela').value='';
+  document.getElementById('fechamento-parcelas-preview').style.display='none';
+  atualizarResumoFechamento();renderConsignados();renderDashboard();
+  showToast('Fechamento concluído!','success');
+  syncDrive({action:'addFechamento',revendedor:nome,percentual:(rev&&rev.Percentual)||30,qtdConsignados:reg.qtdConsignados,qtdVendidos:reg.qtdVendidos,qtdDevolvidos:reg.qtdDevolvidos,valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,nParcelas:nParc,valorParcela:vParc,itensVendidos:reg.itensVendidos,itensDevolvidos:reg.itensDevolvidos});
+  vendidos.forEach(function(item){syncDrive({action:'editInventario',rowId:item.rowId,status:'Vendido',revendedor:nome,dataVenda:dataVenda});});
+  devolvidos.forEach(function(item){syncDrive({action:'editInventario',rowId:item.rowId,status:'Em Estoque',revendedor:'',dataVenda:''});});
+  setTimeout(function(){abrirModalAssinatura(reg);},400);
+}
 
 // =====================================================
 // HISTÓRICO
@@ -1521,6 +2098,12 @@ function abrirModalRevendedor(){document.getElementById('titulo-modal-rev').text
 function editarRevendedor(rowId){var rev=revendedores.find(function(r){return r.rowId===rowId;});document.getElementById('titulo-modal-rev').textContent='Editar Revendedor';document.getElementById('rev-rowid').value=rowId;document.getElementById('rev-nome').value=rev.Nome;document.getElementById('rev-contato').value=rev.Contato||'';document.getElementById('rev-percentual').value=rev.Percentual||30;abrirModal('modal-revendedor');}
 function salvarRevendedor(){var rowId=document.getElementById('rev-rowid').value;var nome=document.getElementById('rev-nome').value.trim();if(!nome){showToast('Informe o nome','warning');return;}var percentual=parseFloat(document.getElementById('rev-percentual').value)||30;var contato=document.getElementById('rev-contato').value.trim();if(rowId){var idx=revendedores.findIndex(function(r){return r.rowId==rowId;});if(idx!==-1){revendedores[idx].Nome=nome;revendedores[idx].Contato=contato;revendedores[idx].Percentual=percentual;}syncDrive({action:'editRevendedor',rowId:parseInt(rowId),nome:nome,contato:contato,percentual:percentual});}else{var novoRev={rowId:Date.now(),Nome:nome,Contato:contato,Percentual:percentual};revendedores.push(novoRev);syncDrive({action:'addRevendedor',nome:nome,contato:contato,percentual:percentual});}fecharModal('modal-revendedor');renderRevendedores();carregarRevendedoresSelects();showToast('Revendedor salvo!','success');}
 function excluirRevendedor(rowId){if(!confirm('Excluir este revendedor?'))return;revendedores=revendedores.filter(function(r){return r.rowId!==rowId;});renderRevendedores();carregarRevendedoresSelects();showToast('Revendedor excluído!','success');syncDrive({action:'delRevendedor',rowId:rowId});}
+function carregarSelectEntrega(){
+  var sel=document.getElementById('entrega-revendedor'); if(!sel)return;
+  sel.innerHTML='<option value="">Escolha...</option>';
+  revendedores.forEach(function(r){sel.innerHTML+='<option value="'+r.rowId+'">'+r.Nome+'</option>';});
+}
+
 function carregarRevendedoresSelects(){var opts='<option value="">Em Estoque</option>';revendedores.forEach(function(r){opts+='<option value="'+r.Nome+'">'+r.Nome+'</option>';});var e1=document.getElementById('entrada-revendedor');if(e1)e1.innerHTML=opts;var opts2='<option value="">Selecione...</option>';revendedores.forEach(function(r){opts2+='<option value="'+r.Nome+'">'+r.Nome+'</option>';});var e2=document.getElementById('edit-revendedor');if(e2)e2.innerHTML=opts2;}
 
 // =====================================================

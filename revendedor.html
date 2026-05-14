@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Minha Maleta</title>
+<link rel="icon" type="image/png" href="https://i.ibb.co/6R29d3Dj/luxus-logo.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{
+  --bg:#0d0d0d;--surface:#161616;--surface2:#1e1e1e;--border:#2a2a2a;
+  --gold:#c9a84c;--gold-light:#e8c97a;--gold-dim:rgba(201,168,76,.15);
+  --text:#f0ede6;--text-muted:#8a8580;--text-dim:#5a5650;
+  --green:#4ade80;--green-bg:rgba(74,222,128,.1);
+  --red:#f87171;--red-bg:rgba(248,113,113,.1);
+  --radius:12px;--radius-sm:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.25rem;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.header-brand{display:flex;align-items:center;gap:10px;}
+.brand-logo{width:34px;height:34px;border-radius:8px;object-fit:cover;}
+.brand-name{font-family:'DM Serif Display',serif;font-size:1.15rem;color:var(--gold);}
+.brand-sub{font-size:11px;color:var(--text-muted);}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;flex:1;max-width:240px;}
+.search-box input{background:none;border:none;outline:none;color:var(--text);font-size:13px;font-family:inherit;width:100%;}
+.search-box i{color:var(--text-dim);font-size:12px;flex-shrink:0;}
+.filters-bar{padding:.75rem 1.25rem;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-bottom:1px solid var(--border);}
+.filters-bar::-webkit-scrollbar{display:none;}
+.chip{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);transition:all .15s;white-space:nowrap;font-family:inherit;}
+.chip.active{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+.stats-bar{padding:.75rem 1.25rem;display:flex;gap:.75rem;overflow-x:auto;scrollbar-width:none;}
+.stats-bar::-webkit-scrollbar{display:none;}
+.stat-pill{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.5rem .875rem;white-space:nowrap;flex-shrink:0;}
+.stat-pill .n{font-size:1.1rem;font-weight:700;color:var(--text);}
+.stat-pill .l{font-size:10px;color:var(--text-muted);margin-top:1px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.75rem;padding:1rem 1.25rem;}
+.item-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .2s;position:relative;}
+.item-card:hover{border-color:var(--gold);transform:translateY(-2px);}
+.item-card.vendido{opacity:.5;pointer-events:none;}
+.item-card.vendido::after{content:'Vendido';position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--green);letter-spacing:.5px;}
+.item-thumb{width:100%;height:120px;object-fit:cover;background:var(--surface2);display:flex;align-items:center;justify-content:center;}
+.item-thumb-placeholder{width:100%;height:120px;background:var(--surface2);display:flex;align-items:center;justify-content:center;}
+.item-thumb-placeholder i{font-size:2rem;color:var(--text-dim);}
+.item-body{padding:.75rem;}
+.item-code{font-size:10px;color:var(--text-dim);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px;}
+.item-name{font-size:13px;font-weight:500;color:var(--text);line-height:1.3;margin-bottom:4px;}
+.item-cat{font-size:11px;color:var(--text-muted);}
+.item-price{font-size:14px;font-weight:700;color:var(--gold);margin-top:6px;}
+.empty{text-align:center;padding:4rem 2rem;color:var(--text-dim);}
+.empty i{font-size:2.5rem;display:block;margin-bottom:1rem;color:var(--text-dim);}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center;z-index:200;padding:0;}
+.overlay.open{display:flex;}
+.sheet{background:var(--surface);border-radius:20px 20px 0 0;padding:1.5rem 1.25rem;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.sheet-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 1.25rem;}
+.sheet-title{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--gold);margin-bottom:1.25rem;}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border);}
+.info-row:last-of-type{border-bottom:none;}
+.info-label{font-size:12px;color:var(--text-muted);}
+.info-value{font-size:13px;font-weight:500;color:var(--text);}
+.price-input-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;align-items:center;gap:8px;padding:.75rem 1rem;margin:.75rem 0;}
+.price-input-wrap span{font-size:14px;color:var(--text-muted);}
+.price-input-wrap input{background:none;border:none;outline:none;color:var(--gold);font-size:1.25rem;font-weight:700;font-family:inherit;width:100%;text-align:right;}
+.btn-venda{width:100%;padding:1rem;background:var(--gold);color:#000;font-weight:700;font-size:15px;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;letter-spacing:.3px;margin-top:.5rem;transition:all .2s;}
+.btn-venda:hover{background:var(--gold-light);}
+.btn-cancel{width:100%;padding:.75rem;background:none;color:var(--text-muted);font-size:14px;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;margin-top:.5rem;}
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.75rem 1.25rem;font-size:13px;font-weight:500;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;}
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:1rem;color:var(--text-muted);}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+@media(min-width:480px){.sheet{border-radius:20px;margin:auto;}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-brand">
+    <img class="brand-logo" id="brand-logo" src="https://i.ibb.co/6R29d3Dj/luxus-logo.png" alt="Logo">
+    <div>
+      <div class="brand-name" id="brand-name">LUXUS</div>
+      <div class="brand-sub" id="brand-sub">Minha maleta</div>
+    </div>
+  </div>
+  <div class="search-box">
+    <i class="fas fa-search"></i>
+    <input id="search" type="text" placeholder="Buscar item..." oninput="renderGrid()">
+  </div>
+</div>
+
+<div class="filters-bar" id="filters-bar"></div>
+<div class="stats-bar" id="stats-bar"></div>
+<div id="main-content"><div class="loading"><div class="spinner"></div><span>Carregando maleta...</span></div></div>
+
+<!-- MODAL ITEM -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)fecharModal()">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="modal-title">—</div>
+    <div id="modal-info"></div>
+    <div style="margin-top:1rem;">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">Valor de venda</div>
+      <div class="price-input-wrap">
+        <span>R$</span>
+        <input type="number" id="modal-preco" step="0.01" min="0">
+      </div>
+    </div>
+    <button class="btn-venda" onclick="confirmarVenda()"><i class="fas fa-check" style="margin-right:6px;"></i>Confirmar venda</button>
+    <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var SCRIPT_URL = '';
+var revendedorId = '';
+var revendedorNome = '';
+var itens = [];
+var filtroStatus = 'disponivel';
+var filtroTipo = 'all';
+var itemSelecionado = null;
+
+// Pegar parâmetros da URL
+var params = new URLSearchParams(window.location.search);
+SCRIPT_URL = params.get('script') || localStorage.getItem('luxus_script_url') || '';
+revendedorId = params.get('rev') || '';
+
+function init() {
+  if (!SCRIPT_URL || !revendedorId) {
+    document.getElementById('main-content').innerHTML = '<div class="empty"><i class="fas fa-link-slash"></i>Link inválido.<br>Solicite um novo link ao administrador.</div>';
+    return;
+  }
+  carregarDados();
+}
+
+function carregarDados() {
+  fetch(SCRIPT_URL + '?action=getTudo', { method: 'GET', cache: 'no-cache' })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    // Identidade visual
+    if (d.titulo) document.getElementById('brand-name').textContent = d.titulo;
+    if (d.subtitulo) document.getElementById('brand-sub').textContent = d.subtitulo;
+    if (d.logo) document.getElementById('brand-logo').src = d.logo;
+
+    // Filtrar itens do revendedor
+    var rev = (d.revendedores || []).find(function(r) { return String(r.rowId) === String(revendedorId); });
+    if (!rev) {
+      document.getElementById('main-content').innerHTML = '<div class="empty"><i class="fas fa-user-slash"></i>Revendedor não encontrado.</div>';
+      return;
+    }
+    revendedorNome = rev.Nome;
+    document.getElementById('brand-sub').textContent = 'Olá, ' + rev.Nome.split(' ')[0] + '!';
+
+    itens = (d.inventory || []).filter(function(i) {
+      return i.Revendedor === rev.Nome;
+    });
+
+    renderFiltros();
+    renderStats();
+    renderGrid();
+  })
+  .catch(function() {
+    document.getElementById('main-content').innerHTML = '<div class="empty"><i class="fas fa-wifi-slash"></i>Erro ao carregar.<br>Verifique sua conexão.</div>';
+  });
+}
+
+function renderFiltros() {
+  var tipos = ['all'];
+  itens.forEach(function(i) { if (i.Tipo && tipos.indexOf(i.Tipo) === -1) tipos.push(i.Tipo); });
+
+  var statusOpts = [
+    { v: 'disponivel', l: 'Disponíveis' },
+    { v: 'vendido', l: 'Vendidos' },
+    { v: 'all', l: 'Todos' }
+  ];
+
+  var html = statusOpts.map(function(s) {
+    return '<button class="chip' + (filtroStatus === s.v ? ' active' : '') + '" onclick="setFiltroStatus(\'' + s.v + '\')">' + s.l + '</button>';
+  }).join('');
+
+  if (tipos.length > 2) {
+    html += '<span style="width:1px;background:var(--border);margin:0 2px;flex-shrink:0;"></span>';
+    tipos.forEach(function(t) {
+      var label = t === 'all' ? 'Todos os tipos' : t;
+      html += '<button class="chip' + (filtroTipo === t ? ' active' : '') + '" onclick="setFiltroTipo(\'' + t + '\')">' + label + '</button>';
+    });
+  }
+
+  document.getElementById('filters-bar').innerHTML = html;
+}
+
+function renderStats() {
+  var total = itens.length;
+  var disponiveis = itens.filter(function(i) { return i.Status !== 'Vendido'; }).length;
+  var vendidos = itens.filter(function(i) { return i.Status === 'Vendido'; }).length;
+  var valorMaleta = itens.filter(function(i) { return i.Status !== 'Vendido'; }).reduce(function(s, i) { return s + (parseFloat(i.Venda) || 0); }, 0);
+
+  document.getElementById('stats-bar').innerHTML =
+    '<div class="stat-pill"><div class="n">' + total + '</div><div class="l">Total</div></div>' +
+    '<div class="stat-pill"><div class="n">' + disponiveis + '</div><div class="l">Disponíveis</div></div>' +
+    '<div class="stat-pill"><div class="n" style="color:var(--green);">' + vendidos + '</div><div class="l">Vendidos</div></div>' +
+    '<div class="stat-pill"><div class="n" style="color:var(--gold);">R$' + valorMaleta.toLocaleString('pt-BR', {minimumFractionDigits:2}) + '</div><div class="l">Valor disponível</div></div>';
+}
+
+function setFiltroStatus(v) { filtroStatus = v; renderFiltros(); renderGrid(); }
+function setFiltroTipo(v) { filtroTipo = v; renderFiltros(); renderGrid(); }
+
+function renderGrid() {
+  var search = (document.getElementById('search').value || '').toLowerCase();
+  var filtered = itens.filter(function(i) {
+    if (filtroTipo !== 'all' && i.Tipo !== filtroTipo) return false;
+    if (filtroStatus === 'disponivel' && i.Status === 'Vendido') return false;
+    if (filtroStatus === 'vendido' && i.Status !== 'Vendido') return false;
+    if (search && !(i.Codigo||'').toLowerCase().includes(search) && !(i.Descricao||'').toLowerCase().includes(search) && !(i.Categoria||'').toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    document.getElementById('main-content').innerHTML = '<div class="empty"><i class="fas fa-box-open"></i>Nenhum item encontrado.</div>';
+    return;
+  }
+
+  var html = '<div class="grid">';
+  filtered.forEach(function(item) {
+    var vendido = item.Status === 'Vendido';
+    var preco = parseFloat(item.Venda) || 0;
+    var cat = [item.Tipo, item.Categoria].filter(Boolean).join(' · ');
+    html += '<div class="item-card' + (vendido ? ' vendido' : '') + '" onclick="abrirItem(\'' + item.rowId + '\')">';
+    if (item.Foto) {
+      html += '<img class="item-thumb" src="' + item.Foto + '" alt="" onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'">';
+      html += '<div class="item-thumb-placeholder" style="display:none;"><i class="fas fa-gem"></i></div>';
+    } else {
+      html += '<div class="item-thumb-placeholder"><i class="fas fa-gem"></i></div>';
+    }
+    html += '<div class="item-body">';
+    html += '<div class="item-code">' + (item.Codigo || '—') + '</div>';
+    html += '<div class="item-name">' + (item.Descricao || 'Sem descrição') + '</div>';
+    if (cat) html += '<div class="item-cat">' + cat + '</div>';
+    html += '<div class="item-price">R$ ' + preco.toLocaleString('pt-BR', {minimumFractionDigits:2}) + '</div>';
+    html += '</div></div>';
+  });
+  html += '</div>';
+  document.getElementById('main-content').innerHTML = html;
+}
+
+function abrirItem(rowId) {
+  var item = itens.find(function(i) { return String(i.rowId) === String(rowId); });
+  if (!item || item.Status === 'Vendido') return;
+  itemSelecionado = item;
+
+  document.getElementById('modal-title').textContent = item.Descricao || item.Codigo;
+
+  var cat = [item.Tipo, item.Categoria].filter(Boolean).join(' · ');
+  var html = '';
+  if (item.Codigo) html += '<div class="info-row"><span class="info-label">Código</span><span class="info-value" style="font-family:monospace;">' + item.Codigo + '</span></div>';
+  if (cat) html += '<div class="info-row"><span class="info-label">Tipo / Categoria</span><span class="info-value">' + cat + '</span></div>';
+  document.getElementById('modal-info').innerHTML = html;
+
+  document.getElementById('modal-preco').value = parseFloat(item.Venda) || '';
+  document.getElementById('overlay').classList.add('open');
+  setTimeout(function() { document.getElementById('modal-preco').focus(); }, 200);
+}
+
+function fecharModal() {
+  document.getElementById('overlay').classList.remove('open');
+  itemSelecionado = null;
+}
+
+function confirmarVenda() {
+  if (!itemSelecionado) return;
+  var preco = parseFloat(document.getElementById('modal-preco').value);
+  if (!preco || preco <= 0) { showToast('Informe o valor de venda'); return; }
+
+  var item = itemSelecionado;
+  fecharModal();
+
+  // Atualiza local
+  item.Status = 'Vendido';
+  item.Venda = preco;
+  item.DataVenda = new Date().toISOString();
+
+  renderStats();
+  renderGrid();
+  showToast('✓ ' + (item.Descricao || item.Codigo) + ' marcado como vendido');
+
+  // Sincroniza com Drive
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({
+      action: 'editInventario',
+      rowId: item.rowId,
+      status: 'Vendido',
+      venda: preco,
+      dataVenda: item.DataVenda
+    })
+  });
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+
+init();
+</script>
+</body>
+</html>
