@@ -87,7 +87,7 @@ body.device-tablet .data-table th,body.device-tablet .data-table td{padding:.5re
 body.device-tablet input,body.device-tablet select,body.device-tablet textarea{font-size:14px!important;padding:.75rem 1rem!important;}
 body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.75rem 1rem;font-size:.9rem;}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/zxing-js/0.20.0/zxing.min.js"></script>
+<script src="https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js"></script>
 </head>
 <body>
 
@@ -2150,22 +2150,21 @@ function abrirScanner(targetInputId, callback) {
 }
 
 function iniciarScanner() {
-  if (typeof ZXing === 'undefined') {
+  var ZXingLib = window.ZXingBrowser || window.ZXing;
+  if (!ZXingLib || !ZXingLib.BrowserMultiFormatReader) {
     document.getElementById('scanner-status').textContent = 'Biblioteca não disponível. Use o leitor físico.';
     return;
   }
   var video = document.getElementById('scanner-video');
-  _scannerReader = new ZXing.BrowserMultiFormatReader();
+  _scannerReader = new ZXingLib.BrowserMultiFormatReader();
   _scannerReader.decodeFromVideoDevice(null, video, function(result, err) {
     if (result) {
       var codigo = result.getText();
       document.getElementById('scanner-codigo-lido').textContent = codigo;
       document.getElementById('scanner-resultado').style.display = 'block';
       document.getElementById('scanner-status').textContent = '✓ Código lido com sucesso!';
-      // Preenche o campo alvo
       var input = document.getElementById(_scannerTargetId);
       if (input) { input.value = codigo; input.dispatchEvent(new Event('input')); }
-      // Fecha após 800ms e executa callback
       setTimeout(function() {
         fecharScanner();
         if (_scannerCallback) _scannerCallback();
