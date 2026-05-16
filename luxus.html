@@ -749,7 +749,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
 
 <!-- MODAL ENTREGA -->
 <div id="modal-entrega" class="modal-overlay">
-  <div class="modal-content" style="max-width:640px;width:95%;">
+  <div class="modal-content" style="max-width:640px;width:95%;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
       <h3 style="font-size:1.1rem;font-weight:700;color:var(--gray-800);"><i class="fas fa-hand-holding" style="color:var(--primary);margin-right:8px;"></i>Documento de Entrega</h3>
       <button onclick="fecharModal('modal-entrega')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>
@@ -776,9 +776,19 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
           <span style="font-size:12px;font-weight:600;color:var(--gray-600);">Total de itens</span>
           <span id="entrega-doc-total" style="font-size:13px;font-weight:700;color:var(--primary);"></span>
         </div>
-        <div style="display:flex;justify-content:space-between;margin-top:4px;">
-          <span style="font-size:12px;color:var(--gray-500);">Valor total (venda)</span>
-          <span id="entrega-doc-valor" style="font-size:13px;font-weight:700;color:#10b981;"></span>
+        <div style="background:white;border:1px solid var(--gray-200);border-radius:8px;padding:.75rem;margin-top:.75rem;display:flex;flex-direction:column;gap:5px;">
+          <div style="display:flex;justify-content:space-between;">
+            <span style="font-size:12px;color:var(--gray-500);">Valor de custo dos itens</span>
+            <span id="entrega-doc-custo" style="font-size:12px;font-weight:600;color:var(--gray-700);"></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span style="font-size:12px;color:var(--gray-500);">Comissão revendedor (<span id="entrega-doc-pct"></span>%)</span>
+            <span id="entrega-doc-comissao" style="font-size:12px;font-weight:600;color:#f59e0b;"></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--gray-100);margin-top:2px;">
+            <span style="font-size:13px;font-weight:700;color:var(--gray-700);">Total a acertar</span>
+            <span id="entrega-doc-valor" style="font-size:14px;font-weight:700;color:#10b981;"></span>
+          </div>
         </div>
       </div>
       <div style="margin-top:1rem;padding-top:.75rem;border-top:1px dashed var(--gray-300);">
@@ -795,10 +805,10 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
       </div>
       <canvas id="canvas-entrega" style="width:100%;height:110px;border:1.5px solid var(--gray-300);border-radius:8px;background:white;touch-action:none;cursor:crosshair;display:block;"></canvas>
     </div>
-    <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
-      <button onclick="fecharModal('modal-entrega')" class="btn-secondary" style="flex:1;min-width:120px;">Fechar</button>
-      <button onclick="compartilharEntregaWhatsApp()" class="btn-secondary" style="flex:1;min-width:120px;color:#25D366;border-color:#25D366;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='white'"><i class="fab fa-whatsapp" style="margin-right:6px;"></i>WhatsApp</button>
-      <button onclick="baixarEntrega()" class="btn-primary" style="flex:1;min-width:120px;"><i class="fas fa-download" style="margin-right:6px;"></i>Baixar</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.5rem;">
+      <button onclick="fecharModal('modal-entrega')" class="btn-secondary" style="padding:.75rem;"><i class="fas fa-times" style="margin-right:6px;"></i>Fechar</button>
+      <button onclick="compartilharEntregaWhatsApp()" class="btn-secondary" style="padding:.75rem;color:#25D366;border-color:#25D366;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='white'"><i class="fab fa-whatsapp" style="margin-right:6px;"></i>WhatsApp</button>
+      <button onclick="baixarEntrega()" class="btn-primary" style="padding:.75rem;grid-column:1/-1;"><i class="fas fa-download" style="margin-right:6px;"></i>Baixar documento assinado</button>
     </div>
   </div>
 </div>
@@ -1368,16 +1378,30 @@ function abrirModalEntrega(doc) {
   document.getElementById('entrega-doc-data').textContent = new Date(doc.data).toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
   document.getElementById('entrega-doc-rev').textContent = doc.revendedor;
   document.getElementById('entrega-doc-total').textContent = doc.totalItens + ' item(s)';
-  document.getElementById('entrega-doc-valor').textContent = 'R$ ' + doc.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits:2});
+  // Custo, comissão e total a acertar
+  var rev = revendedores.find(function(r){ return r.Nome === doc.revendedor; });
+  var pct = (rev && rev.Percentual) || 30;
+  var totalCusto = doc.itens.reduce(function(s,i){ return s + (parseFloat(i.Custo)||0); }, 0);
+  var comissao = totalCusto * (pct / 100);
+  var totalAcertar = totalCusto + comissao;
+  doc.totalCusto = totalCusto;
+  doc.percentual = pct;
+  doc.comissao = comissao;
+  doc.totalAcertar = totalAcertar;
+  document.getElementById('entrega-doc-pct').textContent = pct;
+  document.getElementById('entrega-doc-custo').textContent = fmt(totalCusto);
+  document.getElementById('entrega-doc-comissao').textContent = fmt(comissao);
+  document.getElementById('entrega-doc-valor').textContent = fmt(totalAcertar);
   document.getElementById('entrega-ass-nome').textContent = doc.revendedor;
   document.getElementById('entrega-ass-img').style.display = 'none';
   document.getElementById('entrega-ass-vazio').style.display = 'block';
   var itensEl = document.getElementById('entrega-doc-itens');
   itensEl.innerHTML = doc.itens.map(function(i) {
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 6px;background:white;border:1px solid var(--gray-200);border-radius:4px;">'
-      + '<span style="font-family:monospace;font-size:11px;color:var(--primary);margin-right:8px;">' + i.Codigo + '</span>'
+      + '<span style="font-family:monospace;font-size:11px;color:var(--primary);margin-right:8px;flex-shrink:0;">' + i.Codigo + '</span>'
       + '<span style="flex:1;font-size:12px;color:var(--gray-700);">' + (i.Descricao||'—') + '</span>'
-      + '<span style="font-size:11px;color:var(--gray-500);">' + (i.Tipo||'') + (i.Categoria?' · '+i.Categoria:'') + '</span>'
+      + '<span style="font-size:11px;color:var(--gray-500);margin-right:8px;">' + (i.Tipo||'') + (i.Categoria?' · '+i.Categoria:'') + '</span>'
+      + '<span style="font-size:12px;font-weight:600;color:var(--gray-700);white-space:nowrap;">' + fmt(parseFloat(i.Custo)||0) + '</span>'
       + '</div>';
   }).join('');
   _entregaAss = null;
@@ -1435,13 +1459,28 @@ function baixarEntrega() {
     ctx.fillStyle='#1e40af'; ctx.font='bold 10px sans-serif'; ctx.fillText(item.Codigo,24,y+15);
     ctx.fillStyle='#334155'; ctx.font='12px sans-serif'; ctx.fillText(item.Descricao||'—',90,y+15);
     var cat=[item.Tipo,item.Categoria].filter(Boolean).join(' · ');
-    ctx.fillStyle='#94a3b8'; ctx.font='10px sans-serif'; ctx.textAlign='right'; ctx.fillText(cat,W-24,y+15); ctx.textAlign='left';
+    ctx.fillStyle='#94a3b8'; ctx.font='10px sans-serif'; ctx.textAlign='right';
+    ctx.fillText(fmt(parseFloat(item.Custo)||0),W-24,y+15);
+    ctx.fillStyle='#cbd5e1'; ctx.font='10px sans-serif';
+    ctx.fillText(cat,W-80,y+15);
+    ctx.textAlign='left';
     y+=26;
   });
   y+=10;
   ctx.fillStyle='#e2e8f0'; ctx.fillRect(16,y,W-32,1); y+=14;
   ctx.fillStyle='#334155'; ctx.font='bold 12px sans-serif'; ctx.fillText('Total: '+doc.totalItens+' item(s)',16,y);
-  ctx.textAlign='right'; ctx.fillStyle='#10b981'; ctx.fillText('R$ '+doc.valorTotal.toLocaleString('pt-BR',{minimumFractionDigits:2}),W-16,y); ctx.textAlign='left'; y+=30;
+  ctx.textAlign='right'; ctx.fillStyle='#10b981'; ctx.textAlign='left'; y+=24;
+  // Resumo financeiro
+  ctx.fillStyle='#fff'; ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=1;
+  roundRect(ctx,16,y,W-32,74,6); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#64748b'; ctx.font='12px sans-serif'; ctx.fillText('Valor de custo dos itens',24,y+18);
+  ctx.textAlign='right'; ctx.fillStyle='#334155'; ctx.font='bold 12px sans-serif'; ctx.fillText(fmt(doc.totalCusto||0),W-24,y+18);
+  ctx.textAlign='left'; ctx.fillStyle='#64748b'; ctx.font='12px sans-serif'; ctx.fillText('Comissão revendedor ('+(doc.percentual||30)+'%)',24,y+36);
+  ctx.textAlign='right'; ctx.fillStyle='#f59e0b'; ctx.font='bold 12px sans-serif'; ctx.fillText(fmt(doc.comissao||0),W-24,y+36);
+  ctx.fillStyle='#e2e8f0'; ctx.fillRect(24,y+44,W-48,1);
+  ctx.textAlign='left'; ctx.fillStyle='#1f2937'; ctx.font='bold 13px sans-serif'; ctx.fillText('Total a acertar',24,y+60);
+  ctx.textAlign='right'; ctx.fillStyle='#10b981'; ctx.font='bold 14px sans-serif'; ctx.fillText(fmt(doc.totalAcertar||0),W-24,y+60);
+  ctx.textAlign='left'; y+=88;
   ctx.strokeStyle='#cbd5e1'; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(16,y); ctx.lineTo(W-16,y); ctx.stroke(); ctx.setLineDash([]); y+=10;
   ctx.fillStyle='#94a3b8'; ctx.font='10px sans-serif'; ctx.fillText('Assinatura do revendedor — confirmo o recebimento',16,y+12); y+=26;
   if (_entregaAss) {
