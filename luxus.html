@@ -2157,28 +2157,99 @@ function iniciarScanner() {
   }
   var video = document.getElementById('scanner-video');
   _scannerReader = new ZXingLib.BrowserMultiFormatReader();
-  _scannerReader.decodeFromVideoDevice(null, video, function(result, err) {
-    if (result) {
-      var codigo = result.getText();
-      document.getElementById('scanner-codigo-lido').textContent = codigo;
-      document.getElementById('scanner-resultado').style.display = 'block';
-      document.getElementById('scanner-status').textContent = '✓ Código lido com sucesso!';
-      var input = document.getElementById(_scannerTargetId);
-      if (input) { input.value = codigo; input.dispatchEvent(new Event('input')); }
-      setTimeout(function() {
-        fecharScanner();
-        if (_scannerCallback) _scannerCallback();
-      }, 800);
+
+  // Lista câmeras e prioriza traseira
+  _scannerReader.listVideoInputDevices().then(function(devices) {
+    var deviceId = null;
+    // Procura câmera traseira pelo label
+    var traseira = devices.find(function(d) {
+      return /back|rear|traseira|environment/i.test(d.label);
+    });
+    deviceId = traseira ? traseira.deviceId : (devices.length > 0 ? devices[devices.length - 1].deviceId : null);
+
+    // Se não achou pelo label, usa constraint de environment
+    if (!deviceId) {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      .then(function(stream) {
+        _scannerStream = stream;
+        video.srcObject = stream;
+        video.play();
+        document.getElementById('scanner-status').textContent = 'Aponte a câmera para o código de barras';
+        iniciarLoopCaptura(video, ZXingLib);
+      }).catch(function(e) {
+        document.getElementById('scanner-status').textContent = 'Erro ao acessar câmera: ' + e.message;
+      });
+      return;
     }
+
+    _scannerReader.decodeFromVideoDevice(deviceId, video, function(result, err) {
+      if (result) onCodigoLido(result.getText());
+    });
+    document.getElementById('scanner-status').textContent = 'Aponte a câmera para o código de barras';
+
+  }).catch(function() {
+    // Fallback direto com environment
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } })
+    .then(function(stream) {
+      _scannerStream = stream;
+      video.srcObject = stream;
+      video.play();
+      document.getElementById('scanner-status').textContent = 'Aponte a câmera para o código de barras';
+      iniciarLoopCaptura(video, ZXingLib);
+    }).catch(function(e) {
+      document.getElementById('scanner-status').textContent = 'Sem acesso à câmera. Verifique as permissões.';
+    });
   });
-  document.getElementById('scanner-status').textContent = 'Aponte a câmera para o código de barras';
+}
+
+var _scannerLoopActive = false;
+function iniciarLoopCaptura(video, ZXingLib) {
+  _scannerLoopActive = true;
+  var hints = new Map();
+  var reader = new ZXingLib.BrowserMultiFormatReader(hints);
+  var canvas = document.createElement('canvas');
+
+  function capturar() {
+    if (!_scannerLoopActive) return;
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      try {
+        var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        var luminance = new ZXingLib.ZXingLuminanceSource ? null : imgData;
+        // Tenta decodificar via canvas
+        reader.decodeFromCanvas(canvas).then(function(result) {
+          if (result) onCodigoLido(result.getText());
+        }).catch(function(){});
+      } catch(e) {}
+    }
+    if (_scannerLoopActive) requestAnimationFrame(capturar);
+  }
+  requestAnimationFrame(capturar);
+}
+
+function onCodigoLido(codigo) {
+  if (!_scannerLoopActive && !_scannerReader) return;
+  _scannerLoopActive = false;
+  document.getElementById('scanner-codigo-lido').textContent = codigo;
+  document.getElementById('scanner-resultado').style.display = 'block';
+  document.getElementById('scanner-status').textContent = '✓ Código lido com sucesso!';
+  var input = document.getElementById(_scannerTargetId);
+  if (input) { input.value = codigo; input.dispatchEvent(new Event('input')); }
+  setTimeout(function() {
+    fecharScanner();
+    if (_scannerCallback) _scannerCallback();
+  }, 800);
 }
 
 function fecharScanner() {
-  if (_scannerReader) {
-    try { _scannerReader.reset(); } catch(e) {}
-    _scannerReader = null;
-  }
+  _scannerLoopActive = false;
+  if (_scannerReader) { try { _scannerReader.reset(); } catch(e) {} _scannerReader = null; }
+  if (_scannerStream) { _scannerStream.getTracks().forEach(function(t){t.stop();}); _scannerStream = null; }
+  var video = document.getElementById('scanner-video');
+  if (video) { video.srcObject = null; }
   fecharModal('modal-scanner');
 }
 
