@@ -440,10 +440,16 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
           </div>
           <div style="margin-bottom:.75rem;">
             <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Filtrar por tipo</label>
-            <select id="conf-filtro-tipo" onchange="iniciarConferencia()" style="width:100%;">
+            <select id="conf-filtro-tipo" onchange="atualizarCategoriasConf();iniciarConferencia()" style="width:100%;">
               <option value="todos">Todos os tipos</option>
               <option value="Semi Joia">Semi Joia</option>
               <option value="Perfume">Perfume</option>
+            </select>
+          </div>
+          <div style="margin-bottom:.75rem;">
+            <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Filtrar por categoria</label>
+            <select id="conf-filtro-categoria" onchange="iniciarConferencia()" style="width:100%;">
+              <option value="todos">Todas as categorias</option>
             </select>
           </div>
           <div style="margin-bottom:.75rem;">
@@ -1956,14 +1962,28 @@ function confirmarPagamento() {
 var confBipados = []; // rowIds bipados
 var confEsperados = []; // itens esperados pelo filtro
 
+function atualizarCategoriasConf() {
+  var tipo = document.getElementById('conf-filtro-tipo').value;
+  var sel = document.getElementById('conf-filtro-categoria');
+  if (!sel) return;
+  var cats = tipo === 'todos'
+    ? Object.keys(categorias).reduce(function(a,t){return a.concat(categorias[t]||[]);}, [])
+    : (categorias[tipo] || []);
+  cats = cats.slice().sort(function(a,b){return a.localeCompare(b,'pt-BR');});
+  sel.innerHTML = '<option value="todos">Todas as categorias</option>'
+    + cats.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
+}
+
 function iniciarConferencia() {
   confBipados = [];
-  var status = document.getElementById('conf-filtro-status').value;
-  var tipo   = document.getElementById('conf-filtro-tipo').value;
+  var status   = document.getElementById('conf-filtro-status').value;
+  var tipo     = document.getElementById('conf-filtro-tipo').value;
+  var categoria = document.getElementById('conf-filtro-categoria') ? document.getElementById('conf-filtro-categoria').value : 'todos';
   confEsperados = inventory.filter(function(i) {
     if (status === 'todos')    { if (i.Status === 'Vendido') return false; }
     else                       { if (i.Status !== status) return false; }
     if (tipo !== 'todos' && i.Tipo !== tipo) return false;
+    if (categoria !== 'todos' && (i.Categoria||'') !== categoria) return false;
     return true;
   });
   document.getElementById('conf-count-total').textContent = confEsperados.length;
@@ -2081,7 +2101,7 @@ function switchSubtab(sub){
   if(sub==='historico')renderHistorico();
   if(sub==='financeiro')renderFinanceiro();
   if(sub==='entrega'){renderUltimasEntregas();carregarSelectEntrega();}
-  if(sub==='conferencia')iniciarConferencia();
+  if(sub==='conferencia'){atualizarCategoriasConf();iniciarConferencia();}
 }
 
 // =====================================================
