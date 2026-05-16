@@ -236,6 +236,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
     <button id="subtab-entrada-btn"    onclick="switchSubtab('entrada')"    style="padding:8px 20px;font-size:13px;font-weight:600;background:var(--primary);color:#fff;border:none;cursor:pointer;"><i class="fas fa-box-open" style="margin-right:6px;"></i>Entrada de Produto</button>
     <button id="subtab-fechamento-btn" onclick="switchSubtab('fechamento')" style="padding:8px 20px;font-size:13px;font-weight:500;background:transparent;color:var(--gray-600);border:none;cursor:pointer;"><i class="fas fa-calculator" style="margin-right:6px;"></i>Fechamento</button>
     <button id="subtab-financeiro-btn" onclick="switchSubtab('financeiro')" style="padding:8px 20px;font-size:13px;font-weight:500;background:transparent;color:var(--gray-600);border:none;cursor:pointer;"><i class="fas fa-dollar-sign" style="margin-right:6px;"></i>Financeiro</button>
+    <button id="subtab-conferencia-btn" onclick="switchSubtab('conferencia')" style="padding:8px 20px;font-size:13px;font-weight:500;background:transparent;color:var(--gray-600);border:none;cursor:pointer;"><i class="fas fa-clipboard-check" style="margin-right:6px;"></i>Conferência</button>
     <button id="subtab-historico-btn"  onclick="switchSubtab('historico')"  style="padding:8px 20px;font-size:13px;font-weight:500;background:transparent;color:var(--gray-600);border:none;cursor:pointer;"><i class="fas fa-history" style="margin-right:6px;"></i>Histórico</button>
   </div>
 
@@ -417,6 +418,107 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
         </table>
       </div>
       <div id="historico-empty" style="text-align:center;padding:3rem;display:none;"><i class="fas fa-history" style="font-size:2.5rem;color:var(--gray-300);display:block;margin-bottom:12px;"></i><p style="font-size:14px;color:var(--gray-400);">Nenhum fechamento registrado ainda</p></div>
+    </div>
+  </div>
+
+  <!-- CONFERÊNCIA DE ESTOQUE -->
+  <div id="subtab-conferencia" style="display:none;">
+    <div style="display:grid;grid-template-columns:340px 1fr;gap:1.25rem;align-items:start;" class="grid-entrada">
+
+      <!-- Painel esquerdo: bipagem -->
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <div class="card-light" style="padding:1.25rem;">
+          <h3 class="section-title"><i class="fas fa-clipboard-check"></i>Conferência de Estoque</h3>
+          <div style="margin-bottom:.75rem;">
+            <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Filtrar por status</label>
+            <select id="conf-filtro-status" onchange="iniciarConferencia()" style="width:100%;">
+              <option value="Em Estoque">Em Estoque</option>
+              <option value="Consignado">Consignado</option>
+              <option value="todos">Todos (exceto vendidos)</option>
+            </select>
+          </div>
+          <div style="margin-bottom:.75rem;">
+            <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Filtrar por tipo</label>
+            <select id="conf-filtro-tipo" onchange="iniciarConferencia()" style="width:100%;">
+              <option value="todos">Todos os tipos</option>
+              <option value="Semi Joia">Semi Joia</option>
+              <option value="Perfume">Perfume</option>
+            </select>
+          </div>
+          <div style="margin-bottom:.75rem;">
+            <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;"><i class="fas fa-barcode" style="margin-right:4px;"></i>Bipe os itens encontrados</label>
+            <div style="display:flex;gap:6px;">
+              <input type="text" id="conf-codigo" class="barcode-input" placeholder="Código — Enter" style="flex:1;"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();registrarConferencia();}"
+                oninput="clearTimeout(this._t);this._t=setTimeout(function(){var v=document.getElementById('conf-codigo').value.trim();if(v.length>3)registrarConferencia();},600)">
+              <button onclick="abrirScanner('conf-codigo',registrarConferencia)" class="btn-secondary" style="padding:6px 10px;flex-shrink:0;" title="Câmera"><i class="fas fa-camera"></i></button>
+            </div>
+          </div>
+          <button onclick="limparConferencia()" class="btn-secondary" style="width:100%;margin-top:.25rem;">
+            <i class="fas fa-redo" style="margin-right:6px;"></i>Reiniciar conferência
+          </button>
+        </div>
+
+        <!-- Resumo -->
+        <div class="card-light" style="padding:1.25rem;">
+          <h4 style="font-size:12px;font-weight:600;color:var(--gray-600);margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.5px;">Resumo</h4>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;justify-content:space-between;padding:8px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;">
+              <span style="font-size:13px;color:#15803d;font-weight:500;"><i class="fas fa-check-circle" style="margin-right:6px;"></i>Encontrados</span>
+              <span id="conf-count-ok" style="font-size:14px;font-weight:700;color:#15803d;">0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:8px 10px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;">
+              <span style="font-size:13px;color:#dc2626;font-weight:500;"><i class="fas fa-times-circle" style="margin-right:6px;"></i>Não encontrados</span>
+              <span id="conf-count-falta" style="font-size:14px;font-weight:700;color:#dc2626;">0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:8px 10px;background:#fef9c3;border:1px solid #fde047;border-radius:6px;">
+              <span style="font-size:13px;color:#854d0e;font-weight:500;"><i class="fas fa-exclamation-circle" style="margin-right:6px;"></i>Bipados a mais</span>
+              <span id="conf-count-extra" style="font-size:14px;font-weight:700;color:#854d0e;">0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:8px 10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;">
+              <span style="font-size:13px;color:var(--gray-600);">Total esperado</span>
+              <span id="conf-count-total" style="font-size:14px;font-weight:700;color:var(--gray-700);">0</span>
+            </div>
+          </div>
+          <div style="margin-top:.75rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:12px;color:var(--gray-500);">Progresso</span>
+              <span id="conf-pct" style="font-size:12px;font-weight:600;color:var(--primary);">0%</span>
+            </div>
+            <div style="background:var(--gray-200);border-radius:99px;height:8px;overflow:hidden;">
+              <div id="conf-progress-bar" style="height:100%;background:#10b981;border-radius:99px;transition:width .3s;width:0%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Painel direito: listas -->
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <!-- Não encontrados -->
+        <div class="card-light" style="padding:1.25rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+            <h4 style="font-size:13px;font-weight:600;color:#dc2626;"><i class="fas fa-times-circle" style="margin-right:6px;"></i>Não encontrados <span id="badge-conf-falta" style="background:#fca5a5;color:#7f1d1d;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;">0</span></h4>
+          </div>
+          <div id="conf-lista-faltando" style="display:flex;flex-direction:column;gap:5px;max-height:260px;overflow-y:auto;">
+            <p style="font-size:12px;color:var(--gray-400);text-align:center;padding:1rem 0;">Aguardando início da conferência...</p>
+          </div>
+        </div>
+        <!-- Encontrados -->
+        <div class="card-light" style="padding:1.25rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+            <h4 style="font-size:13px;font-weight:600;color:#15803d;"><i class="fas fa-check-circle" style="margin-right:6px;"></i>Encontrados <span id="badge-conf-ok" style="background:#86efac;color:#14532d;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;">0</span></h4>
+          </div>
+          <div id="conf-lista-ok" style="display:flex;flex-wrap:wrap;gap:5px;max-height:180px;overflow-y:auto;"></div>
+        </div>
+        <!-- Extras -->
+        <div class="card-light" style="padding:1.25rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+            <h4 style="font-size:13px;font-weight:600;color:#854d0e;"><i class="fas fa-exclamation-circle" style="margin-right:6px;"></i>Bipados a mais <span id="badge-conf-extra" style="background:#fde047;color:#713f12;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;">0</span></h4>
+            <span style="font-size:11px;color:var(--gray-400);">Não constam no filtro selecionado</span>
+          </div>
+          <div id="conf-lista-extra" style="display:flex;flex-wrap:wrap;gap:5px;max-height:120px;overflow-y:auto;"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1758,11 +1860,130 @@ function confirmarPagamento() {
   _pagamentoAtual = null;
 }
 
+// =====================================================
+// CONFERÊNCIA DE ESTOQUE
+// =====================================================
+var confBipados = []; // rowIds bipados
+var confEsperados = []; // itens esperados pelo filtro
+
+function iniciarConferencia() {
+  confBipados = [];
+  var status = document.getElementById('conf-filtro-status').value;
+  var tipo   = document.getElementById('conf-filtro-tipo').value;
+  confEsperados = inventory.filter(function(i) {
+    if (status === 'todos')    { if (i.Status === 'Vendido') return false; }
+    else                       { if (i.Status !== status) return false; }
+    if (tipo !== 'todos' && i.Tipo !== tipo) return false;
+    return true;
+  });
+  document.getElementById('conf-count-total').textContent = confEsperados.length;
+  document.getElementById('conf-codigo').value = '';
+  document.getElementById('conf-codigo').focus();
+  renderConferencia();
+}
+
+function registrarConferencia() {
+  var codigo = (document.getElementById('conf-codigo').value || '').trim().toUpperCase();
+  if (!codigo) return;
+  document.getElementById('conf-codigo').value = '';
+  document.getElementById('conf-codigo').focus();
+
+  // Acha itens com esse código nos esperados que ainda não foram bipados
+  var candidatos = confEsperados.filter(function(i) {
+    return (i.Codigo||'').toUpperCase() === codigo && confBipados.indexOf(i.rowId) === -1;
+  });
+
+  if (candidatos.length === 0) {
+    // Não está nos esperados — pode ser extra ou já bipado
+    var jaBipado = confBipados.some(function(rid) {
+      var item = inventory.find(function(i){ return i.rowId === rid; });
+      return item && (item.Codigo||'').toUpperCase() === codigo;
+    });
+    if (jaBipado) {
+      showToast('Já bipado: ' + codigo, 'warning');
+    } else {
+      // Extra — bipar mesmo assim
+      var itemExtra = inventory.find(function(i){ return (i.Codigo||'').toUpperCase() === codigo; });
+      if (itemExtra) { confBipados.push(itemExtra.rowId); showToast('Item extra: ' + codigo, 'warning'); }
+      else showToast('Código não encontrado: ' + codigo, 'warning');
+    }
+  } else if (candidatos.length === 1) {
+    confBipados.push(candidatos[0].rowId);
+    showToast('✓ ' + codigo, 'success');
+  } else {
+    // Duplicatas — seleciona
+    selecionarItemDuplicado(candidatos, function(item) {
+      confBipados.push(item.rowId);
+      renderConferencia();
+    });
+    return;
+  }
+  renderConferencia();
+}
+
+function renderConferencia() {
+  var esperadosIds = confEsperados.map(function(i){ return i.rowId; });
+  var encontrados  = confEsperados.filter(function(i){ return confBipados.indexOf(i.rowId) !== -1; });
+  var faltando     = confEsperados.filter(function(i){ return confBipados.indexOf(i.rowId) === -1; });
+  var extras       = confBipados.filter(function(rid){ return esperadosIds.indexOf(rid) === -1; });
+
+  // Resumo
+  document.getElementById('conf-count-ok').textContent    = encontrados.length;
+  document.getElementById('conf-count-falta').textContent = faltando.length;
+  document.getElementById('conf-count-extra').textContent = extras.length;
+  document.getElementById('badge-conf-ok').textContent    = encontrados.length;
+  document.getElementById('badge-conf-falta').textContent = faltando.length;
+  document.getElementById('badge-conf-extra').textContent = extras.length;
+
+  // Barra de progresso
+  var pct = confEsperados.length > 0 ? Math.round(encontrados.length / confEsperados.length * 100) : 0;
+  document.getElementById('conf-pct').textContent = pct + '%';
+  document.getElementById('conf-progress-bar').style.width = pct + '%';
+  document.getElementById('conf-progress-bar').style.background = pct === 100 ? '#10b981' : pct > 50 ? '#f59e0b' : '#3b82f6';
+
+  // Lista faltando
+  var listaFalta = document.getElementById('conf-lista-faltando');
+  if (!faltando.length) {
+    listaFalta.innerHTML = encontrados.length > 0
+      ? '<p style="font-size:13px;color:#15803d;text-align:center;padding:1rem 0;font-weight:600;"><i class="fas fa-check-circle" style="margin-right:6px;"></i>Todos os itens encontrados!</p>'
+      : '<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:1rem 0;">Nenhum item bipado ainda...</p>';
+  } else {
+    listaFalta.innerHTML = faltando.map(function(item) {
+      return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;">'
+        + '<span style="font-family:monospace;font-size:12px;font-weight:700;color:#dc2626;min-width:80px;">' + item.Codigo + '</span>'
+        + '<span style="flex:1;font-size:12px;color:var(--gray-700);">' + (item.Descricao||'—') + '</span>'
+        + '<span style="font-size:11px;color:var(--gray-500);">' + (item.Tipo||'') + (item.Categoria?' · '+item.Categoria:'') + '</span>'
+        + (item.Revendedor ? '<span style="font-size:10px;background:#fef9c3;color:#854d0e;padding:2px 6px;border-radius:4px;">' + item.Revendedor + '</span>' : '')
+        + '</div>';
+    }).join('');
+  }
+
+  // Lista encontrados (chips)
+  document.getElementById('conf-lista-ok').innerHTML = encontrados.map(function(item) {
+    return '<span style="background:#f0fdf4;border:1px solid #86efac;color:#15803d;font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;font-family:monospace;">'
+      + item.Codigo + '</span>';
+  }).join('');
+
+  // Lista extras
+  document.getElementById('conf-lista-extra').innerHTML = extras.map(function(rid) {
+    var item = inventory.find(function(i){ return i.rowId === rid; });
+    if (!item) return '';
+    return '<span style="background:#fef9c3;border:1px solid #fde047;color:#854d0e;font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;font-family:monospace;">'
+      + item.Codigo + '</span>';
+  }).join('');
+}
+
+function limparConferencia() {
+  confBipados = [];
+  document.getElementById('conf-codigo').value = '';
+  iniciarConferencia();
+}
+
 function switchSubtab(sub){
-  var tabs=['entrega','entrada','fechamento','financeiro','historico'];
+  var tabs=['entrega','entrada','fechamento','financeiro','conferencia','historico'];
   tabs.forEach(function(t){
     var el=document.getElementById('subtab-'+t);
-    if(el)el.style.display=(t===sub)?(t==='historico'||t==='financeiro'?'block':(t==='entrega'||t==='entrada'?'grid':'block')):'none';
+    if(el)el.style.display=(t===sub)?(t==='historico'||t==='financeiro'||t==='conferencia'?'block':(t==='entrega'||t==='entrada'?'grid':'block')):'none';
     var btn=document.getElementById('subtab-'+t+'-btn');
     if(btn){btn.style.background=(t===sub)?'var(--primary)':'transparent';btn.style.color=(t===sub)?'#fff':'var(--gray-600)';btn.style.fontWeight=(t===sub)?'600':'500';}
   });
@@ -1770,6 +1991,7 @@ function switchSubtab(sub){
   if(sub==='historico')renderHistorico();
   if(sub==='financeiro')renderFinanceiro();
   if(sub==='entrega'){renderUltimasEntregas();carregarSelectEntrega();}
+  if(sub==='conferencia')iniciarConferencia();
 }
 
 // =====================================================
