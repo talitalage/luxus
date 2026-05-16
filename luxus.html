@@ -353,7 +353,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
         <div style="height:1px;background:var(--gray-200);margin:2px 0;"></div>
         <div style="display:flex;justify-content:space-between;padding:9px 12px;background:#fef3c7;border-radius:6px;border:1px solid #fde68a;"><span style="font-size:13px;font-weight:500;color:#92400e;">Vendido</span><span id="resumo-vendido" style="font-size:14px;font-weight:700;color:#b45309;">R$ 0,00</span></div>
         <div style="display:flex;justify-content:space-between;padding:9px 12px;background:#f5f3ff;border-radius:6px;border:1px solid #ddd6fe;"><span style="font-size:13px;font-weight:500;color:#5b21b6;">Comissão</span><span id="resumo-comissao" style="font-size:14px;font-weight:700;color:#6d28d9;">R$ 0,00</span></div>
-        <div style="display:flex;justify-content:space-between;padding:11px 12px;background:#d1fae5;border-radius:6px;border:2px solid #6ee7b7;"><span style="font-size:13px;font-weight:700;color:#065f46;">Lucro Luxus</span><span id="resumo-lucro" style="font-size:1.25rem;font-weight:800;color:#059669;">R$ 0,00</span></div>
+        <div style="display:flex;justify-content:space-between;padding:11px 12px;background:#d1fae5;border-radius:6px;border:2px solid #6ee7b7;"><span style="font-size:13px;font-weight:700;color:#065f46;">A receber (Venda + Comissão)</span><span id="resumo-lucro" style="font-size:1.25rem;font-weight:800;color:#059669;">R$ 0,00</span></div>
       </div>
       <button onclick="finalizarFechamento()" class="btn-primary" style="width:100%;padding:.7rem;"><i class="fas fa-check-double" style="margin-right:6px;"></i>Finalizar Fechamento</button>
       <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--gray-200);">
@@ -786,7 +786,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
             <span id="entrega-doc-comissao" style="font-size:12px;font-weight:600;color:#f59e0b;"></span>
           </div>
           <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--gray-100);margin-top:2px;">
-            <span style="font-size:13px;font-weight:700;color:var(--gray-700);">Você recebe</span>
+            <span style="font-size:13px;font-weight:700;color:var(--gray-700);">Total a receber</span>
             <span id="entrega-doc-valor" style="font-size:14px;font-weight:700;color:#10b981;"></span>
           </div>
         </div>
@@ -877,7 +877,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
       <div style="background:white;border:1px solid var(--gray-200);border-radius:8px;padding:.75rem;margin-bottom:.5rem;">
         <div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="color:var(--gray-500);">Total vendido</span><span id="recibo-total" style="font-weight:600;color:var(--gray-800);"></span></div>
         <div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="color:var(--gray-500);">Comissão (<span id="recibo-pct"></span>%)</span><span id="recibo-comissao" style="font-weight:600;color:#f59e0b;"></span></div>
-        <div style="display:flex;justify-content:space-between;padding:6px 0 3px;border-top:1px solid var(--gray-100);margin-top:4px;"><span style="font-weight:700;color:var(--gray-700);">A receber (loja)</span><span id="recibo-lucro" style="font-weight:700;color:#10b981;font-size:15px;"></span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0 3px;border-top:1px solid var(--gray-100);margin-top:4px;"><span style="font-weight:700;color:var(--gray-700);">A receber (Venda + Comissão)</span><span id="recibo-lucro" style="font-weight:700;color:#10b981;font-size:15px;"></span></div>
       </div>
       <!-- Itens vendidos -->
       <div id="recibo-itens-bloco" style="margin-top:.5rem;">
@@ -991,6 +991,7 @@ var categorias       = {'Semi Joia':[], 'Perfume':[]};
 var statusList       = ['Em Estoque','Consignado','Vendido'];
 var statusCores      = {'Em Estoque':'#10b981','Consignado':'#3b82f6','Vendido':'#ef4444'};
 var historicFechamentos = [];
+var historicEntregas    = [];
 var scriptUrl        = '';
 
 // Preferências de UI (ficam no localStorage — são por dispositivo)
@@ -1086,6 +1087,7 @@ function loadData() {
       if(Array.isArray(dc.revendedores)) revendedores=dc.revendedores;
       if(dc.categorias&&!Array.isArray(dc.categorias)) categorias=dc.categorias;
       if(Array.isArray(dc.fechamentos))  historicFechamentos=dc.fechamentos;
+      if(Array.isArray(dc.entregas))    historicEntregas=dc.entregas;
       carregarRevendedoresSelects();
       renderRevendedores();
       renderDashboard();
@@ -1108,13 +1110,14 @@ function loadData() {
     if(Array.isArray(d.revendedores)) revendedores=d.revendedores;
     if(d.categorias&&!Array.isArray(d.categorias)) categorias=d.categorias;
     if(Array.isArray(d.fechamentos))  historicFechamentos=d.fechamentos;
+    if(Array.isArray(d.entregas))    historicEntregas=d.entregas;
     if(d.titulo)    {localStorage.setItem('luxus_titulo',d.titulo);   document.getElementById('site-title-display').textContent=d.titulo;document.title=d.titulo+' - Sistema de Gestão';}
     if(d.subtitulo) {localStorage.setItem('luxus_subtitulo',d.subtitulo);document.getElementById('site-subtitle-display').textContent=d.subtitulo;}
     if(d.logo)      {localStorage.setItem('luxus_logo',d.logo);var hlogo=document.getElementById('header-logo');if(hlogo){hlogo.src=d.logo;hlogo.style.display='block';}}
     if(Array.isArray(d.statusList))  {statusList=d.statusList;  localStorage.setItem('luxus_status',JSON.stringify(statusList));}
     if(d.statusCores&&typeof d.statusCores==='object'){statusCores=d.statusCores;localStorage.setItem('luxus_status_cores',JSON.stringify(statusCores));}
     // Atualiza cache local
-    try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos}));}catch(e){}
+    try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas}));}catch(e){}
     carregarRevendedoresSelects();
     renderRevendedores();
     renderDashboard();
@@ -1157,7 +1160,7 @@ function syncDrive(payload){
   .then(function(){
     // no-cors sempre resolve — resposta opaca é comportamento normal
     showSyncStatus(true);
-    try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos}));}catch(e){}
+    try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas}));}catch(e){}
   })
   .catch(function(e){
     // Só chega aqui se houver erro de rede real (offline, DNS, etc)
@@ -1351,6 +1354,7 @@ function confirmarEntrega() {
   // Monta documento
   _entregaDoc = {
     id: Date.now(),
+    tipo: 'entrega',
     data: dataEntrega,
     revendedor: revNome,
     revendedorId: revSel.value,
@@ -1359,7 +1363,8 @@ function confirmarEntrega() {
     valorTotal: itensEntrega.reduce(function(s, i) { return s + (parseFloat(i.Venda)||0); }, 0)
   };
 
-  // Salva no Drive
+  // Salva localmente e no Drive
+  historicEntregas.unshift(_entregaDoc);
   syncDrive({ action: 'addEntrega', entrega: _entregaDoc });
 
   abrirModalEntrega(_entregaDoc);
@@ -1383,7 +1388,7 @@ function abrirModalEntrega(doc) {
   var pct = (rev && rev.Percentual) || 30;
   var totalVenda = doc.itens.reduce(function(s,i){ return s + (parseFloat(i.Venda)||0); }, 0);
   var comissao = totalVenda * (pct / 100);
-  var totalAcertar = totalVenda - comissao;  // você recebe: venda - comissão
+  var totalAcertar = totalVenda + comissao;  // você recebe: venda + comissão
   doc.totalCusto = totalVenda;
   doc.percentual = pct;
   doc.comissao = comissao;
@@ -1517,15 +1522,23 @@ function compartilharEntregaWhatsApp() {
 
 function renderUltimasEntregas() {
   var el=document.getElementById('lista-ultimas-entregas'); if(!el)return;
-  var entregas=(historicFechamentos||[]).filter(function(f){return f.tipo==='entrega';}).slice(0,20);
+  var entregas=historicEntregas.slice(0,20);
   if(!entregas.length){el.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:2rem 0;">Nenhuma entrega registrada.</p>';return;}
   el.innerHTML=entregas.map(function(e){
     return '<div style="display:flex;align-items:center;gap:10px;padding:.75rem;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;">'
       +'<div style="width:34px;height:34px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;color:#185FA5;flex-shrink:0;">'+(e.revendedor||'?').slice(0,2).toUpperCase()+'</div>'
-      +'<div style="flex:1;"><div style="font-size:13px;font-weight:500;">'+e.revendedor+'</div><div style="font-size:11px;color:var(--gray-500);">'+new Date(e.data).toLocaleDateString('pt-BR')+' · '+e.totalItens+' item(s)</div></div>'
-      +'<span style="font-size:12px;font-weight:600;color:#10b981;">R$ '+((e.valorTotal||0).toLocaleString('pt-BR',{minimumFractionDigits:2}))+'</span>'
+      +'<div style="flex:1;"><div style="font-size:13px;font-weight:500;">'+e.revendedor+'</div><div style="font-size:11px;color:var(--gray-500);">'+new Date(e.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · '+e.totalItens+' item(s)</div></div>'
+      +'<span style="font-size:12px;font-weight:600;color:#10b981;margin-right:8px;">'+fmt(e.valorTotal||0)+'</span>'
+      +'<button onclick="reabrirEntrega('+e.id+')" class="btn-secondary" style="padding:4px 10px;font-size:12px;"><i class="fas fa-eye" style="margin-right:4px;"></i>Ver</button>'
       +'</div>';
   }).join('');
+}
+
+function reabrirEntrega(id) {
+  var doc = historicEntregas.find(function(e){ return e.id === id; });
+  if (!doc) return;
+  _entregaDoc = doc;
+  abrirModalEntrega(doc);
 }
 
 // =====================================================
@@ -1822,7 +1835,7 @@ function registrarDevolucao(){
 function renderDevolucoes(){var el=document.getElementById('lista-devolucoes');var empty=document.getElementById('lista-devolucoes-empty');if(!devolucoes.length){el.innerHTML='';if(empty)empty.style.display='block';return;}if(empty)empty.style.display='none';renderConsignados();var html='';devolucoes.forEach(function(item,idx){html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;"><div><span style="font-family:monospace;font-size:12px;font-weight:600;color:#b45309;">'+item.Codigo+'</span><span style="font-size:12px;color:var(--gray-600);margin-left:8px;">'+(item.Descricao||'—')+'</span></div><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:12px;font-weight:600;">'+fmt(item.Venda)+'</span><button onclick="removerDevolucao('+idx+')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'var(--gray-400)\'"><i class="fas fa-times"></i></button></div></div>';});el.innerHTML=html;}
 function removerDevolucao(idx){devolucoes.splice(idx,1);renderDevolucoes();atualizarResumoFechamento();}
 function limparDevolucoes(){if(!devolucoes.length)return;if(confirm('Limpar todas as devoluções?')){devolucoes=[];renderDevolucoes();atualizarResumoFechamento();}}
-function atualizarResumoFechamento(){var nome=document.getElementById('fechamento-revendedor').value;if(!nome)return;var rev=revendedores.find(function(r){return r.Nome===nome;});var pct=((rev&&rev.Percentual)||30)/100;var vc=produtosConsignados.reduce(function(s,i){return s+pN(i.Venda);},0);var vd=devolucoes.reduce(function(s,i){return s+pN(i.Venda);},0);var vv=vc-vd;var com=vv*pct;var luc=vv-com;document.getElementById('resumo-consignado').textContent=fmt(vc);document.getElementById('resumo-devolvido').textContent=fmt(vd);document.getElementById('resumo-vendido').textContent=fmt(vv);document.getElementById('resumo-comissao').textContent=fmt(com);document.getElementById('resumo-lucro').textContent=fmt(luc);}
+function atualizarResumoFechamento(){var nome=document.getElementById('fechamento-revendedor').value;if(!nome)return;var rev=revendedores.find(function(r){return r.Nome===nome;});var pct=((rev&&rev.Percentual)||30)/100;var vc=produtosConsignados.reduce(function(s,i){return s+pN(i.Venda);},0);var vd=devolucoes.reduce(function(s,i){return s+pN(i.Venda);},0);var vv=vc-vd;var com=vv*pct;var luc=vv+com;document.getElementById('resumo-consignado').textContent=fmt(vc);document.getElementById('resumo-devolvido').textContent=fmt(vd);document.getElementById('resumo-vendido').textContent=fmt(vv);document.getElementById('resumo-comissao').textContent=fmt(com);document.getElementById('resumo-lucro').textContent=fmt(luc);}
 // =====================================================
 // ASSINATURA & RECIBO
 // =====================================================
@@ -2047,7 +2060,7 @@ function gerarReciboCanvas(){
   linha('Total vendido',fmt(reg.valorVendido),'#1f2937',vy+22);
   linha('Comissão ('+reg.percentual+'%)',fmt(reg.comissao),'#f59e0b',vy+44);
   ctx.strokeStyle='#e2e8f0';ctx.beginPath();ctx.moveTo(28,vy+54);ctx.lineTo(W-28,vy+54);ctx.stroke();
-  linha('A receber (loja)',fmt(reg.lucro),'#10b981',vy+76);
+  linha('A receber (Venda + Comissão)',fmt(reg.lucro),'#10b981',vy+76);
 
   // itens vendidos
   ctx.fillStyle='#64748b';ctx.font='bold 10px sans-serif';ctx.fillText('ITENS VENDIDOS',16,292);
@@ -2121,7 +2134,7 @@ function compartilharWhatsApp(){
     +'Devolvidos: '+reg.qtdDevolvidos+'\n\n'
     +'Total vendido: '+fmt(reg.valorVendido)+'\n'
     +'Comissão ('+reg.percentual+'%): '+fmt(reg.comissao)+'\n'
-    +'*A receber (loja): '+fmt(reg.lucro)+'*\n\n'
+    +'*A receber (Venda + Comissão): '+fmt(reg.lucro)+'*\n\n'
     +'_Itens vendidos: '+(reg.itensVendidos||[]).map(function(i){return i.Codigo;}).join(', ')+'_';
   var url='https://wa.me/'+(contato?'55'+contato:'')+'?text='+encodeURIComponent(msg);
   window.open(url,'_blank');
@@ -2141,7 +2154,7 @@ function finalizarFechamento(){
   var pct=((rev&&rev.Percentual)||30)/100;
   var vc=produtosConsignados.reduce(function(s,i){return s+pN(i.Venda);},0);
   var vd=devolvidos.reduce(function(s,i){return s+pN(i.Venda);},0);
-  var vv=vc-vd;var com=vv*pct;var luc=vv-com;
+  var vv=vc-vd;var com=vv*pct;var luc=vv+com;
 
   // Parcelas
   var nParc=parseInt(document.getElementById('fechamento-parcelas').value)||1;
