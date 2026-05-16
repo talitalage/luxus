@@ -924,7 +924,8 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.5rem;">
       <button onclick="fecharModal('modal-entrega')" class="btn-secondary" style="padding:.75rem;"><i class="fas fa-times" style="margin-right:6px;"></i>Fechar</button>
       <button onclick="compartilharEntregaWhatsApp()" class="btn-secondary" style="padding:.75rem;color:#25D366;border-color:#25D366;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='white'"><i class="fab fa-whatsapp" style="margin-right:6px;"></i>WhatsApp</button>
-      <button onclick="baixarEntrega()" class="btn-primary" style="padding:.75rem;grid-column:1/-1;"><i class="fas fa-download" style="margin-right:6px;"></i>Baixar documento assinado</button>
+      <button onclick="excluirEntregaAtual()" class="btn-secondary" style="padding:.75rem;color:#dc2626;border-color:#fca5a5;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='white'"><i class="fas fa-trash" style="margin-right:6px;"></i>Excluir entrega</button>
+      <button onclick="baixarEntrega()" class="btn-primary" style="padding:.75rem;"><i class="fas fa-download" style="margin-right:6px;"></i>Baixar documento assinado</button>
     </div>
   </div>
 </div>
@@ -1696,13 +1697,15 @@ function renderUltimasEntregas() {
   var entregas=historicEntregas.slice(0,20);
   if(!entregas.length){el.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:2rem 0;">Nenhuma entrega registrada.</p>';return;}
   el.innerHTML=entregas.map(function(e){
-    return '<div style="display:flex;align-items:center;gap:10px;padding:.75rem;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;">'
+    return '<div style="display:flex;align-items:center;gap:8px;padding:.75rem;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;">'
       +'<div style="width:34px;height:34px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;color:#185FA5;flex-shrink:0;">'+(e.revendedor||'?').slice(0,2).toUpperCase()+'</div>'
-      +'<div style="flex:1;"><div style="font-size:13px;font-weight:500;">'+(e.tipo==='maleta-pendente'?'<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;margin-right:4px;">Pendente</span>':'')+e.revendedor+'</div><div style="font-size:11px;color:var(--gray-500);">'+new Date(e.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · '+e.totalItens+' item(s)</div></div>'
-      +'<span style="font-size:12px;font-weight:600;color:#10b981;margin-right:8px;">'+fmt(e.valorTotal||0)+'</span>'
-      +(e.assinado||e.reciboUrl?'<span style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600;margin-right:6px;white-space:nowrap;"><i class="fas fa-check-circle" style="margin-right:3px;"></i>Assinado</span>':(e.tipo==='maleta-pendente'?'':'<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600;margin-right:6px;white-space:nowrap;"><i class="fas fa-clock" style="margin-right:3px;"></i>Pendente</span>'))
-      +(e.tipo==='maleta-pendente'?'<button onclick="atrelarRevendedor('+e.id+')" class="btn-primary" style="padding:4px 10px;font-size:12px;white-space:nowrap;"><i class="fas fa-link" style="margin-right:4px;"></i>Atrelar</button>':'<button onclick="reabrirEntrega('+e.id+')" class="btn-secondary" style="padding:4px 10px;font-size:12px;"><i class="fas fa-eye" style="margin-right:4px;"></i>Ver</button>')
-      +'<button onclick="reabrirEntrega('+e.id+')" class="btn-secondary" style="padding:4px 10px;font-size:12px;"><i class="fas fa-eye" style="margin-right:4px;"></i>Ver</button>'
+      +'<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:500;">'+(e.tipo==='maleta-pendente'?'<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;margin-right:4px;">Pendente</span>':'')+e.revendedor+'</div><div style="font-size:11px;color:var(--gray-500);">'+new Date(e.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · '+e.totalItens+' item(s)</div></div>'
+      +'<span style="font-size:12px;font-weight:600;color:#10b981;white-space:nowrap;">'+fmt(e.valorTotal||0)+'</span>'
+      +(e.tipo==='maleta-pendente'
+        ?'<button onclick="atrelarRevendedor('+e.id+')" class="btn-primary" style="padding:4px 10px;font-size:12px;white-space:nowrap;"><i class="fas fa-link" style="margin-right:4px;"></i>Atrelar</button>'
+        :'<button onclick="reabrirEntrega('+e.id+')" class="btn-secondary" style="padding:4px 10px;font-size:12px;"><i class="fas fa-eye" style="margin-right:4px;"></i>Ver</button>'
+      )
+      +'<button onclick="editarEntrega('+e.id+')" class="btn-secondary" style="padding:4px 8px;font-size:12px;" title="Editar"><i class="fas fa-pen"></i></button>'
       +'</div>';
   }).join('');
 }
@@ -1765,6 +1768,45 @@ function confirmarAtrelar(id) {
 
   // Abre documento para assinatura
   setTimeout(function(){ abrirModalEntrega(_entregaDoc); }, 300);
+}
+
+function editarEntrega(id) {
+  var doc = historicEntregas.find(function(e){ return e.id === id; });
+  if (!doc) return;
+  _entregaDoc = doc;
+
+  // Carrega os itens da entrega de volta para o formulário
+  itensEntrega = doc.itens.slice();
+
+  // Seleciona o revendedor correspondente
+  var sel = document.getElementById('entrega-revendedor');
+  if (sel && doc.revendedorId) sel.value = doc.revendedorId;
+
+  renderListaEntrega();
+  switchSubtab('entrega');
+  showToast('Entrega carregada para edição. Ajuste os itens e confirme novamente.', 'info');
+}
+
+function excluirEntregaAtual() {
+  if (!_entregaDoc) return;
+  if (!confirm('Excluir esta entrega? Os itens voltarão para o estoque.')) return;
+  var doc = _entregaDoc;
+
+  // Devolve itens ao estoque
+  doc.itens.forEach(function(item) {
+    var idx = inventory.findIndex(function(i){ return i.rowId === item.rowId; });
+    if (idx !== -1) { inventory[idx].Status = 'Em Estoque'; inventory[idx].Revendedor = ''; }
+    syncDrive({ action: 'editInventario', rowId: item.rowId, status: 'Em Estoque', revendedor: '' });
+  });
+
+  // Remove do histórico local
+  historicEntregas = historicEntregas.filter(function(e){ return e.id !== doc.id; });
+
+  fecharModal('modal-entrega');
+  _entregaDoc = null;
+  renderDashboard();
+  renderUltimasEntregas();
+  showToast('Entrega excluída — itens devolvidos ao estoque', 'success');
 }
 
 function reabrirEntrega(id) {
