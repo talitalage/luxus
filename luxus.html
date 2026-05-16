@@ -778,6 +778,10 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
         </div>
         <div style="background:white;border:1px solid var(--gray-200);border-radius:8px;padding:.75rem;margin-top:.75rem;display:flex;flex-direction:column;gap:5px;">
           <div style="display:flex;justify-content:space-between;">
+            <span style="font-size:12px;color:var(--gray-500);">Soma dos custos</span>
+            <span id="entrega-doc-soma-custo" style="font-size:12px;font-weight:600;color:var(--gray-700);"></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
             <span style="font-size:12px;color:var(--gray-500);">Valor total de venda</span>
             <span id="entrega-doc-custo" style="font-size:12px;font-weight:600;color:var(--gray-700);"></span>
           </div>
@@ -1386,14 +1390,16 @@ function abrirModalEntrega(doc) {
   // Custo, comissão e total a acertar
   var rev = revendedores.find(function(r){ return r.Nome === doc.revendedor; });
   var pct = (rev && rev.Percentual) || 30;
+  var totalCusto = doc.itens.reduce(function(s,i){ return s + (parseFloat(i.Custo)||0); }, 0);
   var totalVenda = doc.itens.reduce(function(s,i){ return s + (parseFloat(i.Venda)||0); }, 0);
   var comissao = totalVenda * (pct / 100);
-  var totalAcertar = totalVenda + comissao;  // você recebe: venda + comissão
-  doc.totalCusto = totalVenda;
+  var totalAcertar = totalVenda - comissao;
+  doc.totalCusto = totalCusto;
   doc.percentual = pct;
   doc.comissao = comissao;
   doc.totalAcertar = totalAcertar;
   document.getElementById('entrega-doc-pct').textContent = pct;
+  document.getElementById('entrega-doc-soma-custo').textContent = fmt(totalCusto);
   document.getElementById('entrega-doc-custo').textContent = fmt(totalVenda);
   document.getElementById('entrega-doc-comissao').textContent = fmt(comissao);
   document.getElementById('entrega-doc-valor').textContent = fmt(totalAcertar);
@@ -1477,15 +1483,17 @@ function baixarEntrega() {
   ctx.textAlign='right'; ctx.fillStyle='#10b981'; ctx.textAlign='left'; y+=24;
   // Resumo financeiro
   ctx.fillStyle='#fff'; ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=1;
-  roundRect(ctx,16,y,W-32,74,6); ctx.fill(); ctx.stroke();
-  ctx.fillStyle='#64748b'; ctx.font='12px sans-serif'; ctx.fillText('Valor de custo dos itens',24,y+18);
+  roundRect(ctx,16,y,W-32,96,6); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#64748b'; ctx.font='12px sans-serif'; ctx.fillText('Soma dos custos',24,y+18);
   ctx.textAlign='right'; ctx.fillStyle='#334155'; ctx.font='bold 12px sans-serif'; ctx.fillText(fmt(doc.totalCusto||0),W-24,y+18);
-  ctx.textAlign='left'; ctx.fillStyle='#64748b'; ctx.font='12px sans-serif'; ctx.fillText('Comissão revendedor ('+(doc.percentual||30)+'%)',24,y+36);
-  ctx.textAlign='right'; ctx.fillStyle='#f59e0b'; ctx.font='bold 12px sans-serif'; ctx.fillText(fmt(doc.comissao||0),W-24,y+36);
-  ctx.fillStyle='#e2e8f0'; ctx.fillRect(24,y+44,W-48,1);
-  ctx.textAlign='left'; ctx.fillStyle='#1f2937'; ctx.font='bold 13px sans-serif'; ctx.fillText('Total a acertar',24,y+60);
-  ctx.textAlign='right'; ctx.fillStyle='#10b981'; ctx.font='bold 14px sans-serif'; ctx.fillText(fmt(doc.totalAcertar||0),W-24,y+60);
-  ctx.textAlign='left'; y+=88;
+  ctx.textAlign='left'; ctx.fillStyle='#64748b'; ctx.font='12px sans-serif'; ctx.fillText('Valor total de venda',24,y+36);
+  ctx.textAlign='right'; ctx.fillStyle='#334155'; ctx.font='bold 12px sans-serif'; ctx.fillText(fmt((doc.totalAcertar||0)+(doc.comissao||0)),W-24,y+36);
+  ctx.textAlign='left'; ctx.fillStyle='#64748b'; ctx.font='12px sans-serif'; ctx.fillText('Comissão revendedor ('+(doc.percentual||30)+'%)',24,y+54);
+  ctx.textAlign='right'; ctx.fillStyle='#f59e0b'; ctx.font='bold 12px sans-serif'; ctx.fillText(fmt(doc.comissao||0),W-24,y+54);
+  ctx.fillStyle='#e2e8f0'; ctx.fillRect(24,y+62,W-48,1);
+  ctx.textAlign='left'; ctx.fillStyle='#1f2937'; ctx.font='bold 13px sans-serif'; ctx.fillText('Total a receber (Venda \u2212 Comiss\u00e3o)',24,y+80);
+  ctx.textAlign='right'; ctx.fillStyle='#10b981'; ctx.font='bold 14px sans-serif'; ctx.fillText(fmt(doc.totalAcertar||0),W-24,y+80);
+  ctx.textAlign='left'; y+=110;
   ctx.strokeStyle='#cbd5e1'; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(16,y); ctx.lineTo(W-16,y); ctx.stroke(); ctx.setLineDash([]); y+=10;
   ctx.fillStyle='#94a3b8'; ctx.font='10px sans-serif'; ctx.fillText('Assinatura do revendedor — confirmo o recebimento',16,y+12); y+=26;
   if (_entregaAss) {
