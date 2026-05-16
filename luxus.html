@@ -259,7 +259,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
           <div>
             <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;"><i class="fas fa-barcode" style="margin-right:4px;"></i>Bipe os itens da maleta</label>
             <div style="display:flex;gap:6px;">
-            <input type="text" id="entrega-codigo" class="barcode-input" placeholder="Código do produto — Enter" onkeydown="if(event.key==='Enter')adicionarEntrega()" style="flex:1;">
+            <input type="text" id="entrega-codigo" class="barcode-input" placeholder="Código do produto — Enter" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarEntrega();}" oninput="clearTimeout(this._t);this._t=setTimeout(function(){var v=document.getElementById('entrega-codigo').value.trim();if(v.length>3)adicionarEntrega();},600)" style="flex:1;">
             <button onclick="abrirScanner('entrega-codigo',adicionarEntrega)" class="btn-secondary" style="padding:6px 10px;flex-shrink:0;" title="Usar câmera"><i class="fas fa-camera"></i></button>
           </div>
           </div>
@@ -331,7 +331,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
       <div class="card-light" style="padding:1.25rem;">
         <h4 style="font-size:12px;font-weight:600;color:var(--gray-700);margin-bottom:8px;">Registrar Devolução</h4>
         <div style="display:flex;gap:6px;margin-bottom:8px;">
-          <input type="text" id="fechamento-codigo" class="barcode-input" placeholder="Código do produto" onkeypress="if(event.key==='Enter')registrarDevolucao()" style="flex:1;">
+          <input type="text" id="fechamento-codigo" class="barcode-input" placeholder="Código do produto" onkeydown="if(event.key==='Enter'){event.preventDefault();registrarDevolucao();}" oninput="clearTimeout(this._t);this._t=setTimeout(function(){var v=document.getElementById('fechamento-codigo').value.trim();if(v.length>3)registrarDevolucao();},600)" style="flex:1;">
           <button onclick="abrirScanner('fechamento-codigo')" class="btn-secondary" style="padding:6px 10px;flex-shrink:0;" title="Usar câmera"><i class="fas fa-camera"></i></button>
         </div>
         <button onclick="registrarDevolucao()" class="btn-primary" style="width:100%;"><i class="fas fa-undo" style="margin-right:6px;"></i>Registrar</button>
@@ -2275,7 +2275,7 @@ function finalizarFechamento(){
   if(!nome){showToast('Selecione um revendedor','warning');return;}
   if(!devolucoes.length&&produtosConsignados.length>0){if(!confirm('Nenhuma devolução. Tudo foi vendido. Continuar?'))return;}
   if(!confirm('Confirmar fechamento?'))return;
-  var vendidos=produtosConsignados.filter(function(p){return!devolucoes.find(function(d){return d.Codigo===p.Codigo;});});
+  var vendidos=produtosConsignados.filter(function(p){return!devolucoes.find(function(d){return d.rowId===p.rowId;});});
   var devolvidos=devolucoes.slice();
   var dataVenda=new Date().toISOString();
   vendidos.forEach(function(item){var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});if(idx!==-1){inventory[idx].Status='Vendido';inventory[idx].Revendedor=nome;inventory[idx].DataVenda=dataVenda;}});
@@ -2313,8 +2313,9 @@ function finalizarFechamento(){
   document.getElementById('fechamento-parcelas').value='1';
   document.getElementById('fechamento-valor-parcela').value='';
   document.getElementById('fechamento-parcelas-preview').style.display='none';
-  atualizarResumoFechamento();renderConsignados();renderDashboard();
+  atualizarResumoFechamento();renderConsignados();renderDashboard();renderHistorico();
   showToast('Fechamento concluído!','success');
+  try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas}));}catch(e){}
   syncDrive({action:'addFechamento',revendedor:nome,percentual:(rev&&rev.Percentual)||30,qtdConsignados:reg.qtdConsignados,qtdVendidos:reg.qtdVendidos,qtdDevolvidos:reg.qtdDevolvidos,valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,nParcelas:nParc,valorParcela:vParc,itensVendidos:reg.itensVendidos,itensDevolvidos:reg.itensDevolvidos});
   vendidos.forEach(function(item){syncDrive({action:'editInventario',rowId:item.rowId,status:'Vendido',revendedor:nome,dataVenda:dataVenda});});
   devolvidos.forEach(function(item){syncDrive({action:'editInventario',rowId:item.rowId,status:'Em Estoque',revendedor:'',dataVenda:''});});
