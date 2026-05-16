@@ -276,7 +276,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
         <p id="lista-entrega-empty" style="font-size:12px;color:var(--gray-400);text-align:center;padding:12px 0;">Nenhum item bipado</p>
         <div id="entrega-resumo" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--gray-200);">
           <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
-            <span style="color:var(--gray-600);">Valor total (venda)</span>
+            <span style="color:var(--gray-600);">Valor total (custo)</span>
             <span id="entrega-valor-total" style="font-weight:700;color:var(--primary);">R$ 0,00</span>
           </div>
         </div>
@@ -858,7 +858,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
 
 <!-- MODAL ENTREGA -->
 <div id="modal-entrega" class="modal-overlay">
-  <div class="modal-content" style="max-width:640px;width:95%;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+  <div class="modal-content" style="max-width:640px;width:95%;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
       <h3 style="font-size:1.1rem;font-weight:700;color:var(--gray-800);"><i class="fas fa-hand-holding" style="color:var(--primary);margin-right:8px;"></i>Documento de Entrega</h3>
       <div style="display:flex;align-items:center;gap:8px;">
@@ -866,7 +866,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
         <button onclick="fecharModal('modal-entrega')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>
       </div>
     </div>
-    <div id="entrega-doc" style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:1.25rem;margin-bottom:1rem;font-size:13px;">
+    <div id="entrega-doc" style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:1.25rem;margin-bottom:1rem;font-size:13px;flex:1;overflow-y:auto;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--gray-200);">
         <div>
           <div id="entrega-doc-titulo" style="font-size:1.1rem;font-weight:700;color:var(--gray-800);"></div>
@@ -922,7 +922,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
       </div>
       <canvas id="canvas-entrega" style="width:100%;height:110px;border:1.5px solid var(--gray-300);border-radius:8px;background:white;touch-action:none;cursor:crosshair;display:block;"></canvas>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.5rem;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.5rem;flex-shrink:0;position:sticky;bottom:0;background:white;padding-top:.75rem;border-top:1px solid var(--gray-100);">
       <button onclick="fecharModal('modal-entrega')" class="btn-secondary" style="padding:.75rem;"><i class="fas fa-times" style="margin-right:6px;"></i>Fechar</button>
       <button onclick="compartilharEntregaWhatsApp()" class="btn-secondary" style="padding:.75rem;color:#25D366;border-color:#25D366;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='white'"><i class="fab fa-whatsapp" style="margin-right:6px;"></i>WhatsApp</button>
       <button onclick="excluirEntregaAtual()" class="btn-secondary" style="padding:.75rem;color:#dc2626;border-color:#fca5a5;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='white'"><i class="fas fa-trash" style="margin-right:6px;"></i>Excluir entrega</button>
@@ -1439,7 +1439,7 @@ function renderListaEntrega() {
   if (itensEntrega.length === 0) { lista.innerHTML = ''; empty.style.display = 'block'; resumo.style.display = 'none'; return; }
   empty.style.display = 'none';
   resumo.style.display = 'block';
-  var total = itensEntrega.reduce(function(s, i) { return s + (parseFloat(i.Venda) || 0); }, 0);
+  var total = itensEntrega.reduce(function(s, i) { return s + (parseFloat(i.Custo) || 0); }, 0);
   valorTotal.textContent = 'R$ ' + total.toLocaleString('pt-BR', {minimumFractionDigits:2});
   lista.innerHTML = itensEntrega.map(function(item, idx) {
     return '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;">'
