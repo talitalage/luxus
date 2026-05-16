@@ -704,6 +704,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
     <input type="hidden" id="rev-rowid">
     <div style="display:flex;flex-direction:column;gap:1rem;">
       <div><label style="font-size:13px;font-weight:500;color:var(--gray-700);display:block;margin-bottom:6px;">Nome</label><input type="text" id="rev-nome" placeholder="Nome do revendedor"></div>
+      <div><label style="font-size:13px;font-weight:500;color:var(--gray-700);display:block;margin-bottom:6px;">CPF</label><input type="text" id="rev-cpf" placeholder="000.000.000-00" maxlength="14" oninput="this.value=this.value.replace(/\D/g,'').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2')"></div>
       <div><label style="font-size:13px;font-weight:500;color:var(--gray-700);display:block;margin-bottom:6px;">WhatsApp</label><input type="text" id="rev-contato" placeholder="(00) 00000-0000"></div>
       <div><label style="font-size:13px;font-weight:500;color:var(--gray-700);display:block;margin-bottom:6px;">Comissão (%)</label><input type="number" id="rev-percentual" min="0" max="100" step="0.1" value="30"></div>
       <div style="display:flex;gap:.75rem;padding-top:1rem;">
@@ -799,7 +800,8 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
         <div style="font-size:11px;color:var(--gray-400);margin-bottom:4px;">Assinatura do revendedor — confirmo o recebimento dos itens acima</div>
         <img id="entrega-ass-img" style="display:none;max-height:60px;border-bottom:1px solid var(--gray-300);">
         <div id="entrega-ass-vazio" style="height:40px;border-bottom:1px solid var(--gray-800);"></div>
-        <div id="entrega-ass-nome" style="font-size:10px;color:var(--gray-400);margin-top:4px;"></div>
+        <div id="entrega-ass-nome" style="font-size:11px;color:var(--gray-600);margin-top:4px;font-weight:500;"></div>
+        <div id="entrega-ass-cpf" style="font-size:10px;color:var(--gray-400);margin-top:1px;"></div>
       </div>
     </div>
     <div style="margin-bottom:.75rem;">
@@ -893,7 +895,8 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
         <div style="font-size:11px;color:var(--gray-400);margin-bottom:4px;">Assinatura do revendedor</div>
         <img id="recibo-assinatura-img" style="display:none;max-height:60px;border-bottom:1px solid var(--gray-300);">
         <div id="recibo-assinatura-vazio" style="height:40px;border-bottom:1px solid var(--gray-800);"></div>
-        <div style="font-size:10px;color:var(--gray-400);margin-top:4px;" id="recibo-nome-ass"></div>
+        <div style="font-size:11px;color:var(--gray-600);margin-top:4px;font-weight:500;" id="recibo-nome-ass"></div>
+        <div style="font-size:10px;color:var(--gray-400);margin-top:1px;" id="recibo-cpf-ass"></div>
       </div>
     </div>
 
@@ -1404,6 +1407,9 @@ function abrirModalEntrega(doc) {
   document.getElementById('entrega-doc-comissao').textContent = fmt(comissao);
   document.getElementById('entrega-doc-valor').textContent = fmt(totalAcertar);
   document.getElementById('entrega-ass-nome').textContent = doc.revendedor;
+  var revEnt = revendedores.find(function(r){ return r.Nome === doc.revendedor; });
+  var cpfEnt = revEnt && revEnt.CPF ? 'CPF: ' + revEnt.CPF : '';
+  document.getElementById('entrega-ass-cpf').textContent = cpfEnt;
   document.getElementById('entrega-ass-img').style.display = 'none';
   document.getElementById('entrega-ass-vazio').style.display = 'block';
   var itensEl = document.getElementById('entrega-doc-itens');
@@ -1503,16 +1509,25 @@ function baixarEntrega() {
   }
   ctx.strokeStyle='#1f2937'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(16,y+50); ctx.lineTo(240,y+50); ctx.stroke();
   ctx.fillStyle='#334155'; ctx.font='11px sans-serif'; ctx.fillText(doc.revendedor,16,y+64);
+  var revDocCpf=revendedores.find(function(r){return r.Nome===doc.revendedor;});if(revDocCpf&&revDocCpf.CPF){ctx.fillStyle='#94a3b8';ctx.font='10px sans-serif';ctx.fillText('CPF: '+revDocCpf.CPF,16,y+78);}
   finalDownloadEntrega(c,doc);
 }
 
 function finalDownloadEntrega(c,doc) {
   var dataUrl=c.toDataURL('image/png');
   var d=new Date(doc.data);
-  var nome='entrega_'+d.getFullYear()+(d.getMonth()+1).toString().padStart(2,'0')+d.getDate().toString().padStart(2,'0')+'_'+doc.revendedor.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'')+'.png';
-  syncDrive({action:'salvarRecibo',nomeArquivo:nome,imagemBase64:dataUrl});
-  var a=document.createElement('a'); a.download=nome; a.href=dataUrl; a.click();
-  showToast('Documento salvo!','success');
+  var nome='entrega_'+d.getFullYear()+(d.getMonth()+1).toString().padStart(2,'0')+d.getDate().toString().padStart(2,'0')+'_'+doc.revendedor.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
+  syncDriveComCallback({action:'salvarRecibo',nomeArquivo:nome,imagemBase64:dataUrl}, function(res){
+    if(res&&res.success&&res.url){
+      // Salva URL na entrega local
+      var idx=historicEntregas.findIndex(function(e){return e.id===doc.id;});
+      if(idx!==-1) historicEntregas[idx].reciboUrl=res.url;
+      mostrarLinkRecibo(res.url, doc.revendedor);
+    } else {
+      showToast('Documento salvo localmente','success');
+    }
+  });
+  var a=document.createElement('a'); a.download=nome+'.png'; a.href=dataUrl; a.click();
 }
 
 function compartilharEntregaWhatsApp() {
@@ -1545,8 +1560,12 @@ function renderUltimasEntregas() {
 function reabrirEntrega(id) {
   var doc = historicEntregas.find(function(e){ return e.id === id; });
   if (!doc) return;
-  _entregaDoc = doc;
-  abrirModalEntrega(doc);
+  if (doc.reciboUrl) {
+    window.open(doc.reciboUrl, '_blank');
+  } else {
+    _entregaDoc = doc;
+    abrirModalEntrega(doc);
+  }
 }
 
 // =====================================================
@@ -1978,6 +1997,9 @@ function abrirModalAssinatura(reg){
   document.getElementById('recibo-comissao').textContent=fmt(reg.comissao);
   document.getElementById('recibo-lucro').textContent=fmt(reg.lucro);
   document.getElementById('recibo-nome-ass').textContent=reg.revendedor;
+  var revRec=revendedores.find(function(r){return r.Nome===reg.revendedor;});
+  var cpfEl=document.getElementById('recibo-cpf-ass');
+  if(cpfEl)cpfEl.textContent=revRec&&revRec.CPF?'CPF: '+revRec.CPF:'';
 
   var itensEl=document.getElementById('recibo-itens');
   if(itensEl){
@@ -2096,7 +2118,7 @@ function gerarReciboCanvas(){
     return;
   }
   ctx.strokeStyle='#1f2937';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(16,ay+56);ctx.lineTo(240,ay+56);ctx.stroke();
-  ctx.fillStyle='#334155';ctx.font='11px sans-serif';ctx.fillText(reg.revendedor,16,ay+70);
+  ctx.fillStyle='#334155';ctx.font='11px sans-serif';ctx.fillText(reg.revendedor,16,ay+70);var revRecCpf=revendedores.find(function(r){return r.Nome===reg.revendedor;});if(revRecCpf&&revRecCpf.CPF){ctx.fillStyle='#94a3b8';ctx.font='10px sans-serif';ctx.fillText('CPF: '+revRecCpf.CPF,16,ay+84);}
   _downloadCanvas(c,reg);
 }
 
@@ -2104,16 +2126,16 @@ function _downloadCanvas(c,reg){
   var dataUrl=c.toDataURL('image/png');
   if(reg){
     salvarReciboLocal(reg, dataUrl);
-    // Salva no Drive e guarda a URL no registro do fechamento
     var d=new Date(reg.data);
-    var nomeArq='recibo_'+d.getFullYear()+(d.getMonth()+1).toString().padStart(2,'0')+d.getDate().toString().padStart(2,'0')+'_'+reg.revendedor.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'')+'.png';
+    var nomeArq='recibo_'+d.getFullYear()+(d.getMonth()+1).toString().padStart(2,'0')+d.getDate().toString().padStart(2,'0')+'_'+reg.revendedor.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
     syncDriveComCallback({action:'salvarRecibo',nomeArquivo:nomeArq,imagemBase64:dataUrl}, function(res){
       if(res&&res.success&&res.url){
         var idx=historicFechamentos.findIndex(function(f){return f.id===reg.id;});
         if(idx!==-1) historicFechamentos[idx].reciboUrl=res.url;
-        // Persiste a URL no Drive também
         syncDrive({action:'updateFechamentoUrl',id:reg.id,reciboUrl:res.url});
-        showToast('Recibo salvo no Drive!','success');
+        mostrarLinkRecibo(res.url, reg.revendedor);
+      } else {
+        showToast('Recibo salvo localmente','success');
       }
     });
   }
@@ -2121,6 +2143,15 @@ function _downloadCanvas(c,reg){
   a.download='recibo-'+(reg?reg.revendedor.replace(/\s/g,'_'):'fechamento')+'-'+new Date().toISOString().slice(0,10)+'.png';
   a.href=dataUrl;
   a.click();
+}
+
+function mostrarLinkRecibo(url, nome){
+  var el=document.getElementById('link-recibo-box');
+  if(!el){el=document.createElement('div');el.id='link-recibo-box';el.style.cssText='position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:white;border:1px solid var(--gray-200);border-radius:12px;padding:1rem 1.25rem;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:9999;min-width:320px;max-width:480px;width:90%;';document.body.appendChild(el);}
+  el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:13px;font-weight:600;color:var(--gray-800);"><i class=\"fas fa-check-circle\" style=\"color:#10b981;margin-right:6px;\"></i>PDF salvo no Drive</span><button onclick=\"document.getElementById(\'link-recibo-box\').remove()\" style=\"background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1rem;\">×</button></div>'
+    +'<div style="display:flex;gap:6px;"><input id=\"link-recibo-input\" value=\"'+url+'\" readonly style=\"flex:1;font-size:11px;background:var(--gray-50)!important;\"><button onclick=\"navigator.clipboard.writeText(\''+url+'\');showToast(\'Link copiado!\',\'success\')\" class=\"btn-secondary\" style=\"padding:6px 10px;font-size:12px;white-space:nowrap;\"><i class=\"fas fa-copy\"></i></button><a href=\"'+url+'\" target=\"_blank\" class=\"btn-primary\" style=\"padding:6px 10px;font-size:12px;text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;\"><i class=\"fas fa-external-link-alt\"></i></a></div>'
+    +'<div style="font-size:11px;color:var(--gray-400);margin-top:6px;">Envie este link para '+nome+' visualizar o documento</div>';
+  setTimeout(function(){if(el.parentNode)el.remove();},30000);
 }
 
 function roundRect(ctx,x,y,w,h,r){
@@ -2300,10 +2331,10 @@ function salvarCfgCards(){function gv(id){var e=document.getElementById(id);retu
 // =====================================================
 // REVENDEDORES
 // =====================================================
-function renderRevendedores(){var busca=(document.getElementById('busca-revendedor')?document.getElementById('busca-revendedor').value:'').toLowerCase();var lista=revendedores.filter(function(r){return r.Nome.toLowerCase().includes(busca);});var html='';lista.forEach(function(rev){html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem;background:white;border-radius:8px;border:1px solid var(--gray-200);"><div style="flex:1;"><div style="font-weight:500;color:var(--gray-800);font-size:14px;">'+rev.Nome+'</div><div style="font-size:12px;color:var(--gray-500);margin-top:2px;">'+(rev.Contato||'Sem contato')+' · '+(rev.Percentual||30)+'% comissão</div></div><div style="display:flex;gap:6px;"><button onclick="editarRevendedor('+rev.rowId+')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);" onmouseover="this.style.color=\'#3b82f6\'" onmouseout="this.style.color=\'var(--gray-400)\'"><i class="fas fa-pen" style="font-size:11px;"></i></button><button onclick="excluirRevendedor('+rev.rowId+')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'var(--gray-400)\'"><i class="fas fa-trash" style="font-size:11px;"></i></button></div></div>';});var el=document.getElementById('lista-revendedores');if(el)el.innerHTML=html||'<p style="color:var(--gray-400);font-size:13px;text-align:center;padding:2rem 0;">Nenhum revendedor cadastrado</p>';}
-function abrirModalRevendedor(){document.getElementById('titulo-modal-rev').textContent='Novo Revendedor';['rev-rowid','rev-nome','rev-contato'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});document.getElementById('rev-percentual').value='30';abrirModal('modal-revendedor');}
-function editarRevendedor(rowId){var rev=revendedores.find(function(r){return r.rowId===rowId;});document.getElementById('titulo-modal-rev').textContent='Editar Revendedor';document.getElementById('rev-rowid').value=rowId;document.getElementById('rev-nome').value=rev.Nome;document.getElementById('rev-contato').value=rev.Contato||'';document.getElementById('rev-percentual').value=rev.Percentual||30;abrirModal('modal-revendedor');}
-function salvarRevendedor(){var rowId=document.getElementById('rev-rowid').value;var nome=document.getElementById('rev-nome').value.trim();if(!nome){showToast('Informe o nome','warning');return;}var percentual=parseFloat(document.getElementById('rev-percentual').value)||30;var contato=document.getElementById('rev-contato').value.trim();if(rowId){var idx=revendedores.findIndex(function(r){return r.rowId==rowId;});if(idx!==-1){revendedores[idx].Nome=nome;revendedores[idx].Contato=contato;revendedores[idx].Percentual=percentual;}syncDrive({action:'editRevendedor',rowId:parseInt(rowId),nome:nome,contato:contato,percentual:percentual});}else{var novoRev={rowId:Date.now(),Nome:nome,Contato:contato,Percentual:percentual};revendedores.push(novoRev);syncDrive({action:'addRevendedor',nome:nome,contato:contato,percentual:percentual});}fecharModal('modal-revendedor');renderRevendedores();carregarRevendedoresSelects();showToast('Revendedor salvo!','success');}
+function renderRevendedores(){var busca=(document.getElementById('busca-revendedor')?document.getElementById('busca-revendedor').value:'').toLowerCase();var lista=revendedores.filter(function(r){return r.Nome.toLowerCase().includes(busca);});var html='';lista.forEach(function(rev){html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem;background:white;border-radius:8px;border:1px solid var(--gray-200);"><div style="flex:1;"><div style="font-weight:500;color:var(--gray-800);font-size:14px;">'+rev.Nome+'</div><div style="font-size:12px;color:var(--gray-500);margin-top:2px;">'+(rev.CPF?'CPF: '+rev.CPF+' · ':'')+( rev.Contato||'Sem contato')+' · '+(rev.Percentual||30)+'% comissão</div></div><div style="display:flex;gap:6px;"><button onclick="editarRevendedor('+rev.rowId+')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);" onmouseover="this.style.color=\'#3b82f6\'" onmouseout="this.style.color=\'var(--gray-400)\'"><i class="fas fa-pen" style="font-size:11px;"></i></button><button onclick="excluirRevendedor('+rev.rowId+')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'var(--gray-400)\'"><i class="fas fa-trash" style="font-size:11px;"></i></button></div></div>';});var el=document.getElementById('lista-revendedores');if(el)el.innerHTML=html||'<p style="color:var(--gray-400);font-size:13px;text-align:center;padding:2rem 0;">Nenhum revendedor cadastrado</p>';}
+function abrirModalRevendedor(){document.getElementById('titulo-modal-rev').textContent='Novo Revendedor';['rev-rowid','rev-nome','rev-cpf','rev-contato'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});document.getElementById('rev-percentual').value='30';abrirModal('modal-revendedor');}
+function editarRevendedor(rowId){var rev=revendedores.find(function(r){return r.rowId===rowId;});document.getElementById('titulo-modal-rev').textContent='Editar Revendedor';document.getElementById('rev-rowid').value=rowId;document.getElementById('rev-nome').value=rev.Nome;document.getElementById('rev-cpf').value=rev.CPF||'';document.getElementById('rev-contato').value=rev.Contato||'';document.getElementById('rev-percentual').value=rev.Percentual||30;abrirModal('modal-revendedor');}
+function salvarRevendedor(){var rowId=document.getElementById('rev-rowid').value;var nome=document.getElementById('rev-nome').value.trim();if(!nome){showToast('Informe o nome','warning');return;}var percentual=parseFloat(document.getElementById('rev-percentual').value)||30;var contato=document.getElementById('rev-contato').value.trim();var cpf=document.getElementById('rev-cpf').value.trim();if(rowId){var idx=revendedores.findIndex(function(r){return r.rowId==rowId;});if(idx!==-1){revendedores[idx].Nome=nome;revendedores[idx].Contato=contato;revendedores[idx].Percentual=percentual;revendedores[idx].CPF=cpf;}syncDrive({action:'editRevendedor',rowId:parseInt(rowId),nome:nome,contato:contato,percentual:percentual,cpf:cpf});}else{var novoRev={rowId:Date.now(),Nome:nome,Contato:contato,Percentual:percentual,CPF:cpf};revendedores.push(novoRev);syncDrive({action:'addRevendedor',nome:nome,contato:contato,percentual:percentual,cpf:cpf});}fecharModal('modal-revendedor');renderRevendedores();carregarRevendedoresSelects();showToast('Revendedor salvo!','success');}
 function excluirRevendedor(rowId){if(!confirm('Excluir este revendedor?'))return;revendedores=revendedores.filter(function(r){return r.rowId!==rowId;});renderRevendedores();carregarRevendedoresSelects();showToast('Revendedor excluído!','success');syncDrive({action:'delRevendedor',rowId:rowId});}
 // =====================================================
 // SCANNER DE CÂMERA (html5-qrcode)
