@@ -87,6 +87,7 @@ body.device-tablet .data-table th,body.device-tablet .data-table td{padding:.5re
 body.device-tablet input,body.device-tablet select,body.device-tablet textarea{font-size:14px!important;padding:.75rem 1rem!important;}
 body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.75rem 1rem;font-size:.9rem;}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/zxing-js/0.20.0/zxing.min.js"></script>
 </head>
 <body>
 
@@ -242,7 +243,10 @@ body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.75rem
           </div>
           <div>
             <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;"><i class="fas fa-barcode" style="margin-right:4px;"></i>Bipe os itens da maleta</label>
-            <input type="text" id="entrega-codigo" class="barcode-input" placeholder="Código do produto — Enter" onkeydown="if(event.key==='Enter')adicionarEntrega()">
+            <div style="display:flex;gap:6px;">
+            <input type="text" id="entrega-codigo" class="barcode-input" placeholder="Código do produto — Enter" onkeydown="if(event.key==='Enter')adicionarEntrega()" style="flex:1;">
+            <button onclick="abrirScanner('entrega-codigo',adicionarEntrega)" class="btn-secondary" style="padding:6px 10px;flex-shrink:0;" title="Usar câmera"><i class="fas fa-camera"></i></button>
+          </div>
           </div>
           <button onclick="adicionarEntrega()" class="btn-secondary" style="width:100%;"><i class="fas fa-plus" style="margin-right:6px;"></i>Adicionar item</button>
         </div>
@@ -274,8 +278,12 @@ body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.75rem
     <div class="card-light" style="padding:1.25rem;">
       <h3 class="section-title"><i class="fas fa-box-open"></i>Entrada de Produtos</h3>
       <div style="display:flex;flex-direction:column;gap:.875rem;">
-        <div><label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;"><i class="fas fa-barcode" style="margin-right:4px;"></i>Código</label><input type="text" id="entrada-codigo" class="barcode-input" placeholder="Bipe ou digite o código"></div>
-        <div><label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Descrição</label><input type="text" id="entrada-descricao" placeholder="Ex: Colar Dourado"></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;"><i class="fas fa-barcode" style="margin-right:4px;"></i>Código</label>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="entrada-codigo" class="barcode-input" placeholder="Bipe ou digite o código" style="flex:1;">
+          <button onclick="abrirScanner('entrada-codigo')" class="btn-secondary" style="padding:6px 10px;flex-shrink:0;" title="Usar câmera"><i class="fas fa-camera"></i></button>
+        </div></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Descrição</label><input type="text" id="entrada-descricao" placeholder="Ex: COLAR DOURADO" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
           <div><label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Tipo</label><select id="entrada-tipo" onchange="onChangeTipoEntrada()"><option value="">Selecione...</option><option value="Semi Joia">Semi Joia</option><option value="Perfume">Perfume</option></select></div>
           <div id="entrada-categoria-container" style="display:none;"><label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Categoria</label><select id="entrada-categoria"></select></div>
@@ -304,7 +312,10 @@ body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.75rem
       </div>
       <div class="card-light" style="padding:1.25rem;">
         <h4 style="font-size:12px;font-weight:600;color:var(--gray-700);margin-bottom:8px;">Registrar Devolução</h4>
-        <input type="text" id="fechamento-codigo" class="barcode-input" placeholder="Código do produto" onkeypress="if(event.key==='Enter')registrarDevolucao()" style="margin-bottom:8px;">
+        <div style="display:flex;gap:6px;margin-bottom:8px;">
+          <input type="text" id="fechamento-codigo" class="barcode-input" placeholder="Código do produto" onkeypress="if(event.key==='Enter')registrarDevolucao()" style="flex:1;">
+          <button onclick="abrirScanner('fechamento-codigo')" class="btn-secondary" style="padding:6px 10px;flex-shrink:0;" title="Usar câmera"><i class="fas fa-camera"></i></button>
+        </div>
         <button onclick="registrarDevolucao()" class="btn-primary" style="width:100%;"><i class="fas fa-undo" style="margin-right:6px;"></i>Registrar</button>
       </div>
       <div class="card-light" style="padding:1.25rem;">
@@ -686,6 +697,29 @@ body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.75rem
       <button onclick="restaurarColunasPadrao()" class="btn-secondary" style="flex:1;font-size:13px;">Restaurar padrão</button>
       <button onclick="aplicarColunas()" class="btn-primary" style="flex:1;"><i class="fas fa-check" style="margin-right:6px;"></i>Aplicar</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL SCANNER CÂMERA -->
+<div id="modal-scanner" class="modal-overlay">
+  <div class="modal-content" style="max-width:420px;width:95%;padding:1.25rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="font-size:1rem;font-weight:700;color:var(--gray-800);"><i class="fas fa-camera" style="color:var(--primary);margin-right:8px;"></i>Ler código de barras</h3>
+      <button onclick="fecharScanner()" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>
+    </div>
+    <div style="position:relative;background:#000;border-radius:10px;overflow:hidden;margin-bottom:1rem;">
+      <video id="scanner-video" style="width:100%;display:block;max-height:280px;object-fit:cover;" playsinline autoplay muted></video>
+      <!-- Mira -->
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+        <div style="width:200px;height:80px;border:2px solid #60a5fa;border-radius:6px;box-shadow:0 0 0 9999px rgba(0,0,0,.4);"></div>
+      </div>
+    </div>
+    <div id="scanner-status" style="font-size:13px;color:var(--gray-500);text-align:center;margin-bottom:.75rem;">Aponte a câmera para o código de barras</div>
+    <div id="scanner-resultado" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.75rem;margin-bottom:.75rem;text-align:center;">
+      <div style="font-size:11px;color:#065f46;margin-bottom:4px;">Código lido</div>
+      <div id="scanner-codigo-lido" style="font-family:monospace;font-size:1.1rem;font-weight:700;color:#059669;"></div>
+    </div>
+    <button onclick="fecharScanner()" class="btn-secondary" style="width:100%;">Cancelar</button>
   </div>
 </div>
 
@@ -1623,7 +1657,7 @@ function renderDashTable(){
 // ENTRADA
 // =====================================================
 function onChangeTipoEntrada(){var tipo=document.getElementById('entrada-tipo').value;var container=document.getElementById('entrada-categoria-container');var select=document.getElementById('entrada-categoria');if(tipo&&categorias[tipo]){container.style.display='block';var opts='<option value="">Selecione...</option>';categorias[tipo].forEach(function(c){opts+='<option value="'+c+'">'+c+'</option>';});select.innerHTML=opts;}else{container.style.display='none';}}
-function registrarEntrada(){var codigo=document.getElementById('entrada-codigo').value.trim();var descricao=document.getElementById('entrada-descricao').value.trim();var tipo=document.getElementById('entrada-tipo').value;var categoria=document.getElementById('entrada-categoria').value;var custo=pN(document.getElementById('entrada-custo').value);var venda=pN(document.getElementById('entrada-venda').value);var revendedor=document.getElementById('entrada-revendedor').value;if(!codigo){showToast('Informe o código do produto','warning');document.getElementById('entrada-codigo').focus();return;}var status=revendedor?'Consignado':'Em Estoque';var novoItem={rowId:Date.now(),Codigo:codigo,Descricao:descricao,Tipo:tipo,Categoria:categoria,Custo:custo,Venda:venda,Status:status,Revendedor:revendedor,Foto:'',Data:new Date().toISOString()};inventory.push(novoItem);limparFormEntrada();renderUltimasEntradas();renderDashboard();showToast('Produto registrado!','success');syncDrive({action:'addInventario',codigo:codigo,descricao:descricao,tipo:tipo,categoria:categoria,custo:custo,venda:venda,status:status,revendedor:revendedor||'',foto:''});}
+function registrarEntrada(){var codigo=document.getElementById('entrada-codigo').value.trim();var descricao=(document.getElementById('entrada-descricao').value.trim()).toUpperCase();var tipo=document.getElementById('entrada-tipo').value;var categoria=document.getElementById('entrada-categoria').value;var custo=pN(document.getElementById('entrada-custo').value);var venda=pN(document.getElementById('entrada-venda').value);var revendedor=document.getElementById('entrada-revendedor').value;if(!codigo){showToast('Informe o código do produto','warning');document.getElementById('entrada-codigo').focus();return;}var status=revendedor?'Consignado':'Em Estoque';var novoItem={rowId:Date.now(),Codigo:codigo,Descricao:descricao,Tipo:tipo,Categoria:categoria,Custo:custo,Venda:venda,Status:status,Revendedor:revendedor,Foto:'',Data:new Date().toISOString()};inventory.push(novoItem);limparFormEntrada();renderUltimasEntradas();renderDashboard();showToast('Produto registrado!','success');syncDrive({action:'addInventario',codigo:codigo,descricao:descricao,tipo:tipo,categoria:categoria,custo:custo,venda:venda,status:status,revendedor:revendedor||'',foto:''});}
 function limparFormEntrada(){['entrada-codigo','entrada-tipo','entrada-categoria','entrada-descricao','entrada-custo','entrada-venda','entrada-revendedor'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});var cc=document.getElementById('entrada-categoria-container');if(cc)cc.style.display='none';var ce=document.getElementById('entrada-codigo');if(ce)ce.focus();}
 function renderUltimasEntradas(){var ultimas=inventory.slice().sort(function(a,b){return new Date(b.Data)-new Date(a.Data);}).slice(0,10);var html='';ultimas.forEach(function(item){html+='<div style="background:var(--gray-50);padding:.75rem;border-radius:8px;border:1px solid var(--gray-200);"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-family:monospace;color:#92400e;font-weight:700;">'+item.Codigo+'</span><span class="category-badge">'+(item.Categoria||item.Tipo||'—')+'</span></div><div style="font-size:13px;color:var(--gray-700);">'+(item.Descricao||'—')+'</div><div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:var(--gray-600);"><span>'+fmt(item.Venda)+'</span><span>'+(item.Revendedor||'Estoque')+'</span></div></div>';});var el=document.getElementById('ultimas-entradas');if(el)el.innerHTML=html||'<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1rem;">Nenhuma entrada registrada</p>';}
 
@@ -2098,6 +2132,57 @@ function abrirModalRevendedor(){document.getElementById('titulo-modal-rev').text
 function editarRevendedor(rowId){var rev=revendedores.find(function(r){return r.rowId===rowId;});document.getElementById('titulo-modal-rev').textContent='Editar Revendedor';document.getElementById('rev-rowid').value=rowId;document.getElementById('rev-nome').value=rev.Nome;document.getElementById('rev-contato').value=rev.Contato||'';document.getElementById('rev-percentual').value=rev.Percentual||30;abrirModal('modal-revendedor');}
 function salvarRevendedor(){var rowId=document.getElementById('rev-rowid').value;var nome=document.getElementById('rev-nome').value.trim();if(!nome){showToast('Informe o nome','warning');return;}var percentual=parseFloat(document.getElementById('rev-percentual').value)||30;var contato=document.getElementById('rev-contato').value.trim();if(rowId){var idx=revendedores.findIndex(function(r){return r.rowId==rowId;});if(idx!==-1){revendedores[idx].Nome=nome;revendedores[idx].Contato=contato;revendedores[idx].Percentual=percentual;}syncDrive({action:'editRevendedor',rowId:parseInt(rowId),nome:nome,contato:contato,percentual:percentual});}else{var novoRev={rowId:Date.now(),Nome:nome,Contato:contato,Percentual:percentual};revendedores.push(novoRev);syncDrive({action:'addRevendedor',nome:nome,contato:contato,percentual:percentual});}fecharModal('modal-revendedor');renderRevendedores();carregarRevendedoresSelects();showToast('Revendedor salvo!','success');}
 function excluirRevendedor(rowId){if(!confirm('Excluir este revendedor?'))return;revendedores=revendedores.filter(function(r){return r.rowId!==rowId;});renderRevendedores();carregarRevendedoresSelects();showToast('Revendedor excluído!','success');syncDrive({action:'delRevendedor',rowId:rowId});}
+// =====================================================
+// SCANNER DE CÂMERA (ZXing)
+// =====================================================
+var _scannerTargetId = null;
+var _scannerCallback = null;
+var _scannerReader = null;
+var _scannerStream = null;
+
+function abrirScanner(targetInputId, callback) {
+  _scannerTargetId = targetInputId;
+  _scannerCallback = callback || null;
+  document.getElementById('scanner-resultado').style.display = 'none';
+  document.getElementById('scanner-status').textContent = 'Iniciando câmera...';
+  abrirModal('modal-scanner');
+  setTimeout(iniciarScanner, 300);
+}
+
+function iniciarScanner() {
+  if (typeof ZXing === 'undefined') {
+    document.getElementById('scanner-status').textContent = 'Biblioteca não disponível. Use o leitor físico.';
+    return;
+  }
+  var video = document.getElementById('scanner-video');
+  _scannerReader = new ZXing.BrowserMultiFormatReader();
+  _scannerReader.decodeFromVideoDevice(null, video, function(result, err) {
+    if (result) {
+      var codigo = result.getText();
+      document.getElementById('scanner-codigo-lido').textContent = codigo;
+      document.getElementById('scanner-resultado').style.display = 'block';
+      document.getElementById('scanner-status').textContent = '✓ Código lido com sucesso!';
+      // Preenche o campo alvo
+      var input = document.getElementById(_scannerTargetId);
+      if (input) { input.value = codigo; input.dispatchEvent(new Event('input')); }
+      // Fecha após 800ms e executa callback
+      setTimeout(function() {
+        fecharScanner();
+        if (_scannerCallback) _scannerCallback();
+      }, 800);
+    }
+  });
+  document.getElementById('scanner-status').textContent = 'Aponte a câmera para o código de barras';
+}
+
+function fecharScanner() {
+  if (_scannerReader) {
+    try { _scannerReader.reset(); } catch(e) {}
+    _scannerReader = null;
+  }
+  fecharModal('modal-scanner');
+}
+
 function carregarSelectEntrega(){
   var sel=document.getElementById('entrega-revendedor'); if(!sel)return;
   sel.innerHTML='<option value="">Escolha...</option>';
