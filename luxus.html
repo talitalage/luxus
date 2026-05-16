@@ -2872,7 +2872,42 @@ function abrirModalNovoItem(){var rowId=document.getElementById('edit-rowid');if
 function editarItem(rowId){var item=inventory.find(function(i){return i.rowId===rowId;});if(!item)return;document.getElementById('edit-rowid').value=rowId;document.getElementById('edit-codigo').value=item.Codigo||'';document.getElementById('edit-descricao').value=item.Descricao||'';document.getElementById('edit-tipo').value=item.Tipo||'';document.getElementById('edit-categoria').value=item.Categoria||'';document.getElementById('edit-custo').value=item.Custo||'';document.getElementById('edit-venda').value=item.Venda||'';document.getElementById('edit-foto').value=item.Foto||'';var status=item.Status;if(item.Revendedor&&item.Status!=='Vendido'&&item.Status!=='Em Estoque')status='Consignado';document.getElementById('edit-status').value=status;document.getElementById('edit-revendedor').value=item.Revendedor||'';var titulo=document.getElementById('modal-item-titulo');if(titulo)titulo.textContent='Editar Item';var btnEx=document.getElementById('btn-excluir-item');if(btnEx)btnEx.style.display='';carregarCategoriasEdit();atualizarCampoRevendedorEdit();abrirModal('modal-item');}
 function carregarCategoriasEdit(){var tipo=document.getElementById('edit-tipo').value;var sel=document.getElementById('edit-categoria');var opts='<option value="">Sem categoria</option>';if(tipo&&categorias[tipo])categorias[tipo].forEach(function(c){opts+='<option value="'+c+'">'+c+'</option>';});sel.innerHTML=opts;}
 function atualizarCampoRevendedorEdit(){var status=document.getElementById('edit-status').value;var sel=document.getElementById('edit-revendedor');var cont=document.getElementById('edit-revendedor-container');if(status==='Consignado'){cont.style.opacity='1';sel.disabled=false;}else{cont.style.opacity='.5';sel.disabled=true;sel.value='';}}
-function salvarItem(){var rowId=document.getElementById('edit-rowid').value;var status=document.getElementById('edit-status').value;var revend=document.getElementById('edit-revendedor').value;if(status==='Consignado'&&!revend){showToast('Selecione um revendedor para status Consignado','warning');return;}var payload={action:rowId?'editInventario':'addInventario',codigo:document.getElementById('edit-codigo').value.trim(),descricao:document.getElementById('edit-descricao').value.trim(),tipo:document.getElementById('edit-tipo').value,categoria:document.getElementById('edit-categoria').value,custo:parseFloat(document.getElementById('edit-custo').value)||0,venda:parseFloat(document.getElementById('edit-venda').value)||0,status:status,revendedor:status==='Consignado'?revend:'',foto:document.getElementById('edit-foto').value||''};if(rowId)payload.rowId=parseInt(rowId);if(rowId){var idx=inventory.findIndex(function(i){return i.rowId==rowId;});if(idx!==-1)inventory[idx]=Object.assign(inventory[idx],{Codigo:payload.codigo,Descricao:payload.descricao,Tipo:payload.tipo,Categoria:payload.categoria,Custo:payload.custo,Venda:payload.venda,Status:payload.status,Revendedor:payload.revendedor,Foto:payload.foto});}else{inventory.push({rowId:Date.now(),Codigo:payload.codigo,Descricao:payload.descricao,Tipo:payload.tipo,Categoria:payload.categoria,Custo:payload.custo,Venda:payload.venda,Status:payload.status,Revendedor:payload.revendedor,Foto:payload.foto,Data:new Date().toISOString()});}renderDashboard();fecharModal('modal-item');showToast('Item salvo!','success');syncDrive(payload);}
+function salvarItem(){
+  var rowId=document.getElementById('edit-rowid').value;
+  var status=document.getElementById('edit-status').value;
+  var revend=document.getElementById('edit-revendedor').value;
+  if(status==='Consignado'&&!revend){showToast('Selecione um revendedor para status Consignado','warning');return;}
+  var revendedor=(status==='Consignado'?revend:'');
+  var payload={
+    action:rowId?'editInventario':'addInventario',
+    codigo:document.getElementById('edit-codigo').value.trim(),
+    descricao:document.getElementById('edit-descricao').value.trim().toUpperCase(),
+    tipo:document.getElementById('edit-tipo').value,
+    categoria:document.getElementById('edit-categoria').value,
+    custo:parseFloat(document.getElementById('edit-custo').value)||0,
+    venda:parseFloat(document.getElementById('edit-venda').value)||0,
+    status:status,
+    revendedor:revendedor,
+    foto:document.getElementById('edit-foto').value||''
+  };
+  if(rowId){
+    payload.rowId=rowId; // string para preservar precisão
+    var idx=inventory.findIndex(function(i){return String(i.rowId)===String(rowId);});
+    if(idx!==-1)inventory[idx]=Object.assign(inventory[idx],{
+      Codigo:payload.codigo,Descricao:payload.descricao,Tipo:payload.tipo,
+      Categoria:payload.categoria,Custo:payload.custo,Venda:payload.venda,
+      Status:payload.status,Revendedor:revendedor,Foto:payload.foto
+    });
+  } else {
+    inventory.push({rowId:Date.now(),Codigo:payload.codigo,Descricao:payload.descricao,
+      Tipo:payload.tipo,Categoria:payload.categoria,Custo:payload.custo,Venda:payload.venda,
+      Status:payload.status,Revendedor:revendedor,Foto:payload.foto,Data:new Date().toISOString()});
+  }
+  renderDashboard();
+  fecharModal('modal-item');
+  showToast('Item salvo!','success');
+  syncDrive(payload);
+}
 function excluirItem(){var rowId=document.getElementById('edit-rowid').value;if(!rowId){fecharModal('modal-item');return;}var item=inventory.find(function(i){return i.rowId==rowId;});if(!confirm('Excluir o produto '+(item?item.Codigo:rowId)+'?'))return;inventory=inventory.filter(function(i){return i.rowId!=rowId;});fecharModal('modal-item');renderDashboard();showToast('Produto excluído!','success');syncDrive({action:'delInventario',rowId:parseInt(rowId)});}
 function verFoto(url){if(url)window.open(url,'_blank');}
 
