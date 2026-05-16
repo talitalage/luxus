@@ -753,7 +753,10 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
   <div class="modal-content" style="max-width:640px;width:95%;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
       <h3 style="font-size:1.1rem;font-weight:700;color:var(--gray-800);"><i class="fas fa-hand-holding" style="color:var(--primary);margin-right:8px;"></i>Documento de Entrega</h3>
-      <button onclick="fecharModal('modal-entrega')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span id="entrega-status-badge"></span>
+        <button onclick="fecharModal('modal-entrega')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>
+      </div>
     </div>
     <div id="entrega-doc" style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:1.25rem;margin-bottom:1rem;font-size:13px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--gray-200);">
@@ -847,7 +850,10 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
   <div class="modal-content" style="max-width:640px;width:95%;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
       <h3 style="font-size:1.25rem;font-weight:700;color:var(--gray-800);">Recibo de Fechamento</h3>
-      <button onclick="fecharModal('modal-assinatura')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span id="recibo-status-badge"></span>
+        <button onclick="fecharModal('modal-assinatura')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>
+      </div>
     </div>
 
     <!-- Recibo -->
@@ -1421,9 +1427,29 @@ function abrirModalEntrega(doc) {
       + '<span style="font-size:12px;font-weight:600;color:var(--gray-700);white-space:nowrap;">' + fmt(parseFloat(i.Custo)||0) + '</span>'
       + '</div>';
   }).join('');
+  var badge = document.getElementById('entrega-status-badge');
+  if (badge) {
+    if (doc.reciboUrl) {
+      badge.innerHTML = '<span style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;"><i class="fas fa-check-circle" style="margin-right:4px;"></i>Assinado</span>';
+    } else {
+      badge.innerHTML = '<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;"><i class="fas fa-clock" style="margin-right:4px;"></i>Pendente</span>';
+    }
+  }
   _entregaAss = null;
   abrirModal('modal-entrega');
-  setTimeout(initCanvasEntrega, 150);
+  // Se já assinado, bloqueia canvas e troca botão
+  setTimeout(function() {
+    initCanvasEntrega();
+    var canvasWrap = document.getElementById('canvas-entrega');
+    var baixarBtn = document.querySelector('#modal-entrega .btn-primary');
+    if (doc.reciboUrl) {
+      if (canvasWrap) { canvasWrap.style.pointerEvents='none'; canvasWrap.style.opacity='.4'; }
+      if (baixarBtn) { baixarBtn.innerHTML='<i class="fas fa-external-link-alt" style="margin-right:6px;"></i>Abrir PDF no Drive'; baixarBtn.onclick=function(){window.open(doc.reciboUrl,'_blank');}; }
+    } else {
+      if (canvasWrap) { canvasWrap.style.pointerEvents=''; canvasWrap.style.opacity='1'; }
+      if (baixarBtn) { baixarBtn.innerHTML='<i class="fas fa-download" style="margin-right:6px;"></i>Baixar documento assinado'; baixarBtn.onclick=baixarEntrega; }
+    }
+  }, 150);
 }
 
 function initCanvasEntrega() {
@@ -1521,8 +1547,9 @@ function finalDownloadEntrega(c,doc) {
     if(res&&res.success&&res.url){
       // Salva URL na entrega local
       var idx=historicEntregas.findIndex(function(e){return e.id===doc.id;});
-      if(idx!==-1) historicEntregas[idx].reciboUrl=res.url;
+      if(idx!==-1){ historicEntregas[idx].reciboUrl=res.url; historicEntregas[idx].assinado=true; }
       mostrarLinkRecibo(res.url, doc.revendedor);
+      renderUltimasEntregas();
     } else {
       showToast('Documento salvo localmente','success');
     }
@@ -1552,6 +1579,7 @@ function renderUltimasEntregas() {
       +'<div style="width:34px;height:34px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;color:#185FA5;flex-shrink:0;">'+(e.revendedor||'?').slice(0,2).toUpperCase()+'</div>'
       +'<div style="flex:1;"><div style="font-size:13px;font-weight:500;">'+e.revendedor+'</div><div style="font-size:11px;color:var(--gray-500);">'+new Date(e.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · '+e.totalItens+' item(s)</div></div>'
       +'<span style="font-size:12px;font-weight:600;color:#10b981;margin-right:8px;">'+fmt(e.valorTotal||0)+'</span>'
+      +(e.assinado||e.reciboUrl?'<span style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600;margin-right:6px;white-space:nowrap;"><i class="fas fa-check-circle" style="margin-right:3px;"></i>Assinado</span>':'<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600;margin-right:6px;white-space:nowrap;"><i class="fas fa-clock" style="margin-right:3px;"></i>Pendente</span>')
       +'<button onclick="reabrirEntrega('+e.id+')" class="btn-secondary" style="padding:4px 10px;font-size:12px;"><i class="fas fa-eye" style="margin-right:4px;"></i>Ver</button>'
       +'</div>';
   }).join('');
@@ -2014,9 +2042,28 @@ function abrirModalAssinatura(reg){
   if(img)img.style.display='none';
   if(vazio)vazio.style.display='block';
 
+  var badge=document.getElementById('recibo-status-badge');
+  if(badge){
+    if(reg.reciboUrl){
+      badge.innerHTML='<span style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;"><i class="fas fa-check-circle" style="margin-right:4px;"></i>Assinado</span>';
+    } else {
+      badge.innerHTML='<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;"><i class="fas fa-clock" style="margin-right:4px;"></i>Pendente</span>';
+    }
+  }
+
   abrirModal('modal-assinatura');
-  setTimeout(initCanvasAssinatura, 100);
-  // Salva recibo imediatamente (sem assinatura) para não perder
+  setTimeout(function(){
+    initCanvasAssinatura();
+    var canvas=document.getElementById('canvas-assinatura');
+    var baixarBtn=document.querySelector('#modal-assinatura .btn-primary');
+    if(reg.reciboUrl){
+      if(canvas){canvas.style.pointerEvents='none';canvas.style.opacity='.4';}
+      if(baixarBtn){baixarBtn.innerHTML='<i class="fas fa-external-link-alt" style="margin-right:6px;"></i>Abrir PDF no Drive';baixarBtn.onclick=function(){window.open(reg.reciboUrl,'_blank');};}
+    } else {
+      if(canvas){canvas.style.pointerEvents='';canvas.style.opacity='1';}
+      if(baixarBtn){baixarBtn.innerHTML='<i class="fas fa-download" style="margin-right:6px;"></i>Baixar imagem';baixarBtn.onclick=baixarRecibo;}
+    }
+  }, 100);
   salvarReciboLocal(reg, null);
 }
 
@@ -2235,7 +2282,7 @@ function finalizarFechamento(){
 // =====================================================
 
 function excluirFechamento(id){if(!confirm('Excluir este fechamento?'))return;historicFechamentos=historicFechamentos.filter(function(f){return String(f.id)!==String(id);});renderHistorico();syncDrive({action:'delFechamento',id:id});showToast('Fechamento excluido','success');}
-function renderHistorico(){var search=(document.getElementById('hist-search')?document.getElementById('hist-search').value:'').toLowerCase();var filtered=historicFechamentos.filter(function(r){return r.revendedor.toLowerCase().includes(search);});var badge=document.getElementById('badge-historico');if(badge)badge.textContent=historicFechamentos.length+' registro'+(historicFechamentos.length!==1?'s':'');var tbody=document.getElementById('tbody-historico');var empty=document.getElementById('historico-empty');if(!tbody)return;if(!filtered.length){tbody.innerHTML='';if(empty)empty.style.display='block';return;}if(empty)empty.style.display='none';var html='';filtered.forEach(function(r){var d=new Date(r.data);html+='<tr style="border-bottom:1px solid var(--gray-200);" onmouseover="this.style.background=\'var(--gray-50)\'" onmouseout="this.style.background=\'white\'"><td style="padding:10px 14px;white-space:nowrap;"><div style="font-size:13px;font-weight:600;color:var(--gray-800);">'+d.toLocaleDateString('pt-BR')+'</div><div style="font-size:11px;color:var(--gray-400);">'+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+'</div></td><td style="padding:10px 14px;"><div style="font-size:13px;font-weight:600;">'+r.revendedor+'</div><div style="font-size:11px;color:var(--gray-400);">'+r.percentual+'% comissão</div></td><td style="padding:10px 14px;text-align:center;font-size:13px;font-weight:600;">'+r.qtdConsignados+'</td><td style="padding:10px 14px;text-align:center;font-size:13px;font-weight:700;color:#059669;">'+r.qtdVendidos+'</td><td style="padding:10px 14px;text-align:center;font-size:13px;color:var(--gray-500);">'+r.qtdDevolvidos+'</td><td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:700;color:#b45309;">'+fmt(r.valorVendido)+'</td><td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:600;color:#6d28d9;">'+fmt(r.comissao)+'</td><td style="padding:10px 14px;text-align:right;font-size:14px;font-weight:700;color:#059669;">'+fmt(r.lucro)+'</td><td style="padding:10px 14px;text-align:center;"><button onclick="verDetalhesFechamento('+r.id+')" style="background:none;border:1px solid var(--gray-300);padding:3px 10px;border-radius:5px;font-size:11px;color:var(--primary);cursor:pointer;"><i class="fas fa-eye" style="margin-right:4px;"></i>Ver</button> <button onclick=\"excluirFechamento('+r.id+'  )\" style=\"background:none;border:1px solid #fca5a5;padding:3px 8px;border-radius:5px;font-size:11px;color:#dc2626;cursor:pointer;\"><i class=\"fas fa-trash\"></i></button></td></tr>';});var tv=filtered.reduce(function(s,r){return s+r.valorVendido;},0);var tc=filtered.reduce(function(s,r){return s+r.comissao;},0);var tl=filtered.reduce(function(s,r){return s+r.lucro;},0);var tvv=filtered.reduce(function(s,r){return s+r.qtdVendidos;},0);html+='<tr style="background:var(--gray-50);border-top:2px solid var(--gray-200);"><td colspan="2" style="padding:10px 14px;font-size:12px;font-weight:600;color:var(--gray-600);">'+filtered.length+' fechamento'+(filtered.length!==1?'s':'')+'</td><td colspan="2" style="padding:10px 14px;text-align:center;font-size:13px;font-weight:700;color:#059669;">'+tvv+' vendidos</td><td></td><td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:700;color:#b45309;">'+fmt(tv)+'</td><td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:700;color:#6d28d9;">'+fmt(tc)+'</td><td style="padding:10px 14px;text-align:right;font-size:14px;font-weight:800;color:#059669;">'+fmt(tl)+'</td><td></td></tr>';tbody.innerHTML=html;}
+function renderHistorico(){var search=(document.getElementById('hist-search')?document.getElementById('hist-search').value:'').toLowerCase();var filtered=historicFechamentos.filter(function(r){return r.revendedor.toLowerCase().includes(search);});var badge=document.getElementById('badge-historico');if(badge)badge.textContent=historicFechamentos.length+' registro'+(historicFechamentos.length!==1?'s':'');var tbody=document.getElementById('tbody-historico');var empty=document.getElementById('historico-empty');if(!tbody)return;if(!filtered.length){tbody.innerHTML='';if(empty)empty.style.display='block';return;}if(empty)empty.style.display='none';var html='';filtered.forEach(function(r){var d=new Date(r.data);html+='<tr style="border-bottom:1px solid var(--gray-200);" onmouseover="this.style.background=\'var(--gray-50)\'" onmouseout="this.style.background=\'white\'"><td style="padding:10px 14px;white-space:nowrap;"><div style="font-size:13px;font-weight:600;color:var(--gray-800);">'+d.toLocaleDateString('pt-BR')+'</div><div style="font-size:11px;color:var(--gray-400);">'+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+'</div></td><td style="padding:10px 14px;"><div style="font-size:13px;font-weight:600;">'+r.revendedor+'</div><div style="font-size:11px;color:var(--gray-400);">'+r.percentual+'% comissão</div></td><td style="padding:10px 14px;text-align:center;font-size:13px;font-weight:600;">'+r.qtdConsignados+'</td><td style="padding:10px 14px;text-align:center;font-size:13px;font-weight:700;color:#059669;">'+r.qtdVendidos+'</td><td style="padding:10px 14px;text-align:center;font-size:13px;color:var(--gray-500);">'+r.qtdDevolvidos+'</td><td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:700;color:#b45309;">'+fmt(r.valorVendido)+'</td><td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:600;color:#6d28d9;">'+fmt(r.comissao)+'</td><td style="padding:10px 14px;text-align:right;font-size:14px;font-weight:700;color:#059669;">'+fmt(r.lucro)+'</td><td style="padding:10px 14px;text-align:center;">'+(r.reciboUrl?'<span style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:20px;padding:2px 7px;font-size:10px;font-weight:600;display:inline-block;margin-bottom:3px;"><i class=\"fas fa-check-circle\" style=\"margin-right:2px;\"></i>Assinado</span><br>':'<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:20px;padding:2px 7px;font-size:10px;font-weight:600;display:inline-block;margin-bottom:3px;"><i class=\"fas fa-clock\" style=\"margin-right:2px;\"></i>Pendente</span><br>')+'<button onclick="verDetalhesFechamento('+r.id+')" style="background:none;border:1px solid var(--gray-300);padding:3px 10px;border-radius:5px;font-size:11px;color:var(--primary);cursor:pointer;"><i class="fas fa-eye" style="margin-right:4px;"></i>Ver</button> <button onclick=\"excluirFechamento('+r.id+'  )\" style=\"background:none;border:1px solid #fca5a5;padding:3px 8px;border-radius:5px;font-size:11px;color:#dc2626;cursor:pointer;\"><i class=\"fas fa-trash\"></i></button></td></tr>';});var tv=filtered.reduce(function(s,r){return s+r.valorVendido;},0);var tc=filtered.reduce(function(s,r){return s+r.comissao;},0);var tl=filtered.reduce(function(s,r){return s+r.lucro;},0);var tvv=filtered.reduce(function(s,r){return s+r.qtdVendidos;},0);html+='<tr style="background:var(--gray-50);border-top:2px solid var(--gray-200);"><td colspan="2" style="padding:10px 14px;font-size:12px;font-weight:600;color:var(--gray-600);">'+filtered.length+' fechamento'+(filtered.length!==1?'s':'')+'</td><td colspan="2" style="padding:10px 14px;text-align:center;font-size:13px;font-weight:700;color:#059669;">'+tvv+' vendidos</td><td></td><td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:700;color:#b45309;">'+fmt(tv)+'</td><td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:700;color:#6d28d9;">'+fmt(tc)+'</td><td style="padding:10px 14px;text-align:right;font-size:14px;font-weight:800;color:#059669;">'+fmt(tl)+'</td><td></td></tr>';tbody.innerHTML=html;}
 
 function verDetalhesFechamento(id){
   var r=historicFechamentos.find(function(x){return x.id===id;});
