@@ -900,6 +900,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
       <div style="display:flex;gap:8px;margin-top:4px;">
         <input id="avulsa-codigo" type="text" placeholder="Bipe ou digite o código..." style="flex:1;font-family:var(--font-mono);" oninput="buscarItemAvulsa()" onkeydown="if(event.key==='Enter')buscarItemAvulsa()">
         <button onclick="buscarItemAvulsa()" class="btn-secondary" style="padding:.5rem .75rem;"><i class="fas fa-search"></i></button>
+        <button onclick="abrirScanner('avulsa-codigo',buscarItemAvulsa)" class="btn-secondary" style="padding:.5rem .75rem;" title="Usar câmera"><i class="fas fa-camera"></i></button>
       </div>
     </div>
     <div id="avulsa-item-card" style="display:none;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:1rem;margin-bottom:.75rem;">
