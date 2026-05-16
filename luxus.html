@@ -1524,16 +1524,32 @@ function baixarEntrega() {
   ctx.fillStyle='#64748b'; ctx.font='11px sans-serif'; ctx.fillText('Revendedor',16,y);
   ctx.fillStyle='#1f2937'; ctx.font='bold 14px sans-serif'; ctx.fillText(doc.revendedor,16,y+16); y+=40;
   ctx.fillStyle='#64748b'; ctx.font='bold 10px sans-serif'; ctx.fillText('ITENS ENTREGUES',16,y); y+=14;
+  // Colunas: codigo(0-90) | descricao(95-350) | cat(355-500) | custo(505-W)
   doc.itens.forEach(function(item) {
     ctx.fillStyle='#fff'; ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=1;
     roundRect(ctx,16,y,W-32,22,4); ctx.fill(); ctx.stroke();
-    ctx.fillStyle='#1e40af'; ctx.font='bold 10px sans-serif'; ctx.fillText(item.Codigo,24,y+15);
-    ctx.fillStyle='#334155'; ctx.font='12px sans-serif'; ctx.fillText(item.Descricao||'—',90,y+15);
+    // Código — trunca se longo
+    ctx.save();
+    ctx.rect(18,y,72,22); ctx.clip();
+    ctx.fillStyle='#1e40af'; ctx.font='bold 10px sans-serif';
+    ctx.fillText(item.Codigo||'—',24,y+15);
+    ctx.restore();
+    // Descrição
+    ctx.save();
+    ctx.rect(96,y,255,22); ctx.clip();
+    ctx.fillStyle='#334155'; ctx.font='12px sans-serif';
+    ctx.fillText(item.Descricao||'—',98,y+15);
+    ctx.restore();
+    // Categoria
     var cat=[item.Tipo,item.Categoria].filter(Boolean).join(' · ');
-    ctx.fillStyle='#94a3b8'; ctx.font='10px sans-serif'; ctx.textAlign='right';
-    ctx.fillText(fmt(parseFloat(item.Custo)||0),W-24,y+15);
-    ctx.fillStyle='#cbd5e1'; ctx.font='10px sans-serif';
-    ctx.fillText(cat,W-80,y+15);
+    ctx.save();
+    ctx.rect(356,y,140,22); ctx.clip();
+    ctx.fillStyle='#94a3b8'; ctx.font='10px sans-serif';
+    ctx.fillText(cat,358,y+15);
+    ctx.restore();
+    // Custo
+    ctx.fillStyle='#475569'; ctx.font='bold 11px sans-serif'; ctx.textAlign='right';
+    ctx.fillText(fmt(parseFloat(item.Custo)||0),W-20,y+15);
     ctx.textAlign='left';
     y+=26;
   });
