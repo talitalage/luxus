@@ -1184,7 +1184,35 @@ function syncDrive(payload){
 
 function syncDriveComCallback(payload, callback){
   if(!scriptUrl)return;
-  // Para operações que precisam de retorno (ex: salvarRecibo), usa GET via payload
+
+  if(payload.imagemBase64){
+    // Estratégia: primeiro cria o PDF via POST no-cors (imagem grande),
+    // depois busca a URL via GET com apenas o nome do arquivo
+    var nomeArq = payload.nomeArquivo;
+    fetch(scriptUrl, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify(payload)
+    })
+    .then(function(){
+      // Aguarda 4s para o Drive processar, depois busca a URL pelo nome
+      setTimeout(function(){
+        var busca=encodeURIComponent(JSON.stringify({action:'buscarRecibo',nomeArquivo:nomeArq}));
+        fetch(scriptUrl+'?payload='+busca,{method:'GET',cache:'no-cache'})
+        .then(function(r){return r.text();})
+        .then(function(t){
+          var res={};try{res=JSON.parse(t);}catch(e){}
+          if(callback)callback(res);
+        })
+        .catch(function(){if(callback)callback(null);});
+      }, 4000);
+    })
+    .catch(function(){if(callback)callback(null);});
+    return;
+  }
+
+  // Para payloads normais (sem imagem): GET direto
   var encoded=encodeURIComponent(JSON.stringify(payload));
   fetch(scriptUrl+'?payload='+encoded,{method:'GET',cache:'no-cache'})
   .then(function(r){return r.text();})
@@ -1542,7 +1570,7 @@ function baixarEntrega() {
 function finalDownloadEntrega(c,doc) {
   var dataUrl=c.toDataURL('image/png');
   var d=new Date(doc.data);
-  var nome='entrega_'+d.getFullYear()+(d.getMonth()+1).toString().padStart(2,'0')+d.getDate().toString().padStart(2,'0')+'_'+doc.revendedor.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
+  var nome='entrega_'+d.getFullYear()+(d.getMonth()+1).toString().padStart(2,'0')+d.getDate().toString().padStart(2,'0')+'_'+d.getHours().toString().padStart(2,'0')+d.getMinutes().toString().padStart(2,'0')+'_'+doc.revendedor.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
   syncDriveComCallback({action:'salvarRecibo',nomeArquivo:nome,imagemBase64:dataUrl}, function(res){
     if(res&&res.success&&res.url){
       // Salva URL na entrega local
@@ -2174,7 +2202,7 @@ function _downloadCanvas(c,reg){
   if(reg){
     salvarReciboLocal(reg, dataUrl);
     var d=new Date(reg.data);
-    var nomeArq='recibo_'+d.getFullYear()+(d.getMonth()+1).toString().padStart(2,'0')+d.getDate().toString().padStart(2,'0')+'_'+reg.revendedor.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
+    var nomeArq='recibo_'+d.getFullYear()+(d.getMonth()+1).toString().padStart(2,'0')+d.getDate().toString().padStart(2,'0')+'_'+d.getHours().toString().padStart(2,'0')+d.getMinutes().toString().padStart(2,'0')+'_'+reg.revendedor.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
     syncDriveComCallback({action:'salvarRecibo',nomeArquivo:nomeArq,imagemBase64:dataUrl}, function(res){
       if(res&&res.success&&res.url){
         var idx=historicFechamentos.findIndex(function(f){return f.id===reg.id;});
