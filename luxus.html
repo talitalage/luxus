@@ -2392,8 +2392,6 @@ function buscarItemAvulsa(){
   if(encontrados.length===1){exibirItem(encontrados[0]);}
   else{selecionarItemDuplicado(encontrados,exibirItem);}
 }
-  document.getElementById('avulsa-valor').focus();
-}
 
 function confirmarVendaAvulsa(){
   if(!_avulsaItem){showToast('Nenhum produto selecionado','warning');return;}
