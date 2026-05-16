@@ -280,7 +280,10 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
           </div>
         </div>
       </div>
-      <button onclick="confirmarEntrega()" class="btn-primary" style="width:100%;padding:.75rem;"><i class="fas fa-paper-plane" style="margin-right:6px;"></i>Confirmar entrega e gerar documento</button>
+      <div style="display:flex;gap:.75rem;">
+        <button onclick="salvarRascunhoEntrega()" class="btn-secondary" style="flex:1;padding:.75rem;"><i class="fas fa-save" style="margin-right:6px;"></i>Salvar</button>
+        <button onclick="confirmarEntrega()" class="btn-primary" style="flex:1;padding:.75rem;"><i class="fas fa-paper-plane" style="margin-right:6px;"></i>Entregar maleta</button>
+      </div>
     </div>
     <div class="card-light" style="padding:1.25rem;">
       <h3 class="section-title"><i class="fas fa-history"></i>Últimas Entregas</h3>
@@ -1185,11 +1188,36 @@ var itensEntrega = [];
 var _entregaAss = null, _entregaAssCtx = null, _entregaAssDesenhando = false;
 var _entregaDoc = null;
 
+function salvarRascunhoEntrega() {
+  var revSel = document.getElementById('entrega-revendedor');
+  if (!revSel.value) { showToast('Selecione o revendedor primeiro', 'warning'); return; }
+  if (!itensEntrega.length) { showToast('Adicione ao menos um item', 'warning'); return; }
+  var key = 'luxus_rascunho_entrega_' + revSel.value;
+  localStorage.setItem(key, JSON.stringify(itensEntrega.map(function(i){ return i.rowId; })));
+  showToast('Rascunho salvo — ' + itensEntrega.length + ' item(s)', 'success');
+}
+
 function onChangeEntregaRevendedor() {
   var sel = document.getElementById('entrega-revendedor');
-  var revNome = sel.options[sel.selectedIndex]?.text || '';
   var revId = sel.value;
   itensEntrega = [];
+
+  // Restaura rascunho salvo se existir
+  if (revId) {
+    var key = 'luxus_rascunho_entrega_' + revId;
+    var saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        var rowIds = JSON.parse(saved);
+        rowIds.forEach(function(rowId) {
+          var item = inventory.find(function(i){ return i.rowId === rowId; });
+          if (item && item.Status === 'Em Estoque') itensEntrega.push(item);
+        });
+        if (itensEntrega.length) showToast('Rascunho restaurado — ' + itensEntrega.length + ' item(s)', 'info');
+      } catch(e) {}
+    }
+  }
+
   renderListaEntrega();
   var box = document.getElementById('entrega-link-box');
   var linkEl = document.getElementById('entrega-link');
@@ -1327,6 +1355,8 @@ function confirmarEntrega() {
   abrirModalEntrega(_entregaDoc);
   itensEntrega = [];
   renderListaEntrega();
+  // Limpa rascunho salvo
+  localStorage.removeItem('luxus_rascunho_entrega_' + revSel.value);
   renderDashboard();
   renderUltimasEntregas();
   showToast('Entrega confirmada!', 'success');
