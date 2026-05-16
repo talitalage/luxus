@@ -247,8 +247,8 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
         <h3 class="section-title"><i class="fas fa-hand-holding"></i>Nova Entrega</h3>
         <div style="display:flex;flex-direction:column;gap:.875rem;">
           <div>
-            <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Revendedor</label>
-            <select id="entrega-revendedor" onchange="onChangeEntregaRevendedor()"><option value="">Escolha...</option></select>
+            <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Revendedor <span style="font-size:10px;font-weight:400;color:var(--gray-400);">(opcional — pode atrelar depois)</span></label>
+            <select id="entrega-revendedor" onchange="onChangeEntregaRevendedor()"><option value="">Sem revendedor — montar maleta</option></select>
           </div>
           <div id="entrega-link-box" style="display:none;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:.75rem;">
             <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px;">Link da maleta do revendedor</div>
@@ -349,12 +349,12 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
     <div class="card-light" style="padding:1.25rem;">
       <h4 style="font-size:11px;font-weight:600;color:var(--gray-500);margin-bottom:14px;text-align:center;text-transform:uppercase;letter-spacing:.5px;">Resumo do Fechamento</h4>
       <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px;">
-        <div style="display:flex;justify-content:space-between;padding:9px 12px;background:var(--gray-50);border-radius:6px;border:1px solid var(--gray-200);"><span style="font-size:13px;color:var(--gray-600);">Consignado</span><span id="resumo-consignado" style="font-size:13px;font-weight:600;color:#3b82f6;">R$ 0,00</span></div>
-        <div style="display:flex;justify-content:space-between;padding:9px 12px;background:var(--gray-50);border-radius:6px;border:1px solid var(--gray-200);"><span style="font-size:13px;color:var(--gray-600);">Devolvido</span><span id="resumo-devolvido" style="font-size:13px;font-weight:600;color:#10b981;">R$ 0,00</span></div>
+        <div style="display:flex;justify-content:space-between;padding:9px 12px;background:var(--gray-50);border-radius:6px;border:1px solid var(--gray-200);"><span style="font-size:13px;color:var(--gray-600);">Custo total (consignado)</span><span id="resumo-consignado" style="font-size:13px;font-weight:600;color:#3b82f6;">R$ 0,00</span></div>
+        <div style="display:flex;justify-content:space-between;padding:9px 12px;background:var(--gray-50);border-radius:6px;border:1px solid var(--gray-200);"><span style="font-size:13px;color:var(--gray-600);">Custo devolvido</span><span id="resumo-devolvido" style="font-size:13px;font-weight:600;color:#10b981;">R$ 0,00</span></div>
         <div style="height:1px;background:var(--gray-200);margin:2px 0;"></div>
-        <div style="display:flex;justify-content:space-between;padding:9px 12px;background:#fef3c7;border-radius:6px;border:1px solid #fde68a;"><span style="font-size:13px;font-weight:500;color:#92400e;">Vendido</span><span id="resumo-vendido" style="font-size:14px;font-weight:700;color:#b45309;">R$ 0,00</span></div>
-        <div style="display:flex;justify-content:space-between;padding:9px 12px;background:#f5f3ff;border-radius:6px;border:1px solid #ddd6fe;"><span style="font-size:13px;font-weight:500;color:#5b21b6;">Comissão</span><span id="resumo-comissao" style="font-size:14px;font-weight:700;color:#6d28d9;">R$ 0,00</span></div>
-        <div style="display:flex;justify-content:space-between;padding:11px 12px;background:#d1fae5;border-radius:6px;border:2px solid #6ee7b7;"><span style="font-size:13px;font-weight:700;color:#065f46;">A receber (Venda − Comissão)</span><span id="resumo-lucro" style="font-size:1.25rem;font-weight:800;color:#059669;">R$ 0,00</span></div>
+        <div style="display:flex;justify-content:space-between;padding:9px 12px;background:#fef3c7;border-radius:6px;border:1px solid #fde68a;"><span style="font-size:13px;font-weight:500;color:#92400e;">Valor vendido (preço venda)</span><span id="resumo-vendido" style="font-size:14px;font-weight:700;color:#b45309;">R$ 0,00</span></div>
+        <div style="display:flex;justify-content:space-between;padding:9px 12px;background:#f5f3ff;border-radius:6px;border:1px solid #ddd6fe;"><span style="font-size:13px;font-weight:500;color:#5b21b6;">Comissão revendedor (<span id="resumo-pct-label">0</span>%)</span><span id="resumo-comissao" style="font-size:14px;font-weight:700;color:#6d28d9;">R$ 0,00</span></div>
+        <div style="display:flex;justify-content:space-between;padding:11px 12px;background:#d1fae5;border-radius:6px;border:2px solid #6ee7b7;"><span style="font-size:13px;font-weight:700;color:#065f46;">A receber (Custo + Comissão)</span><span id="resumo-lucro" style="font-size:1.25rem;font-weight:800;color:#059669;">R$ 0,00</span></div>
       </div>
       <button onclick="finalizarFechamento()" class="btn-primary" style="width:100%;padding:.7rem;"><i class="fas fa-check-double" style="margin-right:6px;"></i>Finalizar Fechamento</button>
       <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--gray-200);">
@@ -1043,7 +1043,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
     <div style="margin-bottom:.75rem;">
       <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Código do produto *</label>
       <div style="display:flex;gap:8px;margin-top:4px;">
-        <input id="avulsa-codigo" type="text" placeholder="Bipe ou digite o código..." style="flex:1;font-family:var(--font-mono);" oninput="buscarItemAvulsa()" onkeydown="if(event.key==='Enter')buscarItemAvulsa()">
+        <input id="avulsa-codigo" type="text" placeholder="Código ou descrição..." style="flex:1;font-family:var(--font-mono);text-transform:uppercase;" oninput="this.value=this.value.toUpperCase();buscarItemAvulsa()" onkeydown="if(event.key==='Enter')buscarItemAvulsa()">
         <button onclick="buscarItemAvulsa()" class="btn-secondary" style="padding:.5rem .75rem;"><i class="fas fa-search"></i></button>
         <button onclick="abrirScanner('avulsa-codigo',buscarItemAvulsa)" class="btn-secondary" style="padding:.5rem .75rem;" title="Usar câmera"><i class="fas fa-camera"></i></button>
       </div>
@@ -1407,8 +1407,6 @@ function selecionarItemDuplicado(itens, callback) {
 function adicionarEntrega() {
   var codigo = (document.getElementById('entrega-codigo').value || '').trim().toUpperCase();
   if (!codigo) return;
-  var revSel = document.getElementById('entrega-revendedor');
-  if (!revSel.value) { showToast('Selecione o revendedor primeiro', 'warning'); return; }
 
   var encontrados = inventory.filter(function(i) {
     return (i.Codigo || '').toUpperCase() === codigo
@@ -1456,44 +1454,46 @@ function limparEntrega() { itensEntrega = []; renderListaEntrega(); }
 
 function confirmarEntrega() {
   var revSel = document.getElementById('entrega-revendedor');
-  if (!revSel.value) { showToast('Selecione o revendedor', 'warning'); return; }
-  if (itensEntrega.length === 0) { showToast('Adicione ao menos um item', 'warning'); return; }
-  var revNome = revSel.options[revSel.selectedIndex].text;
-  if (!confirm('Confirmar entrega de ' + itensEntrega.length + ' item(s) para ' + revNome + '?')) return;
+  var revId = revSel.value;
+  var revNome = revId ? revSel.options[revSel.selectedIndex].text : '';
+  if (!itensEntrega.length) { showToast('Adicione ao menos um item', 'warning'); return; }
 
   var dataEntrega = new Date().toISOString();
-  // Atualiza inventário local
+
+  // Sem revendedor — salva como maleta pendente
+  if (!revId) {
+    if (!confirm('Salvar maleta sem revendedor? Os itens ficarão com status "Em Maleta" até você atrelar um revendedor.')) return;
+    itensEntrega.forEach(function(item) {
+      var idx = inventory.findIndex(function(i) { return i.rowId === item.rowId; });
+      if (idx !== -1) { inventory[idx].Status = 'Em Maleta'; inventory[idx].Revendedor = ''; }
+      syncDrive({ action: 'editInventario', rowId: item.rowId, status: 'Em Maleta', revendedor: '' });
+    });
+    _entregaDoc = { id: Date.now(), tipo: 'maleta-pendente', data: dataEntrega, revendedor: '(sem revendedor)', revendedorId: '', itens: itensEntrega.slice(), totalItens: itensEntrega.length, valorTotal: itensEntrega.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0) };
+    historicEntregas.unshift(_entregaDoc);
+    syncDrive({ action: 'addEntrega', entrega: _entregaDoc });
+    itensEntrega = []; renderListaEntrega(); renderDashboard(); renderUltimasEntregas();
+    showToast('Maleta salva — atrelhe um revendedor depois', 'success');
+    return;
+  }
+
+  if (!confirm('Confirmar entrega de ' + itensEntrega.length + ' item(s) para ' + revNome + '?')) return;
+
   itensEntrega.forEach(function(item) {
     var idx = inventory.findIndex(function(i) { return i.rowId === item.rowId; });
     if (idx !== -1) { inventory[idx].Status = 'Consignado'; inventory[idx].Revendedor = revNome; }
     syncDrive({ action: 'editInventario', rowId: item.rowId, status: 'Consignado', revendedor: revNome });
   });
 
-  // Monta documento
-  _entregaDoc = {
-    id: Date.now(),
-    tipo: 'entrega',
-    data: dataEntrega,
-    revendedor: revNome,
-    revendedorId: revSel.value,
-    itens: itensEntrega.slice(),
-    totalItens: itensEntrega.length,
-    valorTotal: itensEntrega.reduce(function(s, i) { return s + (parseFloat(i.Venda)||0); }, 0)
-  };
-
-  // Salva localmente e no Drive
+  _entregaDoc = { id: Date.now(), tipo: 'entrega', data: dataEntrega, revendedor: revNome, revendedorId: revId, itens: itensEntrega.slice(), totalItens: itensEntrega.length, valorTotal: itensEntrega.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0) };
   historicEntregas.unshift(_entregaDoc);
   syncDrive({ action: 'addEntrega', entrega: _entregaDoc });
-
   abrirModalEntrega(_entregaDoc);
-  itensEntrega = [];
-  renderListaEntrega();
-  // Limpa rascunho salvo
-  localStorage.removeItem('luxus_rascunho_entrega_' + revSel.value);
-  renderDashboard();
-  renderUltimasEntregas();
+  itensEntrega = []; renderListaEntrega();
+  localStorage.removeItem('luxus_rascunho_entrega_' + revId);
+  renderDashboard(); renderUltimasEntregas();
   showToast('Entrega confirmada!', 'success');
 }
+
 
 function abrirModalEntrega(doc) {
   document.getElementById('entrega-doc-titulo').textContent = localStorage.getItem('luxus_titulo') || 'LUXUS';
@@ -1698,12 +1698,73 @@ function renderUltimasEntregas() {
   el.innerHTML=entregas.map(function(e){
     return '<div style="display:flex;align-items:center;gap:10px;padding:.75rem;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;">'
       +'<div style="width:34px;height:34px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;color:#185FA5;flex-shrink:0;">'+(e.revendedor||'?').slice(0,2).toUpperCase()+'</div>'
-      +'<div style="flex:1;"><div style="font-size:13px;font-weight:500;">'+e.revendedor+'</div><div style="font-size:11px;color:var(--gray-500);">'+new Date(e.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · '+e.totalItens+' item(s)</div></div>'
+      +'<div style="flex:1;"><div style="font-size:13px;font-weight:500;">'+(e.tipo==='maleta-pendente'?'<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;margin-right:4px;">Pendente</span>':'')+e.revendedor+'</div><div style="font-size:11px;color:var(--gray-500);">'+new Date(e.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · '+e.totalItens+' item(s)</div></div>'
       +'<span style="font-size:12px;font-weight:600;color:#10b981;margin-right:8px;">'+fmt(e.valorTotal||0)+'</span>'
-      +(e.assinado||e.reciboUrl?'<span style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600;margin-right:6px;white-space:nowrap;"><i class="fas fa-check-circle" style="margin-right:3px;"></i>Assinado</span>':'<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600;margin-right:6px;white-space:nowrap;"><i class="fas fa-clock" style="margin-right:3px;"></i>Pendente</span>')
+      +(e.assinado||e.reciboUrl?'<span style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600;margin-right:6px;white-space:nowrap;"><i class="fas fa-check-circle" style="margin-right:3px;"></i>Assinado</span>':(e.tipo==='maleta-pendente'?'':'<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600;margin-right:6px;white-space:nowrap;"><i class="fas fa-clock" style="margin-right:3px;"></i>Pendente</span>'))
+      +(e.tipo==='maleta-pendente'?'<button onclick="atrelarRevendedor('+e.id+')" class="btn-primary" style="padding:4px 10px;font-size:12px;white-space:nowrap;"><i class="fas fa-link" style="margin-right:4px;"></i>Atrelar</button>':'<button onclick="reabrirEntrega('+e.id+')" class="btn-secondary" style="padding:4px 10px;font-size:12px;"><i class="fas fa-eye" style="margin-right:4px;"></i>Ver</button>')
       +'<button onclick="reabrirEntrega('+e.id+')" class="btn-secondary" style="padding:4px 10px;font-size:12px;"><i class="fas fa-eye" style="margin-right:4px;"></i>Ver</button>'
       +'</div>';
   }).join('');
+}
+
+function atrelarRevendedor(id) {
+  var doc = historicEntregas.find(function(e){ return e.id === id; });
+  if (!doc) return;
+
+  // Monta select de revendedores
+  var opts = revendedores.map(function(r){ return '<option value="'+r.rowId+'">'+r.Nome+'</option>'; }).join('');
+  var sel = '<select id="atrelar-rev-sel" style="width:100%;margin-top:8px;font-size:14px;">'+opts+'</select>';
+
+  // Usa confirm via modal simples
+  var modal = document.getElementById('modal-dup');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-dup';
+    modal.className = 'modal-overlay';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = '<div class="modal-content" style="max-width:400px;width:95%;">'
+    + '<h3 style="font-size:1rem;font-weight:700;color:var(--gray-800);margin-bottom:1rem;"><i class="fas fa-link" style="color:var(--primary);margin-right:8px;"></i>Atrelar revendedor</h3>'
+    + '<p style="font-size:13px;color:var(--gray-600);margin-bottom:.5rem;">Maleta com '+doc.totalItens+' item(s). Selecione o revendedor:</p>'
+    + sel
+    + '<div style="display:flex;gap:.75rem;margin-top:1rem;">'
+    + '<button onclick="fecharModal(\'modal-dup\')" class="btn-secondary" style="flex:1;">Cancelar</button>'
+    + '<button onclick="confirmarAtrelar('+id+')" class="btn-primary" style="flex:1;"><i class="fas fa-check" style="margin-right:6px;"></i>Confirmar</button>'
+    + '</div></div>';
+  abrirModal('modal-dup');
+}
+
+function confirmarAtrelar(id) {
+  var doc = historicEntregas.find(function(e){ return e.id === id; });
+  var revSel = document.getElementById('atrelar-rev-sel');
+  if (!doc || !revSel || !revSel.value) return;
+  var rev = revendedores.find(function(r){ return String(r.rowId) === String(revSel.value); });
+  if (!rev) return;
+
+  fecharModal('modal-dup');
+
+  // Atualiza os itens para Consignado com o revendedor
+  doc.itens.forEach(function(item) {
+    var idx = inventory.findIndex(function(i){ return i.rowId === item.rowId; });
+    if (idx !== -1) { inventory[idx].Status = 'Consignado'; inventory[idx].Revendedor = rev.Nome; }
+    syncDrive({ action: 'editInventario', rowId: item.rowId, status: 'Consignado', revendedor: rev.Nome });
+  });
+
+  // Atualiza o doc
+  var idx = historicEntregas.findIndex(function(e){ return e.id === id; });
+  if (idx !== -1) {
+    historicEntregas[idx].tipo = 'entrega';
+    historicEntregas[idx].revendedor = rev.Nome;
+    historicEntregas[idx].revendedorId = revSel.value;
+  }
+
+  _entregaDoc = historicEntregas[idx] || doc;
+  renderDashboard();
+  renderUltimasEntregas();
+  showToast(doc.totalItens + ' item(s) atrelados a ' + rev.Nome, 'success');
+
+  // Abre documento para assinatura
+  setTimeout(function(){ abrirModalEntrega(_entregaDoc); }, 300);
 }
 
 function reabrirEntrega(id) {
@@ -1794,6 +1855,7 @@ function renderFinanceiro() {
           +(pago?'<div style="font-size:10px;color:#10b981;">Pago</div>':'')
           +'</div>'
           +(!pago?'<button onclick="abrirPagamento(\''+r.rowId+'\','+di+')" class="btn-primary" style="padding:4px 10px;font-size:12px;">Pagar</button>':'')
+          +'<button onclick="excluirDivida(\''+r.rowId+'\','+di+')" style="background:none;border:1px solid #fca5a5;color:#dc2626;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;margin-left:4px;" title="Excluir"><i class="fas fa-trash"></i></button>'
           +'</div>';
       });
       html += '</div>';
@@ -1801,6 +1863,16 @@ function renderFinanceiro() {
     html += '</div>';
     return html;
   }).join('');
+}
+
+function excluirDivida(revId, diIdx){
+  if(!confirm('Excluir esta dívida?'))return;
+  var rev=revendedores.find(function(r){return String(r.rowId)===String(revId);});
+  if(!rev||!rev.dividas)return;
+  rev.dividas.splice(diIdx,1);
+  syncDrive({action:'editRevendedor',rowId:rev.rowId,dividas:rev.dividas});
+  renderFinanceiro();
+  showToast('Dívida excluída','success');
 }
 
 function abrirPagamento(revId, diIdx) {
@@ -2133,7 +2205,25 @@ function registrarDevolucao(){
 function renderDevolucoes(){var el=document.getElementById('lista-devolucoes');var empty=document.getElementById('lista-devolucoes-empty');if(!devolucoes.length){el.innerHTML='';if(empty)empty.style.display='block';return;}if(empty)empty.style.display='none';renderConsignados();var html='';devolucoes.forEach(function(item,idx){html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;"><div><span style="font-family:monospace;font-size:12px;font-weight:600;color:#b45309;">'+item.Codigo+'</span><span style="font-size:12px;color:var(--gray-600);margin-left:8px;">'+(item.Descricao||'—')+'</span></div><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:12px;font-weight:600;">'+fmt(item.Venda)+'</span><button onclick="removerDevolucao('+idx+')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'var(--gray-400)\'"><i class="fas fa-times"></i></button></div></div>';});el.innerHTML=html;}
 function removerDevolucao(idx){devolucoes.splice(idx,1);renderDevolucoes();atualizarResumoFechamento();}
 function limparDevolucoes(){if(!devolucoes.length)return;if(confirm('Limpar todas as devoluções?')){devolucoes=[];renderDevolucoes();atualizarResumoFechamento();}}
-function atualizarResumoFechamento(){var nome=document.getElementById('fechamento-revendedor').value;if(!nome)return;var rev=revendedores.find(function(r){return r.Nome===nome;});var pct=((rev&&rev.Percentual)||30)/100;var vc=produtosConsignados.reduce(function(s,i){return s+pN(i.Custo);},0);var vd=devolucoes.reduce(function(s,i){return s+pN(i.Custo);},0);var vv=produtosConsignados.reduce(function(s,i){return s+pN(i.Venda);},0)-devolucoes.reduce(function(s,i){return s+pN(i.Venda);},0);var com=vv*pct;var luc=vv-com;document.getElementById('resumo-consignado').textContent=fmt(vc);document.getElementById('resumo-devolvido').textContent=fmt(vd);document.getElementById('resumo-vendido').textContent=fmt(vv);document.getElementById('resumo-comissao').textContent=fmt(com);document.getElementById('resumo-lucro').textContent=fmt(luc);}
+function atualizarResumoFechamento(){
+  var nome=document.getElementById('fechamento-revendedor').value;if(!nome)return;
+  var rev=revendedores.find(function(r){return r.Nome===nome;});
+  var pct=((rev&&rev.Percentual)||30)/100;
+  var pctLabel=document.getElementById('resumo-pct-label');if(pctLabel)pctLabel.textContent=((rev&&rev.Percentual)||30);
+  // vc = custo total consignado, vd = custo devolvido
+  var vc=produtosConsignados.reduce(function(s,i){return s+pN(i.Custo);},0);
+  var vd=devolucoes.reduce(function(s,i){return s+pN(i.Custo);},0);
+  // vv = valor de venda dos vendidos (não devolvidos)
+  var vv=produtosConsignados.reduce(function(s,i){return s+pN(i.Venda);},0)-devolucoes.reduce(function(s,i){return s+pN(i.Venda);},0);
+  var com=vv*pct;
+  // A receber = custo vendido + comissão (= vc - vd + com)
+  var luc=(vc-vd)+com;
+  document.getElementById('resumo-consignado').textContent=fmt(vc);
+  document.getElementById('resumo-devolvido').textContent=fmt(vd);
+  document.getElementById('resumo-vendido').textContent=fmt(vv);
+  document.getElementById('resumo-comissao').textContent=fmt(com);
+  document.getElementById('resumo-lucro').textContent=fmt(luc);
+}
 // =====================================================
 // ASSINATURA & RECIBO
 // =====================================================
@@ -2496,7 +2586,7 @@ function finalizarFechamento(){
   var vc=produtosConsignados.reduce(function(s,i){return s+pN(i.Custo);},0);
   var vd=devolvidos.reduce(function(s,i){return s+pN(i.Custo);},0);
   var vv=vendidos.reduce(function(s,i){return s+pN(i.Venda);},0);
-  var com=vv*pct;var luc=vv-com;
+  var com=vv*pct;var luc=(vc-vd)+com;
 
   // Parcelas — dívida é o valor que a revendedora deve pagar (lucro = venda - comissão)
   var nParc=parseInt(document.getElementById('fechamento-parcelas').value)||1;
@@ -2819,18 +2909,23 @@ function abrirVendaAvulsa(){
 }
 
 function buscarItemAvulsa(){
-  var codigo=(document.getElementById('avulsa-codigo').value||'').trim().toUpperCase();
-  if(!codigo)return;
+  var busca=(document.getElementById('avulsa-codigo').value||'').trim().toUpperCase();
+  if(!busca)return;
   document.getElementById('avulsa-inicial').style.display='none';
   document.getElementById('avulsa-erro').style.display='none';
   document.getElementById('avulsa-item-card').style.display='none';
   document.getElementById('avulsa-form').style.display='none';
 
-  var encontrados=inventory.filter(function(i){return (i.Codigo||'').toUpperCase()===codigo && i.Status!=='Vendido';});
+  var encontrados=inventory.filter(function(i){
+    if(i.Status==='Vendido')return false;
+    var cod=(i.Codigo||'').toUpperCase();
+    var desc=(i.Descricao||'').toUpperCase();
+    return cod===busca||cod.includes(busca)||desc.includes(busca);
+  });
 
   if(!encontrados.length){
     document.getElementById('avulsa-erro').style.display='block';
-    document.getElementById('avulsa-erro').textContent='Produto "'+codigo+'" não encontrado ou já vendido.';
+    document.getElementById('avulsa-erro').textContent='Nenhum produto encontrado para "'+busca+'".';
     return;
   }
 
@@ -2848,8 +2943,27 @@ function buscarItemAvulsa(){
     document.getElementById('avulsa-valor').focus();
   }
 
-  if(encontrados.length===1){exibirItem(encontrados[0]);}
-  else{selecionarItemDuplicado(encontrados,exibirItem);}
+  if(encontrados.length===1){
+    exibirItem(encontrados[0]);
+  } else {
+    // Múltiplos resultados — mostra lista para seleção
+    document.getElementById('avulsa-erro').style.display='block';
+    document.getElementById('avulsa-erro').style.background='#f0f9ff';
+    document.getElementById('avulsa-erro').style.borderColor='#bae6fd';
+    document.getElementById('avulsa-erro').style.color='#0369a1';
+    document.getElementById('avulsa-erro').innerHTML='<div style="margin-bottom:6px;font-weight:600;">'+encontrados.length+' itens encontrados — selecione:</div>'
+      +encontrados.slice(0,8).map(function(item,idx){
+        return '<button onclick="window._avulsaSelect('+idx+')" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:white;border:1px solid #bae6fd;border-radius:6px;padding:6px 10px;margin-bottom:4px;cursor:pointer;font-family:inherit;">'
+          +'<span style="font-family:monospace;font-size:11px;color:#0369a1;min-width:80px;">'+item.Codigo+'</span>'
+          +'<span style="flex:1;font-size:12px;color:#1e293b;">'+item.Descricao+'</span>'
+          +'<span style="font-size:11px;color:#10b981;font-weight:600;">'+fmt(item.Venda)+'</span>'
+          +'</button>';
+      }).join('');
+    window._avulsaSelect=function(idx){
+      document.getElementById('avulsa-erro').style.display='none';
+      exibirItem(encontrados[idx]);
+    };
+  }
 }
 
 function confirmarVendaAvulsa(){
