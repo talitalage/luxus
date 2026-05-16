@@ -72,23 +72,34 @@ input[type=hidden]{display:none!important;}
 @keyframes spin{to{transform:rotate(360deg);}}
 @keyframes slideIn{from{transform:translateX(400px);opacity:0}to{transform:translateX(0);opacity:1}}
 
-/* ── MODO TABLET ── */
-body.device-tablet .page-wrapper{padding:1rem;}
-body.device-tablet .header-dark{height:56px;}
-body.device-tablet .header-dark .page-wrapper-inner{padding:0 .75rem;}
+/* ── MODO TABLET 10.4" (2000x1200 / 5:3) ── */
+body.device-tablet{font-size:15px;}
+body.device-tablet .page-wrapper{padding:1rem 1.5rem;max-width:100%;}
+body.device-tablet .header-dark{height:58px;}
+body.device-tablet .nav-tab{height:58px;font-size:.82rem;padding:0 .9rem;}
+body.device-tablet .nav-tab i{margin-right:4px;}
 body.device-tablet #site-subtitle-display{display:none;}
-body.device-tablet .nav-tab{height:56px;font-size:.75rem;padding:0 .6rem;}
-body.device-tablet .nav-tab i{display:none;}
+
+/* Grids — 2 colunas em vez de 3/4/5 */
 body.device-tablet .grid-stats-4{grid-template-columns:repeat(2,1fr)!important;}
-body.device-tablet .grid-stats-5{grid-template-columns:repeat(2,1fr)!important;}
-body.device-tablet .grid-config-3{grid-template-columns:1fr!important;}
-body.device-tablet .grid-relatorio-2{grid-template-columns:1fr!important;}
-body.device-tablet .grid-entrada{grid-template-columns:1fr!important;}
-body.device-tablet .grid-fechamento{grid-template-columns:1fr!important;}
-body.device-tablet .stat-card{padding:1rem;}
-body.device-tablet .data-table th,body.device-tablet .data-table td{padding:.5rem .6rem;font-size:12px;}
-body.device-tablet input,body.device-tablet select,body.device-tablet textarea{font-size:14px!important;padding:.75rem 1rem!important;}
-body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.75rem 1rem;font-size:.9rem;}
+body.device-tablet .grid-stats-5{grid-template-columns:repeat(3,1fr)!important;}
+body.device-tablet .grid-config-3{grid-template-columns:repeat(2,1fr)!important;}
+body.device-tablet .grid-relatorio-2{grid-template-columns:1fr 320px!important;}
+body.device-tablet .grid-entrada{grid-template-columns:340px 1fr!important;}
+body.device-tablet .grid-fechamento{grid-template-columns:240px 240px 1fr!important;}
+
+/* Tipografia e componentes */
+body.device-tablet .stat-card{padding:1.1rem 1.25rem;}
+body.device-tablet .stat-card .stat-value{font-size:1.4rem;}
+body.device-tablet .data-table th{padding:.6rem .75rem;font-size:11px;}
+body.device-tablet .data-table td{padding:.6rem .75rem;font-size:13px;}
+body.device-tablet input,body.device-tablet select,body.device-tablet textarea{font-size:14px!important;padding:.65rem .875rem!important;}
+body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.65rem 1.1rem;font-size:.875rem;}
+body.device-tablet .card-light{border-radius:8px;}
+body.device-tablet .modal-content{padding:1.25rem;}
+body.device-tablet .section-title{font-size:.9rem;}
+body.device-tablet .filter-chip{font-size:11.5px;padding:3px 11px;}
+body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resolução alta aguenta */
 </style>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
