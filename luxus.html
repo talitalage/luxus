@@ -355,7 +355,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
         <div style="display:flex;justify-content:space-between;padding:9px 12px;background:#fef3c7;border-radius:6px;border:1px solid #fde68a;"><span style="font-size:13px;font-weight:500;color:#92400e;">Valor vendido (preço venda)</span><span id="resumo-vendido" style="font-size:14px;font-weight:700;color:#b45309;">R$ 0,00</span></div>
         <div style="display:flex;justify-content:space-between;padding:9px 12px;background:#f5f3ff;border-radius:6px;border:1px solid #ddd6fe;"><span style="font-size:13px;font-weight:500;color:#5b21b6;">Comissão revendedor (<span id="resumo-pct-label">0</span>%)</span><span id="resumo-comissao" style="font-size:14px;font-weight:700;color:#6d28d9;">R$ 0,00</span></div>
         <div style="display:flex;justify-content:space-between;padding:9px 12px;background:#eff6ff;border-radius:6px;border:1px solid #bfdbfe;"><span style="font-size:13px;font-weight:500;color:#1e40af;">Margem (<span id="resumo-pct-dono-label">0</span>%)</span><span id="resumo-margem" style="font-size:14px;font-weight:700;color:#1d4ed8;">R$ 0,00</span></div>
-        <div style="display:flex;justify-content:space-between;padding:11px 12px;background:#d1fae5;border-radius:6px;border:2px solid #6ee7b7;"><span style="font-size:13px;font-weight:700;color:#065f46;">A receber (Custo + Comissão)</span><span id="resumo-lucro" style="font-size:1.25rem;font-weight:800;color:#059669;">R$ 0,00</span></div>
+        <div style="display:flex;justify-content:space-between;padding:11px 12px;background:#d1fae5;border-radius:6px;border:2px solid #6ee7b7;"><span style="font-size:13px;font-weight:700;color:#065f46;">A receber (Consignado + Margem)</span><span id="resumo-lucro" style="font-size:1.25rem;font-weight:800;color:#059669;">R$ 0,00</span></div>
       </div>
       <button onclick="finalizarFechamento()" class="btn-primary" style="width:100%;padding:.7rem;"><i class="fas fa-check-double" style="margin-right:6px;"></i>Finalizar Fechamento</button>
       <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--gray-200);">
@@ -2260,7 +2260,7 @@ function atualizarResumoFechamento(){
   var vv=produtosConsignados.reduce(function(s,i){return s+pN(i.Venda);},0)-devolucoes.reduce(function(s,i){return s+pN(i.Venda);},0);
   var com=vv*pct;       // comissão revendedor
   var comDono=vv*pctDono; // margem = vv - com
-  var luc=(vc-vd)+com;  // a receber = custo vendido + comissão revendedor
+  var luc=(vc-vd)+comDono;  // a receber = custo vendido + margem
   document.getElementById('resumo-consignado').textContent=fmt(vc);
   document.getElementById('resumo-devolvido').textContent=fmt(vd);
   document.getElementById('resumo-vendido').textContent=fmt(vv);
@@ -2630,7 +2630,7 @@ function finalizarFechamento(){
   var vc=produtosConsignados.reduce(function(s,i){return s+pN(i.Custo);},0);
   var vd=devolvidos.reduce(function(s,i){return s+pN(i.Custo);},0);
   var vv=vendidos.reduce(function(s,i){return s+pN(i.Venda);},0);
-  var com=vv*pct;var luc=(vc-vd)+com;
+  var com=vv*pct;var comDono=vv*(1-pct);var luc=(vc-vd)+comDono;
 
   // Parcelas — dívida é o valor que a revendedora deve pagar (lucro = venda - comissão)
   var nParc=parseInt(document.getElementById('fechamento-parcelas').value)||1;
