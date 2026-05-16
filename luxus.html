@@ -1400,38 +1400,8 @@ function copiarLink() {
 
 // Helper: quando há múltiplos itens com mesmo código, abre modal de seleção
 function selecionarItemDuplicado(itens, callback) {
-  var html = '<div style="padding:.5rem 0;font-size:13px;color:var(--gray-600);margin-bottom:.75rem;">Múltiplos itens com este código. Selecione qual deseja:</div>';
-  html += '<div style="display:flex;flex-direction:column;gap:6px;">';
-  itens.forEach(function(item, idx) {
-    html += '<button onclick="window._dupCallback(' + idx + ')" style="text-align:left;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:.75rem;cursor:pointer;width:100%;">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;">'
-      + '<div><span style="font-family:monospace;font-size:12px;font-weight:700;color:var(--primary);">' + item.Codigo + '</span>'
-      + ' <span style="font-size:13px;color:var(--gray-700);">' + (item.Descricao||'—') + '</span></div>'
-      + '<div style="text-align:right;font-size:11px;color:var(--gray-500);">' + (item.Tipo||'') + (item.Categoria?' · '+item.Categoria:'')
-      + '<br><span style="color:var(--primary);font-weight:600;">' + fmt(item.Venda) + '</span></div>'
-      + '</div>'
-      + '<div style="font-size:11px;color:var(--gray-400);margin-top:3px;">Status: ' + item.Status + (item.Revendedor?' · '+item.Revendedor:'') + '</div>'
-      + '</button>';
-  });
-  html += '</div>';
-  window._dupCallback = function(idx) {
-    fecharModal('modal-dup');
-    callback(itens[idx]);
-  };
-  var modal = document.getElementById('modal-dup');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'modal-dup';
-    modal.className = 'modal-overlay';
-    modal.innerHTML = '<div class="modal-content" style="max-width:460px;width:95%;">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">'
-      + '<h3 style="font-size:1rem;font-weight:700;color:var(--gray-800);">Selecionar item</h3>'
-      + '<button onclick="fecharModal(\'modal-dup\')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>'
-      + '</div><div id="modal-dup-content"></div></div>';
-    document.body.appendChild(modal);
-  }
-  document.getElementById('modal-dup-content').innerHTML = html;
-  abrirModal('modal-dup');
+  // Seleciona automaticamente o primeiro — os demais ficam disponíveis para bipes futuros
+  if (itens.length > 0) callback(itens[0]);
 }
 
 function adicionarEntrega() {
