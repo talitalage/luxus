@@ -694,7 +694,12 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
           <label style="font-size:12px;color:var(--gray-600);font-weight:500;">Filtrar por tipo</label>
           <select id="cfg-total-tipo" onchange="salvarCfgCards()"><option value="all">Todos</option><option value="Semi Joia">Semi Joia</option><option value="Perfume">Perfume</option></select>
           <label style="font-size:12px;color:var(--gray-600);font-weight:500;">Filtrar por status</label>
-          <select id="cfg-total-status" onchange="salvarCfgCards()"><option value="all">Todos os status</option><option value="Em Estoque">Em Estoque</option><option value="Consignado">Consignado</option><option value="Vendido">Vendido</option></select>
+          <div id="cfg-total-status-checks" style="display:flex;flex-direction:column;gap:5px;padding:8px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--gray-700);"><input type="checkbox" id="cfg-total-status-all" onchange="onStatusCheckAll('total')" style="width:14px;height:14px;"> Todos</label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--gray-700);"><input type="checkbox" id="cfg-total-status-estoque" value="Em Estoque" onchange="onStatusCheck('total')" style="width:14px;height:14px;"> Em Estoque</label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--gray-700);"><input type="checkbox" id="cfg-total-status-consignado" value="Consignado" onchange="onStatusCheck('total')" style="width:14px;height:14px;"> Consignado</label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--gray-700);"><input type="checkbox" id="cfg-total-status-vendido" value="Vendido" onchange="onStatusCheck('total')" style="width:14px;height:14px;"> Vendido</label>
+          </div>
         </div>
         <div id="cfgcard-vendas" style="display:none;flex-direction:column;gap:10px;">
           <label style="font-size:12px;color:var(--gray-600);font-weight:500;">Período</label>
@@ -1999,7 +2004,7 @@ function switchSubtab(sub){
 // =====================================================
 function renderDashboard(){
   var c=cfgCards;
-  var itemsTotal=inventory.filter(function(i){return(c.total.tipo==='all'||i.Tipo===c.total.tipo)&&(c.total.status==='all'||i.Status===c.total.status);});
+  var itemsTotal=inventory.filter(function(i){return(c.total.tipo==='all'||i.Tipo===c.total.tipo)&&(c.total.status==='all'||Array.isArray(c.total.status)?c.total.status==='all'||(Array.isArray(c.total.status)&&c.total.status.indexOf(i.Status)!==-1):i.Status===c.total.status);});
   document.getElementById('dash-total').textContent=itemsTotal.length;
   var itemsCap=inventory.filter(function(i){return i.Status==='Em Estoque'&&(c.capital.tipo==='all'||i.Tipo===c.capital.tipo);});
   document.getElementById('dash-capital').textContent=fmt(itemsCap.reduce(function(s,i){return s+pN(c.capital.venda?i.Venda:i.Custo);},0));
@@ -2096,7 +2101,7 @@ function renderDashTable(){
       if(el&&el.parentElement){el.parentElement.style.outline='none';}
     });
     var c=cfgCards;
-    var itemsTotal=inventory.filter(function(i){return(c.total.tipo==='all'||i.Tipo===c.total.tipo)&&(c.total.status==='all'||i.Status===c.total.status);});
+    var itemsTotal=inventory.filter(function(i){return(c.total.tipo==='all'||i.Tipo===c.total.tipo)&&(c.total.status==='all'||Array.isArray(c.total.status)?c.total.status==='all'||(Array.isArray(c.total.status)&&c.total.status.indexOf(i.Status)!==-1):i.Status===c.total.status);});
     document.getElementById('dash-total').textContent=itemsTotal.length;
     var itemsCap=inventory.filter(function(i){return i.Status==='Em Estoque'&&(c.capital.tipo==='all'||i.Tipo===c.capital.tipo);});
     document.getElementById('dash-capital').textContent=fmt(itemsCap.reduce(function(s,i){return s+pN(c.capital.venda?i.Venda:i.Custo);},0));
@@ -2639,8 +2644,43 @@ function aplicarVisibilidadeCards(){Object.keys(dashCardsVisiveis).forEach(funct
 // CONFIG CARDS
 // =====================================================
 function switchCfgCard(tab){['total','vendas','consignado','capital'].forEach(function(t){var p=document.getElementById('cfgcard-'+t);var b=document.getElementById('cfgcard-tab-'+t);if(!p||!b)return;var ativo=t===tab;p.style.display=ativo?'flex':'none';b.style.background=ativo?'var(--white)':'transparent';b.style.color=ativo?'var(--primary)':'var(--gray-500)';b.style.fontWeight=ativo?'600':'500';});}
-function carregarCfgCards(){var opts='<option value="">Todos</option>';revendedores.forEach(function(r){opts+='<option value="'+r.Nome+'">'+r.Nome+'</option>';});['cfg-vendas-revendedor','cfg-cons-revendedor'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=opts;});var c=cfgCards;function sv(id,val){var e=document.getElementById(id);if(e)e.value=val;}function sc(id,val){var e=document.getElementById(id);if(e)e.checked=val;}sv('cfg-total-tipo',c.total.tipo);sv('cfg-total-status',c.total.status);sv('cfg-vendas-periodo',c.vendas.periodo);sv('cfg-vendas-revendedor',c.vendas.revendedor);sv('cfg-vendas-tipo',c.vendas.tipo);sc('cfg-vendas-lucro',c.vendas.lucro);sv('cfg-cons-revendedor',c.consignado.revendedor);sv('cfg-cons-tipo',c.consignado.tipo);sc('cfg-cons-custo',c.consignado.custo);sv('cfg-capital-tipo',c.capital.tipo);sc('cfg-capital-venda',c.capital.venda);}
-function salvarCfgCards(){function gv(id){var e=document.getElementById(id);return e?e.value:'';}function gc(id){var e=document.getElementById(id);return e?e.checked:false;}cfgCards={total:{tipo:gv('cfg-total-tipo'),status:gv('cfg-total-status')},vendas:{periodo:gv('cfg-vendas-periodo'),revendedor:gv('cfg-vendas-revendedor'),tipo:gv('cfg-vendas-tipo'),lucro:gc('cfg-vendas-lucro')},consignado:{revendedor:gv('cfg-cons-revendedor'),tipo:gv('cfg-cons-tipo'),custo:gc('cfg-cons-custo')},capital:{tipo:gv('cfg-capital-tipo'),venda:gc('cfg-capital-venda')}};localStorage.setItem('luxus_cfg_cards',JSON.stringify(cfgCards));renderDashboard();showToast('Cards atualizados!','success');}
+function onStatusCheckAll(card){
+  var allCb=document.getElementById('cfg-'+card+'-status-all');
+  ['estoque','consignado','vendido'].forEach(function(s){
+    var cb=document.getElementById('cfg-'+card+'-status-'+s);
+    if(cb)cb.checked=allCb.checked;
+  });
+  salvarCfgCards();
+}
+function onStatusCheck(card){
+  var checks=['estoque','consignado','vendido'].map(function(s){return document.getElementById('cfg-'+card+'-status-'+s);}).filter(Boolean);
+  var allChecked=checks.every(function(c){return c.checked;});
+  var noneChecked=checks.every(function(c){return !c.checked;});
+  var allCb=document.getElementById('cfg-'+card+'-status-all');
+  if(allCb)allCb.checked=allChecked||noneChecked;
+  if(noneChecked){checks.forEach(function(c){c.checked=true;});if(allCb)allCb.checked=true;}
+  salvarCfgCards();
+}
+function getStatusChecks(card){
+  var map={estoque:'Em Estoque',consignado:'Consignado',vendido:'Vendido'};
+  var sel=[];
+  Object.keys(map).forEach(function(k){var cb=document.getElementById('cfg-'+card+'-status-'+k);if(cb&&cb.checked)sel.push(map[k]);});
+  return sel.length===3||sel.length===0?'all':sel;
+}
+function setStatusChecks(card,val){
+  var map={estoque:'Em Estoque',consignado:'Consignado',vendido:'Vendido'};
+  var allCb=document.getElementById('cfg-'+card+'-status-all');
+  if(val==='all'||!val){
+    Object.keys(map).forEach(function(k){var cb=document.getElementById('cfg-'+card+'-status-'+k);if(cb)cb.checked=true;});
+    if(allCb)allCb.checked=true;
+  } else {
+    var arr=Array.isArray(val)?val:[val];
+    Object.keys(map).forEach(function(k){var cb=document.getElementById('cfg-'+card+'-status-'+k);if(cb)cb.checked=arr.indexOf(map[k])!==-1;});
+    if(allCb)allCb.checked=arr.length===3;
+  }
+}
+function carregarCfgCards(){var opts='<option value="">Todos</option>';revendedores.forEach(function(r){opts+='<option value="'+r.Nome+'">'+r.Nome+'</option>';});['cfg-vendas-revendedor','cfg-cons-revendedor'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=opts;});var c=cfgCards;function sv(id,val){var e=document.getElementById(id);if(e)e.value=val;}function sc(id,val){var e=document.getElementById(id);if(e)e.checked=val;}sv('cfg-total-tipo',c.total.tipo);setStatusChecks('total',c.total.status);sv('cfg-vendas-periodo',c.vendas.periodo);sv('cfg-vendas-revendedor',c.vendas.revendedor);sv('cfg-vendas-tipo',c.vendas.tipo);sc('cfg-vendas-lucro',c.vendas.lucro);sv('cfg-cons-revendedor',c.consignado.revendedor);sv('cfg-cons-tipo',c.consignado.tipo);sc('cfg-cons-custo',c.consignado.custo);sv('cfg-capital-tipo',c.capital.tipo);sc('cfg-capital-venda',c.capital.venda);}
+function salvarCfgCards(){function gv(id){var e=document.getElementById(id);return e?e.value:'';}function gc(id){var e=document.getElementById(id);return e?e.checked:false;}cfgCards={total:{tipo:gv('cfg-total-tipo'),status:getStatusChecks('total')},vendas:{periodo:gv('cfg-vendas-periodo'),revendedor:gv('cfg-vendas-revendedor'),tipo:gv('cfg-vendas-tipo'),lucro:gc('cfg-vendas-lucro')},consignado:{revendedor:gv('cfg-cons-revendedor'),tipo:gv('cfg-cons-tipo'),custo:gc('cfg-cons-custo')},capital:{tipo:gv('cfg-capital-tipo'),venda:gc('cfg-capital-venda')}};localStorage.setItem('luxus_cfg_cards',JSON.stringify(cfgCards));renderDashboard();showToast('Cards atualizados!','success');}
 
 // =====================================================
 // REVENDEDORES
