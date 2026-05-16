@@ -1696,6 +1696,7 @@ function compartilharEntregaWhatsApp() {
     +'Total de itens: '+doc.totalItens+'\n'
     +'Valor total: R$ '+doc.valorTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})+'\n\n'
     +'*Itens:*\n'+doc.itens.map(function(i){return '  '+i.Codigo+' — '+(i.Descricao||'—');}).join('\n');
+  if(doc.reciboUrl) msg+='\n\n📄 *Documento assinado:*\n'+doc.reciboUrl;
   window.open('https://wa.me/'+(contato?'55'+contato:'')+'?text='+encodeURIComponent(msg),'_blank');
 }
 
@@ -1806,13 +1807,15 @@ function excluirEntregaAtual() {
     syncDrive({ action: 'editInventario', rowId: item.rowId, status: 'Em Estoque', revendedor: '' });
   });
 
-  // Remove do histórico local
+  // Remove do histórico local e sincroniza com Drive
   historicEntregas = historicEntregas.filter(function(e){ return e.id !== doc.id; });
+  syncDrive({ action: 'delEntrega', id: doc.id });
 
   fecharModal('modal-entrega');
   _entregaDoc = null;
   renderDashboard();
   renderUltimasEntregas();
+  try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas}));}catch(e){}
   showToast('Entrega excluída — itens devolvidos ao estoque', 'success');
 }
 
@@ -2617,8 +2620,8 @@ function compartilharWhatsApp(){
     +'Devolvidos: '+reg.qtdDevolvidos+'\n\n'
     +'Total vendido: '+fmt(reg.valorVendido)+'\n'
     +'Comissão ('+reg.percentual+'%): '+fmt(reg.comissao)+'\n'
-    +'*A receber (Venda − Comissão): '+fmt(reg.lucro)+'*\n\n'
-    +'_Itens vendidos: '+(reg.itensVendidos||[]).map(function(i){return i.Codigo;}).join(', ')+'_';
+    +'*A receber: '+fmt(reg.lucro)+'*';
+  if(reg.reciboUrl) msg+='\n\n📄 *Recibo assinado:*\n'+reg.reciboUrl;
   var url='https://wa.me/'+(contato?'55'+contato:'')+'?text='+encodeURIComponent(msg);
   window.open(url,'_blank');
 }
