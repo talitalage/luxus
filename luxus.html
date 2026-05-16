@@ -2477,8 +2477,20 @@ function finalizarFechamento(){
   var vendidos=produtosConsignados.filter(function(p){return!devolucoes.find(function(d){return d.rowId===p.rowId;});});
   var devolvidos=devolucoes.slice();
   var dataVenda=new Date().toISOString();
-  vendidos.forEach(function(item){var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});if(idx!==-1){inventory[idx].Status='Vendido';inventory[idx].DataVenda=inventory[idx].DataVenda||dataVenda;}});
-  devolvidos.forEach(function(item){var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});if(idx!==-1){inventory[idx].Status='Em Estoque';inventory[idx].Revendedor='';inventory[idx].DataVenda='';}});
+  // Vendidos: marca como Vendido e limpa revendedor
+  vendidos.forEach(function(item){
+    var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});
+    if(idx!==-1){
+      inventory[idx].Status='Vendido';
+      inventory[idx].Revendedor='';
+      inventory[idx].DataVenda=inventory[idx].DataVenda||dataVenda;
+    }
+  });
+  // Devolvidos: volta pro estoque
+  devolvidos.forEach(function(item){
+    var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});
+    if(idx!==-1){inventory[idx].Status='Em Estoque';inventory[idx].Revendedor='';inventory[idx].DataVenda='';}
+  });
   var rev=revendedores.find(function(r){return r.Nome===nome;});
   var pct=((rev&&rev.Percentual)||30)/100;
   var vc=produtosConsignados.reduce(function(s,i){return s+pN(i.Custo);},0);
@@ -2486,15 +2498,14 @@ function finalizarFechamento(){
   var vv=vendidos.reduce(function(s,i){return s+pN(i.Venda);},0);
   var com=vv*pct;var luc=vv-com;
 
-  // Parcelas
+  // Parcelas — dívida é o valor que a revendedora deve pagar (lucro = venda - comissão)
   var nParc=parseInt(document.getElementById('fechamento-parcelas').value)||1;
-  var vParc=parseFloat(document.getElementById('fechamento-valor-parcela').value)||luc;
+  var vParc=parseFloat(document.getElementById('fechamento-valor-parcela').value)||(luc/nParc);
   var dividas=[];
-  if(com>0){
+  if(luc>0){
     for(var p=1;p<=nParc;p++){
-      dividas.push({id:Date.now()+p,data:dataVenda,descricao:'Parcela '+p+'/'+nParc+' — Fechamento '+new Date().toLocaleDateString('pt-BR'),valor:vParc,pago:false,tipo:'comissao'});
+      dividas.push({id:Date.now()+p,data:dataVenda,descricao:'Parcela '+p+'/'+nParc+' — Fechamento '+new Date().toLocaleDateString('pt-BR'),valor:parseFloat(vParc.toFixed(2)),pago:false,tipo:'recebimento'});
     }
-    // Registra dívida no revendedor
     if(rev){
       if(!rev.dividas)rev.dividas=[];
       dividas.forEach(function(d){rev.dividas.push(d);});
@@ -2516,7 +2527,7 @@ function finalizarFechamento(){
   showToast('Fechamento concluído!','success');
   try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas}));}catch(e){}
   syncDrive({action:'addFechamento',revendedor:nome,percentual:(rev&&rev.Percentual)||30,qtdConsignados:reg.qtdConsignados,qtdVendidos:reg.qtdVendidos,qtdDevolvidos:reg.qtdDevolvidos,valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,nParcelas:nParc,valorParcela:vParc,itensVendidos:reg.itensVendidos,itensDevolvidos:reg.itensDevolvidos});
-  vendidos.forEach(function(item){syncDrive({action:'editInventario',rowId:item.rowId,status:'Vendido',revendedor:nome,dataVenda:dataVenda});});
+  vendidos.forEach(function(item){syncDrive({action:'editInventario',rowId:item.rowId,status:'Vendido',revendedor:'',dataVenda:item.DataVenda||dataVenda});});
   devolvidos.forEach(function(item){syncDrive({action:'editInventario',rowId:item.rowId,status:'Em Estoque',revendedor:'',dataVenda:''});});
   setTimeout(function(){abrirModalAssinatura(reg);},400);
 }
