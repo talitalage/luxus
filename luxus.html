@@ -304,7 +304,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
           <div id="entrada-categoria-container" style="display:none;"><label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Categoria</label><select id="entrada-categoria"></select></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
-          <div><label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Custo (R$)</label><input type="number" id="entrada-custo" step="0.01" placeholder="0.00" onblur="var c=parseFloat(this.value)||0;var v=document.getElementById('entrada-venda');if(c>0&&(!v.value||parseFloat(v.value)===0))v.value=(c*2).toFixed(2);"></div>
+          <div><label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Custo (R$)</label><input type="number" id="entrada-custo" step="0.01" placeholder="0.00" onblur="var c=parseFloat(this.value)||0;var v=document.getElementById('entrada-venda');if(c>0)v.value=(c*2).toFixed(2);"></div>
           <div><label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Venda (R$) <span style="font-size:10px;color:var(--gray-400);font-weight:400;">2× custo</span></label><input type="number" id="entrada-venda" step="0.01" placeholder="0.00"></div>
         </div>
         <div><label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Revendedor (Opcional)</label><select id="entrada-revendedor"><option value="">Em Estoque</option></select></div>
@@ -2355,9 +2355,7 @@ function confirmarVendaAvulsa(){
 function calcularVendaEdit(){
   var custo=parseFloat(document.getElementById('edit-custo').value)||0;
   var vendaEl=document.getElementById('edit-venda');
-  if(custo>0&&(!vendaEl.value||parseFloat(vendaEl.value)===0)){
-    vendaEl.value=(custo*2).toFixed(2);
-  }
+  if(custo>0) vendaEl.value=(custo*2).toFixed(2);
 }
 
 function abrirModalNovoItem(){var rowId=document.getElementById('edit-rowid');if(rowId)rowId.value='';['edit-codigo','edit-descricao','edit-tipo','edit-categoria','edit-custo','edit-venda','edit-foto'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});document.getElementById('edit-status').value='Em Estoque';document.getElementById('edit-revendedor').value='';var titulo=document.getElementById('modal-item-titulo');if(titulo)titulo.textContent='Novo Item';var btnEx=document.getElementById('btn-excluir-item');if(btnEx)btnEx.style.display='none';var ec=document.getElementById('edit-codigo');if(ec){ec.removeAttribute('readonly');ec.removeAttribute('disabled');}abrirModal('modal-item');}
