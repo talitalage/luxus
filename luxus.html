@@ -74,8 +74,11 @@ input[type=hidden]{display:none!important;}
 
 /* ── MODO TABLET ── */
 body.device-tablet .page-wrapper{padding:1rem;}
-body.device-tablet .header-dark{height:60px;}
-body.device-tablet .nav-tab{height:60px;font-size:.8rem;padding:0 .75rem;}
+body.device-tablet .header-dark{height:56px;}
+body.device-tablet .header-dark .page-wrapper-inner{padding:0 .75rem;}
+body.device-tablet #site-subtitle-display{display:none;}
+body.device-tablet .nav-tab{height:56px;font-size:.75rem;padding:0 .6rem;}
+body.device-tablet .nav-tab i{display:none;}
 body.device-tablet .grid-stats-4{grid-template-columns:repeat(2,1fr)!important;}
 body.device-tablet .grid-stats-5{grid-template-columns:repeat(2,1fr)!important;}
 body.device-tablet .grid-config-3{grid-template-columns:1fr!important;}
@@ -87,7 +90,7 @@ body.device-tablet .data-table th,body.device-tablet .data-table td{padding:.5re
 body.device-tablet input,body.device-tablet select,body.device-tablet textarea{font-size:14px!important;padding:.75rem 1rem!important;}
 body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.75rem 1rem;font-size:.9rem;}
 </style>
-<script src="https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
 
@@ -109,14 +112,15 @@ body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.75rem
       <button onclick="switchTab('relatorio')"  id="tab-relatorio"  class="nav-tab"><i class="fas fa-chart-bar" style="margin-right:6px;"></i>Relatórios</button>
       <button onclick="switchTab('config')"     id="tab-config"     class="nav-tab"><i class="fas fa-cog" style="margin-right:6px;"></i>Configurações</button>
     </nav>
-    <div style="display:flex;align-items:center;gap:.75rem;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0;">
       <div style="text-align:right;">
         <div style="font-size:.8rem;font-weight:600;color:rgba(255,255,255,.9);">Olá, <span id="header-username">Lu</span>! ✨</div>
-        <div style="font-size:.6rem;color:rgba(255,255,255,.4);">Bem-vinda ao seu painel</div>
+        <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end;">
+          <span id="status-time" style="font-size:.65rem;color:rgba(255,255,255,.5);white-space:nowrap;">--:--:--</span>
+          <span id="sync-status" style="font-size:.65rem;color:rgba(255,255,255,0);transition:all .4s;display:flex;align-items:center;gap:2px;white-space:nowrap;"></span>
+        </div>
       </div>
-      <span id="status-time" style="font-size:.75rem;color:rgba(255,255,255,.5);">--:--</span>
-      <span id="sync-status" style="font-size:.7rem;color:rgba(255,255,255,0);transition:all .4s;display:flex;align-items:center;gap:3px;"></span>
-      <button onclick="loadData()" style="background:rgba(255,255,255,.1);border:none;cursor:pointer;padding:6px 10px;border-radius:6px;color:rgba(255,255,255,.8);" title="Sincronizar"><i class="fas fa-sync-alt"></i></button>
+      <button onclick="loadData()" style="background:rgba(255,255,255,.1);border:none;cursor:pointer;padding:6px 8px;border-radius:6px;color:rgba(255,255,255,.8);flex-shrink:0;" title="Sincronizar"><i class="fas fa-sync-alt"></i></button>
     </div>
   </div>
 </div>
@@ -707,14 +711,8 @@ body.device-tablet .btn-primary,body.device-tablet .btn-secondary{padding:.75rem
       <h3 style="font-size:1rem;font-weight:700;color:var(--gray-800);"><i class="fas fa-camera" style="color:var(--primary);margin-right:8px;"></i>Ler código de barras</h3>
       <button onclick="fecharScanner()" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>
     </div>
-    <div style="position:relative;background:#000;border-radius:10px;overflow:hidden;margin-bottom:1rem;">
-      <video id="scanner-video" style="width:100%;display:block;max-height:280px;object-fit:cover;" playsinline autoplay muted></video>
-      <!-- Mira -->
-      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
-        <div style="width:200px;height:80px;border:2px solid #60a5fa;border-radius:6px;box-shadow:0 0 0 9999px rgba(0,0,0,.4);"></div>
-      </div>
-    </div>
-    <div id="scanner-status" style="font-size:13px;color:var(--gray-500);text-align:center;margin-bottom:.75rem;">Aponte a câmera para o código de barras</div>
+    <div id="scanner-container" style="border-radius:10px;overflow:hidden;margin-bottom:1rem;"></div>
+    <div id="scanner-status" style="font-size:13px;color:var(--gray-500);text-align:center;margin-bottom:.75rem;">Iniciando câmera...</div>
     <div id="scanner-resultado" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.75rem;margin-bottom:.75rem;text-align:center;">
       <div style="font-size:11px;color:#065f46;margin-bottom:4px;">Código lido</div>
       <div id="scanner-codigo-lido" style="font-family:monospace;font-size:1.1rem;font-weight:700;color:#059669;"></div>
@@ -2133,123 +2131,73 @@ function editarRevendedor(rowId){var rev=revendedores.find(function(r){return r.
 function salvarRevendedor(){var rowId=document.getElementById('rev-rowid').value;var nome=document.getElementById('rev-nome').value.trim();if(!nome){showToast('Informe o nome','warning');return;}var percentual=parseFloat(document.getElementById('rev-percentual').value)||30;var contato=document.getElementById('rev-contato').value.trim();if(rowId){var idx=revendedores.findIndex(function(r){return r.rowId==rowId;});if(idx!==-1){revendedores[idx].Nome=nome;revendedores[idx].Contato=contato;revendedores[idx].Percentual=percentual;}syncDrive({action:'editRevendedor',rowId:parseInt(rowId),nome:nome,contato:contato,percentual:percentual});}else{var novoRev={rowId:Date.now(),Nome:nome,Contato:contato,Percentual:percentual};revendedores.push(novoRev);syncDrive({action:'addRevendedor',nome:nome,contato:contato,percentual:percentual});}fecharModal('modal-revendedor');renderRevendedores();carregarRevendedoresSelects();showToast('Revendedor salvo!','success');}
 function excluirRevendedor(rowId){if(!confirm('Excluir este revendedor?'))return;revendedores=revendedores.filter(function(r){return r.rowId!==rowId;});renderRevendedores();carregarRevendedoresSelects();showToast('Revendedor excluído!','success');syncDrive({action:'delRevendedor',rowId:rowId});}
 // =====================================================
-// SCANNER DE CÂMERA (ZXing)
+// SCANNER DE CÂMERA (html5-qrcode)
 // =====================================================
 var _scannerTargetId = null;
 var _scannerCallback = null;
-var _scannerReader = null;
-var _scannerStream = null;
+var _html5Qr = null;
 
 function abrirScanner(targetInputId, callback) {
   _scannerTargetId = targetInputId;
   _scannerCallback = callback || null;
   document.getElementById('scanner-resultado').style.display = 'none';
   document.getElementById('scanner-status').textContent = 'Iniciando câmera...';
+  document.getElementById('scanner-container').innerHTML = '';
   abrirModal('modal-scanner');
-  setTimeout(iniciarScanner, 300);
+  setTimeout(iniciarScanner, 350);
 }
 
 function iniciarScanner() {
-  var ZXingLib = window.ZXingBrowser || window.ZXing;
-  if (!ZXingLib || !ZXingLib.BrowserMultiFormatReader) {
+  if (typeof Html5Qrcode === 'undefined') {
     document.getElementById('scanner-status').textContent = 'Biblioteca não disponível. Use o leitor físico.';
     return;
   }
-  var video = document.getElementById('scanner-video');
-  _scannerReader = new ZXingLib.BrowserMultiFormatReader();
-
-  // Lista câmeras e prioriza traseira
-  _scannerReader.listVideoInputDevices().then(function(devices) {
-    var deviceId = null;
-    // Procura câmera traseira pelo label
-    var traseira = devices.find(function(d) {
-      return /back|rear|traseira|environment/i.test(d.label);
-    });
-    deviceId = traseira ? traseira.deviceId : (devices.length > 0 ? devices[devices.length - 1].deviceId : null);
-
-    // Se não achou pelo label, usa constraint de environment
-    if (!deviceId) {
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-      .then(function(stream) {
-        _scannerStream = stream;
-        video.srcObject = stream;
-        video.play();
-        document.getElementById('scanner-status').textContent = 'Aponte a câmera para o código de barras';
-        iniciarLoopCaptura(video, ZXingLib);
-      }).catch(function(e) {
-        document.getElementById('scanner-status').textContent = 'Erro ao acessar câmera: ' + e.message;
-      });
-      return;
-    }
-
-    _scannerReader.decodeFromVideoDevice(deviceId, video, function(result, err) {
-      if (result) onCodigoLido(result.getText());
-    });
+  _html5Qr = new Html5Qrcode('scanner-container');
+  var config = {
+    fps: 15,
+    qrbox: { width: 250, height: 120 },
+    aspectRatio: 1.5,
+    formatsToSupport: [
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.CODE_39,
+      Html5QrcodeSupportedFormats.QR_CODE,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.UPC_E
+    ]
+  };
+  _html5Qr.start(
+    { facingMode: 'environment' },
+    config,
+    function(codigo) { onCodigoLido(codigo); },
+    function(err) {}
+  ).then(function() {
     document.getElementById('scanner-status').textContent = 'Aponte a câmera para o código de barras';
-
-  }).catch(function() {
-    // Fallback direto com environment
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } })
-    .then(function(stream) {
-      _scannerStream = stream;
-      video.srcObject = stream;
-      video.play();
-      document.getElementById('scanner-status').textContent = 'Aponte a câmera para o código de barras';
-      iniciarLoopCaptura(video, ZXingLib);
-    }).catch(function(e) {
-      document.getElementById('scanner-status').textContent = 'Sem acesso à câmera. Verifique as permissões.';
-    });
+  }).catch(function(e) {
+    document.getElementById('scanner-status').textContent = 'Erro: ' + (e.message || e);
   });
 }
 
-var _scannerLoopActive = false;
-function iniciarLoopCaptura(video, ZXingLib) {
-  _scannerLoopActive = true;
-  var hints = new Map();
-  var reader = new ZXingLib.BrowserMultiFormatReader(hints);
-  var canvas = document.createElement('canvas');
-
-  function capturar() {
-    if (!_scannerLoopActive) return;
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      var ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      try {
-        var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        var luminance = new ZXingLib.ZXingLuminanceSource ? null : imgData;
-        // Tenta decodificar via canvas
-        reader.decodeFromCanvas(canvas).then(function(result) {
-          if (result) onCodigoLido(result.getText());
-        }).catch(function(){});
-      } catch(e) {}
-    }
-    if (_scannerLoopActive) requestAnimationFrame(capturar);
-  }
-  requestAnimationFrame(capturar);
-}
-
 function onCodigoLido(codigo) {
-  if (!_scannerLoopActive && !_scannerReader) return;
-  _scannerLoopActive = false;
   document.getElementById('scanner-codigo-lido').textContent = codigo;
   document.getElementById('scanner-resultado').style.display = 'block';
-  document.getElementById('scanner-status').textContent = '✓ Código lido com sucesso!';
+  document.getElementById('scanner-status').textContent = '✓ Código lido!';
   var input = document.getElementById(_scannerTargetId);
   if (input) { input.value = codigo; input.dispatchEvent(new Event('input')); }
   setTimeout(function() {
     fecharScanner();
     if (_scannerCallback) _scannerCallback();
-  }, 800);
+  }, 700);
 }
 
 function fecharScanner() {
-  _scannerLoopActive = false;
-  if (_scannerReader) { try { _scannerReader.reset(); } catch(e) {} _scannerReader = null; }
-  if (_scannerStream) { _scannerStream.getTracks().forEach(function(t){t.stop();}); _scannerStream = null; }
-  var video = document.getElementById('scanner-video');
-  if (video) { video.srcObject = null; }
+  if (_html5Qr) {
+    _html5Qr.stop().catch(function(){}).finally(function(){
+      _html5Qr.clear();
+      _html5Qr = null;
+    });
+  }
   fecharModal('modal-scanner');
 }
 
