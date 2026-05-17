@@ -2274,20 +2274,23 @@ function atualizarResumoFechamento(){
   var nome=document.getElementById('fechamento-revendedor').value;if(!nome)return;
   var rev=revendedores.find(function(r){return r.Nome===nome;});
   var pct=((rev&&rev.Percentual)||30)/100;
-  var pctDono=1-pct; // percentual do dono = 100% - comissão revendedor
   var pctLabel=document.getElementById('resumo-pct-label');if(pctLabel)pctLabel.textContent=((rev&&rev.Percentual)||30);
-  var pctDonoLabel=document.getElementById('resumo-pct-dono-label');if(pctDonoLabel)pctDonoLabel.textContent=Math.round(pctDono*100);
+  var pctDonoLabel=document.getElementById('resumo-pct-dono-label');if(pctDonoLabel)pctDonoLabel.textContent=Math.round((1-pct)*100);
+  // Custo dos consignados e devolvidos
   var vc=produtosConsignados.reduce(function(s,i){return s+pN(i.Custo);},0);
   var vd=devolucoes.reduce(function(s,i){return s+pN(i.Custo);},0);
+  var custoVendido=vc-vd;
+  // Valor de venda (apenas para exibição na linha Vendido)
   var vv=produtosConsignados.reduce(function(s,i){return s+pN(i.Venda);},0)-devolucoes.reduce(function(s,i){return s+pN(i.Venda);},0);
-  var com=vv*pct;       // comissão revendedor
-  var comDono=vv*pctDono; // margem = vv - com
-  var luc=(vc-vd)+comDono;  // a receber = custo vendido + margem
+  // Comissão e margem calculadas sobre o CUSTO vendido
+  var com=custoVendido*pct;
+  var margem=custoVendido*(1-pct);
+  var luc=custoVendido+margem; // A receber = consignado + margem
   document.getElementById('resumo-consignado').textContent=fmt(vc);
   document.getElementById('resumo-devolvido').textContent=fmt(vd);
   document.getElementById('resumo-vendido').textContent=fmt(vv);
   document.getElementById('resumo-comissao').textContent=fmt(com);
-  var elDono=document.getElementById('resumo-margem');if(elDono)elDono.textContent=fmt(comDono);
+  var elMargem=document.getElementById('resumo-margem');if(elMargem)elMargem.textContent=fmt(margem);
   document.getElementById('resumo-lucro').textContent=fmt(luc);
 }
 // =====================================================
@@ -2651,8 +2654,11 @@ function finalizarFechamento(){
   var pct=((rev&&rev.Percentual)||30)/100;
   var vc=produtosConsignados.reduce(function(s,i){return s+pN(i.Custo);},0);
   var vd=devolvidos.reduce(function(s,i){return s+pN(i.Custo);},0);
+  var custoVendido=vc-vd;
   var vv=vendidos.reduce(function(s,i){return s+pN(i.Venda);},0);
-  var com=vv*pct;var comDono=vv*(1-pct);var luc=(vc-vd)+comDono;
+  var com=custoVendido*pct;        // comissão revendedor sobre custo
+  var margem=custoVendido*(1-pct); // margem sobre custo
+  var luc=custoVendido+margem;     // a receber = consignado + margem
 
   // Parcelas — dívida é o valor que a revendedora deve pagar (lucro = venda - comissão)
   var nParc=parseInt(document.getElementById('fechamento-parcelas').value)||1;
