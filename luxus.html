@@ -1864,20 +1864,41 @@ function atualizarPreviewParcelas(n,v) {
 var _pagamentoAtual = null;
 
 function renderFinanceiro() {
-  var devedores = revendedores.map(function(r) {
-    var dividas = (r.dividas || []).filter(function(d) { return !d.pago; });
-    var totalAberto = dividas.reduce(function(s,d){ return s + (parseFloat(d.saldo||d.valor)||0); }, 0);
-    var totalPago = (r.dividas||[]).reduce(function(s,d){return s+(parseFloat(d.valorPago)||0);},0);
-    return { rev: r, dividas: dividas, totalAberto: totalAberto, totalPago: totalPago };
-  }).filter(function(x) { return x.dividas.length > 0 || x.totalPago > 0; });
+  // Agrupa fechamentos por revendedor
+  var porRevendedor = {};
+  revendedores.forEach(function(r) {
+    if (!r.dividas || !r.dividas.length) return;
+    porRevendedor[r.Nome] = porRevendedor[r.Nome] || { rev: r, grupos: [] };
+  });
 
-  var totalGeral = devedores.reduce(function(s,x){return s+x.totalAberto;},0);
-  var totalRecebido = devedores.reduce(function(s,x){return s+x.totalPago;},0);
-  var countDev = devedores.filter(function(x){return x.totalAberto>0;}).length;
+  // Agrupa dívidas por fechamento (descricao contém a data)
+  revendedores.forEach(function(r) {
+    if (!r.dividas || !r.dividas.length) return;
+    // Agrupa parcelas pelo fechamento (id agrupado por prefixo de timestamp)
+    var grupos = {};
+    r.dividas.forEach(function(d, di) {
+      // Chave do grupo: data do fechamento (YYYY-MM-DD HH:MM)
+      var dataGrupo = new Date(d.data).toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric'});
+      var chave = dataGrupo + '|' + (d.descricao||'').replace(/Parcela \d+\/\d+ — /,'');
+      if (!grupos[chave]) grupos[chave] = { data: d.data, descricao: (d.descricao||'').replace(/Parcela \d+\/\d+ — /,''), parcelas: [] };
+      grupos[chave].parcelas.push({ d: d, di: di });
+    });
+    porRevendedor[r.Nome] = { rev: r, grupos: Object.values(grupos) };
+  });
 
-  document.getElementById('fin-total-aberto').textContent = 'R$ '+totalGeral.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  var devedores = Object.values(porRevendedor).filter(function(x) { return x.grupos && x.grupos.length; });
+
+  // Totais
+  var totalAberto = 0, totalPago = 0, countDev = 0;
+  devedores.forEach(function(x) {
+    var aberto = (x.rev.dividas||[]).filter(function(d){return !d.pago;}).reduce(function(s,d){return s+(parseFloat(d.saldo||d.valor)||0);},0);
+    var pago = (x.rev.dividas||[]).reduce(function(s,d){return s+(parseFloat(d.valorPago)||0);},0);
+    totalAberto += aberto; totalPago += pago;
+    if (aberto > 0) countDev++;
+  });
+  document.getElementById('fin-total-aberto').textContent = fmt(totalAberto);
   document.getElementById('fin-count-devedores').textContent = countDev;
-  document.getElementById('fin-total-recebido').textContent = 'R$ '+totalRecebido.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  document.getElementById('fin-total-recebido').textContent = fmt(totalPago);
 
   var lista = document.getElementById('fin-lista');
   var empty = document.getElementById('fin-empty');
@@ -1885,52 +1906,67 @@ function renderFinanceiro() {
   empty.style.display='none';
 
   lista.innerHTML = devedores.map(function(x) {
-    var r=x.rev;
-    var html='<div class="card-light" style="padding:1.25rem;">'
-      +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;">'
-      +'<div style="width:40px;height:40px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#185FA5;flex-shrink:0;">'+(r.Nome||'?').slice(0,2).toUpperCase()+'</div>'
-      +'<div style="flex:1;"><div style="font-weight:600;font-size:14px;">'+r.Nome+'</div><div style="font-size:12px;color:var(--gray-500);">'+r.Contato+'</div></div>'
-      +'<div style="text-align:right;"><div style="font-size:11px;color:var(--gray-500);">Em aberto</div>'
-      +(x.totalAberto>0?'<div style="font-size:1.1rem;font-weight:700;color:#ef4444;">R$ '+x.totalAberto.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>':'<div style="font-size:1.1rem;font-weight:700;color:#10b981;">Quitado ✓</div>')
-      +'</div></div>';
+    var r = x.rev;
+    var totalRev = (r.dividas||[]).filter(function(d){return !d.pago;}).reduce(function(s,d){return s+(parseFloat(d.saldo||d.valor)||0);},0);
+    var html = '<div class="card-light" style="padding:1.25rem;">'
+      + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;">'
+      + '<div style="width:40px;height:40px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#185FA5;flex-shrink:0;">'+(r.Nome||'?').slice(0,2).toUpperCase()+'</div>'
+      + '<div style="flex:1;"><div style="font-weight:600;font-size:15px;">'+r.Nome+'</div>'
+      + (r.Contato?'<div style="font-size:12px;color:var(--gray-500);">'+r.Contato+'</div>':'')+'</div>'
+      + '<div style="text-align:right;">'
+      + (totalRev>0?'<div style="font-size:11px;color:var(--gray-500);">Em aberto</div><div style="font-size:1.2rem;font-weight:700;color:#ef4444;">'+fmt(totalRev)+'</div>':'<div style="font-size:13px;font-weight:700;color:#10b981;">✓ Quitado</div>')
+      + '</div></div>';
 
-    if ((r.dividas||[]).length) {
-      html += '<div style="display:flex;flex-direction:column;gap:8px;">';
-      (r.dividas||[]).forEach(function(d,di) {
-        var pago=d.pago;
+    // Grupos por fechamento
+    html += '<div style="display:flex;flex-direction:column;gap:10px;">';
+    x.grupos.sort(function(a,b){return new Date(b.data)-new Date(a.data);}).forEach(function(grupo) {
+      var totalGrupo = grupo.parcelas.reduce(function(s,p){return s+(parseFloat(p.d.saldo||p.d.valor)||0);},0);
+      var pagoGrupo  = grupo.parcelas.reduce(function(s,p){return s+(parseFloat(p.d.valorPago)||0);},0);
+      var quitado    = grupo.parcelas.every(function(p){return p.d.pago;});
+
+      html += '<div style="border:1px solid '+(quitado?'#bbf7d0':'#e2e8f0')+';border-radius:8px;overflow:hidden;">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:'+(quitado?'#f0fdf4':'var(--gray-50)')+';border-bottom:1px solid '+(quitado?'#bbf7d0':'#e2e8f0')+'">'
+        + '<div><div style="font-size:12px;font-weight:600;color:var(--gray-700);">'
+        + '<i class="fas fa-receipt" style="margin-right:6px;color:'+(quitado?'#10b981':'#6366f1')+'"></i>'
+        + grupo.descricao+'</div>'
+        + '<div style="font-size:11px;color:var(--gray-400);">'+new Date(grupo.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · '+grupo.parcelas.length+' parcela(s)</div></div>'
+        + '<div style="text-align:right;">'
+        + (pagoGrupo>0?'<div style="font-size:11px;color:#10b981;">Pago: '+fmt(pagoGrupo)+'</div>':'')
+        + (!quitado?'<div style="font-size:13px;font-weight:700;color:#ef4444;">'+fmt(totalGrupo)+'</div>':'<div style="font-size:12px;font-weight:700;color:#10b981;">Quitado ✓</div>')
+        + '</div></div>';
+
+      // Parcelas do grupo
+      html += '<div style="padding:8px 12px;display:flex;flex-direction:column;gap:6px;">';
+      grupo.parcelas.forEach(function(pg) {
+        var d=pg.d; var di=pg.di;
         var saldo=parseFloat(d.saldo||d.valor)||0;
         var valorPago=parseFloat(d.valorPago)||0;
         var hist=d.historicoPagamentos||[];
-        html += '<div style="background:'+(pago?'#f0fdf4':'#fef2f2')+';border:1px solid '+(pago?'#bbf7d0':'#fecaca')+';border-radius:8px;padding:10px 12px;">'
-          +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:'+(hist.length?'8px':'0')+'">'
-          +'<i class="fas '+(pago?'fa-check-circle':'fa-clock')+'" style="color:'+(pago?'#10b981':'#ef4444')+'"></i>'
-          +'<div style="flex:1;"><div style="font-size:12px;font-weight:500;color:var(--gray-700);">'+d.descricao+'</div>'
-          +'<div style="font-size:11px;color:var(--gray-500);">'+new Date(d.data).toLocaleDateString('pt-BR')+'</div></div>'
-          +'<div style="text-align:right;">'
-          +'<div style="font-size:11px;color:var(--gray-500);">Total: <b>'+fmt(parseFloat(d.valor)||0)+'</b></div>'
-          +(valorPago>0?'<div style="font-size:11px;color:#10b981;">Pago: '+fmt(valorPago)+'</div>':'')
-          +(saldo>0&&!pago?'<div style="font-size:13px;font-weight:700;color:#ef4444;">Saldo: '+fmt(saldo)+'</div>':'')
-          +'</div>'
-          +(!pago?'<button onclick="abrirPagamento(\''+r.rowId+'\','+di+')" class="btn-primary" style="padding:4px 10px;font-size:12px;">Pagar</button>':'')
-          +'<button onclick="excluirDivida(\''+r.rowId+'\','+di+')" style="background:none;border:1px solid #fca5a5;color:#dc2626;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;margin-left:4px;"><i class="fas fa-trash"></i></button>'
-          +'</div>';
-        // Histórico de pagamentos
+        html += '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:'+(d.pago?'#f0fdf4':'white')+';border:1px solid '+(d.pago?'#bbf7d0':'#e5e7eb')+';border-radius:6px;">'
+          + '<i class="fas '+(d.pago?'fa-check-circle':'fa-clock')+'" style="color:'+(d.pago?'#10b981':'#ef4444')+';font-size:13px;"></i>'
+          + '<div style="flex:1;">'
+          + '<div style="font-size:12px;font-weight:500;color:var(--gray-700);">'+(d.descricao||'Parcela')+'</div>'
+          + (valorPago>0?'<div style="font-size:11px;color:#10b981;">Pago: '+fmt(valorPago)+(saldo>0?' · Saldo: <b>'+fmt(saldo)+'</b>':'')+'</div>':'')
+          + '</div>'
+          + '<div style="font-size:13px;font-weight:700;color:'+(d.pago?'#10b981':'#ef4444')+';">'+(d.pago?fmt(parseFloat(d.valor)||0):fmt(saldo))+'</div>'
+          + (!d.pago?'<button onclick="abrirPagamento(\''+r.rowId+'\','+di+')" class="btn-primary" style="padding:4px 10px;font-size:12px;white-space:nowrap;">Pagar</button>':'')
+          + '<button onclick="excluirDivida(\''+r.rowId+'\','+di+')" style="background:none;border:1px solid #fca5a5;color:#dc2626;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;margin-left:4px;"><i class="fas fa-trash"></i></button>'
+          + '</div>';
+
+        // Histórico de pagamentos inline
         if (hist.length) {
-          html += '<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,0,0,.06);">'
-            +'<div style="font-size:10px;color:var(--gray-400);margin-bottom:4px;font-weight:600;">HISTÓRICO DE PAGAMENTOS</div>'
-            +hist.map(function(pg){
-              return '<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;">'
-                +'<span style="color:var(--gray-500);">'+new Date(pg.data).toLocaleDateString('pt-BR')+(pg.obs?' — '+pg.obs:'')+'</span>'
-                +'<span style="color:#10b981;font-weight:600;">'+fmt(pg.valor)+'</span>'
-                +'</div>';
-            }).join('')
-            +'</div>';
+          html += '<div style="padding:4px 10px 6px 32px;display:flex;flex-direction:column;gap:2px;">'
+            + hist.map(function(pg){
+                return '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--gray-400);">'
+                  +'<span>'+new Date(pg.data).toLocaleDateString('pt-BR')+(pg.obs?' — '+pg.obs:'')+'</span>'
+                  +'<span style="color:#10b981;font-weight:600;">'+fmt(pg.valor)+'</span></div>';
+              }).join('')
+            + '</div>';
         }
-        html += '</div>';
       });
-      html += '</div>';
-    }
-    html += '</div>';
+      html += '</div></div>';
+    });
+    html += '</div></div>';
     return html;
   }).join('');
 }
