@@ -2674,27 +2674,40 @@ function finalizarFechamento(){
   var devolvidos=devolucoes.slice();
   var dataVenda=new Date().toISOString();
 
+    // Devolvidos: pergunta se volta ao estoque ou fica em maleta
+  var opcaoDevolvidos='estoque';
+  if(devolvidos.length>0){
+    var resp=confirm('Os '+devolvidos.length+' item(s) devolvidos voltam ao ESTOQUE? Clique OK para Estoque ou Cancelar para Manter em Maleta.');
+    opcaoDevolvidos=resp?'estoque':'maleta';
+  }
+
   // Vendidos: marca como Vendido e limpa revendedor
   vendidos.forEach(function(item){
     var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});
-    if(idx!==-1){inventory[idx].Status='Vendido';inventory[idx].Revendedor='';inventory[idx].DataVenda=inventory[idx].DataVenda||dataVenda;}
-    syncDrive({action:'editInventario',rowId:item.rowId,status:'Vendido',revendedor:'',dataVenda:inventory[inventory.findIndex(function(i){return i.rowId===item.rowId;})].DataVenda||dataVenda});
+    if(idx!==-1){
+      var dv=inventory[idx].DataVenda||dataVenda;
+      inventory[idx].Status='Vendido';inventory[idx].Revendedor='';inventory[idx].DataVenda=dv;
+    }
   });
 
-  // Devolvidos: pergunta se volta ao estoque ou fica em maleta
-  var opcaoDevolvidos='estoque';
-  if(devolvidos.length>0){
-    var resp=confirm('Os '+devolvidos.length+' item(s) devolvidos voltam ao ESTOQUE?
-
-OK = Estoque  |  Cancelar = Manter em Maleta (sem revendedor)');
-    opcaoDevolvidos=resp?'estoque':'maleta';
-  }
+  // Devolvidos
   devolvidos.forEach(function(item){
     var novoStatus=opcaoDevolvidos==='estoque'?'Em Estoque':'Em Maleta';
     var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});
     if(idx!==-1){inventory[idx].Status=novoStatus;inventory[idx].Revendedor='';inventory[idx].DataVenda='';}
-    syncDrive({action:'editInventario',rowId:item.rowId,status:novoStatus,revendedor:'',dataVenda:''});
   });
+
+  // Sincroniza todos de uma vez via ação batch
+  var batchItems=[];
+  vendidos.forEach(function(item){
+    var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});
+    batchItems.push({rowId:item.rowId,status:'Vendido',revendedor:'',dataVenda:idx!==-1?inventory[idx].DataVenda:dataVenda});
+  });
+  devolvidos.forEach(function(item){
+    var novoStatus=opcaoDevolvidos==='estoque'?'Em Estoque':'Em Maleta';
+    batchItems.push({rowId:item.rowId,status:novoStatus,revendedor:'',dataVenda:''});
+  });
+  if(batchItems.length) syncDrive({action:'batchEditInventario',items:batchItems});
 
   var rev=revendedores.find(function(r){return r.Nome===nome;});
   var pct=((rev&&rev.Percentual)||30)/100;
