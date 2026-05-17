@@ -1866,10 +1866,10 @@ var _pagamentoAtual = null;
 function renderFinanceiro() {
   var devedores = revendedores.map(function(r) {
     var dividas = (r.dividas || []).filter(function(d) { return !d.pago; });
-    var totalAberto = dividas.reduce(function(s,d){ return s + (parseFloat(d.valor)||0); }, 0);
-    var totalPago = (r.dividas||[]).filter(function(d){return d.pago;}).reduce(function(s,d){return s+(parseFloat(d.valorPago)||0);},0);
+    var totalAberto = dividas.reduce(function(s,d){ return s + (parseFloat(d.saldo||d.valor)||0); }, 0);
+    var totalPago = (r.dividas||[]).reduce(function(s,d){return s+(parseFloat(d.valorPago)||0);},0);
     return { rev: r, dividas: dividas, totalAberto: totalAberto, totalPago: totalPago };
-  }).filter(function(x) { return x.dividas.length > 0 || (x.rev.dividas||[]).some(function(d){return d.pago;}); });
+  }).filter(function(x) { return x.dividas.length > 0 || x.totalPago > 0; });
 
   var totalGeral = devedores.reduce(function(s,x){return s+x.totalAberto;},0);
   var totalRecebido = devedores.reduce(function(s,x){return s+x.totalPago;},0);
@@ -1895,19 +1895,38 @@ function renderFinanceiro() {
       +'</div></div>';
 
     if ((r.dividas||[]).length) {
-      html += '<div style="display:flex;flex-direction:column;gap:6px;">';
+      html += '<div style="display:flex;flex-direction:column;gap:8px;">';
       (r.dividas||[]).forEach(function(d,di) {
         var pago=d.pago;
-        html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:'+(pago?'#f0fdf4':'#fef2f2')+';border:1px solid '+(pago?'#bbf7d0':'#fecaca')+';border-radius:6px;">'
+        var saldo=parseFloat(d.saldo||d.valor)||0;
+        var valorPago=parseFloat(d.valorPago)||0;
+        var hist=d.historicoPagamentos||[];
+        html += '<div style="background:'+(pago?'#f0fdf4':'#fef2f2')+';border:1px solid '+(pago?'#bbf7d0':'#fecaca')+';border-radius:8px;padding:10px 12px;">'
+          +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:'+(hist.length?'8px':'0')+'">'
           +'<i class="fas '+(pago?'fa-check-circle':'fa-clock')+'" style="color:'+(pago?'#10b981':'#ef4444')+'"></i>'
           +'<div style="flex:1;"><div style="font-size:12px;font-weight:500;color:var(--gray-700);">'+d.descricao+'</div>'
-          +'<div style="font-size:11px;color:var(--gray-500);">'+new Date(d.data).toLocaleDateString('pt-BR')+(d.obs?' · '+d.obs:'')+'</div></div>'
-          +'<div style="text-align:right;"><div style="font-size:13px;font-weight:700;color:'+(pago?'#10b981':'#ef4444')+';">R$ '+(parseFloat(d.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>'
-          +(pago?'<div style="font-size:10px;color:#10b981;">Pago</div>':'')
+          +'<div style="font-size:11px;color:var(--gray-500);">'+new Date(d.data).toLocaleDateString('pt-BR')+'</div></div>'
+          +'<div style="text-align:right;">'
+          +'<div style="font-size:11px;color:var(--gray-500);">Total: <b>'+fmt(parseFloat(d.valor)||0)+'</b></div>'
+          +(valorPago>0?'<div style="font-size:11px;color:#10b981;">Pago: '+fmt(valorPago)+'</div>':'')
+          +(saldo>0&&!pago?'<div style="font-size:13px;font-weight:700;color:#ef4444;">Saldo: '+fmt(saldo)+'</div>':'')
           +'</div>'
           +(!pago?'<button onclick="abrirPagamento(\''+r.rowId+'\','+di+')" class="btn-primary" style="padding:4px 10px;font-size:12px;">Pagar</button>':'')
-          +'<button onclick="excluirDivida(\''+r.rowId+'\','+di+')" style="background:none;border:1px solid #fca5a5;color:#dc2626;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;margin-left:4px;" title="Excluir"><i class="fas fa-trash"></i></button>'
+          +'<button onclick="excluirDivida(\''+r.rowId+'\','+di+')" style="background:none;border:1px solid #fca5a5;color:#dc2626;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;margin-left:4px;"><i class="fas fa-trash"></i></button>'
           +'</div>';
+        // Histórico de pagamentos
+        if (hist.length) {
+          html += '<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,0,0,.06);">'
+            +'<div style="font-size:10px;color:var(--gray-400);margin-bottom:4px;font-weight:600;">HISTÓRICO DE PAGAMENTOS</div>'
+            +hist.map(function(pg){
+              return '<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;">'
+                +'<span style="color:var(--gray-500);">'+new Date(pg.data).toLocaleDateString('pt-BR')+(pg.obs?' — '+pg.obs:'')+'</span>'
+                +'<span style="color:#10b981;font-weight:600;">'+fmt(pg.valor)+'</span>'
+                +'</div>';
+            }).join('')
+            +'</div>';
+        }
+        html += '</div>';
       });
       html += '</div>';
     }
@@ -1930,12 +1949,16 @@ function abrirPagamento(revId, diIdx) {
   var rev = revendedores.find(function(r){return String(r.rowId)===String(revId);});
   if (!rev||!rev.dividas||!rev.dividas[diIdx]) return;
   var d = rev.dividas[diIdx];
+  var saldo = parseFloat(d.saldo||d.valor)||0;
+  var valorPago = parseFloat(d.valorPago)||0;
   _pagamentoAtual = { revId: revId, diIdx: diIdx, divida: d };
   document.getElementById('pagamento-info').innerHTML =
     '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--gray-600);">Revendedor</span><strong>'+rev.Nome+'</strong></div>'
     +'<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--gray-600);">Descrição</span><span>'+d.descricao+'</span></div>'
-    +'<div style="display:flex;justify-content:space-between;"><span style="color:var(--gray-600);">Valor em aberto</span><strong style="color:#ef4444;">R$ '+(parseFloat(d.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</strong></div>';
-  document.getElementById('pagamento-valor').value = d.valor || '';
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--gray-600);">Valor total</span><span><b>'+fmt(parseFloat(d.valor)||0)+'</b></span></div>'
+    +(valorPago>0?'<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--gray-600);">Já pago</span><span style="color:#10b981;font-weight:600;">'+fmt(valorPago)+'</span></div>':'')
+    +'<div style="display:flex;justify-content:space-between;"><span style="color:var(--gray-600);">Saldo devedor</span><strong style="color:#ef4444;font-size:1.1rem;">'+fmt(saldo)+'</strong></div>';
+  document.getElementById('pagamento-valor').value = saldo.toFixed(2);
   document.getElementById('pagamento-obs').value = '';
   abrirModal('modal-pagamento');
 }
@@ -1947,14 +1970,27 @@ function confirmarPagamento() {
   if (!valor) { showToast('Informe o valor recebido','warning'); return; }
   var rev = revendedores.find(function(r){return String(r.rowId)===String(_pagamentoAtual.revId);});
   if (!rev) return;
-  rev.dividas[_pagamentoAtual.diIdx].pago = true;
-  rev.dividas[_pagamentoAtual.diIdx].valorPago = valor;
-  rev.dividas[_pagamentoAtual.diIdx].dataPagamento = new Date().toISOString();
-  rev.dividas[_pagamentoAtual.diIdx].obs = obs;
+  var d = rev.dividas[_pagamentoAtual.diIdx];
+  var saldoAtual = parseFloat(d.saldo||d.valor)||0;
+  var novoSaldo = parseFloat((saldoAtual - valor).toFixed(2));
+
+  // Registra no histórico de pagamentos da parcela
+  if (!d.historicoPagamentos) d.historicoPagamentos = [];
+  d.historicoPagamentos.push({ data: new Date().toISOString(), valor: valor, obs: obs });
+  d.valorPago = parseFloat(((d.valorPago||0) + valor).toFixed(2));
+  d.saldo = novoSaldo <= 0 ? 0 : novoSaldo;
+  d.pago = novoSaldo <= 0;
+  if (d.pago) d.dataPagamento = new Date().toISOString();
+
   syncDrive({ action: 'editRevendedor', rowId: rev.rowId, dividas: rev.dividas });
   fecharModal('modal-pagamento');
   renderFinanceiro();
-  showToast('Pagamento registrado!', 'success');
+
+  if (novoSaldo > 0) {
+    showToast('Pagamento de '+fmt(valor)+' registrado — saldo restante: '+fmt(novoSaldo), 'success');
+  } else {
+    showToast('Parcela quitada!', 'success');
+  }
   _pagamentoAtual = null;
 }
 
@@ -2633,40 +2669,60 @@ function finalizarFechamento(){
   if(!nome){showToast('Selecione um revendedor','warning');return;}
   if(!devolucoes.length&&produtosConsignados.length>0){if(!confirm('Nenhuma devolução. Tudo foi vendido. Continuar?'))return;}
   if(!confirm('Confirmar fechamento?'))return;
+
   var vendidos=produtosConsignados.filter(function(p){return!devolucoes.find(function(d){return d.rowId===p.rowId;});});
   var devolvidos=devolucoes.slice();
   var dataVenda=new Date().toISOString();
+
   // Vendidos: marca como Vendido e limpa revendedor
   vendidos.forEach(function(item){
     var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});
-    if(idx!==-1){
-      inventory[idx].Status='Vendido';
-      inventory[idx].Revendedor='';
-      inventory[idx].DataVenda=inventory[idx].DataVenda||dataVenda;
-    }
+    if(idx!==-1){inventory[idx].Status='Vendido';inventory[idx].Revendedor='';inventory[idx].DataVenda=inventory[idx].DataVenda||dataVenda;}
+    syncDrive({action:'editInventario',rowId:item.rowId,status:'Vendido',revendedor:'',dataVenda:inventory[inventory.findIndex(function(i){return i.rowId===item.rowId;})].DataVenda||dataVenda});
   });
-  // Devolvidos: volta pro estoque
+
+  // Devolvidos: pergunta se volta ao estoque ou fica em maleta
+  var opcaoDevolvidos='estoque';
+  if(devolvidos.length>0){
+    var resp=confirm('Os '+devolvidos.length+' item(s) devolvidos voltam ao ESTOQUE?
+
+OK = Estoque  |  Cancelar = Manter em Maleta (sem revendedor)');
+    opcaoDevolvidos=resp?'estoque':'maleta';
+  }
   devolvidos.forEach(function(item){
+    var novoStatus=opcaoDevolvidos==='estoque'?'Em Estoque':'Em Maleta';
     var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});
-    if(idx!==-1){inventory[idx].Status='Em Estoque';inventory[idx].Revendedor='';inventory[idx].DataVenda='';}
+    if(idx!==-1){inventory[idx].Status=novoStatus;inventory[idx].Revendedor='';inventory[idx].DataVenda='';}
+    syncDrive({action:'editInventario',rowId:item.rowId,status:novoStatus,revendedor:'',dataVenda:''});
   });
+
   var rev=revendedores.find(function(r){return r.Nome===nome;});
   var pct=((rev&&rev.Percentual)||30)/100;
   var vc=produtosConsignados.reduce(function(s,i){return s+pN(i.Custo);},0);
   var vd=devolvidos.reduce(function(s,i){return s+pN(i.Custo);},0);
   var custoVendido=vc-vd;
   var vv=vendidos.reduce(function(s,i){return s+pN(i.Venda);},0);
-  var com=custoVendido*pct;        // comissão revendedor sobre custo
-  var margem=custoVendido*(1-pct); // margem sobre custo
-  var luc=custoVendido+margem;     // a receber = consignado + margem
+  var com=custoVendido*pct;
+  var margem=custoVendido*(1-pct);
+  var luc=custoVendido+margem;
 
-  // Parcelas — dívida é o valor que a revendedora deve pagar (lucro = venda - comissão)
+  // Parcelas
   var nParc=parseInt(document.getElementById('fechamento-parcelas').value)||1;
   var vParc=parseFloat(document.getElementById('fechamento-valor-parcela').value)||(luc/nParc);
   var dividas=[];
   if(luc>0){
     for(var p=1;p<=nParc;p++){
-      dividas.push({id:Date.now()+p,data:dataVenda,descricao:'Parcela '+p+'/'+nParc+' — Fechamento '+new Date().toLocaleDateString('pt-BR'),valor:parseFloat(vParc.toFixed(2)),pago:false,tipo:'recebimento'});
+      dividas.push({
+        id:Date.now()+p,
+        data:dataVenda,
+        descricao:'Parcela '+p+'/'+nParc+' — Fechamento '+new Date().toLocaleDateString('pt-BR'),
+        valor:parseFloat(vParc.toFixed(2)),
+        valorPago:0,
+        saldo:parseFloat(vParc.toFixed(2)),
+        pago:false,
+        tipo:'recebimento',
+        historicoPagamentos:[]
+      });
     }
     if(rev){
       if(!rev.dividas)rev.dividas=[];
@@ -2675,8 +2731,16 @@ function finalizarFechamento(){
     }
   }
 
-  var reg={id:Date.now(),data:dataVenda,revendedor:nome,percentual:(rev&&rev.Percentual)||30,qtdConsignados:produtosConsignados.length,qtdVendidos:vendidos.length,qtdDevolvidos:devolvidos.length,valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,nParcelas:nParc,valorParcela:vParc,itensVendidos:vendidos.map(function(i){return{Codigo:i.Codigo,Descricao:i.Descricao,Venda:i.Venda};}),itensDevolvidos:devolvidos.map(function(i){return{Codigo:i.Codigo,Descricao:i.Descricao,Venda:i.Venda};})};
+  var reg={id:Date.now(),data:dataVenda,revendedor:nome,percentual:(rev&&rev.Percentual)||30,
+    qtdConsignados:produtosConsignados.length,qtdVendidos:vendidos.length,qtdDevolvidos:devolvidos.length,
+    valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,
+    nParcelas:nParc,valorParcela:vParc,
+    itensVendidos:vendidos.map(function(i){return{Codigo:i.Codigo,Descricao:i.Descricao,Venda:i.Venda};}),
+    itensDevolvidos:devolvidos.map(function(i){return{Codigo:i.Codigo,Descricao:i.Descricao,Venda:i.Venda};})
+  };
   historicFechamentos.unshift(reg);
+
+  // Limpa tela
   document.getElementById('fechamento-revendedor').value='';
   document.getElementById('info-revendedor').style.display='none';
   produtosConsignados=[];devolucoes=[];
@@ -2688,9 +2752,10 @@ function finalizarFechamento(){
   atualizarResumoFechamento();renderConsignados();renderDashboard();renderHistorico();
   showToast('Fechamento concluído!','success');
   try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas}));}catch(e){}
-  syncDrive({action:'addFechamento',revendedor:nome,percentual:(rev&&rev.Percentual)||30,qtdConsignados:reg.qtdConsignados,qtdVendidos:reg.qtdVendidos,qtdDevolvidos:reg.qtdDevolvidos,valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,nParcelas:nParc,valorParcela:vParc,itensVendidos:reg.itensVendidos,itensDevolvidos:reg.itensDevolvidos});
-  vendidos.forEach(function(item){syncDrive({action:'editInventario',rowId:item.rowId,status:'Vendido',revendedor:'',dataVenda:item.DataVenda||dataVenda});});
-  devolvidos.forEach(function(item){syncDrive({action:'editInventario',rowId:item.rowId,status:'Em Estoque',revendedor:'',dataVenda:''});});
+  syncDrive({action:'addFechamento',revendedor:nome,percentual:(rev&&rev.Percentual)||30,
+    qtdConsignados:reg.qtdConsignados,qtdVendidos:reg.qtdVendidos,qtdDevolvidos:reg.qtdDevolvidos,
+    valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,
+    nParcelas:nParc,valorParcela:vParc,itensVendidos:reg.itensVendidos,itensDevolvidos:reg.itensDevolvidos});
   setTimeout(function(){abrirModalAssinatura(reg);},400);
 }
 
