@@ -1472,7 +1472,11 @@ function confirmarEntrega() {
       if (idx !== -1) { inventory[idx].Status = 'Em Maleta'; inventory[idx].Revendedor = ''; }
       syncDrive({ action: 'editInventario', rowId: item.rowId, status: 'Em Maleta', revendedor: '' });
     });
-    _entregaDoc = { id: Date.now(), tipo: 'maleta-pendente', data: dataEntrega, revendedor: '(sem revendedor)', revendedorId: '', itens: itensEntrega.slice(), totalItens: itensEntrega.length, valorTotal: itensEntrega.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0) };
+    _entregaDoc = { id: Date.now(), tipo: 'maleta-pendente', data: dataEntrega, revendedor: '(sem revendedor)', revendedorId: '',
+      itens: itensEntrega.slice(), totalItens: itensEntrega.length,
+      valorTotal: itensEntrega.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0),
+      valorCusto: itensEntrega.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0)
+    };
     historicEntregas.unshift(_entregaDoc);
     syncDrive({ action: 'addEntrega', entrega: _entregaDoc });
     itensEntrega = []; renderListaEntrega(); renderDashboard(); renderUltimasEntregas();
@@ -1488,7 +1492,11 @@ function confirmarEntrega() {
     syncDrive({ action: 'editInventario', rowId: item.rowId, status: 'Consignado', revendedor: revNome });
   });
 
-  _entregaDoc = { id: Date.now(), tipo: 'entrega', data: dataEntrega, revendedor: revNome, revendedorId: revId, itens: itensEntrega.slice(), totalItens: itensEntrega.length, valorTotal: itensEntrega.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0) };
+  _entregaDoc = { id: Date.now(), tipo: 'entrega', data: dataEntrega, revendedor: revNome, revendedorId: revId,
+    itens: itensEntrega.slice(), totalItens: itensEntrega.length,
+    valorTotal: itensEntrega.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0),
+    valorCusto: itensEntrega.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0)
+  };
   historicEntregas.unshift(_entregaDoc);
   syncDrive({ action: 'addEntrega', entrega: _entregaDoc });
   abrirModalEntrega(_entregaDoc);
@@ -1537,14 +1545,14 @@ function abrirModalEntrega(doc) {
   }).join('');
   _entregaAss = null;
   abrirModal('modal-entrega');
-  // Seta badge após abrir modal
-  var badge = document.getElementById('entrega-status-badge');
-  if (badge) {
-    badge.innerHTML = doc.reciboUrl
-      ? '<span style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;"><i class="fas fa-check-circle" style="margin-right:4px;"></i>Assinado</span>'
-      : '<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;"><i class="fas fa-clock" style="margin-right:4px;"></i>Pendente</span>';
-  }
   setTimeout(function() {
+    // Badge de status
+    var badge = document.getElementById('entrega-status-badge');
+    if (badge) {
+      badge.innerHTML = doc.reciboUrl
+        ? '<span style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;"><i class="fas fa-check-circle" style="margin-right:4px;"></i>Assinado</span>'
+        : '<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;"><i class="fas fa-clock" style="margin-right:4px;"></i>Pendente</span>';
+    }
     initCanvasEntrega();
     var canvasWrap = document.getElementById('canvas-entrega');
     var baixarBtn = document.querySelector('#modal-entrega .btn-primary');
@@ -1699,7 +1707,7 @@ function renderUltimasEntregas() {
     return '<div style="display:flex;align-items:center;gap:8px;padding:.75rem;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;">'
       +'<div style="width:34px;height:34px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;color:#185FA5;flex-shrink:0;">'+(e.revendedor||'?').slice(0,2).toUpperCase()+'</div>'
       +'<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:500;">'+(e.tipo==='maleta-pendente'?'<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;margin-right:4px;">Pendente</span>':'')+e.revendedor+'</div><div style="font-size:11px;color:var(--gray-500);">'+new Date(e.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · '+e.totalItens+' item(s)</div></div>'
-      +'<span style="font-size:12px;font-weight:600;color:#10b981;white-space:nowrap;">'+fmt(e.valorTotal||0)+'</span>'
+      +'<span style="font-size:12px;font-weight:600;color:#10b981;white-space:nowrap;">'+fmt(e.valorCusto||e.valorTotal||0)+'</span>'
       +(e.tipo==='maleta-pendente'
         ?'<button onclick="atrelarRevendedor('+e.id+')" class="btn-primary" style="padding:4px 10px;font-size:12px;white-space:nowrap;"><i class="fas fa-link" style="margin-right:4px;"></i>Atrelar</button>'
         :'<button onclick="reabrirEntrega('+e.id+')" class="btn-secondary" style="padding:4px 10px;font-size:12px;"><i class="fas fa-eye" style="margin-right:4px;"></i>Ver</button>'
@@ -1798,14 +1806,14 @@ function excluirEntregaAtual() {
     syncDrive({ action: 'editInventario', rowId: item.rowId, status: 'Em Estoque', revendedor: '' });
   });
 
-  // Remove do histórico local e sincroniza com Drive
-  historicEntregas = historicEntregas.filter(function(e){ return e.id !== doc.id; });
-  syncDrive({ action: 'delEntrega', id: doc.id });
+  historicEntregas = historicEntregas.filter(function(e){ return String(e.id) !== String(doc.id); });
+  syncDrive({ action: 'delEntrega', id: String(doc.id) });
 
   fecharModal('modal-entrega');
   _entregaDoc = null;
   renderDashboard();
   renderUltimasEntregas();
+  // Salva cache imediatamente para evitar reaparecer
   try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas}));}catch(e){}
   showToast('Entrega excluída — itens devolvidos ao estoque', 'success');
 }
