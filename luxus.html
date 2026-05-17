@@ -532,9 +532,10 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
   <!-- FINANCEIRO -->
   <div id="subtab-financeiro" style="display:none;">
     <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem;">
-      <div class="stat-card" style="flex:1;min-width:160px;">
-        <div style="font-size:12px;color:var(--gray-500);">Total em aberto</div>
-        <div id="fin-total-aberto" style="font-size:1.5rem;font-weight:700;color:#ef4444;">R$ 0,00</div>
+      <div class="stat-card" style="flex:1;min-width:160px;background:linear-gradient(135deg,#ef4444,#dc2626);">
+        <div style="font-size:12px;color:rgba(255,255,255,.8);">Total em aberto</div>
+        <div id="fin-total-aberto" style="font-size:1.5rem;font-weight:700;color:white;margin-bottom:8px;">R$ 0,00</div>
+        <div id="fin-devedores-lista" style="border-top:1px solid rgba(255,255,255,.2);padding-top:6px;"></div>
       </div>
       <div class="stat-card" style="flex:1;min-width:160px;">
         <div style="font-size:12px;color:var(--gray-500);">Revendedores com dívida</div>
@@ -1864,41 +1865,33 @@ function atualizarPreviewParcelas(n,v) {
 var _pagamentoAtual = null;
 
 function renderFinanceiro() {
-  // Agrupa fechamentos por revendedor
-  var porRevendedor = {};
-  revendedores.forEach(function(r) {
-    if (!r.dividas || !r.dividas.length) return;
-    porRevendedor[r.Nome] = porRevendedor[r.Nome] || { rev: r, grupos: [] };
-  });
+  var devedores = revendedores.map(function(r) {
+    var dividas = r.dividas || [];
+    var totalDevido  = dividas.reduce(function(s,d){ return s + (parseFloat(d.valor)||0); }, 0);
+    var totalPago    = dividas.reduce(function(s,d){ return s + (parseFloat(d.valorPago)||0); }, 0);
+    var totalAberto  = dividas.filter(function(d){return !d.pago;}).reduce(function(s,d){ return s + (parseFloat(d.saldo||d.valor)||0); }, 0);
+    return { rev: r, dividas: dividas, totalDevido: totalDevido, totalPago: totalPago, totalAberto: totalAberto };
+  }).filter(function(x){ return x.dividas.length > 0; });
 
-  // Agrupa dívidas por fechamento (descricao contém a data)
-  revendedores.forEach(function(r) {
-    if (!r.dividas || !r.dividas.length) return;
-    // Agrupa parcelas pelo fechamento (id agrupado por prefixo de timestamp)
-    var grupos = {};
-    r.dividas.forEach(function(d, di) {
-      // Chave do grupo: data do fechamento (YYYY-MM-DD HH:MM)
-      var dataGrupo = new Date(d.data).toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric'});
-      var chave = dataGrupo + '|' + (d.descricao||'').replace(/Parcela \d+\/\d+ — /,'');
-      if (!grupos[chave]) grupos[chave] = { data: d.data, descricao: (d.descricao||'').replace(/Parcela \d+\/\d+ — /,''), parcelas: [] };
-      grupos[chave].parcelas.push({ d: d, di: di });
-    });
-    porRevendedor[r.Nome] = { rev: r, grupos: Object.values(grupos) };
-  });
+  var somaAberto   = devedores.reduce(function(s,x){ return s + x.totalAberto; }, 0);
+  var somaPago     = devedores.reduce(function(s,x){ return s + x.totalPago; }, 0);
+  var countDev     = devedores.filter(function(x){ return x.totalAberto > 0; }).length;
 
-  var devedores = Object.values(porRevendedor).filter(function(x) { return x.grupos && x.grupos.length; });
-
-  // Totais
-  var totalAberto = 0, totalPago = 0, countDev = 0;
-  devedores.forEach(function(x) {
-    var aberto = (x.rev.dividas||[]).filter(function(d){return !d.pago;}).reduce(function(s,d){return s+(parseFloat(d.saldo||d.valor)||0);},0);
-    var pago = (x.rev.dividas||[]).reduce(function(s,d){return s+(parseFloat(d.valorPago)||0);},0);
-    totalAberto += aberto; totalPago += pago;
-    if (aberto > 0) countDev++;
-  });
-  document.getElementById('fin-total-aberto').textContent = fmt(totalAberto);
+  // Cards
+  document.getElementById('fin-total-aberto').textContent    = fmt(somaAberto);
   document.getElementById('fin-count-devedores').textContent = countDev;
-  document.getElementById('fin-total-recebido').textContent = fmt(totalPago);
+  document.getElementById('fin-total-recebido').textContent  = fmt(somaPago);
+
+  // Lista devedores dentro do card "Em aberto"
+  var devedoresEl = document.getElementById('fin-devedores-lista');
+  if (devedoresEl) {
+    devedoresEl.innerHTML = devedores.filter(function(x){return x.totalAberto>0;}).map(function(x){
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.15);">'
+        + '<span style="font-size:12px;color:rgba(255,255,255,.85);">'+x.rev.Nome+'</span>'
+        + '<span style="font-size:13px;font-weight:700;color:white;">'+fmt(x.totalAberto)+'</span>'
+        + '</div>';
+    }).join('') || '<div style="font-size:12px;color:rgba(255,255,255,.6);padding:4px 0;">Nenhum devedor</div>';
+  }
 
   var lista = document.getElementById('fin-lista');
   var empty = document.getElementById('fin-empty');
@@ -1907,70 +1900,68 @@ function renderFinanceiro() {
 
   lista.innerHTML = devedores.map(function(x) {
     var r = x.rev;
-    var totalRev = (r.dividas||[]).filter(function(d){return !d.pago;}).reduce(function(s,d){return s+(parseFloat(d.saldo||d.valor)||0);},0);
     var html = '<div class="card-light" style="padding:1.25rem;">'
+      // Cabeçalho revendedor
       + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;">'
       + '<div style="width:40px;height:40px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#185FA5;flex-shrink:0;">'+(r.Nome||'?').slice(0,2).toUpperCase()+'</div>'
       + '<div style="flex:1;"><div style="font-weight:600;font-size:15px;">'+r.Nome+'</div>'
       + (r.Contato?'<div style="font-size:12px;color:var(--gray-500);">'+r.Contato+'</div>':'')+'</div>'
       + '<div style="text-align:right;">'
-      + (totalRev>0?'<div style="font-size:11px;color:var(--gray-500);">Em aberto</div><div style="font-size:1.2rem;font-weight:700;color:#ef4444;">'+fmt(totalRev)+'</div>':'<div style="font-size:13px;font-weight:700;color:#10b981;">✓ Quitado</div>')
-      + '</div></div>';
+      + (x.totalAberto>0
+          ? '<div style="font-size:11px;color:var(--gray-500);">Saldo devedor</div><div style="font-size:1.25rem;font-weight:700;color:#ef4444;">'+fmt(x.totalAberto)+'</div>'
+          : '<div style="font-size:13px;font-weight:700;color:#10b981;">✓ Quitado</div>')
+      + '</div></div>'
+      // Tabela de lançamentos
+      + '<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+      + '<thead><tr style="background:var(--gray-50);">'
+      + '<th style="padding:6px 10px;text-align:left;font-size:11px;color:var(--gray-500);font-weight:600;border-bottom:2px solid var(--gray-200);">Data</th>'
+      + '<th style="padding:6px 10px;text-align:left;font-size:11px;color:var(--gray-500);font-weight:600;border-bottom:2px solid var(--gray-200);">Descrição</th>'
+      + '<th style="padding:6px 10px;text-align:right;font-size:11px;color:#ef4444;font-weight:600;border-bottom:2px solid var(--gray-200);">Devido</th>'
+      + '<th style="padding:6px 10px;text-align:right;font-size:11px;color:#10b981;font-weight:600;border-bottom:2px solid var(--gray-200);">Pago</th>'
+      + '<th style="padding:6px 10px;text-align:right;font-size:11px;color:var(--gray-500);font-weight:600;border-bottom:2px solid var(--gray-200);">Saldo</th>'
+      + '<th style="padding:6px 10px;border-bottom:2px solid var(--gray-200);"></th>'
+      + '</tr></thead><tbody>';
 
-    // Grupos por fechamento
-    html += '<div style="display:flex;flex-direction:column;gap:10px;">';
-    x.grupos.sort(function(a,b){return new Date(b.data)-new Date(a.data);}).forEach(function(grupo) {
-      var totalGrupo = grupo.parcelas.reduce(function(s,p){return s+(parseFloat(p.d.saldo||p.d.valor)||0);},0);
-      var pagoGrupo  = grupo.parcelas.reduce(function(s,p){return s+(parseFloat(p.d.valorPago)||0);},0);
-      var quitado    = grupo.parcelas.every(function(p){return p.d.pago;});
+    x.dividas.forEach(function(d, di) {
+      var saldo = parseFloat(d.saldo||d.valor)||0;
+      var pago  = parseFloat(d.valorPago)||0;
+      var quitado = d.pago;
+      var bg = quitado ? '#f0fdf4' : (saldo > 0 ? 'white' : 'white');
 
-      html += '<div style="border:1px solid '+(quitado?'#bbf7d0':'#e2e8f0')+';border-radius:8px;overflow:hidden;">'
-        + '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:'+(quitado?'#f0fdf4':'var(--gray-50)')+';border-bottom:1px solid '+(quitado?'#bbf7d0':'#e2e8f0')+'">'
-        + '<div><div style="font-size:12px;font-weight:600;color:var(--gray-700);">'
-        + '<i class="fas fa-receipt" style="margin-right:6px;color:'+(quitado?'#10b981':'#6366f1')+'"></i>'
-        + grupo.descricao+'</div>'
-        + '<div style="font-size:11px;color:var(--gray-400);">'+new Date(grupo.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · '+grupo.parcelas.length+' parcela(s)</div></div>'
-        + '<div style="text-align:right;">'
-        + (pagoGrupo>0?'<div style="font-size:11px;color:#10b981;">Pago: '+fmt(pagoGrupo)+'</div>':'')
-        + (!quitado?'<div style="font-size:13px;font-weight:700;color:#ef4444;">'+fmt(totalGrupo)+'</div>':'<div style="font-size:12px;font-weight:700;color:#10b981;">Quitado ✓</div>')
-        + '</div></div>';
+      // Linha principal da dívida
+      html += '<tr style="background:'+bg+';border-bottom:1px solid var(--gray-100);" onmouseover="this.style.background=\'var(--gray-50)\'" onmouseout="this.style.background=\''+bg+'\'">'
+        + '<td style="padding:8px 10px;white-space:nowrap;color:var(--gray-600);">'+new Date(d.data).toLocaleDateString('pt-BR')+'</td>'
+        + '<td style="padding:8px 10px;color:var(--gray-700);">'+d.descricao+'</td>'
+        + '<td style="padding:8px 10px;text-align:right;font-weight:600;color:#ef4444;">'+fmt(parseFloat(d.valor)||0)+'</td>'
+        + '<td style="padding:8px 10px;text-align:right;font-weight:600;color:#10b981;">'+(pago>0?fmt(pago):'—')+'</td>'
+        + '<td style="padding:8px 10px;text-align:right;font-weight:700;color:'+(quitado?'#10b981':(saldo>0?'#ef4444':'#10b981'))+';">'+(quitado?'Quitado':fmt(saldo))+'</td>'
+        + '<td style="padding:8px 10px;text-align:right;white-space:nowrap;">'
+        + (!quitado?'<button onclick="abrirPagamento(\''+r.rowId+'\','+di+')" class="btn-primary" style="padding:3px 10px;font-size:12px;">Pagar</button> ':'')
+        + '<button onclick="excluirDivida(\''+r.rowId+'\','+di+')" style="background:none;border:1px solid #fca5a5;color:#dc2626;border-radius:6px;padding:3px 7px;cursor:pointer;font-size:12px;"><i class="fas fa-trash"></i></button>'
+        + '</td></tr>';
 
-      // Parcelas do grupo
-      html += '<div style="padding:8px 12px;display:flex;flex-direction:column;gap:6px;">';
-      grupo.parcelas.forEach(function(pg) {
-        var d=pg.d; var di=pg.di;
-        var saldo=parseFloat(d.saldo||d.valor)||0;
-        var valorPago=parseFloat(d.valorPago)||0;
-        var hist=d.historicoPagamentos||[];
-        html += '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:'+(d.pago?'#f0fdf4':'white')+';border:1px solid '+(d.pago?'#bbf7d0':'#e5e7eb')+';border-radius:6px;">'
-          + '<i class="fas '+(d.pago?'fa-check-circle':'fa-clock')+'" style="color:'+(d.pago?'#10b981':'#ef4444')+';font-size:13px;"></i>'
-          + '<div style="flex:1;">'
-          + '<div style="font-size:12px;font-weight:500;color:var(--gray-700);">'+(d.descricao||'Parcela')+'</div>'
-          + (valorPago>0?'<div style="font-size:11px;color:#10b981;">Pago: '+fmt(valorPago)+(saldo>0?' · Saldo: <b>'+fmt(saldo)+'</b>':'')+'</div>':'')
-          + '</div>'
-          + '<div style="font-size:13px;font-weight:700;color:'+(d.pago?'#10b981':'#ef4444')+';">'+(d.pago?fmt(parseFloat(d.valor)||0):fmt(saldo))+'</div>'
-          + (!d.pago?'<button onclick="abrirPagamento(\''+r.rowId+'\','+di+')" class="btn-primary" style="padding:4px 10px;font-size:12px;white-space:nowrap;">Pagar</button>':'')
-          + '<button onclick="excluirDivida(\''+r.rowId+'\','+di+')" style="background:none;border:1px solid #fca5a5;color:#dc2626;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;margin-left:4px;"><i class="fas fa-trash"></i></button>'
-          + '</div>';
-
-        // Histórico de pagamentos inline
-        if (hist.length) {
-          html += '<div style="padding:4px 10px 6px 32px;display:flex;flex-direction:column;gap:2px;">'
-            + hist.map(function(pg){
-                return '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--gray-400);">'
-                  +'<span>'+new Date(pg.data).toLocaleDateString('pt-BR')+(pg.obs?' — '+pg.obs:'')+'</span>'
-                  +'<span style="color:#10b981;font-weight:600;">'+fmt(pg.valor)+'</span></div>';
-              }).join('')
-            + '</div>';
-        }
+      // Linhas de pagamentos parciais
+      (d.historicoPagamentos||[]).forEach(function(pg) {
+        html += '<tr style="background:#f8fafc;border-bottom:1px solid var(--gray-100);">'
+          + '<td style="padding:5px 10px 5px 22px;color:var(--gray-400);font-size:11px;white-space:nowrap;">↳ '+new Date(pg.data).toLocaleDateString('pt-BR')+'</td>'
+          + '<td style="padding:5px 10px;color:var(--gray-400);font-size:11px;">'+(pg.obs||'Pagamento parcial')+'</td>'
+          + '<td colspan="2" style="padding:5px 10px;text-align:right;font-size:11px;color:#10b981;font-weight:600;">'+fmt(pg.valor)+'</td>'
+          + '<td colspan="2"></td></tr>';
       });
-      html += '</div></div>';
     });
-    html += '</div></div>';
+
+    // Totais do revendedor
+    html += '<tr style="background:var(--gray-50);border-top:2px solid var(--gray-200);">'
+      + '<td colspan="2" style="padding:8px 10px;font-size:12px;font-weight:600;color:var(--gray-600);">Total</td>'
+      + '<td style="padding:8px 10px;text-align:right;font-weight:700;color:#ef4444;">'+fmt(x.totalDevido)+'</td>'
+      + '<td style="padding:8px 10px;text-align:right;font-weight:700;color:#10b981;">'+fmt(x.totalPago)+'</td>'
+      + '<td style="padding:8px 10px;text-align:right;font-weight:700;color:'+(x.totalAberto>0?'#ef4444':'#10b981')+';">'+(x.totalAberto>0?fmt(x.totalAberto):'Quitado')+'</td>'
+      + '<td></td></tr>';
+
+    html += '</tbody></table></div>';
     return html;
   }).join('');
 }
-
 function excluirDivida(revId, diIdx){
   if(!confirm('Excluir esta dívida?'))return;
   var rev=revendedores.find(function(r){return String(r.rowId)===String(revId);});
@@ -2744,6 +2735,17 @@ function finalizarFechamento(){
     batchItems.push({rowId:item.rowId,status:novoStatus,revendedor:'',dataVenda:''});
   });
   if(batchItems.length) syncDrive({action:'batchEditInventario',items:batchItems});
+
+  // Se devolvidos foram para maleta, cria entrada na lista de entregas pendentes
+  if(opcaoDevolvidos==='maleta' && devolvidos.length>0){
+    var maleta={id:Date.now()+9999,tipo:'maleta-pendente',data:dataVenda,revendedor:'(sem revendedor)',revendedorId:'',
+      itens:devolvidos.slice(),totalItens:devolvidos.length,
+      valorTotal:devolvidos.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0),
+      valorCusto:devolvidos.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0)
+    };
+    historicEntregas.unshift(maleta);
+    syncDrive({action:'addEntrega',entrega:maleta});
+  }
 
   var rev=revendedores.find(function(r){return r.Nome===nome;});
   var pct=((rev&&rev.Percentual)||30)/100;
