@@ -1061,11 +1061,10 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
     </div>
 
     <!-- Ações -->
-    <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;flex-shrink:0;position:sticky;bottom:0;background:white;padding-top:.75rem;border-top:1px solid var(--gray-100);">
       <button onclick="fecharModal('modal-assinatura')" class="btn-secondary" style="flex:1;min-width:120px;"><i class="fas fa-times" style="margin-right:6px;"></i>Fechar</button>
-      <button onclick="verRecibos()" class="btn-secondary" style="flex:1;min-width:120px;"><i class="fas fa-folder-open" style="margin-right:6px;"></i>Ver salvos</button>
       <button onclick="compartilharWhatsApp()" class="btn-secondary" style="flex:1;min-width:120px;color:#25D366;border-color:#25D366;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='white'"><i class="fab fa-whatsapp" style="margin-right:6px;"></i>WhatsApp</button>
-      <button onclick="baixarRecibo()" class="btn-primary" style="flex:1;min-width:120px;"><i class="fas fa-download" style="margin-right:6px;"></i>Baixar imagem</button>
+      <button id="btn-salvar-recibo" onclick="salvarReciboNoDrive()" class="btn-primary" style="flex:1;min-width:120px;"><i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Salvar no Drive</button>
     </div>
   </div>
 </div>
@@ -2848,43 +2847,71 @@ function abrirModalAssinatura(reg){
   setTimeout(function(){
     initCanvasAssinatura();
     var canvas=document.getElementById('canvas-assinatura');
-    var baixarBtn=document.querySelector('#modal-assinatura .btn-primary');
+    var baixarBtn=document.getElementById('btn-salvar-recibo');
     if(reg.reciboUrl){
-      if(canvas){canvas.style.pointerEvents='none';canvas.style.opacity='.4';}
-      if(baixarBtn){baixarBtn.innerHTML='<i class="fas fa-external-link-alt" style="margin-right:6px;"></i>Abrir PDF no Drive';baixarBtn.onclick=function(){window.open(reg.reciboUrl,'_blank');};}
+      if(baixarBtn){baixarBtn.innerHTML='<i class="fas fa-external-link-alt" style="margin-right:6px;"></i>Abrir PDF';baixarBtn.onclick=function(){window.open(reg.reciboUrl,'_blank');};}
     } else {
-      if(canvas){canvas.style.pointerEvents='';canvas.style.opacity='1';}
-      if(baixarBtn){baixarBtn.innerHTML='<i class="fas fa-download" style="margin-right:6px;"></i>Baixar imagem';baixarBtn.onclick=baixarRecibo;}
+      if(baixarBtn){baixarBtn.innerHTML='<i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Salvar no Drive';baixarBtn.onclick=salvarReciboNoDrive;}
     }
   }, 100);
   salvarReciboLocal(reg, null);
 }
 
-function baixarRecibo(){
-  // Cola assinatura no recibo antes de capturar
+function salvarReciboNoDrive(){
+  if(!_reciboFechamento) return;
+  var btn=document.getElementById('btn-salvar-recibo');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Salvando...';}
+  // Cola assinatura
   if(_assinaturaDados){
-    var img=document.getElementById('recibo-assinatura-img');
-    var vazio=document.getElementById('recibo-assinatura-vazio');
-    if(img){img.src=_assinaturaDados;img.style.display='block';}
-    if(vazio)vazio.style.display='none';
+    var img=document.getElementById('recibo-assinatura-img');var vazio=document.getElementById('recibo-assinatura-vazio');
+    if(img){img.src=_assinaturaDados;img.style.display='block';}if(vazio)vazio.style.display='none';
   }
+  var reg=_reciboFechamento;
+  var d=new Date(reg.data);
+  var nomeArq='recibo_'+d.getFullYear()+(d.getMonth()+1).toString().padStart(2,'0')+d.getDate().toString().padStart(2,'0')
+    +'_'+d.getHours().toString().padStart(2,'0')+d.getMinutes().toString().padStart(2,'0')
+    +'_'+reg.revendedor.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
 
-  // Usa html2canvas se disponível, senão gera via canvas simples
+  function enviarParaDrive(dataUrl){
+    syncDriveComCallback({action:'salvarRecibo',nomeArquivo:nomeArq,imagemBase64:dataUrl},function(res){
+      if(btn){btn.disabled=false;}
+      if(res&&res.success&&res.url){
+        var idx=historicFechamentos.findIndex(function(f){return f.id===reg.id;});
+        if(idx!==-1){historicFechamentos[idx].reciboUrl=res.url;historicFechamentos[idx].assinado=true;}
+        syncDrive({action:'updateFechamentoUrl',id:reg.id,reciboUrl:res.url});
+        if(btn){btn.innerHTML='<i class="fas fa-external-link-alt" style="margin-right:6px;"></i>Abrir PDF';btn.onclick=function(){window.open(res.url,'_blank');};}
+        mostrarLinkRecibo(res.url,reg.revendedor);
+        renderHistorico();
+      } else {
+        if(btn){btn.innerHTML='<i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Salvar no Drive';btn.onclick=salvarReciboNoDrive;}
+        showToast('Erro ao salvar — tente novamente','warning');
+      }
+    });
+  }
+  var el=document.getElementById('recibo-conteudo');
+  if(window.html2canvas){
+    html2canvas(el,{scale:2,backgroundColor:'#f8fafc',useCORS:true}).then(function(canvas){enviarParaDrive(canvas.toDataURL('image/png'));}).catch(function(){gerarReciboCanvas(enviarParaDrive);});
+  } else {
+    gerarReciboCanvas(enviarParaDrive);
+  }
+}
+
+function baixarRecibo(){
+  if(_assinaturaDados){
+    var img=document.getElementById('recibo-assinatura-img');var vazio=document.getElementById('recibo-assinatura-vazio');
+    if(img){img.src=_assinaturaDados;img.style.display='block';}if(vazio)vazio.style.display='none';
+  }
   var el=document.getElementById('recibo-conteudo');
   if(window.html2canvas){
     html2canvas(el,{scale:2,backgroundColor:'#f8fafc',useCORS:true}).then(function(canvas){
       var a=document.createElement('a');
       a.download='recibo-'+(_reciboFechamento?_reciboFechamento.revendedor.replace(/\s/g,'_'):'fechamento')+'-'+new Date().toISOString().slice(0,10)+'.png';
-      a.href=canvas.toDataURL('image/png');
-      a.click();
-      showToast('Recibo salvo!','success');
+      a.href=canvas.toDataURL('image/png');a.click();
     });
-  } else {
-    gerarReciboCanvas();
-  }
+  } else { gerarReciboCanvas(null); }
 }
 
-function gerarReciboCanvas(){
+function gerarReciboCanvas(callback){
   var reg=_reciboFechamento;
   if(!reg)return;
   var W=640,H=520;
@@ -2952,18 +2979,19 @@ function gerarReciboCanvas(){
     var imgAss=new Image();
     imgAss.onload=function(){
       ctx.drawImage(imgAss,16,ay+10,200,50);
-      _downloadCanvas(c,reg);
+      _downloadCanvas(c,reg,callback);
     };
     imgAss.src=_assinaturaDados;
     return;
   }
   ctx.strokeStyle='#1f2937';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(16,ay+56);ctx.lineTo(240,ay+56);ctx.stroke();
   ctx.fillStyle='#334155';ctx.font='11px sans-serif';ctx.fillText(reg.revendedor,16,ay+70);var revRecCpf=revendedores.find(function(r){return r.Nome===reg.revendedor;});if(revRecCpf&&revRecCpf.CPF){ctx.fillStyle='#94a3b8';ctx.font='10px sans-serif';ctx.fillText('CPF: '+revRecCpf.CPF,16,ay+84);}
-  _downloadCanvas(c,reg);
+  _downloadCanvas(c,reg,callback);
 }
 
-function _downloadCanvas(c,reg){
+function _downloadCanvas(c,reg,callback){
   var dataUrl=c.toDataURL('image/png');
+  if(callback){ callback(dataUrl); return; }
   if(reg){
     salvarReciboLocal(reg, dataUrl);
     var d=new Date(reg.data);
@@ -3163,7 +3191,7 @@ function confirmarLimparHistorico(){if(!confirm('Limpar todo o histórico?'))ret
 function setRelPeriodo(dias,btn){relPeriodoDias=dias;document.querySelectorAll('[id^="rp-"]').forEach(function(el){el.classList.remove('active');});if(btn)btn.classList.add('active');document.getElementById('rel-data-ini').value='';document.getElementById('rel-data-fim').value='';renderRelatorio();}
 function getRelFiltroVendidos(){var iniInput=document.getElementById('rel-data-ini').value;var fimInput=document.getElementById('rel-data-fim').value;var revFiltro=document.getElementById('rel-revendedor').value;var dataIni=null,dataFim=new Date();dataFim.setHours(23,59,59,999);if(iniInput&&fimInput){dataIni=new Date(iniInput+'T00:00:00');dataFim=new Date(fimInput+'T23:59:59');}else if(relPeriodoDias>0){dataIni=new Date();dataIni.setDate(dataIni.getDate()-relPeriodoDias);dataIni.setHours(0,0,0,0);}return inventory.filter(function(i){if(i.Status!=='Vendido')return false;if(revFiltro&&i.Revendedor!==revFiltro)return false;var dataRef=i.DataVenda||i.Data;if(dataIni&&dataRef&&new Date(dataRef)<dataIni)return false;return true;});}
 function initRelatorio(){var sel=document.getElementById('rel-revendedor');var cur=sel?sel.value:'';var opts='<option value="">Todos</option>';revendedores.forEach(function(r){opts+='<option value="'+r.Nome+'"'+(cur===r.Nome?' selected':'')+'>'+r.Nome+'</option>';});if(sel)sel.innerHTML=opts;renderRelatorio();}
-function renderRelatorio(){var vendidos=getRelFiltroVendidos();var estoque=inventory.filter(function(i){return i.Status==='Em Estoque';});var receita=vendidos.reduce(function(s,i){return s+pN(i.Venda);},0);var custo=vendidos.reduce(function(s,i){return s+pN(i.Venda);},0);var lucro=receita-custo;var margem=receita>0?((lucro/receita)*100).toFixed(1):0;var custoEst=estoque.reduce(function(s,i){return s+pN(i.Venda);},0);document.getElementById('rel-k-qtd').textContent=vendidos.length;document.getElementById('rel-k-receita').textContent=fmt(receita);document.getElementById('rel-k-custo').textContent=fmt(custo);document.getElementById('rel-k-lucro').textContent=fmt(lucro);document.getElementById('rel-k-margem').textContent=margem+'% margem';document.getElementById('rel-k-estoque').textContent=estoque.length;document.getElementById('rel-k-estoque-val').textContent=fmt(custoEst)+' em custo';renderChartMes(vendidos);renderRankingRevs(vendidos);renderRelCats(vendidos);renderTopProdutos(vendidos);renderTabelaEstoque();renderComissoes();}
+function renderRelatorio(){var vendidos=getRelFiltroVendidos();var estoque=inventory.filter(function(i){return i.Status==='Em Estoque';});var receita=vendidos.reduce(function(s,i){return s+pN(i.Venda);},0);var custo=vendidos.reduce(function(s,i){return s+pN(i.Custo);},0);var lucro=receita-custo;var margem=receita>0?((lucro/receita)*100).toFixed(1):0;var custoEst=estoque.reduce(function(s,i){return s+pN(i.Custo);},0);document.getElementById('rel-k-qtd').textContent=vendidos.length;document.getElementById('rel-k-receita').textContent=fmt(receita);document.getElementById('rel-k-custo').textContent=fmt(custo);document.getElementById('rel-k-lucro').textContent=fmt(lucro);document.getElementById('rel-k-margem').textContent=margem+'% margem';document.getElementById('rel-k-estoque').textContent=estoque.length;document.getElementById('rel-k-estoque-val').textContent=fmt(custoEst)+' em custo';renderChartMes(vendidos);renderRankingRevs(vendidos);renderRelCats(vendidos);renderTopProdutos(vendidos);renderTabelaEstoque();renderComissoes();}
 function renderChartMes(vendidos){var meses={};for(var i=11;i>=0;i--){var d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);var k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');meses[k]={label:d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}),qtd:0,valor:0};}vendidos.forEach(function(i){if(!i.Data)return;var d=new Date(i.Data);var k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(meses[k]){meses[k].qtd++;meses[k].valor+=pN(i.Venda);}});var labels=Object.values(meses).map(function(m){return m.label;});var valores=Object.values(meses).map(function(m){return m.valor;});var qtds=Object.values(meses).map(function(m){return m.qtd;});var canvas=document.getElementById('chart-vendas-mes');if(!canvas)return;if(chartVendasMes){chartVendasMes.destroy();chartVendasMes=null;}if(typeof Chart==='undefined'){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';s.onload=function(){_buildChart(canvas,labels,valores,qtds);};document.head.appendChild(s);}else{_buildChart(canvas,labels,valores,qtds);}}
 function _buildChart(canvas,labels,valores,qtds){chartVendasMes=new Chart(canvas,{type:'bar',data:{labels:labels,datasets:[{label:'Receita (R$)',data:valores,backgroundColor:'rgba(30,64,175,.75)',borderRadius:4,yAxisID:'y'},{label:'Qtd',data:qtds,type:'line',borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.12)',pointBackgroundColor:'#f59e0b',tension:.3,yAxisID:'y2'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{position:'left',grid:{color:'rgba(0,0,0,.05)'},ticks:{callback:function(v){return 'R$'+v;},font:{size:11}}},y2:{position:'right',grid:{drawOnChartArea:false},ticks:{font:{size:11}}},x:{grid:{display:false},ticks:{font:{size:11}}}}}})}
 function renderRankingRevs(vendidos){var container=document.getElementById('rel-ranking-revs');if(!container)return;var map={};vendidos.forEach(function(i){var r=i.Revendedor||'(direto)';if(!map[r])map[r]={valor:0,qtd:0};map[r].valor+=pN(i.Venda);map[r].qtd++;});var sorted=Object.entries(map).sort(function(a,b){return b[1].valor-a[1].valor;});var maxVal=sorted[0]?sorted[0][1].valor:1;if(!sorted.length){container.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1.5rem 0;">Nenhuma venda no período</p>';return;}var medals=['🥇','🥈','🥉'];var html='';sorted.forEach(function(entry,idx){var nome=entry[0],d=entry[1];var pct=((d.valor/maxVal)*100).toFixed(0);var cor=idx===0?'#1e40af':idx===1?'#3b82f6':'#93c5fd';html+='<div style="margin-bottom:4px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><span style="font-size:13px;font-weight:600;color:var(--gray-800);">'+(medals[idx]||'')+' '+nome+'</span><span style="font-size:12px;color:var(--gray-500);">'+d.qtd+' · <strong style="color:#1e40af;">'+fmt(d.valor)+'</strong></span></div><div style="height:6px;background:var(--gray-100);border-radius:3px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+cor+';border-radius:3px;"></div></div></div>';});container.innerHTML=html;}
