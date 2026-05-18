@@ -213,6 +213,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
     </div>
     <div style="padding:7px 16px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-height:36px;">
       <span style="font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;">Categoria</span>
+      <button class="filter-chip active" id="dash-fcat-all" onclick="dashLimparCats()">Todos</button>
       <div id="dash-chips-cat" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
     </div>
     <div style="padding:10px 16px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;gap:8px;">
@@ -2707,7 +2708,31 @@ function dashClicarGrupoEstoque(grupo){
   var t=document.getElementById('dash-table');if(t)t.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function renderTopRevendedores(){var revStats=revendedores.map(function(rev){var prods=inventory.filter(function(i){return i.Revendedor===rev.Nome&&i.Status!=='Vendido'&&i.Status!=='Em Estoque';});return{Nome:rev.Nome,qtd:prods.length,valor:prods.reduce(function(s,i){return s+pN(i.Custo);},0)};}).filter(function(r){return r.qtd>0;}).sort(function(a,b){return b.valor-a.valor;});var totalItens=revStats.reduce(function(s,r){return s+r.qtd;},0);var badge=document.getElementById('badge-total-cons');if(badge)badge.textContent=totalItens+(totalItens===1?' item':' itens');var html='';revStats.forEach(function(rev){html+='<div onclick="dashFiltrarRev(\''+rev.Nome.replace(/'/g,"\\'")+'\''+')" style="display:flex;align-items:center;padding:7px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background=\'#eff6ff\'" onmouseout="this.style.background=\'transparent\'">'+'<span style="font-size:13px;font-weight:600;color:var(--gray-800);">'+rev.Nome+'</span>'+'<span style="flex:1;margin:0 8px;border-bottom:1px solid var(--gray-200);display:block;height:1px;align-self:center;"></span>'+'<span style="font-size:13px;font-weight:600;color:var(--gray-600);margin-right:6px;">'+rev.qtd+'</span>'+'<span style="font-size:12px;font-weight:700;color:#3b82f6;">'+fmt(rev.valor)+'</span>'+'</div>';});var el=document.getElementById('top-revendedores');if(el)el.innerHTML=html||'<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:16px 0;">Nenhum produto consignado</p>';}
-function renderCatChips(){var container=document.getElementById('dash-chips-cat');if(!container)return;var cats={};inventory.forEach(function(i){var tipoOk=dashTipoFilter==='all'||(dashTipoFilter==='__geral__'&&(!i.Tipo||i.Tipo==='Geral'))||i.Tipo===dashTipoFilter;if(tipoOk){if(i.Categoria)cats[i.Categoria]=true;}});var keys=Object.keys(cats).sort();if(!keys.length){container.innerHTML='';return;}var html='';keys.forEach(function(cat){var isAct=dashCatFilters[cat];html+='<button class="filter-chip '+(isAct?'active':'')+'" onclick="dashToggleCat(\''+cat.replace(/'/g,"\\'")+'\''+'  )">'+cat+'</button>';});container.innerHTML=html;}
+function dashLimparCats(){
+  dashCatFilters={};
+  renderCatChips();
+  renderDashTable();
+}
+
+function renderCatChips(){
+  var container=document.getElementById('dash-chips-cat');if(!container)return;
+  var cats={};
+  inventory.forEach(function(i){
+    var tipoOk=dashTipoFilter==='all'||(dashTipoFilter==='__geral__'&&(!i.Tipo||i.Tipo==='Geral'))||i.Tipo===dashTipoFilter;
+    if(tipoOk){if(i.Categoria)cats[i.Categoria]=true;}
+  });
+  var keys=Object.keys(cats).sort();
+  if(!keys.length){container.innerHTML='';return;}
+  var html='';
+  keys.forEach(function(cat){
+    var isAct=dashCatFilters[cat];
+    html+='<button class="filter-chip '+(isAct?'active':'')+'" onclick="dashToggleCat(\''+cat.replace(/'/g,"\\'")+'\')">'+cat+'</button>';
+  });
+  container.innerHTML=html;
+  // Todos ativo quando nenhuma categoria selecionada
+  var allBtn=document.getElementById('dash-fcat-all');
+  if(allBtn)allBtn.classList.toggle('active',Object.keys(dashCatFilters).length===0);
+}
 function dashToggleCat(cat){if(dashCatFilters[cat])delete dashCatFilters[cat];else dashCatFilters[cat]=true;renderCatChips();renderDashTable();}
 function dashToggleStatus(s){
   if(s==='all'){
