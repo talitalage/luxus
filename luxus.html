@@ -1400,10 +1400,43 @@ function salvarMaletas(){
 }
 
 function criarMaleta(){
+  // Abre modal interno em vez de prompt nativo
+  var modal = document.getElementById('modal-nova-maleta');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'modal-nova-maleta';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = '<div class="modal-content" style="max-width:400px;width:95%;">'
+      + '<h3 style="font-size:1rem;font-weight:700;color:var(--gray-800);margin-bottom:1rem;"><i class="fas fa-briefcase" style="color:var(--primary);margin-right:8px;"></i>Nova Maleta</h3>'
+      + '<div style="margin-bottom:1rem;">'
+      + '<label style="font-size:13px;font-weight:500;color:var(--gray-600);display:block;margin-bottom:6px;">Nome da maleta</label>'
+      + '<input type="text" id="nova-maleta-nome" placeholder="Ex: Maleta 1, Talita, Centro..." style="font-size:14px;" onkeydown="if(event.key===\'Enter\')confirmarNovaMaleta()">'
+      + '</div>'
+      + '<div style="display:flex;gap:.75rem;">'
+      + '<button onclick="fecharModal(\'modal-nova-maleta\')" class="btn-secondary" style="flex:1;">Cancelar</button>'
+      + '<button onclick="confirmarNovaMaleta()" class="btn-primary" style="flex:1;"><i class="fas fa-plus" style="margin-right:6px;"></i>Criar</button>'
+      + '</div></div>';
+    document.body.appendChild(modal);
+  }
   var n = maletas.length + 1;
-  var nome = prompt('Nome da maleta:', 'Maleta '+n);
-  if (!nome) return;
-  var maleta = { id: Date.now(), nome: nome.trim(), itens: [], revendedorId: '', revendedor: '', dataCriacao: new Date().toISOString(), entregue: false };
+  document.getElementById('nova-maleta-nome').value = 'Maleta ' + n;
+  abrirModal('modal-nova-maleta');
+  setTimeout(function(){ var inp = document.getElementById('nova-maleta-nome'); if(inp){inp.focus();inp.select();} }, 150);
+}
+
+function confirmarNovaMaleta(){
+  var nome = (document.getElementById('nova-maleta-nome').value||'').trim();
+  if(!nome){ showToast('Informe um nome para a maleta','warning'); return; }
+  fecharModal('modal-nova-maleta');
+  // Renomear
+  if(window._maletaRenomear){
+    var m = maletas.find(function(x){ return x.id===window._maletaRenomear; });
+    if(m){ m.nome=nome; salvarMaletas(); renderListaMaletas(); if(maletaAtual&&maletaAtual.id===m.id)renderDetalhesMaleta(); }
+    window._maletaRenomear = null;
+    return;
+  }
+  // Criar
+  var maleta = { id: Date.now(), nome: nome, itens: [], revendedorId: '', revendedor: '', dataCriacao: new Date().toISOString(), entregue: false };
   maletas.unshift(maleta);
   salvarMaletas();
   renderListaMaletas();
@@ -1602,12 +1635,27 @@ function entregarMaleta(){
 
 function editarNomeMaleta(){
   if(!maletaAtual) return;
-  var novoNome = prompt('Novo nome:', maletaAtual.nome);
-  if(!novoNome || !novoNome.trim()) return;
-  maletaAtual.nome = novoNome.trim();
-  salvarMaletas();
-  renderListaMaletas();
-  renderDetalhesMaleta();
+  var modal = document.getElementById('modal-nova-maleta');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'modal-nova-maleta';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = '<div class="modal-content" style="max-width:400px;width:95%;">'
+      + '<h3 style="font-size:1rem;font-weight:700;color:var(--gray-800);margin-bottom:1rem;"><i class="fas fa-pen" style="color:var(--primary);margin-right:8px;"></i>Renomear Maleta</h3>'
+      + '<div style="margin-bottom:1rem;">'
+      + '<label style="font-size:13px;font-weight:500;color:var(--gray-600);display:block;margin-bottom:6px;">Nome da maleta</label>'
+      + '<input type="text" id="nova-maleta-nome" placeholder="Nome..." style="font-size:14px;" onkeydown="if(event.key===\'Enter\')confirmarNovaMaleta()">'
+      + '</div>'
+      + '<div style="display:flex;gap:.75rem;">'
+      + '<button onclick="fecharModal(\'modal-nova-maleta\')" class="btn-secondary" style="flex:1;">Cancelar</button>'
+      + '<button onclick="confirmarNovaMaleta()" class="btn-primary" style="flex:1;"><i class="fas fa-check" style="margin-right:6px;"></i>Salvar</button>'
+      + '</div></div>';
+    document.body.appendChild(modal);
+  }
+  window._maletaRenomear = maletaAtual.id;
+  document.getElementById('nova-maleta-nome').value = maletaAtual.nome;
+  abrirModal('modal-nova-maleta');
+  setTimeout(function(){ var inp = document.getElementById('nova-maleta-nome'); if(inp){inp.focus();inp.select();} }, 150);
 }
 
 function excluirMaletaAtual(){
@@ -3611,7 +3659,7 @@ function calcularVendaEdit(){
 }
 
 function abrirModalNovoItem(){var rowId=document.getElementById('edit-rowid');if(rowId)rowId.value='';['edit-codigo','edit-descricao','edit-tipo','edit-categoria','edit-custo','edit-venda','edit-foto'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});document.getElementById('edit-status').value='Em Estoque';document.getElementById('edit-revendedor').value='';var titulo=document.getElementById('modal-item-titulo');if(titulo)titulo.textContent='Novo Item';var btnEx=document.getElementById('btn-excluir-item');if(btnEx)btnEx.style.display='none';var ec=document.getElementById('edit-codigo');if(ec){ec.removeAttribute('readonly');ec.removeAttribute('disabled');}abrirModal('modal-item');}
-function editarItem(rowId){var item=inventory.find(function(i){return i.rowId===rowId;});if(!item)return;document.getElementById('edit-rowid').value=rowId;document.getElementById('edit-codigo').value=item.Codigo||'';document.getElementById('edit-descricao').value=item.Descricao||'';document.getElementById('edit-tipo').value=item.Tipo||'';document.getElementById('edit-categoria').value=item.Categoria||'';document.getElementById('edit-custo').value=item.Custo||'';document.getElementById('edit-venda').value=item.Venda||'';document.getElementById('edit-foto').value=item.Foto||'';var status=item.Status;if(item.Revendedor&&item.Status!=='Vendido'&&item.Status!=='Em Estoque')status='Consignado';document.getElementById('edit-status').value=status;document.getElementById('edit-revendedor').value=item.Revendedor||'';var titulo=document.getElementById('modal-item-titulo');if(titulo)titulo.textContent='Editar Item';var btnEx=document.getElementById('btn-excluir-item');if(btnEx)btnEx.style.display='';carregarCategoriasEdit();atualizarCampoRevendedorEdit();abrirModal('modal-item');}
+function editarItem(rowId){var item=inventory.find(function(i){return i.rowId===rowId;});if(!item)return;document.getElementById('edit-rowid').value=rowId;document.getElementById('edit-codigo').value=item.Codigo||'';document.getElementById('edit-descricao').value=item.Descricao||'';document.getElementById('edit-tipo').value=item.Tipo||'';document.getElementById('edit-custo').value=item.Custo||'';document.getElementById('edit-venda').value=item.Venda||'';document.getElementById('edit-foto').value=item.Foto||'';var status=item.Status;if(item.Revendedor&&item.Status!=='Vendido'&&item.Status!=='Em Estoque')status='Consignado';document.getElementById('edit-status').value=status;document.getElementById('edit-revendedor').value=item.Revendedor||'';var titulo=document.getElementById('modal-item-titulo');if(titulo)titulo.textContent='Editar Item';var btnEx=document.getElementById('btn-excluir-item');if(btnEx)btnEx.style.display='';carregarCategoriasEdit();document.getElementById('edit-categoria').value=item.Categoria||'';atualizarCampoRevendedorEdit();abrirModal('modal-item');}
 function carregarCategoriasEdit(){var tipo=document.getElementById('edit-tipo').value;var sel=document.getElementById('edit-categoria');var opts='<option value="">Sem categoria</option>';if(tipo&&categorias[tipo])categorias[tipo].forEach(function(c){opts+='<option value="'+c+'">'+c+'</option>';});sel.innerHTML=opts;}
 function atualizarCampoRevendedorEdit(){var status=document.getElementById('edit-status').value;var sel=document.getElementById('edit-revendedor');var cont=document.getElementById('edit-revendedor-container');if(status==='Consignado'){cont.style.opacity='1';sel.disabled=false;}else{cont.style.opacity='.5';sel.disabled=true;sel.value='';}}
 function salvarItem(){
