@@ -2649,7 +2649,33 @@ function toggleSJEstoque(){
   if(icon)icon.className='fas fa-chevron-'+(aberto?'right':'down');
 }
 
-function dashClicarGrupoEstoque(grupo){var p=grupo.split(' · ');dashStatusFilters={estoque:true};dashTipoFilter=p[0]!=='Geral'?p[0]:'all';dashCatFilters={};if(p[1])dashCatFilters[p[1]]=true;dashRevFilter='';['dash-fstatus-all','dash-fstatus-estoque','dash-fstatus-maleta','dash-fstatus-consignado','dash-fstatus-vendido'].forEach(function(id){var e=document.getElementById(id);if(e)e.classList.remove('active');});var e=document.getElementById('dash-fstatus-estoque');if(e)e.classList.add('active');renderCatChips();renderDashTable();var t=document.getElementById('dash-table');if(t)t.scrollIntoView({behavior:'smooth',block:'start'});}
+function dashClicarGrupoEstoque(grupo){
+  var p=grupo.split(' · ');
+  dashStatusFilters={estoque:true};
+  dashCatFilters={};
+  dashRevFilter='';
+
+  var tipo=p[0];
+  var cat=p[1]||'';
+
+  // Define filtro de tipo
+  if(tipo==='Geral'||tipo===''||tipo==='—'){ dashTipoFilter='all'; }
+  else { dashTipoFilter=tipo; }
+
+  // Define filtro de categoria — usa marcador especial para "sem categoria"
+  if(cat){ dashCatFilters[cat]=true; }
+  else if(tipo!=='Geral'){ dashCatFilters['__sem_cat__']=true; }
+
+  ['dash-fstatus-all','dash-fstatus-estoque','dash-fstatus-maleta','dash-fstatus-consignado','dash-fstatus-vendido'].forEach(function(id){var e=document.getElementById(id);if(e)e.classList.remove('active');});
+  var e=document.getElementById('dash-fstatus-estoque');if(e)e.classList.add('active');
+  ['dash-ftipo-all','dash-ftipo-sj','dash-ftipo-pf'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('active');});
+  var btnMap={'Semi Joia':'dash-ftipo-sj','Perfume':'dash-ftipo-pf'};
+  var b=btnMap[dashTipoFilter]?document.getElementById(btnMap[dashTipoFilter]):document.getElementById('dash-ftipo-all');
+  if(b)b.classList.add('active');
+
+  renderCatChips();renderDashTable();
+  var t=document.getElementById('dash-table');if(t)t.scrollIntoView({behavior:'smooth',block:'start'});
+}
 function renderTopRevendedores(){var revStats=revendedores.map(function(rev){var prods=inventory.filter(function(i){return i.Revendedor===rev.Nome&&i.Status!=='Vendido'&&i.Status!=='Em Estoque';});return{Nome:rev.Nome,qtd:prods.length,valor:prods.reduce(function(s,i){return s+pN(i.Custo);},0)};}).filter(function(r){return r.qtd>0;}).sort(function(a,b){return b.valor-a.valor;});var totalItens=revStats.reduce(function(s,r){return s+r.qtd;},0);var badge=document.getElementById('badge-total-cons');if(badge)badge.textContent=totalItens+(totalItens===1?' item':' itens');var html='';revStats.forEach(function(rev){html+='<div onclick="dashFiltrarRev(\''+rev.Nome.replace(/'/g,"\\'")+'\''+')" style="display:flex;align-items:center;padding:7px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background=\'#eff6ff\'" onmouseout="this.style.background=\'transparent\'">'+'<span style="font-size:13px;font-weight:600;color:var(--gray-800);">'+rev.Nome+'</span>'+'<span style="flex:1;margin:0 8px;border-bottom:1px solid var(--gray-200);display:block;height:1px;align-self:center;"></span>'+'<span style="font-size:13px;font-weight:600;color:var(--gray-600);margin-right:6px;">'+rev.qtd+'</span>'+'<span style="font-size:12px;font-weight:700;color:#3b82f6;">'+fmt(rev.valor)+'</span>'+'</div>';});var el=document.getElementById('top-revendedores');if(el)el.innerHTML=html||'<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:16px 0;">Nenhum produto consignado</p>';}
 function renderCatChips(){var container=document.getElementById('dash-chips-cat');if(!container)return;var cats={};inventory.forEach(function(i){if(dashTipoFilter==='all'||i.Tipo===dashTipoFilter){if(i.Categoria)cats[i.Categoria]=true;}});var keys=Object.keys(cats).sort();if(!keys.length){container.innerHTML='';return;}var html='';keys.forEach(function(cat){var isAct=dashCatFilters[cat];html+='<button class="filter-chip '+(isAct?'active':'')+'" onclick="dashToggleCat(\''+cat.replace(/'/g,"\\'")+'\''+'  )">'+cat+'</button>';});container.innerHTML=html;}
 function dashToggleCat(cat){if(dashCatFilters[cat])delete dashCatFilters[cat];else dashCatFilters[cat]=true;renderCatChips();renderDashTable();}
@@ -2669,7 +2695,14 @@ function renderDashTable(){
     if(keys.length>0){var ok=(dashStatusFilters.estoque&&i.Status==='Em Estoque')||(dashStatusFilters.consignado&&i.Status!=='Em Estoque'&&i.Status!=='Vendido')||(dashStatusFilters.vendido&&i.Status==='Vendido');if(!ok)return false;}
     if(dashTipoFilter!=='all'&&i.Tipo!==dashTipoFilter)return false;
     if(dashRevFilter&&i.Revendedor!==dashRevFilter)return false;
-    if(Object.keys(dashCatFilters).length>0&&!dashCatFilters[i.Categoria||''])return false;
+    var catKeys=Object.keys(dashCatFilters);
+    if(catKeys.length>0){
+      var semCat=dashCatFilters['__sem_cat__'];
+      var outrosCats=catKeys.filter(function(k){return k!=='__sem_cat__';});
+      if(semCat && outrosCats.length===0){if(i.Categoria)return false;}
+      else if(!semCat && outrosCats.length>0){if(!dashCatFilters[i.Categoria||''])return false;}
+      else if(semCat && outrosCats.length>0){if(i.Categoria && !dashCatFilters[i.Categoria])return false;}
+    }
     return true;
   });
 
