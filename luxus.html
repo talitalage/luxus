@@ -2567,7 +2567,7 @@ function renderEstoqueDash(){
   function rg(g){
     var it=grupos[g];var v=it.reduce(function(s,i){return s+pN(i.Custo);},0);
     return '<div onclick="dashClicarGrupoEstoque(\''+g.replace(/\'/g,"\\'")+'\''+')" style="display:flex;align-items:center;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background=\'#f0fdf4\'" onmouseout="this.style.background=\'transparent\'">'
-      +'<span style="font-size:13px;color:var(--gray-700);">'+g+'</span>'
+      +'<span style="font-size:13px;color:var(--gray-700);">'+g.replace(/^Semi Joia · /,"").replace(/^Semi Joia$/,"Sem categoria")+'</span>'
       +'<span style="flex:1;margin:0 8px;border-bottom:1px solid var(--gray-200);display:block;height:1px;align-self:center;"></span>'
       +'<span style="font-size:13px;font-weight:600;color:var(--gray-600);margin-right:6px;">'+it.length+'</span>'
       +(v>0?'<span style="font-size:12px;font-weight:700;color:#10b981;">'+fmt(v)+'</span>':'')
