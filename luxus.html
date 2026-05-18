@@ -192,7 +192,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
     </div>
   </div>
   <div class="card-light">
-    <div style="padding:10px 16px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;flex-wrap:wrap;gap:6px;">
+    <div style="padding:8px 16px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;flex-wrap:wrap;gap:6px;">
       <span style="font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;">Status</span>
       <button class="filter-chip active" id="dash-fstatus-all"        onclick="dashToggleStatus('all')">Todos</button>
       <button class="filter-chip"        id="dash-fstatus-estoque"    onclick="dashToggleStatus('estoque')">Em Estoque</button>
@@ -204,15 +204,16 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
       <button class="filter-chip active" id="dash-ftipo-all" onclick="dashSetTipo('all',this)">Todos</button>
       <button class="filter-chip"        id="dash-ftipo-sj"  onclick="dashSetTipo('Semi Joia',this)">Semi Joia</button>
       <button class="filter-chip"        id="dash-ftipo-pf"  onclick="dashSetTipo('Perfume',this)">Perfume</button>
-      <div style="width:1px;height:16px;background:var(--gray-200);margin:0 4px;"></div>
-      <span style="font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;">Categoria</span>
-      <div id="dash-chips-cat" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
       <div id="dash-chip-rev" style="display:none;align-items:center;gap:4px;">
         <div style="width:1px;height:16px;background:var(--gray-200);margin:0 4px;"></div>
         <button class="filter-chip active" style="display:flex;align-items:center;gap:5px;background:#dbeafe;color:#1e40af;border-color:#93c5fd;" onclick="dashLimparRev()">
           <i class="fas fa-user" style="font-size:9px;"></i><span id="dash-label-rev">—</span><i class="fas fa-times" style="font-size:9px;"></i>
         </button>
       </div>
+    </div>
+    <div style="padding:7px 16px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-height:36px;">
+      <span style="font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;">Categoria</span>
+      <div id="dash-chips-cat" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
     </div>
     <div style="padding:10px 16px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;gap:8px;">
       <input type="text" id="dash-search" placeholder="Buscar..." style="flex:1;border-radius:20px!important;font-size:13px;" oninput="renderDashTable()">
