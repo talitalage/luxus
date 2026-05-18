@@ -2576,14 +2576,34 @@ function renderStatsPorTipo(tipo,cid){
   var items=inventory.filter(function(i){return i.Tipo===tipo;});
   var grupos={};
   items.forEach(function(i){var c=i.Categoria||'__sem_cat__';if(!grupos[c])grupos[c]=[];grupos[c].push(i);});
-  var cats=categorias[tipo]||[];
-  var ordem=[];
-  cats.forEach(function(c){if(grupos[c]&&ordem.indexOf(c)===-1)ordem.push(c);});
-  Object.keys(grupos).forEach(function(c){if(ordem.indexOf(c)===-1)ordem.push(c);});
-  // Sem categoria sempre por último
-  ordem.sort(function(a,b){if(a==='__sem_cat__')return 1;if(b==='__sem_cat__')return -1;return a.localeCompare(b,'pt-BR');});
-  // Adiciona categorias sem itens (zeradas) da lista oficial
-  cats.forEach(function(c){if(ordem.indexOf(c)===-1)ordem.push(c);});
+
+  // Só mostra categorias com itens (qtd > 0)
+  var ordem=Object.keys(grupos).filter(function(c){return grupos[c].length>0;});
+
+  // Ordena alfabeticamente, sem categoria por último
+  ordem.sort(function(a,b){
+    if(a==='__sem_cat__') return 1;
+    if(b==='__sem_cat__') return -1;
+    return a.localeCompare(b,'pt-BR');
+  });
+
+  var html='';
+  ordem.forEach(function(cat){
+    var ci=grupos[cat];
+    var v=ci.reduce(function(s,i){return s+pN(i.Custo);},0);
+    var isSemCat=cat==='__sem_cat__';
+    var label=isSemCat?'Sem categoria':cat;
+    var isAct=isSemCat?dashCatFilters['__sem_cat__']:(dashCatFilters[cat]&&(dashTipoFilter===tipo||dashTipoFilter==='all'));
+    var bg=isAct?'#eff6ff':'transparent';var bc=isAct?'#3b82f6':'transparent';
+    html+='<div onclick="dashClicarCategoria(\''+tipo.replace(/'/g,"\\'")+'\',\''+cat.replace(/'/g,"\\'")+'\''+')" style="display:flex;align-items:center;padding:7px 8px;cursor:pointer;border-radius:6px;background:'+bg+';border:1.5px solid '+bc+';" onmouseover="this.style.background=\'#eff6ff\'" onmouseout="this.style.background=\''+bg+'\'">'
+      +'<span style="font-size:13px;color:'+(isAct?'var(--primary)':'var(--gray-700)')+';font-weight:'+(isAct?'600':'400')+';'+(isSemCat?'font-style:italic;color:var(--gray-400);':'')+'">'+label+'</span>'
+      +'<span style="flex:1;margin:0 8px;border-bottom:1px solid var(--gray-200);display:block;height:1px;align-self:center;"></span>'
+      +'<span style="font-size:13px;font-weight:600;color:'+(isAct?'var(--primary)':'var(--gray-500)')+';margin-right:6px;">'+ci.length+'</span>'
+      +(v>0?'<span style="font-size:12px;font-weight:700;color:#f59e0b;">'+fmt(v)+'</span>':'')
+      +'</div>';
+  });
+  var el=document.getElementById(cid);if(el)el.innerHTML=html||'<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:12px 0;">Nenhuma categoria</p>';
+}
 
   var html='';
   ordem.forEach(function(cat){
