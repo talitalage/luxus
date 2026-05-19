@@ -220,9 +220,30 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
       <input type="text" id="dash-search" placeholder="Buscar..." style="flex:1;border-radius:20px!important;font-size:13px;" oninput="renderDashTable()">
       <button onclick="abrirModalNovoItem()" class="btn-primary" style="padding:6px 14px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;"><i class="fas fa-plus"></i>Novo</button>
       <button onclick="abrirVendaAvulsa()" class="btn-secondary" style="padding:6px 14px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;color:#10b981;border-color:#10b981;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='white'"><i class="fas fa-cash-register"></i>Venda avulsa</button>
+      <button onclick="toggleModoSelecao()" id="btn-modo-selecao" class="btn-secondary" style="padding:6px 14px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;"><i class="fas fa-check-square"></i>Selecionar</button>
       <button onclick="abrirModalColunas()" class="btn-secondary" style="padding:6px 14px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;"><i class="fas fa-columns"></i>Colunas</button>
     </div>
     <div style="overflow-x:auto;">
+    <!-- BARRA DE AÇÕES EM LOTE -->
+    <div id="barra-lote" style="display:none;padding:10px 16px;background:#1e40af;border-radius:8px;margin-bottom:8px;display:none;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span style="font-size:13px;font-weight:600;color:white;"><span id="lote-count">0</span> item(s) selecionado(s)</span>
+      <div style="flex:1;"></div>
+      <select id="lote-status" style="font-size:12px;padding:5px 8px;border-radius:6px;border:none;background:white;color:var(--gray-700);cursor:pointer;">
+        <option value="">— Alterar status —</option>
+        <option value="Em Estoque">Em Estoque</option>
+        <option value="Em Maleta">Em Maleta</option>
+        <option value="Consignado">Consignado</option>
+        <option value="Vendido">Vendido</option>
+      </select>
+      <select id="lote-revendedor" style="font-size:12px;padding:5px 8px;border-radius:6px;border:none;background:white;color:var(--gray-700);cursor:pointer;">
+        <option value="">— Alterar revendedor —</option>
+        <option value="__limpar__">Limpar revendedor</option>
+      </select>
+      <button onclick="aplicarLote()" class="btn-primary" style="padding:5px 14px;font-size:12px;background:white;color:#1e40af;border:none;"><i class="fas fa-check" style="margin-right:5px;"></i>Aplicar</button>
+      <button onclick="excluirLote()" class="btn-secondary" style="padding:5px 12px;font-size:12px;background:rgba(255,255,255,.1);color:white;border-color:rgba(255,255,255,.3);" onmouseover="this.style.background='rgba(239,68,68,.3)'" onmouseout="this.style.background='rgba(255,255,255,.1)'"><i class="fas fa-trash" style="margin-right:5px;"></i>Excluir</button>
+      <button onclick="cancelarSelecao()" style="background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;padding:5px 8px;"><i class="fas fa-times"></i></button>
+    </div>
+
       <table class="data-table" id="dash-table">
         <thead><tr id="dash-thead-row"></tr></thead>
         <tbody id="dash-tbody"></tbody>
@@ -989,6 +1010,28 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
     <div style="display:flex;gap:.75rem;">
       <button onclick="fecharModal('modal-pagamento')" class="btn-secondary" style="flex:1;">Cancelar</button>
       <button onclick="confirmarPagamento()" class="btn-primary" style="flex:1;"><i class="fas fa-check" style="margin-right:6px;"></i>Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EXCLUSÃO EM LOTE -->
+<div id="modal-excluir-lote" class="modal-overlay">
+  <div class="modal-content" style="max-width:420px;width:95%;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="font-size:1rem;font-weight:700;color:#dc2626;"><i class="fas fa-trash" style="margin-right:8px;"></i>Excluir em lote</h3>
+      <button onclick="fecharModal('modal-excluir-lote')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>
+    </div>
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:1rem;margin-bottom:1rem;">
+      <p style="font-size:13px;color:#dc2626;font-weight:600;margin-bottom:6px;"><i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i>Ação irreversível</p>
+      <p style="font-size:13px;color:#7f1d1d;">Você está prestes a excluir <strong id="lote-excluir-count">0</strong> item(s). Esta ação não pode ser desfeita.</p>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label style="font-size:13px;font-weight:500;color:var(--gray-700);display:block;margin-bottom:6px;">Para confirmar, digite <strong>excluir</strong>:</label>
+      <input type="text" id="confirmar-excluir-input" placeholder="excluir" oninput="this.value=this.value.toLowerCase();document.getElementById('btn-confirmar-excluir').disabled=this.value!=='excluir';" style="font-size:14px;">
+    </div>
+    <div style="display:flex;gap:.75rem;">
+      <button onclick="fecharModal('modal-excluir-lote')" class="btn-secondary" style="flex:1;">Cancelar</button>
+      <button id="btn-confirmar-excluir" onclick="confirmarExclusaoLote()" disabled style="flex:1;padding:.75rem;background:#dc2626;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;opacity:.5;" onmouseover="if(!this.disabled)this.style.background='#b91c1c'" onmouseout="if(!this.disabled)this.style.background='#dc2626'"><i class="fas fa-trash" style="margin-right:6px;"></i>Excluir</button>
     </div>
   </div>
 </div>
@@ -2023,7 +2066,7 @@ function baixarEntrega() {
 function finalDownloadEntrega(c,doc) {
   var dataUrl=c.toDataURL('image/png');
   var d=new Date(doc.data);
-  var nome='entrega_'+d.getFullYear()+(d.getMonth()+1).toString().padStart(2,'0')+d.getDate().toString().padStart(2,'0')+'_'+d.getHours().toString().padStart(2,'0')+d.getMinutes().toString().padStart(2,'0')+'_'+doc.revendedor.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
+  var nome=nomeArquivo('entrega',doc.data,doc.revendedor);
   syncDriveComCallback({action:'salvarRecibo',nomeArquivo:nome,imagemBase64:dataUrl}, function(res){
     if(res&&res.success&&res.url){
       // Salva URL na entrega local
@@ -2377,8 +2420,135 @@ function confirmarPagamento() {
 }
 
 // =====================================================
-// CONFERÊNCIA DE ESTOQUE
+// SELEÇÃO EM LOTE
 // =====================================================
+var modoSelecao = false;
+var itensSelecionados = {};
+
+function toggleModoSelecao(){
+  modoSelecao = !modoSelecao;
+  itensSelecionados = {};
+  var btn = document.getElementById('btn-modo-selecao');
+  if(btn){
+    btn.style.background = modoSelecao ? 'var(--primary)' : '';
+    btn.style.color = modoSelecao ? 'white' : '';
+    btn.innerHTML = modoSelecao
+      ? '<i class="fas fa-times"></i>Cancelar'
+      : '<i class="fas fa-check-square"></i>Selecionar';
+  }
+  renderDashTable();
+  atualizarBarraLote();
+}
+
+function cancelarSelecao(){
+  modoSelecao = false;
+  itensSelecionados = {};
+  var btn = document.getElementById('btn-modo-selecao');
+  if(btn){ btn.style.background=''; btn.style.color=''; btn.innerHTML='<i class="fas fa-check-square"></i>Selecionar'; }
+  renderDashTable();
+  atualizarBarraLote();
+}
+
+function toggleSelecionarItem(rowId){
+  if(itensSelecionados[rowId]) delete itensSelecionados[rowId];
+  else itensSelecionados[rowId]=true;
+  atualizarBarraLote();
+  // Atualiza visual do checkbox sem re-render completo
+  var cb=document.getElementById('cb-'+rowId);
+  if(cb) cb.checked=!!itensSelecionados[rowId];
+  var row=document.getElementById('row-'+rowId);
+  if(row) row.style.background=itensSelecionados[rowId]?'#eff6ff':'';
+}
+
+function selecionarTodosVisiveis(){
+  var tabelaIds = Array.from(document.querySelectorAll('#dash-table tbody tr[id^="row-"]')).map(function(r){return r.id.replace('row-','');});
+  var todos = tabelaIds.every(function(id){return itensSelecionados[id];});
+  tabelaIds.forEach(function(id){
+    if(todos) delete itensSelecionados[id];
+    else itensSelecionados[id]=true;
+  });
+  atualizarBarraLote();
+  renderDashTable();
+}
+
+function atualizarBarraLote(){
+  var count = Object.keys(itensSelecionados).length;
+  var barra = document.getElementById('barra-lote');
+  if(barra){
+    barra.style.display = (modoSelecao && count > 0) ? 'flex' : 'none';
+    document.getElementById('lote-count').textContent = count;
+  }
+  // Popula select de revendedores no lote
+  var sel = document.getElementById('lote-revendedor');
+  if(sel && sel.options.length <= 2){
+    revendedores.forEach(function(r){
+      var opt=document.createElement('option');opt.value=r.Nome;opt.textContent=r.Nome;sel.appendChild(opt);
+    });
+  }
+}
+
+function aplicarLote(){
+  var count = Object.keys(itensSelecionados).length;
+  if(!count){ showToast('Selecione ao menos um item','warning'); return; }
+  var novoStatus = document.getElementById('lote-status').value;
+  var novoRev = document.getElementById('lote-revendedor').value;
+  if(!novoStatus && !novoRev){ showToast('Selecione o que deseja alterar','warning'); return; }
+
+  var revFinal = novoRev==='__limpar__' ? '' : (novoRev||null);
+  var batchItems = [];
+
+  Object.keys(itensSelecionados).forEach(function(rowId){
+    var idx=inventory.findIndex(function(i){return String(i.rowId)===String(rowId);});
+    if(idx===-1) return;
+    if(novoStatus) inventory[idx].Status=novoStatus;
+    if(revFinal!==null) inventory[idx].Revendedor=revFinal;
+    batchItems.push({rowId:rowId,
+      status:novoStatus||inventory[idx].Status,
+      revendedor:revFinal!==null?revFinal:inventory[idx].Revendedor});
+  });
+
+  if(batchItems.length) syncDrive({action:'batchEditInventario',items:batchItems});
+
+  document.getElementById('lote-status').value='';
+  document.getElementById('lote-revendedor').value='';
+  cancelarSelecao();
+  renderDashboard();
+  showToast(count+' item(s) atualizados!','success');
+}
+
+function excluirLote(){
+  var count = Object.keys(itensSelecionados).length;
+  if(!count) return;
+  document.getElementById('lote-excluir-count').textContent = count;
+  document.getElementById('confirmar-excluir-input').value='';
+  var btnConf=document.getElementById('btn-confirmar-excluir');
+  if(btnConf){btnConf.disabled=true;btnConf.style.opacity='.5';}
+  abrirModal('modal-excluir-lote');
+}
+
+function confirmarExclusaoLote(){
+  var inp=document.getElementById('confirmar-excluir-input');
+  if(!inp||inp.value!=='excluir') return;
+  fecharModal('modal-excluir-lote');
+  var ids=Object.keys(itensSelecionados);
+  ids.forEach(function(rowId){
+    var idx=inventory.findIndex(function(i){return String(i.rowId)===String(rowId);});
+    if(idx!==-1) inventory.splice(idx,1);
+    syncDrive({action:'delInventario',rowId:rowId});
+  });
+  cancelarSelecao();
+  renderDashboard();
+  showToast(ids.length+' item(s) excluídos!','success');
+}
+
+// Atualiza botão confirmar exclusão ao digitar
+document.addEventListener('DOMContentLoaded',function(){
+  var inp=document.getElementById('confirmar-excluir-input');
+  if(inp) inp.addEventListener('input',function(){
+    var btn=document.getElementById('btn-confirmar-excluir');
+    if(btn){btn.disabled=this.value!=='excluir';btn.style.opacity=this.value==='excluir'?'1':'.5';}
+  });
+});
 var confBipados = []; // rowIds bipados
 var confEsperados = []; // itens esperados pelo filtro
 
@@ -2821,14 +2991,28 @@ function renderDashTable(){
   if(dashSortCol){var isNum=dashSortCol==='custo'||dashSortCol==='venda';var campo=campoMap[dashSortCol]||dashSortCol;filtered.sort(function(a,b){var va=a[campo]||'',vb=b[campo]||'';if(isNum){return dashSortDir==='asc'?pN(va)-pN(vb):pN(vb)-pN(va);}va=String(va).toLowerCase();vb=String(vb).toLowerCase();return dashSortDir==='asc'?va.localeCompare(vb):vb.localeCompare(va);});}
   var sortIcon=function(k){if(dashSortCol!==k)return '<span style="opacity:.2;margin-left:3px;">↕</span>';return dashSortDir==='asc'?'<span style="color:var(--primary);margin-left:3px;">↑</span>':'<span style="color:var(--primary);margin-left:3px;">↓</span>';};
   var thead=document.getElementById('dash-thead-row');
-  if(thead){var hhtml='';cols.forEach(function(k){var isAct=dashSortCol===k;hhtml+='<th style="padding:.75rem;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;background:var(--gray-50);border-bottom:2px solid var(--gray-200);white-space:nowrap;cursor:pointer;user-select:none;color:'+(isAct?'var(--primary)':'var(--gray-500)')+';" onclick="dashSortBy(\''+k+'\')">'+colunasConfig[k].nome+sortIcon(k)+'</th>';});thead.innerHTML=hhtml;}
+  if(thead){
+    var hhtml='';
+    if(modoSelecao) hhtml+='<th style="padding:.75rem;width:36px;background:var(--gray-50);border-bottom:2px solid var(--gray-200);"><input type="checkbox" title="Selecionar todos" onchange="selecionarTodosVisiveis()" style="width:16px;height:16px;cursor:pointer;"></th>';
+    cols.forEach(function(k){var isAct=dashSortCol===k;hhtml+='<th style="padding:.75rem;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;background:var(--gray-50);border-bottom:2px solid var(--gray-200);white-space:nowrap;cursor:pointer;user-select:none;color:'+(isAct?'var(--primary)':'var(--gray-500)')+';" onclick="dashSortBy(\''+k+'\')">'+colunasConfig[k].nome+sortIcon(k)+'</th>';});
+    thead.innerHTML=hhtml;
+  }
   var tbody=document.getElementById('dash-tbody');if(!tbody)return;
   var totalCusto=0,totalVenda=0;
   var bhtml='';
-  if(!filtered.length){bhtml='<tr><td colspan="'+cols.length+'" style="text-align:center;padding:2rem;color:var(--gray-400);font-size:13px;">Nenhum item encontrado</td></tr>';}
-  else{filtered.forEach(function(item){totalCusto+=pN(item.Custo);totalVenda+=pN(item.Venda);var cor=getCorStatus(item.Status);var hex=cor.replace('#','');var cr=parseInt(hex.slice(0,2),16),cg=parseInt(hex.slice(2,4),16),cb=parseInt(hex.slice(4,6),16);var cells='';cols.forEach(function(k){var base='padding:.75rem;font-size:13px;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid var(--gray-200);';if(k==='codigo')cells+='<td style="'+base+'font-family:monospace;font-weight:700;color:var(--primary);cursor:pointer;" onclick="editarItem('+item.rowId+')">'+(item.Codigo||'—')+'</td>';else if(k==='descricao')cells+='<td style="'+base+'color:var(--gray-700);max-width:200px;" title="'+(item.Descricao||'')+'">'+(item.Descricao||'—')+'</td>';else if(k==='tipo')cells+='<td style="'+base+'"><span style="font-size:11px;background:var(--gray-100);color:var(--gray-600);padding:2px 8px;border-radius:4px;">'+(item.Tipo||'Geral')+'</span></td>';else if(k==='categoria')cells+='<td style="'+base+'color:var(--gray-700);">'+(item.Categoria||'—')+'</td>';else if(k==='status')cells+='<td style="'+base+'"><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px 3px 6px;border-radius:20px;font-size:12px;font-weight:500;background:rgba('+cr+','+cg+','+cb+',.12);border:1px solid rgba('+cr+','+cg+','+cb+',.3);color:'+cor+';"><span style="width:6px;height:6px;border-radius:50%;background:'+cor+';flex-shrink:0;"></span>'+item.Status+'</span></td>';else if(k==='revendedor')cells+='<td style="'+base+'color:var(--gray-600);">'+(item.Revendedor||'—')+'</td>';else if(k==='custo')cells+='<td style="'+base+'color:var(--gray-700);">'+fmt(item.Custo)+'</td>';else if(k==='venda')cells+='<td style="'+base+'font-weight:700;color:#b45309;">'+fmt(item.Venda)+'</td>';else if(k==='data')cells+='<td style="'+base+'color:var(--gray-600);">'+(item.Data?new Date(item.Data).toLocaleDateString('pt-BR'):'—')+'</td>';else if(k==='foto')cells+=item.Foto?'<td style="'+base+'text-align:center;"><img src="'+item.Foto+'" style="width:36px;height:36px;object-fit:cover;border-radius:4px;cursor:pointer;" onclick="verFoto(\''+item.Foto+'\')"></td>':'<td style="'+base+'text-align:center;"><div class="foto-placeholder"><i class="fas fa-image"></i></div></td>';else cells+='<td style="'+base+'">—</td>';});bhtml+='<tr onmouseover="this.style.background=\'var(--gray-50)\'" onmouseout="this.style.background=\'white\'">'+cells+'</tr>';});}
+  if(!filtered.length){bhtml='<tr><td colspan="'+(cols.length+(modoSelecao?1:0))+'" style="text-align:center;padding:2rem;color:var(--gray-400);font-size:13px;">Nenhum item encontrado</td></tr>';}
+  else{filtered.forEach(function(item){
+    totalCusto+=pN(item.Custo);totalVenda+=pN(item.Venda);
+    var cor=getCorStatus(item.Status);var hex=cor.replace('#','');var cr=parseInt(hex.slice(0,2),16),cg=parseInt(hex.slice(2,4),16),cb=parseInt(hex.slice(4,6),16);
+    var sel=itensSelecionados[String(item.rowId)];
+    var rowBg=sel?'#eff6ff':'white';
+    var cells='';
+    if(modoSelecao) cells+='<td style="padding:.75rem;vertical-align:middle;border-bottom:1px solid var(--gray-200);text-align:center;"><input type="checkbox" id="cb-'+item.rowId+'" '+(sel?'checked':'')+' onchange="toggleSelecionarItem(\''+item.rowId+'\')" style="width:16px;height:16px;cursor:pointer;"></td>';
+    cols.forEach(function(k){var base='padding:.75rem;font-size:13px;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid var(--gray-200);';if(k==='codigo')cells+='<td style="'+base+'font-family:monospace;font-weight:700;color:var(--primary);cursor:pointer;" onclick="'+(modoSelecao?'toggleSelecionarItem(\''+item.rowId+'\')':'editarItem('+item.rowId+')')+'">'+(item.Codigo||'—')+'</td>';else if(k==='descricao')cells+='<td style="'+base+'color:var(--gray-700);max-width:200px;" title="'+(item.Descricao||'')+'">'+(item.Descricao||'—')+'</td>';else if(k==='tipo')cells+='<td style="'+base+'"><span style="font-size:11px;background:var(--gray-100);color:var(--gray-600);padding:2px 8px;border-radius:4px;">'+(item.Tipo||'Geral')+'</span></td>';else if(k==='categoria')cells+='<td style="'+base+'color:var(--gray-700);">'+(item.Categoria||'—')+'</td>';else if(k==='status')cells+='<td style="'+base+'"><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px 3px 6px;border-radius:20px;font-size:12px;font-weight:500;background:rgba('+cr+','+cg+','+cb+',.12);border:1px solid rgba('+cr+','+cg+','+cb+',.3);color:'+cor+';"><span style="width:6px;height:6px;border-radius:50%;background:'+cor+';flex-shrink:0;"></span>'+item.Status+'</span></td>';else if(k==='revendedor')cells+='<td style="'+base+'color:var(--gray-600);">'+(item.Revendedor||'—')+'</td>';else if(k==='custo')cells+='<td style="'+base+'color:var(--gray-700);">'+fmt(item.Custo)+'</td>';else if(k==='venda')cells+='<td style="'+base+'font-weight:700;color:#b45309;">'+fmt(item.Venda)+'</td>';else if(k==='data')cells+='<td style="'+base+'color:var(--gray-600);">'+(item.Data?new Date(item.Data).toLocaleDateString('pt-BR'):'—')+'</td>';else if(k==='foto')cells+=item.Foto?'<td style="'+base+'text-align:center;"><img src="'+item.Foto+'" style="width:36px;height:36px;object-fit:cover;border-radius:4px;cursor:pointer;" onclick="verFoto(\''+item.Foto+'\')"></td>':'<td style="'+base+'text-align:center;"><div class="foto-placeholder"><i class="fas fa-image"></i></div></td>';else cells+='<td style="'+base+'">—</td>';});
+    bhtml+='<tr id="row-'+item.rowId+'" style="background:'+rowBg+';transition:background .1s;" onmouseover="this.style.background=\''+(sel?'#dbeafe':'var(--gray-50)')+'\'" onmouseout="this.style.background=\''+rowBg+'\'">'+cells+'</tr>';
+  });}
   tbody.innerHTML=bhtml;
-  var tfoot=document.getElementById('dash-tfoot');if(tfoot){var fhtml='';cols.forEach(function(k,i){if(i===0)fhtml+='<td style="padding:.75rem;font-size:13px;font-weight:600;color:var(--gray-600);"><i class="fas fa-calculator" style="color:var(--primary);margin-right:5px;"></i>'+filtered.length+' '+(filtered.length===1?'item':'itens')+'</td>';else if(k==='custo')fhtml+='<td style="padding:.75rem;font-size:13px;font-weight:600;color:var(--gray-700);">'+fmt(totalCusto)+'</td>';else if(k==='venda')fhtml+='<td style="padding:.75rem;font-size:13px;font-weight:700;color:#b45309;">'+fmt(totalVenda)+'</td>';else fhtml+='<td></td>';});tfoot.innerHTML='<tr style="background:var(--gray-50);border-top:2px solid var(--gray-200);">'+fhtml+'</tr>';}
+  var tfoot=document.getElementById('dash-tfoot');if(tfoot){var fhtml='';if(modoSelecao)fhtml+='<td></td>';cols.forEach(function(k,i){if(i===0)fhtml+='<td style="padding:.75rem;font-size:13px;font-weight:600;color:var(--gray-600);"><i class="fas fa-calculator" style="color:var(--primary);margin-right:5px;"></i>'+filtered.length+' '+(filtered.length===1?'item':'itens')+'</td>';else if(k==='custo')fhtml+='<td style="padding:.75rem;font-size:13px;font-weight:600;color:var(--gray-700);">'+fmt(totalCusto)+'</td>';else if(k==='venda')fhtml+='<td style="padding:.75rem;font-size:13px;font-weight:700;color:#b45309;">'+fmt(totalVenda)+'</td>';else fhtml+='<td></td>';});tfoot.innerHTML='<tr style="background:var(--gray-50);border-top:2px solid var(--gray-200);">'+fhtml+'</tr>';}
 }
 
 // =====================================================
@@ -3062,6 +3246,16 @@ function abrirModalAssinatura(reg){
   salvarReciboLocal(reg, null);
 }
 
+function nomeArquivo(prefixo, data, revendedor){
+  var d=new Date(data);
+  var dd=d.getDate().toString().padStart(2,'0');
+  var mm=(d.getMonth()+1).toString().padStart(2,'0');
+  var aa=d.getFullYear();
+  var hh=d.getHours().toString().padStart(2,'0');
+  var mi=d.getMinutes().toString().padStart(2,'0');
+  var rev=(revendedor||'').replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
+  return prefixo+'_'+hh+mi+'_'+dd+mm+aa+'_'+rev;
+}
 function salvarReciboNoDrive(){
   if(!_reciboFechamento) return;
   var btn=document.getElementById('btn-salvar-recibo');
@@ -3073,9 +3267,7 @@ function salvarReciboNoDrive(){
   }
   var reg=_reciboFechamento;
   var d=new Date(reg.data);
-  var nomeArq='recibo_'+d.getFullYear()+(d.getMonth()+1).toString().padStart(2,'0')+d.getDate().toString().padStart(2,'0')
-    +'_'+d.getHours().toString().padStart(2,'0')+d.getMinutes().toString().padStart(2,'0')
-    +'_'+reg.revendedor.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
+  var nomeArq=nomeArquivo('recibo',reg.data,reg.revendedor);
 
   function enviarParaDrive(dataUrl){
     syncDriveComCallback({action:'salvarRecibo',nomeArquivo:nomeArq,imagemBase64:dataUrl},function(res){
@@ -3200,7 +3392,7 @@ function _downloadCanvas(c,reg,callback){
   if(reg){
     salvarReciboLocal(reg, dataUrl);
     var d=new Date(reg.data);
-    var nomeArq='recibo_'+d.getFullYear()+(d.getMonth()+1).toString().padStart(2,'0')+d.getDate().toString().padStart(2,'0')+'_'+d.getHours().toString().padStart(2,'0')+d.getMinutes().toString().padStart(2,'0')+'_'+reg.revendedor.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
+    var nomeArq=nomeArquivo('recibo',reg.data,reg.revendedor);
     syncDriveComCallback({action:'salvarRecibo',nomeArquivo:nomeArq,imagemBase64:dataUrl}, function(res){
       if(res&&res.success&&res.url){
         var idx=historicFechamentos.findIndex(function(f){return f.id===reg.id;});
@@ -3213,7 +3405,7 @@ function _downloadCanvas(c,reg,callback){
     });
   }
   var a=document.createElement('a');
-  a.download='recibo-'+(reg?reg.revendedor.replace(/\s/g,'_'):'fechamento')+'-'+new Date().toISOString().slice(0,10)+'.png';
+  a.download=nomeArquivo('recibo',reg?reg.data:new Date().toISOString(),reg?reg.revendedor:'')+'.png';
   a.href=dataUrl;
   a.click();
 }
