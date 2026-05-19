@@ -225,7 +225,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
     </div>
     <div style="overflow-x:auto;">
     <!-- BARRA DE AÇÕES EM LOTE -->
-    <div id="barra-lote" style="display:none;padding:10px 16px;background:#1e40af;border-radius:8px;margin-bottom:8px;display:none;align-items:center;gap:10px;flex-wrap:wrap;">
+    <div id="barra-lote" style="display:none;padding:10px 16px;background:#1e40af;border-radius:8px;margin-bottom:8px;align-items:center;gap:10px;flex-wrap:wrap;">
       <span style="font-size:13px;font-weight:600;color:white;"><span id="lote-count">0</span> item(s) selecionado(s)</span>
       <div style="flex:1;"></div>
       <select id="lote-status" style="font-size:12px;padding:5px 8px;border-radius:6px;border:none;background:white;color:var(--gray-700);cursor:pointer;">
@@ -1196,6 +1196,8 @@ var statusCores      = {'Em Estoque':'#10b981','Consignado':'#3b82f6','Vendido':
 var historicFechamentos = [];
 var historicEntregas    = [];
 var scriptUrl        = '';
+var modoSelecao      = false;
+var itensSelecionados= {};
 
 // Preferências de UI (ficam no localStorage — são por dispositivo)
 var cfgCards         = {'total':{'tipo':'all','status':'all'},'vendas':{'periodo':'30','revendedor':'','tipo':'all','lucro':false},'consignado':{'revendedor':'','tipo':'all','custo':false},'capital':{'tipo':'all','venda':false}};
@@ -2422,8 +2424,6 @@ function confirmarPagamento() {
 // =====================================================
 // SELEÇÃO EM LOTE
 // =====================================================
-var modoSelecao = false;
-var itensSelecionados = {};
 
 function toggleModoSelecao(){
   modoSelecao = !modoSelecao;
