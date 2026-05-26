@@ -235,6 +235,9 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
         <option value="Consignado">Consignado</option>
         <option value="Vendido">Vendido</option>
       </select>
+      <select id="lote-categoria" style="font-size:12px;padding:5px 8px;border-radius:6px;border:none;background:white;color:var(--gray-700);cursor:pointer;">
+        <option value="">— Alterar categoria —</option>
+      </select>
       <select id="lote-revendedor" style="font-size:12px;padding:5px 8px;border-radius:6px;border:none;background:white;color:var(--gray-700);cursor:pointer;">
         <option value="">— Alterar revendedor —</option>
         <option value="__limpar__">Limpar revendedor</option>
@@ -2478,12 +2481,26 @@ function atualizarBarraLote(){
     barra.style.display = (modoSelecao && count > 0) ? 'flex' : 'none';
     document.getElementById('lote-count').textContent = count;
   }
-  // Popula select de revendedores no lote
+  // Popula revendedores
   var sel = document.getElementById('lote-revendedor');
   if(sel && sel.options.length <= 2){
     revendedores.forEach(function(r){
       var opt=document.createElement('option');opt.value=r.Nome;opt.textContent=r.Nome;sel.appendChild(opt);
     });
+  }
+  // Popula categorias (sempre atualiza)
+  var selCat = document.getElementById('lote-categoria');
+  if(selCat){
+    var cur = selCat.value;
+    selCat.innerHTML = '<option value="">— Alterar categoria —</option>';
+    var allCats = [];
+    Object.keys(categorias).forEach(function(tipo){
+      (categorias[tipo]||[]).forEach(function(c){ if(allCats.indexOf(c)===-1) allCats.push(c); });
+    });
+    allCats.sort(function(a,b){return a.localeCompare(b,'pt-BR');}).forEach(function(c){
+      var opt=document.createElement('option');opt.value=c;opt.textContent=c;selCat.appendChild(opt);
+    });
+    selCat.value = cur;
   }
 }
 
@@ -2492,7 +2509,8 @@ function aplicarLote(){
   if(!count){ showToast('Selecione ao menos um item','warning'); return; }
   var novoStatus = document.getElementById('lote-status').value;
   var novoRev = document.getElementById('lote-revendedor').value;
-  if(!novoStatus && !novoRev){ showToast('Selecione o que deseja alterar','warning'); return; }
+  var novaCat = document.getElementById('lote-categoria').value;
+  if(!novoStatus && !novoRev && !novaCat){ showToast('Selecione o que deseja alterar','warning'); return; }
 
   var revFinal = novoRev==='__limpar__' ? '' : (novoRev||null);
   var batchItems = [];
@@ -2502,15 +2520,19 @@ function aplicarLote(){
     if(idx===-1) return;
     if(novoStatus) inventory[idx].Status=novoStatus;
     if(revFinal!==null) inventory[idx].Revendedor=revFinal;
+    if(novaCat) inventory[idx].Categoria=novaCat;
     batchItems.push({rowId:rowId,
-      status:novoStatus||inventory[idx].Status,
-      revendedor:revFinal!==null?revFinal:inventory[idx].Revendedor});
+      status:inventory[idx].Status,
+      revendedor:inventory[idx].Revendedor,
+      categoria:inventory[idx].Categoria
+    });
   });
 
   if(batchItems.length) syncDrive({action:'batchEditInventario',items:batchItems});
 
   document.getElementById('lote-status').value='';
   document.getElementById('lote-revendedor').value='';
+  var lc=document.getElementById('lote-categoria');if(lc)lc.value='';
   cancelarSelecao();
   renderDashboard();
   showToast(count+' item(s) atualizados!','success');
@@ -3826,7 +3848,7 @@ function renderCategorias(){
 }
 function ativarEdicaoCat(safe,tipo,cat){var label=document.getElementById('cat-label-'+safe);if(!label)return;var input=document.createElement('input');input.type='text';input.value=cat;input.style.cssText='flex:1;font-size:13px;padding:2px 6px!important;border:1px solid var(--primary)!important;border-radius:4px!important;outline:none;width:100%;';input.onblur=function(){confirmarEdicaoCat(input,tipo,cat);};input.onkeydown=function(e){if(e.key==='Enter')confirmarEdicaoCat(input,tipo,cat);if(e.key==='Escape')renderCategorias();};label.replaceWith(input);input.focus();input.select();}
 function confirmarEdicaoCat(input,tipo,catAtual){var nova=input.value.trim();if(!nova||nova===catAtual){renderCategorias();return;}var arr=categorias[tipo]||[];var idx=arr.indexOf(catAtual);if(idx!==-1){inventory.forEach(function(item){if(item.Tipo===tipo&&item.Categoria===catAtual)item.Categoria=nova;});arr[idx]=nova;categorias[tipo]=arr;renderCategorias();showToast('Categoria renomeada!','success');syncDrive({action:'renomearCategoria',tipo:tipo,nomeAtual:catAtual,nomeNovo:nova});}}
-function addCategoria(tipo){var inputId=tipo==='Semi Joia'?'nova-cat-semijoia':'nova-cat-perfume';var nome=document.getElementById(inputId).value.trim();if(!nome)return;if(!categorias[tipo])categorias[tipo]=[];var jaExiste=categorias[tipo].some(function(c){return c.toLowerCase()===nome.toLowerCase();});if(jaExiste){showToast('Categoria já existe','warning');return;}categorias[tipo].push(nome);document.getElementById(inputId).value='';renderCategorias();showToast('Categoria adicionada!','success');syncDrive({action:'addCategoria',tipo:tipo,nome:nome});}
+function addCategoria(tipo){var inputId=tipo==='Semi Joia'?'nova-cat-semijoia':'nova-cat-perfume';var nome=document.getElementById(inputId).value.trim();if(!nome)return;if(!categorias[tipo])categorias[tipo]=[];var jaExiste=categorias[tipo].some(function(c){return c.toLowerCase()===nome.toLowerCase();});if(jaExiste){showToast('Categoria já existe','warning');return;}categorias[tipo].push(nome);categorias[tipo].sort(function(a,b){return a.localeCompare(b,'pt-BR');});document.getElementById(inputId).value='';renderCategorias();carregarCategoriasEdit();renderDashboard();showToast('Categoria "'+nome+'" adicionada!','success');syncDrive({action:'addCategoria',tipo:tipo,nome:nome});}
 function excluirCategoria(tipo,nome){if(!confirm('Excluir a categoria "'+nome+'"?'))return;categorias[tipo]=categorias[tipo].filter(function(c){return c!==nome;});renderCategorias();showToast('Categoria excluída','success');syncDrive({action:'delCategoria',tipo:tipo,nome:nome});}
 
 // =====================================================
