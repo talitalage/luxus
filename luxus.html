@@ -1897,8 +1897,9 @@ function renderMaletasAtivas(){
       +(data?' · '+data:'')+'</div>'
       +'</div>'
       +(assinado
-        ? '<span style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:600;"><i class="fas fa-check-circle" style="margin-right:3px;"></i>Assinado</span>'
-        : '<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:600;"><i class="fas fa-clock" style="margin-right:3px;"></i>Pendente</span>')
+        ? '<span style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:600;white-space:nowrap;"><i class="fas fa-check-circle" style="margin-right:3px;"></i>Assinado</span>'
+        : '<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:600;white-space:nowrap;"><i class="fas fa-clock" style="margin-right:3px;"></i>Pendente</span>')
+      +'<button onclick="editarMaletaAtiva(\''+nome.replace(/'/g,"\\'")+'\')" class="btn-secondary" style="padding:5px 8px;font-size:12px;margin-left:6px;flex-shrink:0;" title="Editar maleta"><i class="fas fa-pen"></i></button>'
       +'</div>'
       // Resumo categorias
       +'<div style="margin-bottom:.75rem;padding:.625rem .75rem;background:var(--gray-50);border-radius:6px;display:flex;flex-wrap:wrap;gap:6px;">'
@@ -1918,6 +1919,88 @@ function renderMaletasAtivas(){
       +'</div>'
       +'</div>';
   }).join('');
+}
+
+function editarMaletaAtiva(nomeRev){
+  var itens = inventory.filter(function(i){ return i.Revendedor===nomeRev && (i.Status==='Consignado'||i.Status==='Em Maleta'); });
+  if(!itens.length){ showToast('Nenhum item para '+nomeRev,'warning'); return; }
+
+  // Cria modal dinâmico se não existe
+  var mid = 'modal-editar-maleta-ativa';
+  var modal = document.getElementById(mid);
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = mid;
+    modal.className = 'modal-overlay';
+    document.body.appendChild(modal);
+  }
+
+  function renderItensModal(){
+    var its = inventory.filter(function(i){ return i.Revendedor===nomeRev && (i.Status==='Consignado'||i.Status==='Em Maleta'); });
+    var lista = its.map(function(item){
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;">'
+        +'<span style="font-family:monospace;font-size:11px;color:var(--primary);font-weight:600;min-width:65px;">'+item.Codigo+'</span>'
+        +'<span style="flex:1;font-size:12px;color:var(--gray-700);">'+(item.Descricao||'—')+'</span>'
+        +'<span style="font-size:11px;color:var(--gray-500);">'+(item.Categoria||'')+'</span>'
+        +'<span style="font-size:11px;font-weight:600;color:var(--gray-600);">'+fmt(item.Custo||0)+'</span>'
+        +'<button onclick="removerItemMaletaAtiva(\''+item.rowId+'\',\''+nomeRev+'\')" style="background:none;border:none;cursor:pointer;color:var(--gray-300);padding:2px 4px;" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'var(--gray-300)\'"><i class="fas fa-times"></i></button>'
+        +'</div>';
+    }).join('');
+    var total = its.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0);
+    document.getElementById('maleta-ativa-lista').innerHTML = lista || '<p style="text-align:center;color:var(--gray-400);padding:1rem;">Nenhum item</p>';
+    document.getElementById('maleta-ativa-resumo').textContent = its.length+' item(s) · '+fmt(total);
+  }
+
+  modal.innerHTML = '<div class="modal-content" style="max-width:600px;width:95%;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-shrink:0;">'
+    +'<div><h3 style="font-size:1rem;font-weight:700;color:var(--gray-800);margin:0;"><i class="fas fa-briefcase" style="color:var(--primary);margin-right:8px;"></i>Maleta '+nomeRev+'</h3>'
+    +'<div id="maleta-ativa-resumo" style="font-size:12px;color:var(--gray-500);margin-top:2px;"></div></div>'
+    +'<button onclick="fecharModal(\''+mid+'\')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>'
+    +'</div>'
+    // Bipe para adicionar
+    +'<div style="display:flex;gap:6px;margin-bottom:.75rem;flex-shrink:0;">'
+    +'<input type="text" id="input-add-maleta-ativa" class="barcode-input" placeholder="Bipe ou código para adicionar item..." style="flex:1;" '
+    +'onkeydown="if(event.key===\'Enter\'){adicionarItemMaletaAtiva(\''+nomeRev+'\');}">'
+    +'<button onclick="adicionarItemMaletaAtiva(\''+nomeRev+'\')" class="btn-secondary" style="padding:6px 12px;font-size:12px;"><i class="fas fa-plus"></i></button>'
+    +'</div>'
+    // Lista
+    +'<div id="maleta-ativa-lista" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:0;margin-bottom:.75rem;"></div>'
+    +'<div style="flex-shrink:0;padding-top:.75rem;border-top:1px solid var(--gray-100);">'
+    +'<button onclick="fecharModal(\''+mid+'\')" class="btn-secondary" style="width:100%;padding:.75rem;">Fechar</button>'
+    +'</div></div>';
+
+  abrirModal(mid);
+  renderItensModal();
+  window._renderItensModalAtiva = renderItensModal;
+}
+
+function removerItemMaletaAtiva(rowId, nomeRev){
+  var idx = inventory.findIndex(function(i){ return String(i.rowId)===String(rowId); });
+  if(idx===-1) return;
+  inventory[idx].Status = 'Em Estoque';
+  inventory[idx].Revendedor = '';
+  syncDrive({action:'editInventario',rowId:rowId,status:'Em Estoque',revendedor:''});
+  if(window._renderItensModalAtiva) window._renderItensModalAtiva();
+  renderMaletasAtivas();
+  renderDashboard();
+  showToast('Item devolvido ao estoque','success');
+}
+
+function adicionarItemMaletaAtiva(nomeRev){
+  var codigo = (document.getElementById('input-add-maleta-ativa').value||'').trim().toUpperCase();
+  if(!codigo) return;
+  var encontrado = inventory.find(function(i){
+    return (i.Codigo||'').toUpperCase()===codigo && i.Status==='Em Estoque';
+  });
+  if(!encontrado){ showToast('Item não encontrado em estoque: '+codigo,'warning'); return; }
+  encontrado.Status = 'Consignado';
+  encontrado.Revendedor = nomeRev;
+  syncDrive({action:'editInventario',rowId:encontrado.rowId,status:'Consignado',revendedor:nomeRev});
+  document.getElementById('input-add-maleta-ativa').value = '';
+  if(window._renderItensModalAtiva) window._renderItensModalAtiva();
+  renderMaletasAtivas();
+  renderDashboard();
+  showToast('✓ '+encontrado.Codigo+' adicionado à maleta de '+nomeRev,'success');
 }
 
 function abrirDocumentoAtivo(nomeRev){
