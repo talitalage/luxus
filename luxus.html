@@ -268,12 +268,24 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
   </div>
 
   <!-- ENTREGA -->
-  <div id="subtab-entrega" class="grid-entrada" style="display:none;grid-template-columns:300px 1fr;gap:1.25rem;align-items:start;">
-    <!-- Painel esquerdo: lista de maletas -->
-    <div style="display:flex;flex-direction:column;gap:1rem;">
+  <div id="subtab-entrega" style="display:none;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+
+      <!-- COLUNA ESQUERDA: Maletas por revendedor (consignados) -->
       <div class="card-light" style="padding:1.25rem;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-          <h3 class="section-title" style="margin:0;"><i class="fas fa-briefcase"></i>Maletas</h3>
+          <h3 class="section-title" style="margin:0;"><i class="fas fa-hand-holding"></i>Maletas ativas</h3>
+          <button onclick="renderMaletasAtivas()" class="btn-secondary" style="padding:4px 10px;font-size:12px;" title="Atualizar"><i class="fas fa-sync-alt"></i></button>
+        </div>
+        <div id="lista-maletas-ativas" style="display:flex;flex-direction:column;gap:8px;max-height:560px;overflow-y:auto;">
+          <p style="font-size:13px;color:var(--gray-400);text-align:center;padding:2rem 0;">Carregando...</p>
+        </div>
+      </div>
+
+      <!-- COLUNA DIREITA: Maletas manuais -->
+      <div class="card-light" style="padding:1.25rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <h3 class="section-title" style="margin:0;"><i class="fas fa-briefcase"></i>Maletas em preparo</h3>
           <button onclick="criarMaleta()" class="btn-primary" style="padding:5px 14px;font-size:13px;"><i class="fas fa-plus" style="margin-right:5px;"></i>Nova</button>
         </div>
         <div id="lista-maletas" style="display:flex;flex-direction:column;gap:6px;max-height:480px;overflow-y:auto;">
@@ -281,8 +293,9 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
         </div>
       </div>
     </div>
-    <!-- Painel direito: detalhe da maleta selecionada -->
-    <div id="maleta-detalhe" style="display:none;flex-direction:column;gap:1rem;">
+
+    <!-- DETALHE DA MALETA (expandido abaixo) -->
+    <div id="maleta-detalhe" style="display:none;flex-direction:column;gap:1rem;margin-top:1rem;">
       <div class="card-light" style="padding:1.25rem;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
           <div>
@@ -292,23 +305,21 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
           <div style="display:flex;gap:6px;align-items:center;">
             <span id="maleta-status-badge"></span>
             <button onclick="editarNomeMaleta()" class="btn-secondary" style="padding:5px 10px;font-size:12px;" title="Renomear"><i class="fas fa-pen"></i></button>
-            <button onclick="excluirMaletaAtual()" class="btn-secondary" style="padding:5px 10px;font-size:12px;color:#dc2626;border-color:#fca5a5;" title="Excluir maleta"><i class="fas fa-trash"></i></button>
+            <button onclick="excluirMaletaAtual()" class="btn-secondary" style="padding:5px 10px;font-size:12px;color:#dc2626;border-color:#fca5a5;" title="Excluir"><i class="fas fa-trash"></i></button>
+            <button onclick="document.getElementById('maleta-detalhe').style.display='none';" class="btn-secondary" style="padding:5px 10px;font-size:12px;"><i class="fas fa-times"></i></button>
           </div>
         </div>
-        <!-- Bipe itens -->
         <div style="display:flex;gap:6px;margin-bottom:1rem;">
           <input type="text" id="maleta-codigo" class="barcode-input" placeholder="Bipe ou digite o código — Enter"
             onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarItemMaleta();}"
             oninput="clearTimeout(this._t);this._t=setTimeout(function(){var v=document.getElementById('maleta-codigo').value.trim();if(v.length>3)adicionarItemMaleta();},600)"
             style="flex:1;">
-          <button onclick="abrirScanner('maleta-codigo',adicionarItemMaleta)" class="btn-secondary" style="padding:6px 10px;flex-shrink:0;" title="Câmera"><i class="fas fa-camera"></i></button>
+          <button onclick="abrirScanner('maleta-codigo',adicionarItemMaleta)" class="btn-secondary" style="padding:6px 10px;flex-shrink:0;"><i class="fas fa-camera"></i></button>
           <button onclick="adicionarItemMaleta()" class="btn-secondary" style="padding:6px 10px;flex-shrink:0;"><i class="fas fa-plus"></i></button>
         </div>
-        <!-- Lista de itens da maleta -->
-        <div id="maleta-itens-lista" style="display:flex;flex-direction:column;gap:5px;max-height:340px;overflow-y:auto;margin-bottom:1rem;">
+        <div id="maleta-itens-lista" style="display:flex;flex-direction:column;gap:5px;max-height:300px;overflow-y:auto;margin-bottom:1rem;">
           <p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1.5rem 0;">Nenhum item na maleta.</p>
         </div>
-        <!-- Resumo -->
         <div id="maleta-resumo" style="display:none;padding:.75rem;background:var(--gray-50);border-radius:8px;margin-bottom:1rem;">
           <div style="display:flex;justify-content:space-between;font-size:13px;">
             <span style="color:var(--gray-600);">Total de itens</span><span id="maleta-total-itens" style="font-weight:700;color:var(--primary);"></span>
@@ -317,9 +328,8 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
             <span style="color:var(--gray-600);">Valor de custo</span><span id="maleta-total-custo" style="font-weight:700;color:var(--gray-700);"></span>
           </div>
         </div>
-        <!-- Atrelar revendedor e entregar -->
         <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
-          <select id="maleta-revendedor-sel" style="flex:1;min-width:160px;"><option value="">Selecione o revendedor...</option></select>
+          <select id="maleta-revendedor-sel" onchange="onChangeMaletaRevendedor()" style="flex:1;min-width:160px;"><option value="">Selecione o revendedor...</option></select>
           <div id="maleta-link-box" style="display:none;flex:1;min-width:160px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:.5rem .75rem;">
             <div style="font-size:10px;color:var(--gray-500);margin-bottom:3px;">Link da maleta</div>
             <div style="display:flex;gap:4px;">
@@ -332,20 +342,13 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
           <button onclick="salvarMaleta()" class="btn-secondary" style="flex:1;padding:.75rem;"><i class="fas fa-save" style="margin-right:6px;"></i>Salvar</button>
           <button onclick="entregarMaleta()" class="btn-primary" style="flex:1;padding:.75rem;"><i class="fas fa-paper-plane" style="margin-right:6px;"></i>Entregar</button>
         </div>
-        <!-- LOG DA MALETA -->
         <div id="maleta-log-section" style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--gray-200);display:none;">
           <div style="font-size:11px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem;">Histórico</div>
           <div id="maleta-log-lista" style="display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto;"></div>
         </div>
       </div>
     </div>
-    <!-- Painel direito vazio -->
-    <div id="maleta-vazio" style="display:flex;align-items:center;justify-content:center;min-height:300px;">
-      <div style="text-align:center;color:var(--gray-400);">
-        <i class="fas fa-briefcase" style="font-size:3rem;display:block;margin-bottom:1rem;"></i>
-        <p style="font-size:14px;">Selecione ou crie uma maleta</p>
-      </div>
-    </div>
+    <div id="maleta-vazio" style="display:none;"></div>
   </div>
   <div id="subtab-entrada" class="grid-entrada" style="display:grid;grid-template-columns:360px 1fr;gap:1.25rem;align-items:start;">
     <div class="card-light" style="padding:1.25rem;">
@@ -1842,8 +1845,82 @@ function sincronizarMaletasPendentes(){
 
 function renderUltimasEntregas(){ /* mantido para compatibilidade — lista de entregas está no histórico */ }
 
-function carregarSelectEntrega(){
-  carregarMaletas();
+function renderMaletasAtivas(){
+  var el = document.getElementById('lista-maletas-ativas'); if(!el) return;
+
+  // Agrupa itens consignados por revendedor
+  var porRev = {};
+  inventory.filter(function(i){ return i.Status==='Consignado' && i.Revendedor; }).forEach(function(i){
+    if(!porRev[i.Revendedor]) porRev[i.Revendedor] = [];
+    porRev[i.Revendedor].push(i);
+  });
+
+  var revNomes = Object.keys(porRev).sort();
+  if(!revNomes.length){
+    el.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:2rem 0;">Nenhum item consignado.</p>';
+    return;
+  }
+
+  el.innerHTML = revNomes.map(function(nome){
+    var itens = porRev[nome];
+    var totalCusto = itens.reduce(function(s,i){ return s+(parseFloat(i.Custo)||0); },0);
+    // Busca entrega existente para esse revendedor
+    var entrega = historicEntregas.slice().sort(function(a,b){ return new Date(b.data)-new Date(a.data); })
+      .find(function(e){ return e.revendedor===nome && e.tipo==='entrega'; });
+    var assinado = entrega && entrega.reciboUrl;
+    var data = entrega ? new Date(entrega.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : null;
+
+    return '<div class="card-light" style="padding:1rem;">'
+      // Cabeçalho
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;">'
+      +'<div style="width:38px;height:38px;border-radius:10px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#185FA5;flex-shrink:0;">'+nome.slice(0,2).toUpperCase()+'</div>'
+      +'<div style="flex:1;">'
+      +'<div style="font-weight:700;font-size:14px;color:var(--gray-800);">Maleta '+nome+'</div>'
+      +'<div style="font-size:11px;color:var(--gray-500);">'+itens.length+' item(s) · '+fmt(totalCusto)
+      +(data?' · Entregue: '+data:'')+'</div>'
+      +'</div>'
+      +(assinado
+        ? '<span style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:600;"><i class="fas fa-check-circle" style="margin-right:3px;"></i>Assinado</span>'
+        : '<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:600;"><i class="fas fa-clock" style="margin-right:3px;"></i>Pendente</span>')
+      +'</div>'
+      // Resumo categorias
+      +'<div style="margin-bottom:.75rem;padding:.625rem .75rem;background:var(--gray-50);border-radius:6px;display:flex;flex-wrap:wrap;gap:6px;">'
+      +function(){
+        var grupos={};
+        itens.forEach(function(i){ var k=i.Categoria||'Sem categoria'; if(!grupos[k])grupos[k]=0; grupos[k]++; });
+        return Object.keys(grupos).sort().map(function(k){
+          return '<span style="font-size:11px;background:white;border:1px solid var(--gray-200);border-radius:4px;padding:2px 7px;color:var(--gray-600);">'+k+' ('+grupos[k]+')</span>';
+        }).join('');
+      }()
+      +'</div>'
+      // Botões
+      +'<div style="display:flex;gap:6px;">'
+      +(assinado
+        ? '<button onclick="window.open(\''+entrega.reciboUrl+'\',\'_blank\')" class="btn-secondary" style="flex:1;padding:7px;font-size:12px;color:#10b981;border-color:#86efac;"><i class="fas fa-file-pdf" style="margin-right:5px;"></i>Ver documento</button>'
+        : '<button onclick="abrirDocumentoAtivo(\''+nome+'\')" class="btn-primary" style="flex:1;padding:7px;font-size:12px;"><i class="fas fa-pen-nib" style="margin-right:5px;"></i>Assinar documento</button>')
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function abrirDocumentoAtivo(nomeRev){
+  var itens = inventory.filter(function(i){ return i.Status==='Consignado' && i.Revendedor===nomeRev; });
+  if(!itens.length){ showToast('Nenhum item consignado para '+nomeRev,'warning'); return; }
+  var entrega = historicEntregas.slice().sort(function(a,b){ return new Date(b.data)-new Date(a.data); })
+    .find(function(e){ return e.revendedor===nomeRev && e.tipo==='entrega'; });
+  if(!entrega){
+    // Cria documento on-the-fly
+    entrega = { id: Date.now(), tipo:'entrega', data: new Date().toISOString(),
+      revendedor: nomeRev, revendedorId:'',
+      itens: itens.slice(), totalItens: itens.length,
+      valorTotal: itens.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0),
+      valorCusto: itens.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0)
+    };
+    historicEntregas.unshift(entrega);
+    syncDrive({action:'addEntrega',entrega:entrega});
+  }
+  _entregaDoc = entrega;
+  abrirModalEntrega(entrega);
 }
 
 function salvarRascunhoEntrega() {
@@ -2173,6 +2250,7 @@ function finalDownloadEntrega(c,doc) {
       if(mal){ mal.reciboUrl=res.url; salvarMaletas(); renderDetalhesMaleta(); }
       mostrarLinkRecibo(res.url, doc.revendedor);
       renderUltimasEntregas();
+      renderMaletasAtivas();
     } else {
       showToast('Documento salvo localmente','success');
     }
@@ -2831,7 +2909,7 @@ function switchSubtab(sub){
   if(sub==='fechamento')carregarRevendedoresFechamento();
   if(sub==='historico')renderHistorico();
   if(sub==='financeiro')renderFinanceiro();
-  if(sub==='entrega'){renderUltimasEntregas();carregarSelectEntrega();}
+  if(sub==='entrega'){renderUltimasEntregas();carregarSelectEntrega();renderMaletasAtivas();}
   if(sub==='conferencia'){atualizarCategoriasConf();atualizarMaletasConf();iniciarConferencia();}
 }
 
