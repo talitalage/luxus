@@ -1396,9 +1396,23 @@ function syncDriveComCallback(payload, callback){
   if(!scriptUrl)return;
 
   if(payload.imagemBase64){
-    // Estratégia: primeiro cria o PDF via POST no-cors (imagem grande),
-    // depois busca a URL via GET com apenas o nome do arquivo
     var nomeArq = payload.nomeArquivo;
+    var base64 = payload.imagemBase64;
+    var tamanho = base64.length;
+
+    // Se imagem menor que 500KB, tenta GET direto (mais confiável)
+    if(tamanho < 500000){
+      var encoded = encodeURIComponent(JSON.stringify(payload));
+      if(encoded.length < 7000){
+        fetch(scriptUrl+'?payload='+encoded,{method:'GET',cache:'no-cache'})
+        .then(function(r){return r.text();})
+        .then(function(t){var res={};try{res=JSON.parse(t);}catch(e){}if(callback)callback(res);})
+        .catch(function(){if(callback)callback(null);});
+        return;
+      }
+    }
+
+    // Imagem grande: usa POST no-cors + polling para verificar
     fetch(scriptUrl, {
       method:'POST',
       mode:'no-cors',
@@ -1406,17 +1420,26 @@ function syncDriveComCallback(payload, callback){
       body:JSON.stringify(payload)
     })
     .then(function(){
-      // Aguarda 4s para o Drive processar, depois busca a URL pelo nome
-      setTimeout(function(){
+      // Polling: verifica até 5x com intervalo de 3s
+      var tentativas = 0;
+      function verificar(){
+        tentativas++;
         var busca=encodeURIComponent(JSON.stringify({action:'buscarRecibo',nomeArquivo:nomeArq}));
         fetch(scriptUrl+'?payload='+busca,{method:'GET',cache:'no-cache'})
         .then(function(r){return r.text();})
         .then(function(t){
           var res={};try{res=JSON.parse(t);}catch(e){}
-          if(callback)callback(res);
+          if(res && res.success){
+            if(callback)callback(res);
+          } else if(tentativas < 5){
+            setTimeout(verificar, 3000);
+          } else {
+            if(callback)callback({success:false,error:'Timeout — arquivo não encontrado após 15s'});
+          }
         })
-        .catch(function(){if(callback)callback(null);});
-      }, 4000);
+        .catch(function(){ if(tentativas < 5) setTimeout(verificar,3000); else if(callback)callback(null); });
+      }
+      setTimeout(verificar, 4000);
     })
     .catch(function(){if(callback)callback(null);});
     return;
