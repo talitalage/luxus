@@ -2995,7 +2995,33 @@ function dashClicarGrupoEstoque(grupo){
   renderCatChips();renderDashTable();
   var t=document.getElementById('dash-table');if(t)t.scrollIntoView({behavior:'smooth',block:'start'});
 }
-function renderTopRevendedores(){var revStats=revendedores.map(function(rev){var prods=inventory.filter(function(i){return i.Revendedor===rev.Nome&&i.Status!=='Vendido'&&i.Status!=='Em Estoque';});return{Nome:rev.Nome,qtd:prods.length,valor:prods.reduce(function(s,i){return s+pN(i.Custo);},0)};}).filter(function(r){return r.qtd>0;}).sort(function(a,b){return b.valor-a.valor;});var totalItens=revStats.reduce(function(s,r){return s+r.qtd;},0);var badge=document.getElementById('badge-total-cons');if(badge)badge.textContent=totalItens+(totalItens===1?' item':' itens');var html='';revStats.forEach(function(rev){html+='<div onclick="dashFiltrarRev(\''+rev.Nome.replace(/'/g,"\\'")+'\''+')" style="display:flex;align-items:center;padding:7px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background=\'#eff6ff\'" onmouseout="this.style.background=\'transparent\'">'+'<span style="font-size:13px;font-weight:600;color:var(--gray-800);">'+rev.Nome+'</span>'+'<span style="flex:1;margin:0 8px;border-bottom:1px solid var(--gray-200);display:block;height:1px;align-self:center;"></span>'+'<span style="font-size:13px;font-weight:600;color:var(--gray-600);margin-right:6px;">'+rev.qtd+'</span>'+'<span style="font-size:12px;font-weight:700;color:#3b82f6;">'+fmt(rev.valor)+'</span>'+'</div>';});var el=document.getElementById('top-revendedores');if(el)el.innerHTML=html||'<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:16px 0;">Nenhum produto consignado</p>';}
+function renderTopRevendedores(){
+  var revStats=revendedores.map(function(rev){
+    var prods=inventory.filter(function(i){return i.Revendedor===rev.Nome&&i.Status!=='Vendido'&&i.Status!=='Em Estoque';});
+    if(!prods.length)return null;
+    var grupos={};
+    prods.forEach(function(i){var k=(i.Tipo||'Geral')+(i.Categoria?' · '+i.Categoria:'');if(!grupos[k])grupos[k]=[];grupos[k].push(i);});
+    return{Nome:rev.Nome,qtd:prods.length,valor:prods.reduce(function(s,i){return s+pN(i.Custo);},0),grupos:grupos};
+  }).filter(Boolean).sort(function(a,b){return b.valor-a.valor;});
+  var totalItens=revStats.reduce(function(s,r){return s+r.qtd;},0);
+  var badge=document.getElementById('badge-total-cons');if(badge)badge.textContent=totalItens+(totalItens===1?' item':' itens');
+  var html='';
+  revStats.forEach(function(rev,ri){
+    var revId='cons-rev-'+ri;
+    html+='<div><div style="display:flex;align-items:center;padding:7px 8px;cursor:pointer;border-radius:6px;background:#f8faff;" onmouseover="this.style.background=\'#eff6ff\'" onmouseout="this.style.background=\'#f8faff\'"><span onclick="toggleConsRev(\''+revId+'\')" style="display:flex;align-items:center;gap:6px;flex:1;"><i class="fas fa-chevron-down" id="icon-'+revId+'" style="font-size:9px;color:#6366f1;transition:transform .2s;"></i><span style="font-size:13px;font-weight:600;color:var(--gray-800);">'+rev.Nome+'</span></span><span style="flex:1;margin:0 8px;border-bottom:1px solid #e0e7ff;display:block;height:1px;align-self:center;"></span><span style="font-size:13px;font-weight:600;color:var(--gray-600);margin-right:6px;" onclick="dashFiltrarRev(\''+rev.Nome.replace(/'/g,"\\'")+'\')">'+rev.qtd+'</span><span style="font-size:12px;font-weight:700;color:#3b82f6;" onclick="dashFiltrarRev(\''+rev.Nome.replace(/'/g,"\\'")+'\')">'+fmt(rev.valor)+'</span></div><div id="'+revId+'" style="padding-left:14px;border-left:2px solid #e0e7ff;margin-left:10px;margin-bottom:4px;">';
+    var catKeys=Object.keys(rev.grupos).sort(function(a,b){return a.localeCompare(b,'pt-BR');});
+    catKeys.forEach(function(cat){
+      var itens=rev.grupos[cat];var v=itens.reduce(function(s,i){return s+pN(i.Custo);},0);
+      var label=cat.replace(/^Semi Joia · /,'').replace(/^Perfume · /,'').replace(/^Geral$/,'Geral');
+      html+='<div onclick="dashFiltrarRevCat(\''+rev.Nome.replace(/'/g,"\\'")+'\',\''+cat.replace(/'/g,"\\'")+'\''+')" style="display:flex;align-items:center;padding:5px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background=\'#eff6ff\'" onmouseout="this.style.background=\'transparent\'"><span style="font-size:12px;color:var(--gray-600);">'+label+'</span><span style="flex:1;margin:0 8px;border-bottom:1px solid var(--gray-200);display:block;height:1px;align-self:center;"></span><span style="font-size:12px;font-weight:600;color:var(--gray-500);margin-right:6px;">'+itens.length+'</span>'+(v>0?'<span style="font-size:11px;font-weight:700;color:#3b82f6;">'+fmt(v)+'</span>':'')+'</div>';
+    });
+    html+='</div></div>';
+  });
+  var el=document.getElementById('top-revendedores');if(el)el.innerHTML=html||'<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:16px 0;">Nenhum produto consignado</p>';
+}
+function toggleConsRev(id){var sub=document.getElementById(id);var icon=document.getElementById('icon-'+id);if(!sub)return;var aberto=sub.style.display!=='none';sub.style.display=aberto?'none':'block';if(icon)icon.style.transform=aberto?'rotate(-90deg)':'rotate(0deg)';}
+function dashFiltrarRevCat(rev,cat){dashFiltrarRev(rev);var p=cat.split(' · ');if(p[1])dashCatFilters[p[1]]=true;renderCatChips();renderDashTable();}
+
 function dashLimparCats(){
   dashCatFilters={};
   renderCatChips();
