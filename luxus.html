@@ -2351,8 +2351,8 @@ function baixarEntrega() {
   // Gera canvas do documento
   var W=640, H=400+doc.itens.length*28;
   var c = document.createElement('canvas');
-  c.width=W*2; c.height=H*2;
-  var ctx=c.getContext('2d'); ctx.scale(2,2);
+  c.width=W; c.height=H;
+  var ctx=c.getContext('2d'); 
   ctx.fillStyle='#f8fafc'; ctx.fillRect(0,0,W,H);
   ctx.fillStyle='#1e40af'; ctx.fillRect(0,0,W,48);
   ctx.fillStyle='#fff'; ctx.font='bold 15px sans-serif'; ctx.fillText(localStorage.getItem('luxus_titulo')||'LUXUS',16,30);
@@ -3693,7 +3693,7 @@ function salvarReciboNoDrive(){
   }
   var el=document.getElementById('recibo-conteudo');
   if(window.html2canvas){
-    html2canvas(el,{scale:2,backgroundColor:'#f8fafc',useCORS:true}).then(function(canvas){enviarParaDrive(canvas.toDataURL('image/png'));}).catch(function(){gerarReciboCanvas(enviarParaDrive);});
+    html2canvas(el,{scale:2,backgroundColor:'#f8fafc',useCORS:true}).then(function(canvas){enviarParaDrive(canvas.toDataURL('image/jpeg',0.7));}).catch(function(){gerarReciboCanvas(enviarParaDrive);});
   } else {
     gerarReciboCanvas(enviarParaDrive);
   }
@@ -3719,10 +3719,9 @@ function gerarReciboCanvas(callback){
   if(!reg)return;
   var W=640,H=520;
   var c=document.createElement('canvas');
-  c.width=W*2;c.height=H*2;
+  c.width=W;c.height=H;
   var ctx=c.getContext('2d');
-  ctx.scale(2,2);
-
+  
   // fundo
   ctx.fillStyle='#f8fafc';ctx.fillRect(0,0,W,H);
   ctx.fillStyle='#1e40af';ctx.fillRect(0,0,W,48);
