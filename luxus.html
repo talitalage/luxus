@@ -1447,8 +1447,22 @@ var maletas = [];       // array persistido no localStorage/Drive
 var maletaAtual = null; // maleta selecionada
 
 function carregarMaletas(){
-  try { maletas = JSON.parse(localStorage.getItem('luxus_maletas')||'[]'); } catch(e){ maletas=[]; }
-  // Migra itens Em Maleta sem representação
+function carregarMaletas(){
+  // Prioridade: Drive (carregado no loadData) > localStorage
+  if(!maletas.length){
+    try{
+      var local=JSON.parse(localStorage.getItem('luxus_maletas')||'[]');
+      if(local.length){
+        maletas=local;
+        // Sobe para o Drive imediatamente
+        syncDrive({action:'salvarMaletas',maletas:maletas});
+        showToast('Maletas recuperadas do cache ('+maletas.length+'). Sincronizando...','info');
+      }
+    }catch(e){}
+  } else {
+    // Atualiza localStorage com dados do Drive
+    try{localStorage.setItem('luxus_maletas',JSON.stringify(maletas));}catch(e){}
+  }
   sincronizarMaletasPendentes();
   renderListaMaletas();
 }
