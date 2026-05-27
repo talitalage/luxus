@@ -1552,13 +1552,16 @@ function renderListaMaletas(){
       : (m.revendedor
           ? '<span style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:20px;padding:1px 7px;font-size:10px;font-weight:600;">'+m.revendedor+'</span>'
           : '<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:20px;padding:1px 7px;font-size:10px;font-weight:600;">Sem revendedor</span>');
-    return '<div onclick="selecionarMaleta('+m.id+')" style="display:flex;align-items:center;gap:10px;padding:.75rem;border:1.5px solid var(--gray-200);border-radius:8px;cursor:pointer;transition:all .15s;'+bg+'">'
-      + '<div style="width:36px;height:36px;border-radius:8px;background:'+(ativa?'#185FA5':'#E6F1FB')+';display:flex;align-items:center;justify-content:center;flex-shrink:0;">'
+    return '<div style="display:flex;align-items:center;gap:8px;padding:.625rem .75rem;border:1.5px solid '+(ativa?'#185FA5':'var(--gray-200)')+';border-radius:8px;background:'+(ativa?'#EBF2FB':'white')+';cursor:pointer;transition:all .15s;" onmouseover="if(!'+ativa+')this.style.borderColor=\'#93c5fd\'" onmouseout="if(!'+ativa+')this.style.borderColor=\'var(--gray-200)\'">'
+      + '<div onclick="selecionarMaleta('+m.id+')" style="width:36px;height:36px;border-radius:8px;background:'+(ativa?'#185FA5':'#E6F1FB')+';display:flex;align-items:center;justify-content:center;flex-shrink:0;">'
       + '<i class="fas fa-briefcase" style="color:'+(ativa?'white':'#185FA5')+';font-size:14px;"></i></div>'
-      + '<div style="flex:1;min-width:0;">'
+      + '<div onclick="selecionarMaleta('+m.id+')" style="flex:1;min-width:0;">'
       + '<div style="font-weight:600;font-size:13px;color:var(--gray-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+m.nome+'</div>'
       + '<div style="font-size:11px;color:var(--gray-500);margin-top:2px;">'+m.itens.length+' item(s) · '+fmt(m.itens.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0))+'</div>'
-      + '</div>'+badge+'</div>';
+      + '</div>'+badge
+      + '<button onclick="event.stopPropagation();editarNomeMaletaById('+m.id+')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:4px;flex-shrink:0;" title="Renomear" onmouseover="this.style.color=\'var(--primary)\'" onmouseout="this.style.color=\'var(--gray-400)\'"><i class="fas fa-pen" style="font-size:11px;"></i></button>'
+      + '<button onclick="event.stopPropagation();excluirMaletaById('+m.id+')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:4px;flex-shrink:0;" title="Excluir" onmouseover="this.style.color=\'#dc2626\'" onmouseout="this.style.color=\'var(--gray-400)\'"><i class="fas fa-trash" style="font-size:11px;"></i></button>'
+      + '</div>';
   }).join('');
 }
 
@@ -1569,6 +1572,7 @@ function selecionarMaleta(id){
   renderDetalhesMaleta();
   document.getElementById('maleta-vazio').style.display = 'none';
   document.getElementById('maleta-detalhe').style.display = 'flex';
+  document.getElementById('maleta-detalhe').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 function renderDetalhesMaleta(){
@@ -1801,26 +1805,27 @@ function editarNomeMaleta(){
   setTimeout(function(){ var inp = document.getElementById('nova-maleta-nome'); if(inp){inp.focus();inp.select();} }, 150);
 }
 
-function excluirMaletaAtual(){
-  if(!maletaAtual) return;
-  if(!confirm('Excluir "'+maletaAtual.nome+'"? Os itens voltam para o estoque.')) return;
-  // Devolve itens
+function editarNomeMaletaById(id){
+  var m=maletas.find(function(x){return x.id===id;});if(!m)return;
+  maletaAtual=m;editarNomeMaleta();
+}
+function excluirMaletaById(id){
+  var m=maletas.find(function(x){return x.id===id;});if(!m)return;
+  if(!confirm('Excluir "'+m.nome+'"? Os itens voltam para o estoque.'))return;
   var batch=[];
-  maletaAtual.itens.forEach(function(item){
+  m.itens.forEach(function(item){
     var idx=inventory.findIndex(function(i){return String(i.rowId)===String(item.rowId);});
     if(idx!==-1){inventory[idx].Status='Em Estoque';inventory[idx].Revendedor='';}
     batch.push({rowId:item.rowId,status:'Em Estoque',revendedor:'',dataVenda:''});
   });
-  if(batch.length) syncDrive({action:'batchEditInventario',items:batch});
-  maletas = maletas.filter(function(m){ return m.id!==maletaAtual.id; });
-  maletaAtual = null;
-  salvarMaletas();
-  renderListaMaletas();
-  renderDashboard();
-  document.getElementById('maleta-detalhe').style.display='none';
-  document.getElementById('maleta-vazio').style.display='flex';
+  if(batch.length)syncDrive({action:'batchEditInventario',items:batch});
+  maletas=maletas.filter(function(x){return x.id!==id;});
+  if(maletaAtual&&maletaAtual.id===id){maletaAtual=null;document.getElementById('maleta-detalhe').style.display='none';}
+  salvarMaletas();renderListaMaletas();renderDashboard();
   showToast('Maleta excluída','success');
 }
+function excluirMaletaAtual(){if(maletaAtual)excluirMaletaById(maletaAtual.id);}
+
 
 // Compat: funções antigas apontam para novo sistema
 function adicionarEntrega(){ adicionarItemMaleta(); }
