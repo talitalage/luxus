@@ -1301,6 +1301,7 @@ function loadData() {
       if(dc.categorias&&!Array.isArray(dc.categorias)) categorias=dc.categorias;
       if(Array.isArray(dc.fechamentos))  historicFechamentos=dc.fechamentos;
       if(Array.isArray(dc.entregas))    historicEntregas=dc.entregas;
+      if(Array.isArray(dc.maletas))     maletas=dc.maletas;
       carregarRevendedoresSelects();
       renderRevendedores();
       renderDashboard();
@@ -1324,13 +1325,14 @@ function loadData() {
     if(d.categorias&&!Array.isArray(d.categorias)) categorias=d.categorias;
     if(Array.isArray(d.fechamentos))  historicFechamentos=d.fechamentos;
     if(Array.isArray(d.entregas))    historicEntregas=d.entregas;
+    if(Array.isArray(d.maletas))    maletas=d.maletas;
     if(d.titulo)    {localStorage.setItem('luxus_titulo',d.titulo);   document.getElementById('site-title-display').textContent=d.titulo;document.title=d.titulo+' - Sistema de Gestão';}
     if(d.subtitulo) {localStorage.setItem('luxus_subtitulo',d.subtitulo);document.getElementById('site-subtitle-display').textContent=d.subtitulo;}
     if(d.logo)      {localStorage.setItem('luxus_logo',d.logo);var hlogo=document.getElementById('header-logo');if(hlogo){hlogo.src=d.logo;hlogo.style.display='block';}}
     if(Array.isArray(d.statusList))  {statusList=d.statusList;  localStorage.setItem('luxus_status',JSON.stringify(statusList));}
     if(d.statusCores&&typeof d.statusCores==='object'){statusCores=d.statusCores;localStorage.setItem('luxus_status_cores',JSON.stringify(statusCores));}
     // Atualiza cache local
-    try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas}));}catch(e){}
+    try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas}));}catch(e){}
     carregarRevendedoresSelects();
     renderRevendedores();
     renderDashboard();
@@ -1374,7 +1376,7 @@ function syncDrive(payload){
   .then(function(){
     // no-cors sempre resolve — resposta opaca é comportamento normal
     showSyncStatus(true);
-    try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas}));}catch(e){}
+    try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas}));}catch(e){}
   })
   .catch(function(e){
     // Só chega aqui se houver erro de rede real (offline, DNS, etc)
@@ -1489,6 +1491,7 @@ function renderLogMaleta(){
 
 function salvarMaletas(){
   localStorage.setItem('luxus_maletas', JSON.stringify(maletas));
+  syncDrive({action:'salvarMaletas', maletas:maletas});
 }
 
 function criarMaleta(){
@@ -2308,7 +2311,7 @@ function excluirEntregaAtual() {
   renderDashboard();
   renderUltimasEntregas();
   // Salva cache imediatamente para evitar reaparecer
-  try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas}));}catch(e){}
+  try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas}));}catch(e){}
   showToast('Entrega excluída — itens devolvidos ao estoque', 'success');
 }
 
@@ -3048,7 +3051,7 @@ function renderDashTable(){
   var filtered=inventory.filter(function(i){
     var s=String(i.Codigo).toLowerCase().includes(search)||(i.Descricao||'').toLowerCase().includes(search)||(i.Categoria||'').toLowerCase().includes(search)||(i.Revendedor||'').toLowerCase().includes(search);
     if(!s)return false;
-    if(keys.length>0){var ok=(dashStatusFilters.estoque&&i.Status==='Em Estoque')||(dashStatusFilters.consignado&&i.Status!=='Em Estoque'&&i.Status!=='Vendido')||(dashStatusFilters.vendido&&i.Status==='Vendido');if(!ok)return false;}
+    if(keys.length>0){var ok=(dashStatusFilters.estoque&&i.Status==='Em Estoque')||(dashStatusFilters.maleta&&i.Status==='Em Maleta')||(dashStatusFilters.consignado&&i.Status==='Consignado')||(dashStatusFilters.vendido&&i.Status==='Vendido');if(!ok)return false;}
     if(dashTipoFilter==='__geral__'){if(i.Tipo&&i.Tipo!=='Geral')return false;}
     else if(dashTipoFilter!=='all'&&i.Tipo!==dashTipoFilter)return false;
     if(dashRevFilter&&i.Revendedor!==dashRevFilter)return false;
@@ -3670,7 +3673,7 @@ function finalizarFechamento(){
   document.getElementById('fechamento-parcelas-preview').style.display='none';
   atualizarResumoFechamento();renderConsignados();renderDashboard();renderHistorico();
   showToast('Fechamento concluído!','success');
-  try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas}));}catch(e){}
+  try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas}));}catch(e){}
   syncDrive({action:'addFechamento',revendedor:nome,percentual:(rev&&rev.Percentual)||30,
     qtdConsignados:reg.qtdConsignados,qtdVendidos:reg.qtdVendidos,qtdDevolvidos:reg.qtdDevolvidos,
     valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,
