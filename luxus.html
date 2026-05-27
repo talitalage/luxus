@@ -4009,12 +4009,31 @@ function aplicarIdentidade(dados){
 function salvarConfiguracao(){var url=document.getElementById('config-script-url').value.trim();if(!url){showToast('Digite a URL primeiro','warning');return;}localStorage.setItem('luxus_script_url',url);scriptUrl=url;showToast('✅ URL salva!','success');loadData();}
 function uploadTudoParaDrive(){
   if(!scriptUrl){showToast('Configure o URL do script primeiro','warning');return;}
-  if(!inventory.length&&!revendedores.length){
-    // Tenta carregar do cache primeiro
-    var cache=localStorage.getItem('luxus_cache');
-    if(cache){try{var dc=JSON.parse(cache);if(Array.isArray(dc.inventory))inventory=dc.inventory;if(Array.isArray(dc.revendedores))revendedores=dc.revendedores;if(dc.categorias)categorias=dc.categorias;if(Array.isArray(dc.fechamentos))historicFechamentos=dc.fechamentos;if(Array.isArray(dc.entregas))historicEntregas=dc.entregas;if(Array.isArray(dc.maletas))maletas=dc.maletas;}catch(e){}}
+  // Carrega tudo do cache local
+  var cache=localStorage.getItem('luxus_cache');
+  if(cache){try{var dc=JSON.parse(cache);
+    if(Array.isArray(dc.inventory)&&dc.inventory.length)    inventory=dc.inventory;
+    if(Array.isArray(dc.revendedores)&&dc.revendedores.length) revendedores=dc.revendedores;
+    if(dc.categorias&&Object.keys(dc.categorias).length)    categorias=dc.categorias;
+    if(Array.isArray(dc.fechamentos))  historicFechamentos=dc.fechamentos;
+    if(Array.isArray(dc.entregas))     historicEntregas=dc.entregas;
+    if(Array.isArray(dc.maletas))      maletas=dc.maletas;
+  }catch(e){}}
+
+  // Se inventory ainda vazio, tenta reconstruir dos itens das maletas
+  if(!inventory.length && maletas.length){
+    var rowIds={};
+    maletas.forEach(function(m){
+      (m.itens||[]).forEach(function(item){
+        if(!rowIds[item.rowId]){ rowIds[item.rowId]=true; inventory.push(item); }
+      });
+    });
+    showToast('Inventário reconstruído das maletas: '+inventory.length+' itens','info');
   }
-  showToast('Enviando dados para o Drive...','info');
+
+  if(!inventory.length&&!revendedores.length){showToast('Nenhum dado local encontrado','warning');return;}
+  showToast('Enviando '+inventory.length+' produto(s) para o Drive...','info');
+
   var payload={action:'uploadTudo',inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas};
   fetch(scriptUrl+'?payload='+encodeURIComponent(JSON.stringify(payload)),{method:'GET',cache:'no-cache'})
   .then(function(r){return r.json();})
@@ -4022,6 +4041,8 @@ function uploadTudoParaDrive(){
     if(res.success){
       showToast('✅ '+res.inventory+' produto(s) e '+res.revendedores+' revendedor(es) enviados!','success');
       showConfigStatus('Upload concluído: '+res.inventory+' produtos, '+res.revendedores+' revendedores','success');
+      // Recarrega do Drive para confirmar
+      setTimeout(function(){loadData();},2000);
     } else {
       showToast('Erro no upload: '+(res.error||'desconhecido'),'warning');
     }
