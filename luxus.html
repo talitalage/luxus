@@ -737,6 +737,9 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
             <button onclick="testarConexao()" class="btn-secondary" id="btn-testar" style="flex:1;"><i class="fas fa-plug" style="margin-right:6px;"></i>Testar</button>
             <button onclick="salvarConfiguracao()" class="btn-primary" style="flex:1;"><i class="fas fa-save" style="margin-right:6px;"></i>Salvar</button>
           </div>
+          <button onclick="uploadTudoParaDrive()" class="btn-secondary" style="width:100%;padding:.75rem;color:#10b981;border-color:#10b981;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background=''">
+            <i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Enviar todos os dados locais para o Drive
+          </button>
           <div id="config-status" style="display:none;font-size:13px;padding:.75rem;border-radius:8px;"></div>
         </div>
       </div>
@@ -4004,6 +4007,28 @@ function aplicarIdentidade(dados){
 }
 
 function salvarConfiguracao(){var url=document.getElementById('config-script-url').value.trim();if(!url){showToast('Digite a URL primeiro','warning');return;}localStorage.setItem('luxus_script_url',url);scriptUrl=url;showToast('✅ URL salva!','success');loadData();}
+function uploadTudoParaDrive(){
+  if(!scriptUrl){showToast('Configure o URL do script primeiro','warning');return;}
+  if(!inventory.length&&!revendedores.length){
+    // Tenta carregar do cache primeiro
+    var cache=localStorage.getItem('luxus_cache');
+    if(cache){try{var dc=JSON.parse(cache);if(Array.isArray(dc.inventory))inventory=dc.inventory;if(Array.isArray(dc.revendedores))revendedores=dc.revendedores;if(dc.categorias)categorias=dc.categorias;if(Array.isArray(dc.fechamentos))historicFechamentos=dc.fechamentos;if(Array.isArray(dc.entregas))historicEntregas=dc.entregas;if(Array.isArray(dc.maletas))maletas=dc.maletas;}catch(e){}}
+  }
+  showToast('Enviando dados para o Drive...','info');
+  var payload={action:'uploadTudo',inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas};
+  fetch(scriptUrl+'?payload='+encodeURIComponent(JSON.stringify(payload)),{method:'GET',cache:'no-cache'})
+  .then(function(r){return r.json();})
+  .then(function(res){
+    if(res.success){
+      showToast('✅ '+res.inventory+' produto(s) e '+res.revendedores+' revendedor(es) enviados!','success');
+      showConfigStatus('Upload concluído: '+res.inventory+' produtos, '+res.revendedores+' revendedores','success');
+    } else {
+      showToast('Erro no upload: '+(res.error||'desconhecido'),'warning');
+    }
+  })
+  .catch(function(e){ showToast('Erro ao conectar: '+e.message,'warning'); });
+}
+
 function testarConexao(){
   var url=document.getElementById('config-script-url').value.trim();
   var btn=document.getElementById('btn-testar');
