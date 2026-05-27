@@ -328,9 +328,14 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
             </div>
           </div>
         </div>
-        <div style="display:flex;gap:.75rem;margin-top:.75rem;">
+        <div id="maleta-btns" style="display:flex;gap:.75rem;margin-top:.75rem;flex-wrap:wrap;">
           <button onclick="salvarMaleta()" class="btn-secondary" style="flex:1;padding:.75rem;"><i class="fas fa-save" style="margin-right:6px;"></i>Salvar</button>
           <button onclick="entregarMaleta()" class="btn-primary" style="flex:1;padding:.75rem;"><i class="fas fa-paper-plane" style="margin-right:6px;"></i>Entregar</button>
+        </div>
+        <!-- LOG DA MALETA -->
+        <div id="maleta-log-section" style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--gray-200);display:none;">
+          <div style="font-size:11px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem;">Histórico</div>
+          <div id="maleta-log-lista" style="display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto;"></div>
         </div>
       </div>
     </div>
@@ -1444,6 +1449,44 @@ function carregarMaletas(){
   renderListaMaletas();
 }
 
+function addLogMaleta(maleta, evento){
+  if(!maleta) return;
+  if(!maleta.log) maleta.log = [];
+  maleta.log.push({ data: new Date().toISOString(), evento: evento });
+  salvarMaletas();
+}
+
+function renderLogMaleta(){
+  if(!maletaAtual) return;
+  var sec = document.getElementById('maleta-log-section');
+  var lista = document.getElementById('maleta-log-lista');
+  if(!sec||!lista) return;
+  var log = maletaAtual.log || [];
+  if(!log.length){ sec.style.display='none'; return; }
+  sec.style.display='block';
+  // Mostra do mais recente para o mais antigo
+  lista.innerHTML = log.slice().reverse().map(function(entry){
+    var d = new Date(entry.data);
+    var dt = d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'})
+      +' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    var ico = entry.evento.includes('Entregue')?'fa-paper-plane':
+              entry.evento.includes('Salva')?'fa-save':
+              entry.evento.includes('Criada')?'fa-plus-circle':
+              entry.evento.includes('Atrelada')?'fa-link':
+              entry.evento.includes('item')||entry.evento.includes('Item')?'fa-box':
+              'fa-circle';
+    var cor = entry.evento.includes('Entregue')?'#10b981':
+              entry.evento.includes('Criada')?'#6366f1':
+              entry.evento.includes('Atrelada')?'#3b82f6':'#9ca3af';
+    return '<div style="display:flex;align-items:flex-start;gap:8px;padding:4px 0;">'
+      +'<i class="fas '+ico+'" style="color:'+cor+';font-size:10px;margin-top:3px;flex-shrink:0;"></i>'
+      +'<div style="flex:1;">'
+        +'<div style="font-size:12px;color:var(--gray-700);">'+entry.evento+'</div>'
+        +'<div style="font-size:10px;color:var(--gray-400);">'+dt+'</div>'
+      +'</div></div>';
+  }).join('');
+}
+
 function salvarMaletas(){
   localStorage.setItem('luxus_maletas', JSON.stringify(maletas));
 }
@@ -1485,7 +1528,8 @@ function confirmarNovaMaleta(){
     return;
   }
   // Criar
-  var maleta = { id: Date.now(), nome: nome, itens: [], revendedorId: '', revendedor: '', dataCriacao: new Date().toISOString(), entregue: false };
+  var maleta = { id: Date.now(), nome: nome, itens: [], revendedorId: '', revendedor: '', dataCriacao: new Date().toISOString(), entregue: false, log: [] };
+  addLogMaleta(maleta, 'Maleta criada');
   maletas.unshift(maleta);
   salvarMaletas();
   renderListaMaletas();
@@ -1564,6 +1608,18 @@ function renderDetalhesMaleta(){
       + '<button onclick="removerItemMaleta('+idx+')" style="background:none;border:none;cursor:pointer;color:var(--gray-300);" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'var(--gray-300)\'"><i class="fas fa-times"></i></button>'
       + '</div>';
   }).join('');
+
+  // Botões de ação — sempre visíveis, adapta conforme estado
+  var btnsEl = document.getElementById('maleta-btns');
+  if(btnsEl){
+    var docBtn = m.entregue
+      ? '<button onclick="abrirDocumentoMaleta()" class="btn-secondary" style="flex:1;padding:.75rem;color:'+(m.reciboUrl?'#10b981':'#f59e0b')+';border-color:'+(m.reciboUrl?'#86efac':'#fde047')+';"><i class="fas '+(m.reciboUrl?'fa-file-pdf':'fa-pen-nib')+'" style="margin-right:6px;"></i>'+(m.reciboUrl?'Ver documento':'Assinar documento')+'</button>'
+      : '';
+    btnsEl.innerHTML = docBtn
+      + '<button onclick="salvarMaleta()" class="btn-secondary" style="flex:1;padding:.75rem;"><i class="fas fa-save" style="margin-right:6px;"></i>Salvar</button>'
+      + '<button onclick="entregarMaleta()" class="btn-primary" style="flex:1;padding:.75rem;"><i class="fas fa-paper-plane" style="margin-right:6px;"></i>'+(m.entregue?'Reatrelar':'Entregar')+'</button>';
+  }
+  renderLogMaleta();
 }
 
 function onChangeMaletaRevendedor(){
@@ -1585,25 +1641,55 @@ function copiarLinkMaleta(){
   navigator.clipboard.writeText(el.value).then(function(){ showToast('Link copiado!','success'); });
 }
 
+function abrirDocumentoMaleta(){
+  if(!maletaAtual) return;
+  var m = maletaAtual;
+  // Procura entrega correspondente no histórico
+  var doc = historicEntregas.find(function(e){
+    return e.nomeMaleta===m.nome || e.revendedor===m.revendedor;
+  });
+  if(!doc){
+    // Monta doc a partir da maleta
+    doc = { id: m.id, tipo:'entrega', data: m.dataEntrega||m.dataCriacao,
+      revendedor: m.revendedor||'(sem revendedor)', revendedorId: m.revendedorId,
+      nomeMaleta: m.nome, itens: m.itens.slice(), totalItens: m.itens.length,
+      valorTotal: m.itens.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0),
+      valorCusto: m.itens.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0),
+      reciboUrl: m.reciboUrl||null, assinado: !!m.reciboUrl
+    };
+  }
+  if(doc.reciboUrl){
+    window.open(doc.reciboUrl,'_blank');
+  } else {
+    _entregaDoc = doc;
+    abrirModalEntrega(doc);
+  }
+}
+
 function adicionarItemMaleta(){
   if(!maletaAtual){ showToast('Selecione uma maleta primeiro','warning'); return; }
   var codigo = (document.getElementById('maleta-codigo').value||'').trim().toUpperCase();
   if(!codigo) return;
   document.getElementById('maleta-codigo').value = '';
 
+  // Permite Em Estoque, Em Maleta E Consignado (para maletas já entregues)
   var encontrados = inventory.filter(function(i){
+    var statusOk = i.Status==='Em Estoque'||i.Status==='Em Maleta'||
+      (maletaAtual.entregue && i.Status==='Consignado' && i.Revendedor===maletaAtual.revendedor);
     return (i.Codigo||'').toUpperCase()===codigo
-      && (i.Status==='Em Estoque'||i.Status==='Em Maleta')
+      && statusOk
       && !maletaAtual.itens.find(function(x){ return String(x.rowId)===String(i.rowId); });
   });
   if(!encontrados.length){ showToast('Nenhum item disponível com código: '+codigo,'warning'); return; }
 
   function addItem(item){
     maletaAtual.itens.push(item);
-    // Marca como Em Maleta
+    var novoStatus = maletaAtual.entregue ? 'Consignado' : 'Em Maleta';
+    var novoRev = maletaAtual.entregue ? maletaAtual.revendedor : '';
     var idx=inventory.findIndex(function(i){return String(i.rowId)===String(item.rowId);});
-    if(idx!==-1) inventory[idx].Status='Em Maleta';
-    syncDrive({action:'editInventario',rowId:item.rowId,status:'Em Maleta',revendedor:''});
+    if(idx!==-1){ inventory[idx].Status=novoStatus; inventory[idx].Revendedor=novoRev; }
+    syncDrive({action:'editInventario',rowId:item.rowId,status:novoStatus,revendedor:novoRev});
+    addLogMaleta(maletaAtual, '+1 item adicionado: '+item.Codigo+(item.Descricao?' — '+item.Descricao:''));
     salvarMaletas();
     renderDetalhesMaleta();
     document.getElementById('maleta-codigo').focus();
@@ -1620,6 +1706,7 @@ function removerItemMaleta(idx){
   var invIdx = inventory.findIndex(function(i){ return String(i.rowId)===String(item.rowId); });
   if(invIdx!==-1){ inventory[invIdx].Status='Em Estoque'; inventory[invIdx].Revendedor=''; }
   syncDrive({action:'editInventario',rowId:item.rowId,status:'Em Estoque',revendedor:''});
+  addLogMaleta(maletaAtual, '-1 item removido: '+item.Codigo+(item.Descricao?' — '+item.Descricao:''));
   maletaAtual.itens.splice(idx,1);
   salvarMaletas();
   renderDetalhesMaleta();
@@ -1637,6 +1724,7 @@ function salvarMaleta(){
   salvarMaletas();
   renderListaMaletas();
   renderDetalhesMaleta();
+  addLogMaleta(maletaAtual, 'Maleta salva'+(maletaAtual.revendedor?' — Revendedor: '+maletaAtual.revendedor:''));
   showToast('Maleta "'+maletaAtual.nome+'" salva!','success');
 }
 
@@ -1663,6 +1751,7 @@ function entregarMaleta(){
   maletaAtual.revendedorId = sel.value;
   maletaAtual.revendedor = rev.Nome;
   maletaAtual.dataEntrega = dataEntrega;
+  addLogMaleta(maletaAtual, 'Maleta entregue para '+rev.Nome);
   salvarMaletas();
 
   // Cria registro de entrega para histórico
@@ -2077,6 +2166,8 @@ function finalDownloadEntrega(c,doc) {
       // Salva URL na entrega local
       var idx=historicEntregas.findIndex(function(e){return e.id===doc.id;});
       if(idx!==-1){ historicEntregas[idx].reciboUrl=res.url; historicEntregas[idx].assinado=true; }
+      var mal=maletas.find(function(m){return m.id===doc.id||m.nome===doc.nomeMaleta;});
+      if(mal){ mal.reciboUrl=res.url; salvarMaletas(); renderDetalhesMaleta(); }
       mostrarLinkRecibo(res.url, doc.revendedor);
       renderUltimasEntregas();
     } else {
@@ -2168,6 +2259,8 @@ function confirmarAtrelar(id) {
     historicEntregas[idx].revendedor = rev.Nome;
     historicEntregas[idx].revendedorId = revSel.value;
   }
+  var malatrelar = maletas.find(function(m){ return m.id===id; });
+  if(malatrelar) addLogMaleta(malatrelar, 'Revendedor atrelado: '+rev.Nome);
 
   _entregaDoc = historicEntregas[idx] || doc;
   renderDashboard();
