@@ -1208,7 +1208,7 @@ var statusList       = ['Em Estoque','Consignado','Vendido'];
 var statusCores      = {'Em Estoque':'#10b981','Consignado':'#3b82f6','Vendido':'#ef4444'};
 var historicFechamentos = [];
 var historicEntregas    = [];
-var scriptUrl        = '';
+var scriptUrl        = 'https://script.google.com/macros/s/AKfycbzPf0AHJEr2dnw5diNb4M8UdjxInZ7W3e4FJW7Om7H78mvT5_YVE-sSq_jU4tY6jLNn/exec';
 var modoSelecao      = false;
 var itensSelecionados= {};
 
@@ -1264,7 +1264,9 @@ document.addEventListener('DOMContentLoaded', function() {
   var lcol=localStorage.getItem('luxus_colunas');     if(lcol)try{colunasConfig=JSON.parse(lcol);}catch(e){}
   var ldev=localStorage.getItem('luxus_device')||'desktop'; setDevice(ldev);
 
-  scriptUrl=localStorage.getItem('luxus_script_url')||'';
+  var saved = localStorage.getItem('luxus_script_url');
+  if(saved) scriptUrl = saved;
+  // scriptUrl já tem valor padrão embutido no código
   var ui=document.getElementById('config-script-url'); if(ui)ui.value=scriptUrl;
 
   var el=document.getElementById('header-username'); if(el)el.textContent='Lu';
@@ -4020,34 +4022,48 @@ function uploadTudoParaDrive(){
     if(Array.isArray(dc.maletas))      maletas=dc.maletas;
   }catch(e){}}
 
-  // Se inventory ainda vazio, tenta reconstruir dos itens das maletas
+  // Reconstrói inventory dos itens da maleta se vazio
   if(!inventory.length && maletas.length){
     var rowIds={};
     maletas.forEach(function(m){
       (m.itens||[]).forEach(function(item){
-        if(!rowIds[item.rowId]){ rowIds[item.rowId]=true; inventory.push(item); }
+        if(!rowIds[item.rowId]){rowIds[item.rowId]=true;inventory.push(item);}
       });
     });
-    showToast('Inventário reconstruído das maletas: '+inventory.length+' itens','info');
+    showToast('Inventário reconstruído: '+inventory.length+' itens','info');
   }
 
-  if(!inventory.length&&!revendedores.length){showToast('Nenhum dado local encontrado','warning');return;}
+  if(!inventory.length&&!revendedores.length&&!maletas.length){showToast('Nenhum dado local encontrado','warning');return;}
   showToast('Enviando '+inventory.length+' produto(s) para o Drive...','info');
 
   var payload={action:'uploadTudo',inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas};
-  fetch(scriptUrl+'?payload='+encodeURIComponent(JSON.stringify(payload)),{method:'GET',cache:'no-cache'})
-  .then(function(r){return r.json();})
-  .then(function(res){
-    if(res.success){
-      showToast('✅ '+res.inventory+' produto(s) e '+res.revendedores+' revendedor(es) enviados!','success');
-      showConfigStatus('Upload concluído: '+res.inventory+' produtos, '+res.revendedores+' revendedores','success');
-      // Recarrega do Drive para confirmar
-      setTimeout(function(){loadData();},2000);
-    } else {
-      showToast('Erro no upload: '+(res.error||'desconhecido'),'warning');
-    }
-  })
-  .catch(function(e){ showToast('Erro ao conectar: '+e.message,'warning'); });
+
+  // Usa POST com no-cors + depois verifica via GET
+  fetch(scriptUrl,{
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify(payload)
+  }).then(function(){
+    // POST no-cors não retorna resposta — aguarda 3s e testa conexão
+    setTimeout(function(){
+      fetch(scriptUrl+'?action=getTudo',{method:'GET',cache:'no-cache'})
+      .then(function(r){return r.json();})
+      .then(function(res){
+        var qtd=(res.inventory||[]).length;
+        if(qtd>0){
+          showToast('✅ '+qtd+' produto(s) salvos no Drive!','success');
+          showConfigStatus('Upload concluído: '+qtd+' produtos','success');
+          // Recarrega
+          inventory=res.inventory; revendedores=res.revendedores||[]; categorias=res.categorias||categorias;
+          historicFechamentos=res.fechamentos||[]; historicEntregas=res.entregas||[]; maletas=res.maletas||maletas;
+          renderDashboard(); renderRevendedores();
+        } else {
+          showToast('⚠️ Dados enviados mas Drive retornou vazio — verifique a publicação do script','warning');
+        }
+      }).catch(function(){ showToast('Enviado! Recarregue para confirmar.','info'); });
+    }, 3000);
+  }).catch(function(e){ showToast('Erro: '+e.message,'warning'); });
 }
 
 function testarConexao(){
