@@ -259,8 +259,8 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
 <!-- OPERAÇÕES -->
 <div id="content-entrada" class="tab-content">
   <div style="display:flex;gap:0;margin-bottom:1.25rem;background:var(--white);border:1px solid var(--gray-200);border-radius:8px;overflow:hidden;width:fit-content;flex-wrap:wrap;">
-    <button id="subtab-entrega-btn"    onclick="switchSubtab('entrega')"    style="padding:8px 20px;font-size:13px;font-weight:500;background:transparent;color:var(--gray-600);border:none;cursor:pointer;"><i class="fas fa-hand-holding" style="margin-right:6px;"></i>Entrega</button>
     <button id="subtab-entrada-btn"    onclick="switchSubtab('entrada')"    style="padding:8px 20px;font-size:13px;font-weight:600;background:var(--primary);color:#fff;border:none;cursor:pointer;"><i class="fas fa-box-open" style="margin-right:6px;"></i>Entrada de Produto</button>
+    <button id="subtab-entrega-btn"    onclick="switchSubtab('entrega')"    style="padding:8px 20px;font-size:13px;font-weight:500;background:transparent;color:var(--gray-600);border:none;cursor:pointer;"><i class="fas fa-hand-holding" style="margin-right:6px;"></i>Entrega</button>
     <button id="subtab-fechamento-btn" onclick="switchSubtab('fechamento')" style="padding:8px 20px;font-size:13px;font-weight:500;background:transparent;color:var(--gray-600);border:none;cursor:pointer;"><i class="fas fa-calculator" style="margin-right:6px;"></i>Fechamento</button>
     <button id="subtab-financeiro-btn" onclick="switchSubtab('financeiro')" style="padding:8px 20px;font-size:13px;font-weight:500;background:transparent;color:var(--gray-600);border:none;cursor:pointer;"><i class="fas fa-dollar-sign" style="margin-right:6px;"></i>Financeiro</button>
     <button id="subtab-conferencia-btn" onclick="switchSubtab('conferencia')" style="padding:8px 20px;font-size:13px;font-weight:500;background:transparent;color:var(--gray-600);border:none;cursor:pointer;"><i class="fas fa-clipboard-check" style="margin-right:6px;"></i>Conferência</button>
@@ -1282,7 +1282,12 @@ document.addEventListener('DOMContentLoaded', function() {
   var hashTab=(location.hash||'').replace('#','');
 
   if(scriptUrl){
-    if(tabs.indexOf(hashTab)!==-1){switchTab(hashTab);}
+    if(hashTab.indexOf('operacoes-')===0){
+      switchTab('entrada');
+      setTimeout(function(){ switchSubtab(hashTab.replace('operacoes-','')); }, 500);
+    } else if(tabs.indexOf(hashTab)!==-1){
+      switchTab(hashTab);
+    }
     loadData();
   } else {
     switchTab('config');
@@ -2948,8 +2953,19 @@ function atualizarMaletasConf() {
   var sel = document.getElementById('conf-filtro-maleta');
   if (!sel) return;
   sel.innerHTML = '<option value="todos">Todas as maletas</option>';
+
+  // Maletas do array (em preparo)
   (maletas||[]).forEach(function(m){
-    sel.innerHTML += '<option value="'+m.id+'">'+m.nome+' ('+m.itens.length+' itens)</option>';
+    if(m.itens && m.itens.length)
+      sel.innerHTML += '<option value="maleta_'+m.id+'">'+m.nome+' ('+m.itens.length+' itens)</option>';
+  });
+
+  // Maletas ativas (itens consignados por revendedor)
+  var porRev = {};
+  inventory.filter(function(i){ return i.Revendedor && (i.Status==='Consignado'||i.Status==='Em Maleta'); })
+    .forEach(function(i){ if(!porRev[i.Revendedor])porRev[i.Revendedor]=0; porRev[i.Revendedor]++; });
+  Object.keys(porRev).sort().forEach(function(nome){
+    sel.innerHTML += '<option value="rev_'+nome+'">Maleta '+nome+' ('+porRev[nome]+' itens)</option>';
   });
 }
 
@@ -2962,10 +2978,16 @@ function iniciarConferencia() {
 
   // Se filtrou por maleta específica, usa os itens dela
   if (maletaId !== 'todos') {
-    var maleta = (maletas||[]).find(function(m){ return String(m.id)===String(maletaId); });
-    confEsperados = maleta ? maleta.itens.map(function(item){
-      return inventory.find(function(i){ return String(i.rowId)===String(item.rowId); }) || item;
-    }).filter(Boolean) : [];
+    if(maletaId.indexOf('maleta_')===0){
+      var mid = parseInt(maletaId.replace('maleta_',''));
+      var maleta = (maletas||[]).find(function(m){ return m.id===mid; });
+      confEsperados = maleta ? maleta.itens.map(function(item){
+        return inventory.find(function(i){ return String(i.rowId)===String(item.rowId); }) || item;
+      }).filter(Boolean) : [];
+    } else if(maletaId.indexOf('rev_')===0){
+      var nomeRev = maletaId.replace('rev_','');
+      confEsperados = inventory.filter(function(i){ return i.Revendedor===nomeRev && (i.Status==='Consignado'||i.Status==='Em Maleta'); });
+    }
   } else {
     confEsperados = inventory.filter(function(i) {
       if (status === 'todos')    { if (i.Status === 'Vendido') return false; }
@@ -3082,14 +3104,29 @@ function limparConferencia() {
   iniciarConferencia();
 }
 
+function switchTab(tab){
+  var tabs=['dashboard','operacoes','relatorio','configuracoes'];
+  tabs.forEach(function(t){
+    var el=document.getElementById('content-'+t==='operacoes'?'entrada':t);
+    var btn=document.getElementById('tab-'+t+'-btn');
+    if(t==='operacoes'){el=document.getElementById('content-entrada');}
+    if(el)el.style.display=(t===tab)?'block':'none';
+    if(btn){btn.style.background=(t===tab)?'rgba(255,255,255,.15)':'transparent';btn.style.color=(t===tab)?'#fff':'rgba(255,255,255,.75)';}
+  });
+  location.hash = tab;
+  if(tab==='relatorio'){initRelatorio();}
+  if(tab==='configuracoes'){renderConfiguracoes&&renderConfiguracoes();}
+}
+
 function switchSubtab(sub){
-  var tabs=['entrega','entrada','fechamento','financeiro','conferencia','historico'];
+  var tabs=['entrada','entrega','fechamento','financeiro','conferencia','historico'];
   tabs.forEach(function(t){
     var el=document.getElementById('subtab-'+t);
     if(el)el.style.display=(t===sub)?(t==='historico'||t==='financeiro'||t==='conferencia'?'block':(t==='entrega'||t==='entrada'?'grid':'block')):'none';
     var btn=document.getElementById('subtab-'+t+'-btn');
     if(btn){btn.style.background=(t===sub)?'var(--primary)':'transparent';btn.style.color=(t===sub)?'#fff':'var(--gray-600)';btn.style.fontWeight=(t===sub)?'600':'500';}
   });
+  location.hash = 'operacoes-'+sub;
   if(sub==='fechamento')carregarRevendedoresFechamento();
   if(sub==='historico')renderHistorico();
   if(sub==='financeiro')renderFinanceiro();
