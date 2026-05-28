@@ -740,6 +740,9 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
           <button onclick="uploadTudoParaDrive()" class="btn-secondary" style="width:100%;padding:.75rem;color:#10b981;border-color:#10b981;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background=''">
             <i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Enviar todos os dados locais para o Drive
           </button>
+          <button onclick="fazerBackupManual()" id="btn-backup-manual" class="btn-secondary" style="width:100%;padding:.75rem;margin-top:.5rem;color:#6366f1;border-color:#a5b4fc;" onmouseover="this.style.background='#f5f3ff'" onmouseout="this.style.background=''">
+            <i class="fas fa-database" style="margin-right:6px;"></i>Fazer backup agora
+          </button>
           <div id="config-status" style="display:none;font-size:13px;padding:.75rem;border-radius:8px;"></div>
         </div>
       </div>
@@ -4059,6 +4062,27 @@ function aplicarIdentidade(dados){
 }
 
 function salvarConfiguracao(){var url=document.getElementById('config-script-url').value.trim();if(!url){showToast('Digite a URL primeiro','warning');return;}localStorage.setItem('luxus_script_url',url);scriptUrl=url;showToast('✅ URL salva!','success');loadData();}
+function fazerBackupManual(){
+  if(!scriptUrl){showToast('Configure o URL do script primeiro','warning');return;}
+  var btn=document.getElementById('btn-backup-manual');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Fazendo backup...';}
+  fetch(scriptUrl+'?payload='+encodeURIComponent(JSON.stringify({action:'fazerBackup'})),{method:'GET',cache:'no-cache'})
+  .then(function(r){return r.json();})
+  .then(function(res){
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-database" style="margin-right:6px;"></i>Fazer backup agora';}
+    if(res&&res.success){
+      showToast('✅ Backup criado: '+res.nome,'success');
+      showConfigStatus('Backup salvo em Drive/Backups/'+res.nome,'success');
+    } else {
+      showToast('Erro no backup: '+(res&&res.error||'desconhecido'),'warning');
+    }
+  })
+  .catch(function(e){
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-database" style="margin-right:6px;"></i>Fazer backup agora';}
+    showToast('Erro: '+e.message,'warning');
+  });
+}
+
 function uploadTudoParaDrive(){
   if(!scriptUrl){showToast('Configure o URL do script primeiro','warning');return;}
   // Carrega tudo do cache local
