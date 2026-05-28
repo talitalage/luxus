@@ -2954,13 +2954,19 @@ function atualizarMaletasConf() {
   if (!sel) return;
   sel.innerHTML = '<option value="todos">Todas as maletas</option>';
 
-  // Maletas do array (em preparo)
+  // Revendedores que já têm maleta ativa (consignado/em maleta)
+  var revsAtivos = {};
+  inventory.filter(function(i){ return i.Revendedor && (i.Status==='Consignado'||i.Status==='Em Maleta'); })
+    .forEach(function(i){ revsAtivos[i.Revendedor]=true; });
+
+  // Maletas do array que NÃO têm revendedor ativo já listado
   (maletas||[]).forEach(function(m){
-    if(m.itens && m.itens.length)
+    if(m.itens && m.itens.length && !revsAtivos[m.revendedor]){
       sel.innerHTML += '<option value="maleta_'+m.id+'">'+m.nome+' ('+m.itens.length+' itens)</option>';
+    }
   });
 
-  // Maletas ativas (itens consignados por revendedor)
+  // Maletas ativas por revendedor
   var porRev = {};
   inventory.filter(function(i){ return i.Revendedor && (i.Status==='Consignado'||i.Status==='Em Maleta'); })
     .forEach(function(i){ if(!porRev[i.Revendedor])porRev[i.Revendedor]=0; porRev[i.Revendedor]++; });
