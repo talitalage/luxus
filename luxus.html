@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Luxus - Sistema de Gestão</title>
 <link rel="icon" type="image/png" href="https://i.ibb.co/6R29d3Dj/luxus-logo.png">
-<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 :root {
@@ -18,7 +18,7 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--gray-50);color:var(--gray-700);min-height:100vh;line-height:1.6;overflow-x:hidden;}
-h1,h2,h3,h4{font-family:'Work Sans',sans-serif;font-weight:600;}
+h1,h2,h3,h4{font-family:'Inter Tight',sans-serif;font-weight:600;}
 .header-dark{background:linear-gradient(135deg,#0f172a,#1e293b);height:72px;display:flex;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.12);}
 .nav-tab{background:transparent;color:rgba(255,255,255,.65);border:none;border-bottom:2px solid transparent;padding:0 1rem;height:72px;font-weight:500;font-size:.85rem;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:inherit;}
 .nav-tab:hover{color:rgba(255,255,255,.95);background:rgba(255,255,255,.06);}
@@ -168,7 +168,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
     </div>
     <div class="stat-card" onclick="filtrarDashboard('vendido')">
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div><p style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Total em Vendas</p><div style="background:#ccfbf1;padding:.75rem;border-radius:.75rem;display:inline-flex;"><i class="fas fa-dollar-sign" style="color:#0f766e;font-size:1.25rem;"></i></div></div>
+        <div><p style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Total em Vendas</p><div style="background:#ccfbf1;padding:.75rem;border-radius:.75rem;display:inline-flex;font-size:1.1rem;font-weight:800;color:#0f766e;font-family:'Inter Tight',sans-serif;letter-spacing:-.5px;">R$</div></div>
         <div style="text-align:right;"><p style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Vendido</p><h3 id="dash-vendido" style="font-size:1.5rem;font-weight:700;color:#14b8a6;line-height:1;">R$ 0</h3><p id="label-vendido-sub" style="font-size:10px;color:var(--gray-400);margin-top:4px;">Todo o histórico</p></div>
       </div>
     </div>
@@ -3104,20 +3104,6 @@ function limparConferencia() {
   iniciarConferencia();
 }
 
-function switchTab(tab){
-  var tabs=['dashboard','operacoes','relatorio','configuracoes'];
-  tabs.forEach(function(t){
-    var el=document.getElementById('content-'+t==='operacoes'?'entrada':t);
-    var btn=document.getElementById('tab-'+t+'-btn');
-    if(t==='operacoes'){el=document.getElementById('content-entrada');}
-    if(el)el.style.display=(t===tab)?'block':'none';
-    if(btn){btn.style.background=(t===tab)?'rgba(255,255,255,.15)':'transparent';btn.style.color=(t===tab)?'#fff':'rgba(255,255,255,.75)';}
-  });
-  location.hash = tab;
-  if(tab==='relatorio'){initRelatorio();}
-  if(tab==='configuracoes'){renderConfiguracoes&&renderConfiguracoes();}
-}
-
 function switchSubtab(sub){
   var tabs=['entrada','entrega','fechamento','financeiro','conferencia','historico'];
   tabs.forEach(function(t){
@@ -3126,8 +3112,7 @@ function switchSubtab(sub){
     var btn=document.getElementById('subtab-'+t+'-btn');
     if(btn){btn.style.background=(t===sub)?'var(--primary)':'transparent';btn.style.color=(t===sub)?'#fff':'var(--gray-600)';btn.style.fontWeight=(t===sub)?'600':'500';}
   });
-  location.hash = 'operacoes-'+sub;
-  if(sub==='fechamento')carregarRevendedoresFechamento();
+  history.replaceState(null,'','#operacoes-'+sub);
   if(sub==='historico')renderHistorico();
   if(sub==='financeiro')renderFinanceiro();
   if(sub==='entrega'){renderUltimasEntregas();carregarSelectEntrega();renderMaletasAtivas();}
@@ -3243,9 +3228,9 @@ function renderEstoqueDash(){
       +'<span style="flex:1;margin:0 8px;border-bottom:1px solid #e0e7ff;display:block;height:1px;align-self:center;"></span>'
       +'<span style="font-size:13px;font-weight:600;color:var(--gray-600);margin-right:6px;">'+totSJ+'</span>'
       +(valSJ>0?'<span style="font-size:12px;font-weight:700;color:#10b981;">'+fmt(valSJ)+'</span>':'')
-      +'<i id="sj-toggle-icon" class="fas fa-chevron-down" style="font-size:10px;color:#6366f1;margin-left:8px;"></i>'
+      +'<i id="sj-toggle-icon" class="fas fa-chevron-right" style="font-size:10px;color:#6366f1;margin-left:8px;"></i>'
       +'</div>'
-      +'<div id="sj-sublista" style="padding-left:12px;border-left:2px solid #e0e7ff;margin-left:8px;margin-bottom:4px;">'
+      +'<div id="sj-sublista" style="display:none;padding-left:12px;border-left:2px solid #e0e7ff;margin-left:8px;margin-bottom:4px;">'
       +sjKeys.map(rg).join('')
       +'</div></div>';
   }
@@ -3318,7 +3303,7 @@ function renderTopRevendedores(){
   });
   var el=document.getElementById('top-revendedores');if(el)el.innerHTML=html||'<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:16px 0;">Nenhum produto consignado</p>';
 }
-function toggleConsRev(id){var sub=document.getElementById(id);var icon=document.getElementById('icon-'+id);if(!sub)return;var aberto=sub.style.display!=='none';sub.style.display=aberto?'none':'block';if(icon)icon.style.transform=aberto?'rotate(-90deg)':'rotate(0deg)';}
+function toggleConsRev(id){var sub=document.getElementById(id);var icon=document.getElementById('icon-'+id);if(!sub)return;var aberto=sub.style.display==='block';sub.style.display=aberto?'none':'block';if(icon)icon.className='fas fa-chevron-'+(aberto?'right':'down');}
 function dashFiltrarRevCat(rev,cat){dashFiltrarRev(rev);var p=cat.split(' · ');if(p[1])dashCatFilters[p[1]]=true;renderCatChips();renderDashTable();}
 
 function dashLimparCats(){
