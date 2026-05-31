@@ -1483,23 +1483,32 @@ var maletas = [];       // array persistido no localStorage/Drive
 var maletaAtual = null; // maleta selecionada
 
 function carregarMaletas(){
-  // Prioridade: Drive (carregado no loadData) > localStorage
-  if(!maletas.length){
-    try{
-      var local=JSON.parse(localStorage.getItem('luxus_maletas')||'[]');
-      if(local.length){
-        maletas=local;
-        // Sobe para o Drive imediatamente
-        syncDrive({action:'salvarMaletas',maletas:maletas});
-        showToast('Maletas recuperadas do cache ('+maletas.length+'). Sincronizando...','info');
+  // Sempre busca maletas frescas do Drive
+  if(scriptUrl){
+    fetch(scriptUrl+'?action=getTudo',{method:'GET',cache:'no-cache'})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(Array.isArray(d.maletas) && d.maletas.length){
+        maletas = d.maletas;
+        try{localStorage.setItem('luxus_maletas',JSON.stringify(maletas));}catch(e){}
+      } else if(!maletas.length){
+        // Fallback localStorage
+        try{var local=JSON.parse(localStorage.getItem('luxus_maletas')||'[]');if(local.length)maletas=local;}catch(e){}
       }
-    }catch(e){}
+      sincronizarMaletasPendentes();
+      renderListaMaletas();
+      renderMaletasAtivas();
+    }).catch(function(){
+      // Offline: usa localStorage
+      if(!maletas.length){try{var local=JSON.parse(localStorage.getItem('luxus_maletas')||'[]');if(local.length)maletas=local;}catch(e){}}
+      sincronizarMaletasPendentes();
+      renderListaMaletas();
+    });
   } else {
-    // Atualiza localStorage com dados do Drive
-    try{localStorage.setItem('luxus_maletas',JSON.stringify(maletas));}catch(e){}
+    if(!maletas.length){try{var local=JSON.parse(localStorage.getItem('luxus_maletas')||'[]');if(local.length)maletas=local;}catch(e){}}
+    sincronizarMaletasPendentes();
+    renderListaMaletas();
   }
-  sincronizarMaletasPendentes();
-  renderListaMaletas();
 }
 
 function addLogMaleta(maleta, evento){
@@ -1542,15 +1551,14 @@ function renderLogMaleta(){
 
 function salvarMaletas(){
   localStorage.setItem('luxus_maletas', JSON.stringify(maletas));
-  var payload = JSON.stringify({action:'salvarMaletas', maletas:maletas});
-  if(payload.length < 50000){
-    // Payload pequeno: usa GET (mais confiável)
-    fetch(scriptUrl+'?payload='+encodeURIComponent(payload),{method:'GET',cache:'no-cache'})
-    .catch(function(e){ console.log('Erro salvarMaletas GET:', e.message); });
-  } else {
-    // Payload grande: usa POST no-cors
-    syncDrive({action:'salvarMaletas', maletas:maletas});
-  }
+  if(!scriptUrl) return;
+  // Salva maletas embutidas no payload do uploadTudo (via POST no-cors)
+  // e confirma via GET leve (só as maletas sem itens para verificar)
+  fetch(scriptUrl, {
+    method:'POST', mode:'no-cors',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({action:'salvarMaletas', maletas:maletas})
+  }).catch(function(){});
 }
 
 function criarMaleta(){
@@ -1754,9 +1762,16 @@ function adicionarItemMaleta(){
     var novoRev = maletaAtual.entregue ? maletaAtual.revendedor : '';
     var idx=inventory.findIndex(function(i){return String(i.rowId)===String(item.rowId);});
     if(idx!==-1){ inventory[idx].Status=novoStatus; inventory[idx].Revendedor=novoRev; }
-    syncDrive({action:'editInventario',rowId:item.rowId,status:novoStatus,revendedor:novoRev});
     addLogMaleta(maletaAtual, '+1 item adicionado: '+item.Codigo+(item.Descricao?' — '+item.Descricao:''));
-    salvarMaletas();
+    localStorage.setItem('luxus_maletas',JSON.stringify(maletas));
+    // Salva item + maletas numa única chamada GET
+    var p=JSON.stringify({action:'salvarItemMaleta',rowId:item.rowId,status:novoStatus,revendedor:novoRev,maletas:maletas});
+    if(p.length<8000){
+      fetch(scriptUrl+'?payload='+encodeURIComponent(p),{method:'GET',cache:'no-cache'}).catch(function(){});
+    } else {
+      syncDrive({action:'editInventario',rowId:item.rowId,status:novoStatus,revendedor:novoRev});
+      syncDrive({action:'salvarMaletas',maletas:maletas});
+    }
     renderDetalhesMaleta();
     document.getElementById('maleta-codigo').focus();
     showToast('✓ '+item.Codigo,'success');
@@ -1909,9 +1924,9 @@ function renderUltimasEntregas(){ /* mantido para compatibilidade — lista de e
 function renderMaletasAtivas(){
   var el = document.getElementById('lista-maletas-ativas'); if(!el) return;
 
-  // Agrupa itens consignados por revendedor
+  // Agrupa itens consignados por revendedor (inclui Em Maleta)
   var porRev = {};
-  inventory.filter(function(i){ return i.Status==='Consignado' && i.Revendedor; }).forEach(function(i){
+  inventory.filter(function(i){ return (i.Status==='Consignado'||i.Status==='Em Maleta') && i.Revendedor; }).forEach(function(i){
     if(!porRev[i.Revendedor]) porRev[i.Revendedor] = [];
     porRev[i.Revendedor].push(i);
   });
