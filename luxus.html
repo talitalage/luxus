@@ -3147,7 +3147,7 @@ function switchSubtab(sub){
   history.replaceState(null,'','#operacoes-'+sub);
   if(sub==='historico')renderHistorico();
   if(sub==='financeiro')renderFinanceiro();
-  if(sub==='entrega'){renderUltimasEntregas();carregarSelectEntrega();renderMaletasAtivas();}
+  if(sub==='entrega'){renderUltimasEntregas();carregarSelectEntrega();renderMaletasAtivas();carregarMaletas();}
   if(sub==='conferencia'){atualizarCategoriasConf();atualizarMaletasConf();iniciarConferencia();}
 }
 
