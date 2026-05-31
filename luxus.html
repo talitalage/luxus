@@ -793,6 +793,12 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
           <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-top:4px;"><span style="font-size:13px;color:var(--gray-700);">Mostrar lucro em vez de receita</span><div class="toggle-switch"><input type="checkbox" id="cfg-vendas-lucro" onchange="salvarCfgCards()"><span class="toggle-slider"></span></div></label>
         </div>
         <div id="cfgcard-consignado" style="display:none;flex-direction:column;gap:10px;">
+          <label style="font-size:12px;color:var(--gray-600);font-weight:500;">Escopo</label>
+          <select id="cfg-cons-escopo" onchange="salvarCfgCards()">
+            <option value="consignado">Apenas revendedores (Consignado)</option>
+            <option value="maleta">Apenas maleta (Em Maleta)</option>
+            <option value="ambos">Em Maleta + Revendedores</option>
+          </select>
           <label style="font-size:12px;color:var(--gray-600);font-weight:500;">Revendedor</label>
           <select id="cfg-cons-revendedor" onchange="salvarCfgCards()"><option value="">Todos</option></select>
           <label style="font-size:12px;color:var(--gray-600);font-weight:500;">Tipo</label>
@@ -1216,7 +1222,7 @@ var modoSelecao      = false;
 var itensSelecionados= {};
 
 // Preferências de UI (ficam no localStorage — são por dispositivo)
-var cfgCards         = {'total':{'tipo':'all','status':'all'},'vendas':{'periodo':'30','revendedor':'','tipo':'all','lucro':false},'consignado':{'revendedor':'','tipo':'all','custo':false},'capital':{'tipo':'all','venda':false}};
+var cfgCards         = {'total':{'tipo':'all','status':'all'},'vendas':{'periodo':'30','revendedor':'','tipo':'all','lucro':false},'consignado':{'revendedor':'','tipo':'all','custo':false,'escopo':'consignado'},'capital':{'tipo':'all','venda':false}};
 var dashCardsVisiveis= {'semijoia':true,'perfume':true,'estoque':true,'consignado':true};
 var colunasConfig    = {'codigo':{nome:'Código',visivel:true,ordem:0},'descricao':{nome:'Descrição',visivel:true,ordem:1},'tipo':{nome:'Tipo',visivel:true,ordem:2},'categoria':{nome:'Categoria',visivel:true,ordem:3},'status':{nome:'Status',visivel:true,ordem:4},'revendedor':{nome:'Revendedor',visivel:true,ordem:5},'custo':{nome:'Custo',visivel:true,ordem:6},'venda':{nome:'Venda',visivel:true,ordem:7},'data':{nome:'Data',visivel:true,ordem:8}};
 
@@ -3160,7 +3166,11 @@ function renderDashboard(){
   document.getElementById('dash-total').textContent=itemsTotal.length;
   var itemsCap=inventory.filter(function(i){return i.Status==='Em Estoque'&&(c.capital.tipo==='all'||i.Tipo===c.capital.tipo);});
   document.getElementById('dash-capital').textContent=fmt(itemsCap.reduce(function(s,i){return s+pN(c.capital.venda?i.Venda:i.Custo);},0));
-  var itemsCons=inventory.filter(function(i){return i.Status==='Consignado'&&(!c.consignado.revendedor||i.Revendedor===c.consignado.revendedor)&&(c.consignado.tipo==='all'||i.Tipo===c.consignado.tipo);});
+  var _escopoC=c.consignado.escopo||'consignado';
+  var itemsCons=inventory.filter(function(i){
+    var statusOk=(_escopoC==='consignado'&&i.Status==='Consignado')||(_escopoC==='maleta'&&i.Status==='Em Maleta')||(_escopoC==='ambos'&&(i.Status==='Consignado'||i.Status==='Em Maleta'));
+    return statusOk&&(!c.consignado.revendedor||i.Revendedor===c.consignado.revendedor)&&(c.consignado.tipo==='all'||i.Tipo===c.consignado.tipo);
+  });
   document.getElementById('dash-consignado').textContent=fmt(itemsCons.reduce(function(s,i){return s+pN(i.Custo);},0));
   var agora=new Date(),dataIniV=null;
   if(c.vendas.periodo==='mes'){dataIniV=new Date(agora.getFullYear(),agora.getMonth(),1);}
@@ -3437,7 +3447,11 @@ function renderDashTable(){
     document.getElementById('dash-total').textContent=itemsTotal.length;
     var itemsCap=inventory.filter(function(i){return i.Status==='Em Estoque'&&(c.capital.tipo==='all'||i.Tipo===c.capital.tipo);});
     document.getElementById('dash-capital').textContent=fmt(itemsCap.reduce(function(s,i){return s+pN(c.capital.venda?i.Venda:i.Custo);},0));
-    var itemsCons=inventory.filter(function(i){return i.Status==='Consignado'&&(!c.consignado.revendedor||i.Revendedor===c.consignado.revendedor)&&(c.consignado.tipo==='all'||i.Tipo===c.consignado.tipo);});
+    var _escopoC=c.consignado.escopo||'consignado';
+  var itemsCons=inventory.filter(function(i){
+    var statusOk=(_escopoC==='consignado'&&i.Status==='Consignado')||(_escopoC==='maleta'&&i.Status==='Em Maleta')||(_escopoC==='ambos'&&(i.Status==='Consignado'||i.Status==='Em Maleta'));
+    return statusOk&&(!c.consignado.revendedor||i.Revendedor===c.consignado.revendedor)&&(c.consignado.tipo==='all'||i.Tipo===c.consignado.tipo);
+  });
     document.getElementById('dash-consignado').textContent=fmt(itemsCons.reduce(function(s,i){return s+pN(i.Custo);},0));
     var agora=new Date(),dataIniV=null;
     if(c.vendas.periodo==='mes'){dataIniV=new Date(agora.getFullYear(),agora.getMonth(),1);}
@@ -4230,8 +4244,8 @@ function setStatusChecks(card,val){
     if(allCb)allCb.checked=arr.length===3;
   }
 }
-function carregarCfgCards(){var opts='<option value="">Todos</option>';revendedores.forEach(function(r){opts+='<option value="'+r.Nome+'">'+r.Nome+'</option>';});['cfg-vendas-revendedor','cfg-cons-revendedor'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=opts;});var c=cfgCards;function sv(id,val){var e=document.getElementById(id);if(e)e.value=val;}function sc(id,val){var e=document.getElementById(id);if(e)e.checked=val;}sv('cfg-total-tipo',c.total.tipo);setStatusChecks('total',c.total.status);sv('cfg-vendas-periodo',c.vendas.periodo);sv('cfg-vendas-revendedor',c.vendas.revendedor);sv('cfg-vendas-tipo',c.vendas.tipo);sc('cfg-vendas-lucro',c.vendas.lucro);sv('cfg-cons-revendedor',c.consignado.revendedor);sv('cfg-cons-tipo',c.consignado.tipo);sc('cfg-cons-custo',c.consignado.custo);sv('cfg-capital-tipo',c.capital.tipo);sc('cfg-capital-venda',c.capital.venda);}
-function salvarCfgCards(){function gv(id){var e=document.getElementById(id);return e?e.value:'';}function gc(id){var e=document.getElementById(id);return e?e.checked:false;}cfgCards={total:{tipo:gv('cfg-total-tipo'),status:getStatusChecks('total')},vendas:{periodo:gv('cfg-vendas-periodo'),revendedor:gv('cfg-vendas-revendedor'),tipo:gv('cfg-vendas-tipo'),lucro:gc('cfg-vendas-lucro')},consignado:{revendedor:gv('cfg-cons-revendedor'),tipo:gv('cfg-cons-tipo'),custo:gc('cfg-cons-custo')},capital:{tipo:gv('cfg-capital-tipo'),venda:gc('cfg-capital-venda')}};localStorage.setItem('luxus_cfg_cards',JSON.stringify(cfgCards));renderDashboard();showToast('Cards atualizados!','success');}
+function carregarCfgCards(){var opts='<option value="">Todos</option>';revendedores.forEach(function(r){opts+='<option value="'+r.Nome+'">'+r.Nome+'</option>';});['cfg-vendas-revendedor','cfg-cons-revendedor'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=opts;});var c=cfgCards;function sv(id,val){var e=document.getElementById(id);if(e)e.value=val;}function sc(id,val){var e=document.getElementById(id);if(e)e.checked=val;}sv('cfg-total-tipo',c.total.tipo);setStatusChecks('total',c.total.status);sv('cfg-vendas-periodo',c.vendas.periodo);sv('cfg-vendas-revendedor',c.vendas.revendedor);sv('cfg-vendas-tipo',c.vendas.tipo);sc('cfg-vendas-lucro',c.vendas.lucro);sv('cfg-cons-escopo',c.consignado.escopo||'consignado');sv('cfg-cons-revendedor',c.consignado.revendedor);sv('cfg-cons-tipo',c.consignado.tipo);sc('cfg-cons-custo',c.consignado.custo);sv('cfg-capital-tipo',c.capital.tipo);sc('cfg-capital-venda',c.capital.venda);}
+function salvarCfgCards(){function gv(id){var e=document.getElementById(id);return e?e.value:'';}function gc(id){var e=document.getElementById(id);return e?e.checked:false;}cfgCards={total:{tipo:gv('cfg-total-tipo'),status:getStatusChecks('total')},vendas:{periodo:gv('cfg-vendas-periodo'),revendedor:gv('cfg-vendas-revendedor'),tipo:gv('cfg-vendas-tipo'),lucro:gc('cfg-vendas-lucro')},consignado:{revendedor:gv('cfg-cons-revendedor'),tipo:gv('cfg-cons-tipo'),custo:gc('cfg-cons-custo'),escopo:gv('cfg-cons-escopo')||'consignado'},capital:{tipo:gv('cfg-capital-tipo'),venda:gc('cfg-capital-venda')}};localStorage.setItem('luxus_cfg_cards',JSON.stringify(cfgCards));renderDashboard();showToast('Cards atualizados!','success');}
 
 // =====================================================
 // REVENDEDORES
