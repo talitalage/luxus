@@ -1924,9 +1924,9 @@ function renderUltimasEntregas(){ /* mantido para compatibilidade — lista de e
 function renderMaletasAtivas(){
   var el = document.getElementById('lista-maletas-ativas'); if(!el) return;
 
-  // Agrupa itens consignados por revendedor (inclui Em Maleta)
+  // Agrupa apenas itens Consignado (entregues ao revendedor)
   var porRev = {};
-  inventory.filter(function(i){ return (i.Status==='Consignado'||i.Status==='Em Maleta') && i.Revendedor; }).forEach(function(i){
+  inventory.filter(function(i){ return i.Status==='Consignado' && i.Revendedor; }).forEach(function(i){
     if(!porRev[i.Revendedor]) porRev[i.Revendedor] = [];
     porRev[i.Revendedor].push(i);
   });
