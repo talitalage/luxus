@@ -1542,7 +1542,15 @@ function renderLogMaleta(){
 
 function salvarMaletas(){
   localStorage.setItem('luxus_maletas', JSON.stringify(maletas));
-  syncDrive({action:'salvarMaletas', maletas:maletas});
+  var payload = JSON.stringify({action:'salvarMaletas', maletas:maletas});
+  if(payload.length < 50000){
+    // Payload pequeno: usa GET (mais confiável)
+    fetch(scriptUrl+'?payload='+encodeURIComponent(payload),{method:'GET',cache:'no-cache'})
+    .catch(function(e){ console.log('Erro salvarMaletas GET:', e.message); });
+  } else {
+    // Payload grande: usa POST no-cors
+    syncDrive({action:'salvarMaletas', maletas:maletas});
+  }
 }
 
 function criarMaleta(){
