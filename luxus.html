@@ -3160,7 +3160,7 @@ function renderDashboard(){
   document.getElementById('dash-total').textContent=itemsTotal.length;
   var itemsCap=inventory.filter(function(i){return i.Status==='Em Estoque'&&(c.capital.tipo==='all'||i.Tipo===c.capital.tipo);});
   document.getElementById('dash-capital').textContent=fmt(itemsCap.reduce(function(s,i){return s+pN(c.capital.venda?i.Venda:i.Custo);},0));
-  var itemsCons=inventory.filter(function(i){return i.Status!=='Em Estoque'&&i.Status!=='Vendido'&&(!c.consignado.revendedor||i.Revendedor===c.consignado.revendedor)&&(c.consignado.tipo==='all'||i.Tipo===c.consignado.tipo);});
+  var itemsCons=inventory.filter(function(i){return i.Status==='Consignado'&&(!c.consignado.revendedor||i.Revendedor===c.consignado.revendedor)&&(c.consignado.tipo==='all'||i.Tipo===c.consignado.tipo);});
   document.getElementById('dash-consignado').textContent=fmt(itemsCons.reduce(function(s,i){return s+pN(i.Custo);},0));
   var agora=new Date(),dataIniV=null;
   if(c.vendas.periodo==='mes'){dataIniV=new Date(agora.getFullYear(),agora.getMonth(),1);}
