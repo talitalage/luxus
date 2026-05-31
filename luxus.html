@@ -1005,10 +1005,12 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
       </div>
       <canvas id="canvas-entrega" style="width:100%;height:110px;border:1.5px solid var(--gray-300);border-radius:8px;background:white;touch-action:none;cursor:crosshair;display:block;"></canvas>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-top:.5rem;flex-shrink:0;position:sticky;bottom:0;background:white;padding-top:.75rem;border-top:1px solid var(--gray-100);">
-      <button onclick="fecharModal('modal-entrega')" class="btn-secondary" style="padding:.75rem;"><i class="fas fa-times" style="margin-right:6px;"></i>Fechar</button>
-      <button id="btn-salvar-entrega-drive" onclick="baixarEntrega()" class="btn-secondary" style="padding:.75rem;"><i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Salvar PDF</button>
-      <button id="btn-confirmar-entrega" onclick="confirmarEntregaMaleta()" class="btn-primary" style="padding:.75rem;"><i class="fas fa-check" style="margin-right:6px;"></i>Confirmar entrega</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.5rem;flex-shrink:0;position:sticky;bottom:0;background:white;padding-top:.75rem;border-top:1px solid var(--gray-100);">
+      <button onclick="fecharModal('modal-entrega')" class="btn-secondary" style="padding:.625rem;font-size:12px;"><i class="fas fa-times" style="margin-right:5px;"></i>Fechar</button>
+      <button id="btn-salvar-entrega-drive" onclick="baixarEntrega()" class="btn-secondary" style="padding:.625rem;font-size:12px;"><i class="fas fa-cloud-upload-alt" style="margin-right:5px;"></i>Salvar PDF</button>
+      <button onclick="downloadEntregaLocal()" class="btn-secondary" style="padding:.625rem;font-size:12px;"><i class="fas fa-download" style="margin-right:5px;"></i>Baixar PDF</button>
+      <button onclick="compartilharEntregaWhatsApp()" class="btn-secondary" style="padding:.625rem;font-size:12px;color:#25D366;border-color:#25D366;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background=''"><i class="fab fa-whatsapp" style="margin-right:5px;"></i>WhatsApp</button>
+      <button id="btn-confirmar-entrega" onclick="confirmarEntregaMaleta()" class="btn-primary" style="padding:.625rem;font-size:12px;grid-column:1/-1;"><i class="fas fa-check" style="margin-right:5px;"></i>Confirmar entrega</button>
     </div>
   </div>
 </div>
@@ -2377,7 +2379,31 @@ function confirmarEntregaMaleta(){
   showToast('Entrega confirmada! Itens consignados para '+doc.revendedor,'success');
 }
 
-function baixarEntrega() {
+function downloadEntregaLocal(){
+  if(!_entregaDoc){showToast('Nenhum documento aberto','warning');return;}
+  // Reutiliza o canvas já gerado por baixarEntrega
+  if(_entregaAss){
+    var img=document.getElementById('entrega-ass-img');
+    var vazio=document.getElementById('entrega-ass-vazio');
+    img.src=_entregaAss; img.style.display='block'; vazio.style.display='none';
+  }
+  _downloadLocal=true;
+  baixarEntrega();
+}
+
+function compartilharEntregaWhatsApp(){
+  var doc=_entregaDoc; if(!doc) return;
+  var total=doc.itens.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0);
+  var texto='*Recibo de Entrega — '+(localStorage.getItem('luxus_titulo')||'LUXUS')+'*\n\n'
+    +'👤 Revendedor: *'+doc.revendedor+'*\n'
+    +'📅 Data: '+new Date().toLocaleDateString('pt-BR')+'\n'
+    +'📦 Total de itens: *'+doc.itens.length+'*\n'
+    +'💰 Valor consignado: *R$ '+total.toFixed(2).replace('.',',')+' *\n\n'
+    +'_Confirmo o recebimento dos itens listados no documento de entrega._';
+  window.open('https://wa.me/?text='+encodeURIComponent(texto),'_blank');
+}
+
+function baixarEntrega(){
   if (_entregaAss) {
     var img = document.getElementById('entrega-ass-img');
     var vazio = document.getElementById('entrega-ass-vazio');
@@ -2459,8 +2485,17 @@ function baixarEntrega() {
 }
 
 function finalDownloadEntrega(c,doc) {
-  var dataUrl=c.toDataURL('image/png');
-  var d=new Date(doc.data);
+  var dataUrl=c.toDataURL('image/jpeg',0.8);
+  // Download local se solicitado
+  if(window._downloadLocal){
+    window._downloadLocal=false;
+    var a=document.createElement('a');
+    a.href=dataUrl;
+    a.download='entrega_'+doc.revendedor.replace(/\s+/g,'_')+'_'+new Date().toLocaleDateString('pt-BR').replace(/\//g,'')+'.jpg';
+    a.click();
+    showToast('Documento baixado!','success');
+    return;
+  }
   var nome=nomeArquivo('entrega',doc.data,doc.revendedor);
   syncDriveComCallback({action:'salvarRecibo',nomeArquivo:nome,imagemBase64:dataUrl}, function(res){
     if(res&&res.success&&res.url){
