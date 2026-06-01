@@ -3459,7 +3459,10 @@ function switchSubtab(sub){
 // =====================================================
 function renderDashboard(){
   var c=cfgCards;
-  var itemsTotal=inventory.filter(function(i){return(c.total.tipo==='all'||i.Tipo===c.total.tipo)&&(c.total.status==='all'||Array.isArray(c.total.status)?c.total.status==='all'||(Array.isArray(c.total.status)&&c.total.status.indexOf(i.Status)!==-1):i.Status===c.total.status);});
+  var itemsTotal=inventory.filter(function(i){
+    var statusOk=c.total.status==='all'?i.Status!=='Vendido':(Array.isArray(c.total.status)?c.total.status.indexOf(i.Status)!==-1:i.Status===c.total.status);
+    return statusOk&&(c.total.tipo==='all'||i.Tipo===c.total.tipo);
+  });
   document.getElementById('dash-total').textContent=itemsTotal.length;
   var itemsCap=inventory.filter(function(i){return i.Status==='Em Estoque'&&(c.capital.tipo==='all'||i.Tipo===c.capital.tipo);});
   document.getElementById('dash-capital').textContent=fmt(itemsCap.reduce(function(s,i){return s+pN(c.capital.venda?i.Venda:i.Custo);},0));
