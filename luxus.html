@@ -2643,21 +2643,31 @@ function finalDownloadEntrega(c,doc) {
     return;
   }
   var nome=nomeArquivo('entrega',doc.data,doc.revendedor);
-  syncDriveComCallback({action:'salvarRecibo',nomeArquivo:nome,imagemBase64:dataUrl}, function(res){
-    if(res&&res.success&&res.url){
-      // Salva URL na entrega local
-      var idx=historicEntregas.findIndex(function(e){return e.id===doc.id;});
-      if(idx!==-1){ historicEntregas[idx].reciboUrl=res.url; historicEntregas[idx].assinado=true; }
-      var mal=maletas.find(function(m){return m.id===doc.id||m.nome===doc.nomeMaleta;});
-      if(mal){ mal.reciboUrl=res.url; salvarMaletas(); renderDetalhesMaleta(); }
-      mostrarLinkRecibo(res.url, doc.revendedor);
-      renderUltimasEntregas();
-      renderMaletasAtivas();
-    } else {
-      showToast('Documento salvo localmente','success');
-    }
-  });
-  var a=document.createElement('a'); a.download=nome+'.png'; a.href=dataUrl; a.click();
+  // Converte canvas para PDF antes de salvar no Drive
+  try {
+    var jsPDF = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
+    var pdf = new jsPDF({ orientation:'portrait', unit:'px', format:[c.width/1.5, c.height/1.5] });
+    pdf.addImage(dataUrl,'JPEG',0,0,c.width/1.5,c.height/1.5);
+    var pdfBase64 = pdf.output('datauristring');
+    syncDriveComCallback({action:'salvarRecibo',nomeArquivo:nome+'.pdf',imagemBase64:pdfBase64,mimeType:'application/pdf'}, function(res){
+      if(res&&res.success&&res.url){
+        var idx=historicEntregas.findIndex(function(e){return e.id===doc.id;});
+        if(idx!==-1){ historicEntregas[idx].reciboUrl=res.url; historicEntregas[idx].assinado=true; }
+        var mal=maletas.find(function(m){return m.id===doc.id||m.nome===doc.nomeMaleta||(doc.revendedor&&m.revendedor===doc.revendedor);});
+        if(mal){ mal.reciboUrl=res.url; salvarMaletas(); renderDetalhesMaleta(); }
+        mostrarLinkRecibo(res.url, doc.revendedor);
+        renderUltimasEntregas(); renderMaletasAtivas();
+      } else { showToast('Erro ao salvar no Drive','warning'); }
+    });
+  } catch(e) {
+    // Fallback: salva como imagem
+    syncDriveComCallback({action:'salvarRecibo',nomeArquivo:nome,imagemBase64:dataUrl}, function(res){
+      if(res&&res.success&&res.url){
+        mostrarLinkRecibo(res.url, doc.revendedor);
+        renderMaletasAtivas();
+      }
+    });
+  }
 }
 
 function compartilharEntregaWhatsApp() {
