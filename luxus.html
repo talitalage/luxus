@@ -2643,30 +2643,59 @@ function finalDownloadEntrega(c,doc) {
     return;
   }
   var nome=nomeArquivo('entrega',doc.data,doc.revendedor);
-  // Converte canvas para PDF antes de salvar no Drive
+  // Gera PDF com jsPDF e envia em chunks para o Drive
   try {
     var jsPDF = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
     var pdf = new jsPDF({ orientation:'portrait', unit:'px', format:[c.width/1.5, c.height/1.5] });
     pdf.addImage(dataUrl,'JPEG',0,0,c.width/1.5,c.height/1.5);
     var pdfBase64 = pdf.output('datauristring');
-    syncDriveComCallback({action:'salvarRecibo',nomeArquivo:nome+'.pdf',imagemBase64:pdfBase64,mimeType:'application/pdf'}, function(res){
-      if(res&&res.success&&res.url){
-        var idx=historicEntregas.findIndex(function(e){return e.id===doc.id;});
-        if(idx!==-1){ historicEntregas[idx].reciboUrl=res.url; historicEntregas[idx].assinado=true; }
-        var mal=maletas.find(function(m){return m.id===doc.id||m.nome===doc.nomeMaleta||(doc.revendedor&&m.revendedor===doc.revendedor);});
-        if(mal){ mal.reciboUrl=res.url; salvarMaletas(); renderDetalhesMaleta(); }
-        mostrarLinkRecibo(res.url, doc.revendedor);
-        renderUltimasEntregas(); renderMaletasAtivas();
-      } else { showToast('Erro ao salvar no Drive','warning'); }
-    });
-  } catch(e) {
-    // Fallback: salva como imagem
-    syncDriveComCallback({action:'salvarRecibo',nomeArquivo:nome,imagemBase64:dataUrl}, function(res){
-      if(res&&res.success&&res.url){
-        mostrarLinkRecibo(res.url, doc.revendedor);
-        renderMaletasAtivas();
-      }
-    });
+    // Divide o base64 em chunks de 400KB
+    var dadosBase64 = pdfBase64.replace(/^data:[^,]+,/, '');
+    var chunkSize = 400000;
+    var totalChunks = Math.ceil(dadosBase64.length / chunkSize);
+    var uploadId = Date.now().toString();
+    showToast('Enviando PDF para o Drive ('+totalChunks+' partes)...','info');
+
+    function enviarChunk(idx){
+      var chunk = dadosBase64.slice(idx*chunkSize, (idx+1)*chunkSize);
+      var payload = JSON.stringify({
+        action:'salvarReciboChunk',
+        uploadId:uploadId,
+        nomeArquivo:nome,
+        chunk:chunk,
+        chunkIndex:idx,
+        totalChunks:totalChunks
+      });
+      fetch(scriptUrl, {method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:payload})
+      .then(function(){
+        if(idx+1 < totalChunks){
+          setTimeout(function(){ enviarChunk(idx+1); }, 500);
+        } else {
+          // Todos os chunks enviados — finaliza
+          setTimeout(function(){
+            var p=encodeURIComponent(JSON.stringify({action:'finalizarReciboChunk',uploadId:uploadId,nomeArquivo:nome,totalChunks:totalChunks}));
+            fetch(scriptUrl+'?payload='+p,{method:'GET',cache:'no-cache'})
+            .then(function(r){return r.json();})
+            .then(function(res){
+              if(res&&res.success&&res.url){
+                var idx2=historicEntregas.findIndex(function(e){return e.id===doc.id;});
+                if(idx2!==-1){historicEntregas[idx2].reciboUrl=res.url;historicEntregas[idx2].assinado=true;}
+                var mal=maletas.find(function(m){return m.revendedor===doc.revendedor;});
+                if(mal){mal.reciboUrl=res.url;salvarMaletas();}
+                mostrarLinkRecibo(res.url,doc.revendedor);
+                renderUltimasEntregas();renderMaletasAtivas();
+                showToast('✅ PDF salvo no Drive!','success');
+              } else {
+                showToast('Erro ao finalizar PDF: '+(res&&res.error||'desconhecido'),'warning');
+              }
+            }).catch(function(e){ showToast('Erro: '+e.message,'warning'); });
+          }, 2000);
+        }
+      }).catch(function(){ showToast('Erro ao enviar chunk '+idx,'warning'); });
+    }
+    enviarChunk(0);
+  } catch(e){
+    showToast('Erro ao gerar PDF: '+e.message,'warning');
   }
 }
 
