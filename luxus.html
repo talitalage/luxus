@@ -7,6 +7,7 @@
 <link rel="icon" type="image/png" href="https://i.ibb.co/6R29d3Dj/luxus-logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root {
   --primary:#1e40af; --primary-light:#3b82f6; --accent:#14b8a6;
@@ -2352,9 +2353,9 @@ function abrirModalEntrega(doc) {
         var c=document.getElementById('canvas-entrega');
         if(!c) return;
         _entregaAssCtx.clearRect(0,0,c.width,c.height);
-        // Desenha no tamanho original, centralizado verticalmente
-        var dy=Math.max(0,(c.height-imgAss.height)/2);
-        _entregaAssCtx.drawImage(imgAss,8,dy,imgAss.width,imgAss.height);
+        var dx=(c.width-imgAss.width)/2;
+        var dy=(c.height-imgAss.height)/2;
+        _entregaAssCtx.drawImage(imgAss,dx,dy,imgAss.width,imgAss.height);
         _entregaAss=c.toDataURL('image/png');
       };
       imgAss.src=_entregaAss;
@@ -2548,15 +2549,25 @@ function baixarEntrega(){
 }
 
 function finalDownloadEntrega(c,doc) {
-  var dataUrl=c.toDataURL('image/jpeg',0.8);
-  // Download local se solicitado
+  var dataUrl=c.toDataURL('image/jpeg',0.92);
+  // Download local como PDF
   if(window._downloadLocal){
     window._downloadLocal=false;
-    var a=document.createElement('a');
-    a.href=dataUrl;
-    a.download='entrega_'+doc.revendedor.replace(/\s+/g,'_')+'_'+new Date().toLocaleDateString('pt-BR').replace(/\//g,'')+'.jpg';
-    a.click();
-    showToast('Documento baixado!','success');
+    try {
+      var jsPDF = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
+      var pdf = new jsPDF({ orientation:'portrait', unit:'px', format:[c.width/1.5, c.height/1.5] });
+      pdf.addImage(dataUrl,'JPEG',0,0,c.width/1.5,c.height/1.5);
+      var nome = 'entrega_'+doc.revendedor.replace(/\s+/g,'_')+'_'+new Date(doc.data).toLocaleDateString('pt-BR').replace(/\//g,'')+'.pdf';
+      pdf.save(nome);
+      showToast('PDF baixado!','success');
+    } catch(e){
+      // Fallback: baixa como imagem se jsPDF falhar
+      var a=document.createElement('a');
+      a.href=dataUrl;
+      a.download='entrega_'+doc.revendedor.replace(/\s+/g,'_')+'.jpg';
+      a.click();
+      showToast('Documento baixado!','success');
+    }
     return;
   }
   var nome=nomeArquivo('entrega',doc.data,doc.revendedor);
