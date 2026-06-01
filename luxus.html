@@ -1619,8 +1619,10 @@ function confirmarNovaMaleta(){
 
 function renderListaMaletas(){
   var el = document.getElementById('lista-maletas'); if(!el) return;
-  if(!maletas.length){ el.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1.5rem 0;">Nenhuma maleta criada.</p>'; return; }
-  el.innerHTML = maletas.map(function(m){
+  // Só mostra maletas não entregues
+  var maletasAtivas = maletas.filter(function(m){ return !m.entregue; });
+  if(!maletasAtivas.length){ el.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1.5rem 0;">Nenhuma maleta criada.</p>'; return; }
+  el.innerHTML = maletasAtivas.map(function(m){
     var ativa = maletaAtual && maletaAtual.id === m.id;
     var bg = ativa ? 'background:#EBF2FB;border-color:#185FA5;' : '';
     var badge = m.entregue
@@ -1935,9 +1937,9 @@ function renderUltimasEntregas(){ /* mantido para compatibilidade — lista de e
 function renderMaletasAtivas(){
   var el = document.getElementById('lista-maletas-ativas'); if(!el) return;
 
-  // Revendedores que já têm maleta em preparo — não duplicar
+  // Revendedores que têm maleta em preparo NÃO entregue — não duplicar
   var revsEmPreparo = {};
-  maletas.forEach(function(m){ if(m.revendedor) revsEmPreparo[m.revendedor]=true; });
+  maletas.forEach(function(m){ if(m.revendedor && !m.entregue) revsEmPreparo[m.revendedor]=true; });
 
   // Agrupa apenas itens Consignado sem maleta em preparo correspondente
   var porRev = {};
@@ -1997,11 +1999,23 @@ function renderMaletasAtivas(){
       // Botões
       +'<div style="display:flex;gap:6px;">'
       +(reciboUrlFinal
-        ? '<button onclick="window.open(\''+reciboUrlFinal+'\',\'_blank\')" class="btn-secondary" style="flex:1;padding:7px;font-size:12px;color:#10b981;border-color:#86efac;"><i class="fas fa-file-pdf" style="margin-right:5px;"></i>Ver documento</button>'
-        : '<button onclick="abrirDocumentoAtivo(\''+nome+'\')" class="btn-primary" style="flex:1;padding:7px;font-size:12px;"><i class="fas fa-pen-nib" style="margin-right:5px;"></i>Assinar documento</button>')
+        ? '<div style="display:flex;gap:6px;">'
+          +'<button onclick="window.open(\''+reciboUrlFinal+'\',\'_blank\')" class="btn-secondary" style="flex:1;padding:7px;font-size:12px;color:#10b981;border-color:#86efac;"><i class="fas fa-eye" style="margin-right:5px;"></i>Ver documento</button>'
+          +'<button onclick="downloadEntregaDoRev(\''+nome+'\')" class="btn-secondary" style="padding:7px 10px;font-size:12px;"><i class="fas fa-download"></i></button>'
+          +'</div>'
+        : '<button onclick="abrirDocumentoAtivo(\''+nome+'\')" class="btn-primary" style="width:100%;padding:7px;font-size:12px;"><i class="fas fa-pen-nib" style="margin-right:5px;"></i>Assinar documento</button>')
       +'</div>'
       +'</div>';
   }).join('');
+}
+
+function downloadEntregaDoRev(nomeRev){
+  var entrega = historicEntregas.find(function(e){ return e.revendedor===nomeRev && e.tipo==='entrega'; });
+  var maletaRef = maletas.find(function(m){ return m.revendedor===nomeRev; });
+  if(!entrega && !maletaRef){ showToast('Nenhum documento encontrado','warning'); return; }
+  _entregaDoc = entrega || {revendedor:nomeRev, itens:maletaRef?maletaRef.itens:[], data:maletaRef?maletaRef.dataCriacao:new Date().toISOString()};
+  _downloadLocal = true;
+  baixarEntrega();
 }
 
 function excluirMaletaAtiva(nomeRev){
@@ -3072,7 +3086,7 @@ function iniciarConferencia() {
   var categoria = document.getElementById('conf-filtro-categoria') ? document.getElementById('conf-filtro-categoria').value : 'todos';
   var maletaId  = document.getElementById('conf-filtro-maleta') ? document.getElementById('conf-filtro-maleta').value : 'todos';
 
-  // Se filtrou por maleta específica, usa os itens dela
+  // Primeiro filtra pela maleta/status
   if (maletaId !== 'todos') {
     if(maletaId.indexOf('maleta_')===0){
       var mid = parseInt(maletaId.replace('maleta_',''));
@@ -3088,11 +3102,13 @@ function iniciarConferencia() {
     confEsperados = inventory.filter(function(i) {
       if (status === 'todos')    { if (i.Status === 'Vendido') return false; }
       else                       { if (i.Status !== status) return false; }
-      if (tipo !== 'todos' && i.Tipo !== tipo) return false;
-      if (categoria !== 'todos' && (i.Categoria||'') !== categoria) return false;
       return true;
     });
   }
+
+  // Aplica filtros de tipo e categoria em cima do resultado
+  if(tipo !== 'todos') confEsperados = confEsperados.filter(function(i){ return i.Tipo===tipo; });
+  if(categoria !== 'todos') confEsperados = confEsperados.filter(function(i){ return (i.Categoria||'')===categoria; });
 
   var totalCusto = confEsperados.reduce(function(s,i){ return s+(parseFloat(i.Custo)||0); },0);
   document.getElementById('conf-count-total').textContent = confEsperados.length;
