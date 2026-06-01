@@ -2643,41 +2643,60 @@ function finalDownloadEntrega(c,doc) {
     return;
   }
   var nome=nomeArquivo('entrega',doc.data,doc.revendedor);
-  // Gera PDF com jsPDF e envia em chunks para o Drive
   try {
     var jsPDF = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
     var pdf = new jsPDF({ orientation:'portrait', unit:'px', format:[c.width/1.5, c.height/1.5] });
     pdf.addImage(dataUrl,'JPEG',0,0,c.width/1.5,c.height/1.5);
-    var pdfBase64 = pdf.output('datauristring');
-    // Divide o base64 em chunks de 400KB
-    var dadosBase64 = pdfBase64.replace(/^data:[^,]+,/, '');
-    var chunkSize = 400000;
-    var totalChunks = Math.ceil(dadosBase64.length / chunkSize);
+    var pdfBase64 = pdf.output('datauristring').replace(/^data:[^,]+,/,'');
     var uploadId = Date.now().toString();
-    showToast('Enviando PDF para o Drive ('+totalChunks+' partes)...','info');
+    var CHUNK = 90000;
+    var total = Math.ceil(pdfBase64.length / CHUNK);
+
+    // Cria barra de progresso
+    var progressId = 'pdf-progress-'+uploadId;
+    var progressHtml = '<div id="'+progressId+'" style="position:fixed;bottom:20px;right:20px;background:white;border:1px solid #e2e8f0;border-radius:12px;padding:14px 18px;box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:9999;min-width:260px;">'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'
+      +'<i class="fas fa-file-pdf" style="color:#dc2626;font-size:1.1rem;"></i>'
+      +'<span style="font-size:13px;font-weight:600;color:#1f2937;">Salvando PDF no Drive</span>'
+      +'</div>'
+      +'<div style="background:#f1f5f9;border-radius:6px;height:8px;overflow:hidden;">'
+      +'<div id="'+progressId+'-bar" style="background:linear-gradient(90deg,#1e40af,#3b82f6);height:100%;width:0%;transition:width .4s;border-radius:6px;"></div>'
+      +'</div>'
+      +'<div id="'+progressId+'-txt" style="font-size:11px;color:#64748b;margin-top:6px;text-align:right;">0 / '+total+' partes</div>'
+      +'</div>';
+    document.body.insertAdjacentHTML('beforeend',progressHtml);
+
+    function atualizarProgresso(idx, status){
+      var bar=document.getElementById(progressId+'-bar');
+      var txt=document.getElementById(progressId+'-txt');
+      if(!bar) return;
+      var pct = status==='finalizando' ? 95 : status==='ok' ? 100 : Math.round(((idx+1)/total)*90);
+      bar.style.width=pct+'%';
+      if(bar.parentElement) bar.parentElement.parentElement.querySelector('span').textContent =
+        status==='finalizando'?'Finalizando PDF...':status==='ok'?'✅ PDF salvo!':'Salvando PDF no Drive';
+      if(txt) txt.textContent = status==='finalizando'?'Aguarde...':status==='ok'?'Concluído!':(idx+1)+' / '+total+' partes';
+      if(status==='ok') setTimeout(function(){ var el=document.getElementById(progressId); if(el) el.remove(); },3000);
+    }
 
     function enviarChunk(idx){
-      var chunk = dadosBase64.slice(idx*chunkSize, (idx+1)*chunkSize);
-      var payload = JSON.stringify({
-        action:'salvarReciboChunk',
-        uploadId:uploadId,
-        nomeArquivo:nome,
-        chunk:chunk,
-        chunkIndex:idx,
-        totalChunks:totalChunks
-      });
-      fetch(scriptUrl, {method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:payload})
-      .then(function(){
-        if(idx+1 < totalChunks){
-          setTimeout(function(){ enviarChunk(idx+1); }, 500);
+      atualizarProgresso(idx,'enviando');
+      var chunk = pdfBase64.slice(idx*CHUNK,(idx+1)*CHUNK);
+      fetch(scriptUrl,{
+        method:'POST',mode:'no-cors',
+        headers:{'Content-Type':'text/plain'},
+        body:JSON.stringify({action:'salvarReciboChunk',uploadId:uploadId,nomeArquivo:nome,chunk:chunk,chunkIndex:idx,totalChunks:total})
+      }).then(function(){
+        if(idx+1 < total){
+          setTimeout(function(){ enviarChunk(idx+1); }, 800);
         } else {
-          // Todos os chunks enviados — finaliza
+          atualizarProgresso(idx,'finalizando');
           setTimeout(function(){
-            var p=encodeURIComponent(JSON.stringify({action:'finalizarReciboChunk',uploadId:uploadId,nomeArquivo:nome,totalChunks:totalChunks}));
+            var p=encodeURIComponent(JSON.stringify({action:'finalizarReciboChunk',uploadId:uploadId,nomeArquivo:nome,totalChunks:total}));
             fetch(scriptUrl+'?payload='+p,{method:'GET',cache:'no-cache'})
             .then(function(r){return r.json();})
             .then(function(res){
               if(res&&res.success&&res.url){
+                atualizarProgresso(idx,'ok');
                 var idx2=historicEntregas.findIndex(function(e){return e.id===doc.id;});
                 if(idx2!==-1){historicEntregas[idx2].reciboUrl=res.url;historicEntregas[idx2].assinado=true;}
                 var mal=maletas.find(function(m){return m.revendedor===doc.revendedor;});
@@ -2686,17 +2705,22 @@ function finalDownloadEntrega(c,doc) {
                 renderUltimasEntregas();renderMaletasAtivas();
                 showToast('✅ PDF salvo no Drive!','success');
               } else {
-                showToast('Erro ao finalizar PDF: '+(res&&res.error||'desconhecido'),'warning');
+                var el=document.getElementById(progressId); if(el) el.remove();
+                showToast('Erro ao finalizar: '+(res&&res.error||'tente novamente'),'warning');
               }
-            }).catch(function(e){ showToast('Erro: '+e.message,'warning'); });
-          }, 2000);
+            }).catch(function(e){
+              var el=document.getElementById(progressId); if(el) el.remove();
+              showToast('Erro: '+e.message,'warning');
+            });
+          }, 3000);
         }
-      }).catch(function(){ showToast('Erro ao enviar chunk '+idx,'warning'); });
+      }).catch(function(e){
+        var el=document.getElementById(progressId); if(el) el.remove();
+        showToast('Erro no chunk '+idx+': '+e.message,'warning');
+      });
     }
     enviarChunk(0);
-  } catch(e){
-    showToast('Erro ao gerar PDF: '+e.message,'warning');
-  }
+  } catch(e){ showToast('Erro ao gerar PDF: '+e.message,'warning'); }
 }
 
 function compartilharEntregaWhatsApp() {
