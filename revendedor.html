@@ -553,20 +553,12 @@ function closeModal(){ document.getElementById('modal').classList.remove('open')
 
 function confirmar(){
   if(!sel) return;
-  var btn=document.getElementById('btn-ok');
-  btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>Registrando...';
   var item=sel;
-  fetch(SCRIPT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
-    body:JSON.stringify({action:'editInventario',rowId:item.rowId,fields:{Status:'Vendido',DataVenda:new Date().toISOString()}})
-  }).then(function(){
-    vendidos.push(item);
-    itens=itens.filter(function(i){return i.rowId!==item.rowId;});
-    renderCards(); renderItens(); closeModal();
-    toast('✓ Venda registrada!','ok');
-  }).catch(function(e){
-    btn.disabled=false; btn.innerHTML='<i class="fas fa-check-circle"></i>Confirmar Venda';
-    toast('Erro: '+e.message,'err');
-  });
+  // Controle local apenas — o fechamento é feito pelo sistema principal
+  vendidos.push(item);
+  itens=itens.filter(function(i){return i.rowId!==item.rowId;});
+  renderCards(); renderItens(); closeModal();
+  toast('✓ Venda registrada!','ok');
 }
 
 document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
