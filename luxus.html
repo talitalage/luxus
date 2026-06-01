@@ -1714,8 +1714,13 @@ function onChangeMaletaRevendedor(){
   var revId = sel.value;
   var linkBox = document.getElementById('maleta-link-box');
   if(revId && maletaAtual){
-    var base = window.location.href.replace('luxus.html','revendedor.html').split('?')[0].split('#')[0];
-    var url = base+'?rev='+revId+'&script='+encodeURIComponent(scriptUrl);
+    var _revLink = revendedores.find(function(r){return r.rowId===revId||String(r.rowId)===String(revId);});
+    var _cpfLink = _revLink ? (_revLink.CPF||'').replace(/\D/g,'') : '';
+    var _partesLink = _revLink ? _revLink.Nome.split(' ') : [];
+    var _iniciaisLink = _revLink ? (_partesLink[0][0]+(_partesLink[_partesLink.length-1][0]||'')).toUpperCase() : '';
+    var url = _cpfLink.length>=6
+      ? 'https://talitalage.github.io/luxus/revendedor.html?token='+_iniciaisLink+_cpfLink.slice(0,6)
+      : 'https://talitalage.github.io/luxus/revendedor.html?token='+_iniciaisLink;
     document.getElementById('maleta-link').value = url;
     linkBox.style.display = 'block';
   } else {
@@ -2044,16 +2049,41 @@ function renderMaletasAtivas(){
       }()
       +'</div>'
       // Botões
-      +'<div style="display:flex;gap:6px;">'
+      +'<div style="display:flex;gap:6px;flex-direction:column;">'
       +(reciboUrlFinal
         ? '<div style="display:flex;gap:6px;">'
           +'<button onclick="window.open(\''+reciboUrlFinal+'\',\'_blank\')" class="btn-secondary" style="flex:1;padding:7px;font-size:12px;color:#10b981;border-color:#86efac;"><i class="fas fa-eye" style="margin-right:5px;"></i>Ver documento</button>'
           +'<button onclick="downloadEntregaDoRev(\''+nome+'\')" class="btn-secondary" style="padding:7px 10px;font-size:12px;"><i class="fas fa-download"></i></button>'
           +'</div>'
         : '<button onclick="abrirDocumentoAtivo(\''+nome+'\')" class="btn-primary" style="width:100%;padding:7px;font-size:12px;"><i class="fas fa-pen-nib" style="margin-right:5px;"></i>Assinar documento</button>')
+      +(function(){
+        var rev = revendedores.find(function(r){ return r.Nome===nome; });
+        if(!rev || !rev.CPF) return '';
+        var cpfNum = (rev.CPF||'').replace(/\D/g,'');
+        if(cpfNum.length < 6) return '';
+        var partes = nome.split(' ');
+        var iniciais = (partes[0][0]+(partes[partes.length-1][0]||'')).toUpperCase();
+        var token = iniciais + cpfNum.slice(0,6);
+        var link = 'https://talitalage.github.io/luxus/revendedor.html?token='+token;
+        return '<button onclick="copiarLinkRevendedor(\''+link+'\')" class="btn-secondary" style="width:100%;padding:7px;font-size:12px;color:#6366f1;border-color:#a5b4fc;" title="'+link+'">'
+          +'<i class="fas fa-link" style="margin-right:5px;"></i>Link da revendedora</button>';
+      }())
       +'</div>'
       +'</div>';
   }).join('');
+}
+
+function copiarLinkRevendedor(link){
+  navigator.clipboard.writeText(link).then(function(){
+    showToast('Link copiado!','success');
+  }).catch(function(){
+    // Fallback
+    var ta=document.createElement('textarea');
+    ta.value=link; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Link copiado!','success');
+  });
 }
 
 function downloadEntregaDoRev(nomeRev){
@@ -2233,8 +2263,13 @@ function onChangeEntregaRevendedor() {
   var box = document.getElementById('entrega-link-box');
   var linkEl = document.getElementById('entrega-link');
   if (revId && box && linkEl) {
-    var base = window.location.href.replace('luxus.html', 'revendedor.html').split('?')[0].split('#')[0];
-    var url = base + '?rev=' + revId + '&script=' + encodeURIComponent(scriptUrl);
+    var _revLink = revendedores.find(function(r){return r.rowId===revId||String(r.rowId)===String(revId);});
+    var _cpfLink = _revLink ? (_revLink.CPF||'').replace(/\D/g,'') : '';
+    var _partesLink = _revLink ? _revLink.Nome.split(' ') : [];
+    var _iniciaisLink = _revLink ? (_partesLink[0][0]+(_partesLink[_partesLink.length-1][0]||'')).toUpperCase() : '';
+    var url = _cpfLink.length>=6
+      ? 'https://talitalage.github.io/luxus/revendedor.html?token='+_iniciaisLink+_cpfLink.slice(0,6)
+      : 'https://talitalage.github.io/luxus/revendedor.html?token='+_iniciaisLink;
     linkEl.value = url;
     box.style.display = 'block';
   } else if (box) {
@@ -2499,25 +2534,6 @@ function downloadEntregaLocal(){
   baixarEntrega();
 }
 
-function compartilharEntregaWhatsApp(){
-  var doc=_entregaDoc; if(!doc) return;
-  // Verifica se tem link do Drive salvo
-  var reciboUrl = doc.reciboUrl;
-  if(!reciboUrl){
-    // Tenta buscar na maleta
-    var maletaRef = maletas.find(function(m){ return m.revendedor===doc.revendedor; });
-    if(maletaRef) reciboUrl = maletaRef.reciboUrl;
-  }
-  if(!reciboUrl){
-    showToast('Salve o PDF no Drive primeiro para compartilhar o link','warning');
-    return;
-  }
-  var texto='Olá '+doc.revendedor.split(' ')[0]+'! 👋\n\n'
-    +'Segue o documento de entrega da sua maleta LUXUS:\n\n'
-    +reciboUrl+'\n\n'
-    +'_'+new Date(doc.data).toLocaleDateString('pt-BR')+' · '+doc.itens.length+' itens_';
-  window.open('https://wa.me/?text='+encodeURIComponent(texto),'_blank');
-}
 
 function baixarEntrega(){
   if (_entregaAss) {
@@ -2736,16 +2752,23 @@ function finalDownloadEntrega(c,doc) {
 }
 
 function compartilharEntregaWhatsApp() {
-  var doc=_entregaDoc; if(!doc)return;
+  var doc=_entregaDoc; if(!doc) return;
+  var reciboUrl = doc.reciboUrl;
+  if(!reciboUrl){
+    var mal=maletas.find(function(m){return m.revendedor===doc.revendedor;});
+    if(mal) reciboUrl=mal.reciboUrl;
+  }
+  if(!reciboUrl){
+    showToast('Salve o PDF no Drive primeiro para compartilhar o link','warning');
+    return;
+  }
   var rev=revendedores.find(function(r){return r.Nome===doc.revendedor;});
   var contato=rev&&rev.Contato?rev.Contato.replace(/\D/g,''):'';
-  var msg='*Documento de Entrega — '+(localStorage.getItem('luxus_titulo')||'LUXUS')+'*\n\n'
-    +'Revendedor: '+doc.revendedor+'\n'
-    +'Data: '+new Date(doc.data).toLocaleDateString('pt-BR')+'\n'
-    +'Total de itens: '+doc.totalItens+'\n'
-    +'Valor total: R$ '+doc.valorTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})+'\n\n'
-    +'*Itens:*\n'+doc.itens.map(function(i){return '  '+i.Codigo+' — '+(i.Descricao||'—');}).join('\n');
-  if(doc.reciboUrl) msg+='\n\n📄 *Documento assinado:*\n'+doc.reciboUrl;
+  var primeiroNome=doc.revendedor.split(' ')[0];
+  var msg='Olá '+primeiroNome+'! 👋\n\n'
+    +'Segue o documento de entrega da sua maleta LUXUS:\n\n'
+    +reciboUrl+'\n\n'
+    +'_'+new Date(doc.data).toLocaleDateString('pt-BR')+' · '+doc.itens.length+' itens_';
   window.open('https://wa.me/'+(contato?'55'+contato:'')+'?text='+encodeURIComponent(msg),'_blank');
 }
 
