@@ -1279,9 +1279,8 @@ document.addEventListener('DOMContentLoaded', function() {
   var lcol=localStorage.getItem('luxus_colunas');     if(lcol)try{colunasConfig=JSON.parse(lcol);}catch(e){}
   var ldev=localStorage.getItem('luxus_device')||'desktop'; setDevice(ldev);
 
-  var saved = localStorage.getItem('luxus_script_url');
-  if(saved) scriptUrl = saved;
-  // scriptUrl já tem valor padrão embutido no código
+  // scriptUrl está fixada no código — limpa qualquer valor antigo do localStorage
+  localStorage.removeItem('luxus_script_url');
   var ui=document.getElementById('config-script-url'); if(ui)ui.value=scriptUrl;
 
   var el=document.getElementById('header-username'); if(el)el.textContent='Lu';
