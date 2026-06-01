@@ -2324,14 +2324,34 @@ function renderListaEntrega() {
   resumo.style.display = 'block';
   var total = itensEntrega.reduce(function(s, i) { return s + (parseFloat(i.Custo) || 0); }, 0);
   valorTotal.textContent = 'R$ ' + total.toLocaleString('pt-BR', {minimumFractionDigits:2});
-  lista.innerHTML = itensEntrega.map(function(item, idx) {
-    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;">'
-      + '<span style="font-family:monospace;font-size:11px;color:var(--primary);font-weight:600;">' + item.Codigo + '</span>'
-      + '<span style="flex:1;font-size:12px;color:var(--gray-700);">' + (item.Descricao || '—') + '</span>'
-      + '<span style="font-size:11px;color:#10b981;font-weight:600;">R$' + (parseFloat(item.Venda)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span>'
-      + '<button onclick="removerEntrega(' + idx + ')" style="background:none;border:none;cursor:pointer;color:var(--gray-300);" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'var(--gray-300)\'"><i class="fas fa-times"></i></button>'
-      + '</div>';
-  }).join('');
+
+  // Agrupa por categoria
+  var grupos = {}, ordem = [];
+  itensEntrega.forEach(function(item, idx){
+    var cat = item.Categoria || 'Outros';
+    if(!grupos[cat]){ grupos[cat]=[]; ordem.push(cat); }
+    grupos[cat].push({item:item, idx:idx});
+  });
+  ordem.sort();
+
+  var html = '';
+  ordem.forEach(function(cat){
+    var subtotal = grupos[cat].reduce(function(s,x){ return s+(parseFloat(x.item.Custo)||0); },0);
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px;background:var(--primary);border-radius:5px;margin-top:6px;margin-bottom:2px;">'
+      +'<span style="font-size:10px;font-weight:700;color:white;text-transform:uppercase;letter-spacing:.05em;">'+cat+' ('+grupos[cat].length+')</span>'
+      +'<span style="font-size:10px;font-weight:600;color:rgba(255,255,255,.8);">R$ '+subtotal.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span>'
+      +'</div>';
+    grupos[cat].forEach(function(x){
+      var item=x.item, idx=x.idx;
+      html += '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;margin-bottom:3px;">'
+        + '<span style="font-family:monospace;font-size:11px;color:var(--primary);font-weight:600;">' + item.Codigo + '</span>'
+        + '<span style="flex:1;font-size:12px;color:var(--gray-700);">' + (item.Descricao || '—') + '</span>'
+        + '<span style="font-size:11px;color:#10b981;font-weight:600;">R$' + (parseFloat(item.Venda)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span>'
+        + '<button onclick="removerEntrega(' + idx + ')" style="background:none;border:none;cursor:pointer;color:var(--gray-300);" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'var(--gray-300)\'"><i class="fas fa-times"></i></button>'
+        + '</div>';
+    });
+  });
+  lista.innerHTML = html;
 }
 
 function removerEntrega(idx) { itensEntrega.splice(idx, 1); renderListaEntrega(); }
