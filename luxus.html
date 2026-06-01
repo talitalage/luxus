@@ -2649,7 +2649,7 @@ function finalDownloadEntrega(c,doc) {
     pdf.addImage(dataUrl,'JPEG',0,0,c.width/1.5,c.height/1.5);
     var pdfBase64 = pdf.output('datauristring').replace(/^data:[^,]+,/,'');
     var uploadId = Date.now().toString();
-    var CHUNK = 90000;
+    var CHUNK = 80000; // 80KB
     var total = Math.ceil(pdfBase64.length / CHUNK);
 
     // Cria barra de progresso
