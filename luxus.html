@@ -2206,25 +2206,21 @@ function adicionarItemMaletaAtiva(nomeRev){
 }
 
 function abrirDocumentoAtivo(nomeRev){
-  // Verifica se há maleta em preparo para este revendedor
+  // Sempre busca itens atualizados do inventário
   var maletaRef = maletas.find(function(m){ return m.revendedor===nomeRev; });
-  var itens = maletaRef ? maletaRef.itens : inventory.filter(function(i){ return i.Status==='Consignado' && i.Revendedor===nomeRev; });
+  // Usa itens do inventário atual (fonte da verdade), não da maleta em cache
+  var itens = inventory.filter(function(i){ return (i.Status==='Consignado'||i.Status==='Em Maleta') && i.Revendedor===nomeRev; });
+  if(!itens.length && maletaRef) itens = maletaRef.itens;
   if(!itens.length){ showToast('Nenhum item para '+nomeRev,'warning'); return; }
 
-  var entrega = historicEntregas.slice().sort(function(a,b){ return new Date(b.data)-new Date(a.data); })
-    .find(function(e){ return e.revendedor===nomeRev && e.tipo==='entrega'; });
-  if(!entrega){
-    // Usa data da maleta em preparo se existir, senão data atual
-    var dataDoc = maletaRef && maletaRef.dataCriacao ? maletaRef.dataCriacao : new Date().toISOString();
-    entrega = { id: Date.now(), tipo:'entrega', data: dataDoc,
-      revendedor: nomeRev, revendedorId:'',
-      itens: itens.slice(), totalItens: itens.length,
-      valorTotal: itens.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0),
-      valorCusto: itens.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0)
-    };
-    historicEntregas.unshift(entrega);
-    syncDrive({action:'addEntrega',entrega:entrega});
-  }
+  var dataDoc = maletaRef && maletaRef.dataCriacao ? maletaRef.dataCriacao : new Date().toISOString();
+  // Sempre cria entrega com itens frescos
+  var entrega = { id: Date.now(), tipo:'entrega', data: dataDoc,
+    revendedor: nomeRev, revendedorId:'',
+    itens: itens.slice(), totalItens: itens.length,
+    valorTotal: itens.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0),
+    valorCusto: itens.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0)
+  };
   _entregaDoc = entrega;
   abrirModalEntrega(entrega);
 }
