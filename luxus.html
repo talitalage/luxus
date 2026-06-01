@@ -2463,7 +2463,19 @@ function baixarEntrega(){
   var doc = _entregaDoc;
   if (!doc) return;
   // Gera canvas do documento
-  var W=640, H=400+doc.itens.length*28;
+  // Agrupa itens por categoria
+  var grupos = {};
+  var ordemCats = [];
+  doc.itens.forEach(function(item){
+    var cat = item.Categoria || 'Outros';
+    if(!grupos[cat]){ grupos[cat]=[]; ordemCats.push(cat); }
+    grupos[cat].push(item);
+  });
+  ordemCats.sort();
+
+  // Calcula altura total considerando cabeçalhos de categoria
+  var totalLinhas = doc.itens.length + ordemCats.length;
+  var W=640, H=300 + totalLinhas*26 + 120;
   var escala=1.5;
   var c = document.createElement('canvas');
   c.width=W*escala; c.height=H*escala;
@@ -2482,34 +2494,33 @@ function baixarEntrega(){
   ctx.fillStyle='#64748b'; ctx.font='11px sans-serif'; ctx.fillText('Revendedor',16,y);
   ctx.fillStyle='#1f2937'; ctx.font='bold 14px sans-serif'; ctx.fillText(doc.revendedor,16,y+16); y+=40;
   ctx.fillStyle='#64748b'; ctx.font='bold 10px sans-serif'; ctx.fillText('ITENS ENTREGUES',16,y); y+=14;
-  // Colunas: codigo(0-90) | descricao(95-350) | cat(355-500) | custo(505-W)
-  doc.itens.forEach(function(item) {
-    ctx.fillStyle='#fff'; ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=1;
-    roundRect(ctx,16,y,W-32,22,4); ctx.fill(); ctx.stroke();
-    // Código — trunca se longo
-    ctx.save();
-    ctx.rect(18,y,72,22); ctx.clip();
-    ctx.fillStyle='#1e40af'; ctx.font='bold 10px sans-serif';
-    ctx.fillText(item.Codigo||'—',24,y+15);
-    ctx.restore();
-    // Descrição
-    ctx.save();
-    ctx.rect(96,y,255,22); ctx.clip();
-    ctx.fillStyle='#334155'; ctx.font='12px sans-serif';
-    ctx.fillText(item.Descricao||'—',98,y+15);
-    ctx.restore();
-    // Categoria
-    var cat=[item.Tipo,item.Categoria].filter(Boolean).join(' · ');
-    ctx.save();
-    ctx.rect(356,y,140,22); ctx.clip();
-    ctx.fillStyle='#94a3b8'; ctx.font='10px sans-serif';
-    ctx.fillText(cat,358,y+15);
-    ctx.restore();
-    // Custo
-    ctx.fillStyle='#475569'; ctx.font='bold 11px sans-serif'; ctx.textAlign='right';
-    ctx.fillText(fmt(parseFloat(item.Custo)||0),W-20,y+15);
-    ctx.textAlign='left';
-    y+=26;
+
+  // Renderiza por categoria
+  ordemCats.forEach(function(cat){
+    var itens = grupos[cat];
+    var subtotal = itens.reduce(function(s,i){ return s+(parseFloat(i.Custo)||0); },0);
+    // Cabeçalho da categoria
+    ctx.fillStyle='#e0e7ff'; ctx.fillRect(16,y,W-32,20);
+    ctx.fillStyle='#3730a3'; ctx.font='bold 11px sans-serif';
+    ctx.fillText(cat+' ('+itens.length+')',20,y+14);
+    ctx.textAlign='right'; ctx.fillStyle='#3730a3';
+    ctx.fillText(fmt(subtotal),W-20,y+14);
+    ctx.textAlign='left'; y+=22;
+
+    itens.forEach(function(item){
+      ctx.fillStyle='#fff'; ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=1;
+      roundRect(ctx,16,y,W-32,22,4); ctx.fill(); ctx.stroke();
+      ctx.save(); ctx.rect(18,y,72,22); ctx.clip();
+      ctx.fillStyle='#1e40af'; ctx.font='bold 10px sans-serif';
+      ctx.fillText(item.Codigo||'—',24,y+15); ctx.restore();
+      ctx.save(); ctx.rect(96,y,360,22); ctx.clip();
+      ctx.fillStyle='#334155'; ctx.font='12px sans-serif';
+      ctx.fillText(item.Descricao||'—',98,y+15); ctx.restore();
+      ctx.fillStyle='#475569'; ctx.font='bold 11px sans-serif'; ctx.textAlign='right';
+      ctx.fillText(fmt(parseFloat(item.Custo)||0),W-20,y+15);
+      ctx.textAlign='left'; y+=24;
+    });
+    y+=4;
   });
   y+=10;
   ctx.fillStyle='#e2e8f0'; ctx.fillRect(16,y,W-32,1); y+=14;
