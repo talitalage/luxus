@@ -2502,13 +2502,21 @@ function downloadEntregaLocal(){
 
 function compartilharEntregaWhatsApp(){
   var doc=_entregaDoc; if(!doc) return;
-  var total=doc.itens.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0);
-  var texto='*Recibo de Entrega — '+(localStorage.getItem('luxus_titulo')||'LUXUS')+'*\n\n'
-    +'👤 Revendedor: *'+doc.revendedor+'*\n'
-    +'📅 Data: '+new Date().toLocaleDateString('pt-BR')+'\n'
-    +'📦 Total de itens: *'+doc.itens.length+'*\n'
-    +'💰 Valor consignado: *R$ '+total.toFixed(2).replace('.',',')+' *\n\n'
-    +'_Confirmo o recebimento dos itens listados no documento de entrega._';
+  // Verifica se tem link do Drive salvo
+  var reciboUrl = doc.reciboUrl;
+  if(!reciboUrl){
+    // Tenta buscar na maleta
+    var maletaRef = maletas.find(function(m){ return m.revendedor===doc.revendedor; });
+    if(maletaRef) reciboUrl = maletaRef.reciboUrl;
+  }
+  if(!reciboUrl){
+    showToast('Salve o PDF no Drive primeiro para compartilhar o link','warning');
+    return;
+  }
+  var texto='Olá '+doc.revendedor.split(' ')[0]+'! 👋\n\n'
+    +'Segue o documento de entrega da sua maleta LUXUS:\n\n'
+    +reciboUrl+'\n\n'
+    +'_'+new Date(doc.data).toLocaleDateString('pt-BR')+' · '+doc.itens.length+' itens_';
   window.open('https://wa.me/?text='+encodeURIComponent(texto),'_blank');
 }
 
@@ -2599,7 +2607,11 @@ function baixarEntrega(){
   ctx.fillStyle='#94a3b8'; ctx.font='10px sans-serif'; ctx.fillText('Assinatura do revendedor — confirmo o recebimento',16,y+12); y+=26;
   if (_entregaAss) {
     var imgAss=new Image();
-    imgAss.onload=function(){ctx.drawImage(imgAss,16,y,imgAss.width,imgAss.height);finalDownloadEntrega(c,doc);};
+    imgAss.onload=function(){
+      var dx=(W-imgAss.width)/2;
+      ctx.drawImage(imgAss,dx,y,imgAss.width,imgAss.height);
+      finalDownloadEntrega(c,doc);
+    };
     imgAss.src=_entregaAss; return;
   }
   ctx.strokeStyle='#1f2937'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(16,y+50); ctx.lineTo(240,y+50); ctx.stroke();
