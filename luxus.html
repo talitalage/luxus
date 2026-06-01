@@ -1891,8 +1891,55 @@ function editarNomeMaleta(){
   setTimeout(function(){ var inp = document.getElementById('nova-maleta-nome'); if(inp){inp.focus();inp.select();} }, 150);
 }
 
+function verificarSegurancaEdicao(callback){
+  // Cria modal de confirmação
+  var mid = 'modal-seguranca-edicao';
+  var modal = document.getElementById(mid);
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = mid;
+    modal.className = 'modal-overlay';
+    modal.innerHTML = '<div class="modal-content" style="max-width:360px;width:95%;padding:1.5rem;">'
+      +'<div style="text-align:center;margin-bottom:1rem;">'
+      +'<div style="width:48px;height:48px;background:#fef2f2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">'
+      +'<i class="fas fa-lock" style="color:#dc2626;font-size:1.2rem;"></i></div>'
+      +'<h3 style="font-size:1rem;font-weight:700;color:var(--gray-800);margin:0 0 6px;">Maleta assinada</h3>'
+      +'<p style="font-size:13px;color:var(--gray-500);margin:0;">Digite <strong>editar</strong> para confirmar a edição</p>'
+      +'</div>'
+      +'<input type="text" id="input-seguranca" placeholder="Digite: editar" style="width:100%;padding:.75rem;border:1.5px solid var(--gray-300);border-radius:8px;font-size:14px;text-align:center;box-sizing:border-box;" autocomplete="off">'
+      +'<div id="seguranca-erro" style="display:none;font-size:12px;color:#dc2626;text-align:center;margin-top:6px;">Palavra incorreta. Digite exatamente: editar</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:1rem;">'
+      +'<button onclick="fecharModal(\''+mid+'\')" class="btn-secondary" style="padding:.625rem;">Cancelar</button>'
+      +'<button onclick="confirmarSegurancaEdicao()" class="btn-primary" style="padding:.625rem;">Confirmar</button>'
+      +'</div></div>';
+    document.body.appendChild(modal);
+  }
+  window._segurancaCallback = callback;
+  document.getElementById('input-seguranca').value = '';
+  document.getElementById('seguranca-erro').style.display = 'none';
+  abrirModal(mid);
+  setTimeout(function(){ document.getElementById('input-seguranca').focus(); }, 200);
+  document.getElementById('input-seguranca').onkeydown = function(e){ if(e.key==='Enter') confirmarSegurancaEdicao(); };
+}
+
+function confirmarSegurancaEdicao(){
+  var val = (document.getElementById('input-seguranca').value||'').trim().toLowerCase();
+  if(val === 'editar'){
+    fecharModal('modal-seguranca-edicao');
+    if(window._segurancaCallback) window._segurancaCallback();
+  } else {
+    document.getElementById('seguranca-erro').style.display = 'block';
+    document.getElementById('input-seguranca').value = '';
+    document.getElementById('input-seguranca').focus();
+  }
+}
+
 function editarNomeMaletaById(id){
   var m=maletas.find(function(x){return x.id===id;});if(!m)return;
+  if(m.reciboUrl){
+    verificarSegurancaEdicao(function(){ maletaAtual=m; editarNomeMaleta(); });
+    return;
+  }
   maletaAtual=m;editarNomeMaleta();
 }
 function excluirMaletaById(id){
@@ -2037,6 +2084,17 @@ function excluirMaletaAtiva(nomeRev){
 }
 
 function editarMaletaAtiva(nomeRev){
+  // Verifica se tem documento assinado
+  var entrega = historicEntregas.find(function(e){ return e.revendedor===nomeRev && e.reciboUrl; });
+  var maletaRef = maletas.find(function(m){ return m.revendedor===nomeRev && m.reciboUrl; });
+  if(entrega || maletaRef){
+    verificarSegurancaEdicao(function(){ _abrirEditarMaletaAtiva(nomeRev); });
+    return;
+  }
+  _abrirEditarMaletaAtiva(nomeRev);
+}
+
+function _abrirEditarMaletaAtiva(nomeRev){
   var itens = inventory.filter(function(i){ return i.Revendedor===nomeRev && (i.Status==='Consignado'||i.Status==='Em Maleta'); });
   if(!itens.length){ showToast('Nenhum item para '+nomeRev,'warning'); return; }
 
@@ -2353,8 +2411,10 @@ function abrirModalEntrega(doc) {
         var c=document.getElementById('canvas-entrega');
         if(!c) return;
         _entregaAssCtx.clearRect(0,0,c.width,c.height);
-        var dx=(c.width-imgAss.width)/2;
-        var dy=(c.height-imgAss.height)/2;
+        // Canvas tem escala 2x — usar dimensões lógicas (c.width/2, c.height/2)
+        var lw=c.width/2, lh=c.height/2;
+        var dx=(lw-imgAss.width)/2;
+        var dy=(lh-imgAss.height)/2;
         _entregaAssCtx.drawImage(imgAss,dx,dy,imgAss.width,imgAss.height);
         _entregaAss=c.toDataURL('image/png');
       };
