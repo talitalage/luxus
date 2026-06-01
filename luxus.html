@@ -2690,29 +2690,42 @@ function finalDownloadEntrega(c,doc) {
           setTimeout(function(){ enviarChunk(idx+1); }, 800);
         } else {
           atualizarProgresso(idx,'finalizando');
-          setTimeout(function(){
-            var p=encodeURIComponent(JSON.stringify({action:'finalizarReciboChunk',uploadId:uploadId,nomeArquivo:nome,totalChunks:total}));
-            fetch(scriptUrl+'?payload='+p,{method:'GET',cache:'no-cache'})
-            .then(function(r){return r.json();})
-            .then(function(res){
-              if(res&&res.success&&res.url){
-                atualizarProgresso(idx,'ok');
-                var idx2=historicEntregas.findIndex(function(e){return e.id===doc.id;});
-                if(idx2!==-1){historicEntregas[idx2].reciboUrl=res.url;historicEntregas[idx2].assinado=true;}
-                var mal=maletas.find(function(m){return m.revendedor===doc.revendedor;});
-                if(mal){mal.reciboUrl=res.url;salvarMaletas();}
-                mostrarLinkRecibo(res.url,doc.revendedor);
-                renderUltimasEntregas();renderMaletasAtivas();
-                showToast('✅ PDF salvo no Drive!','success');
-              } else {
-                var el=document.getElementById(progressId); if(el) el.remove();
-                showToast('Erro ao finalizar: '+(res&&res.error||'tente novamente'),'warning');
-              }
-            }).catch(function(e){
-              var el=document.getElementById(progressId); if(el) el.remove();
-              showToast('Erro: '+e.message,'warning');
-            });
-          }, 3000);
+          // Dispara finalização via POST no-cors
+          fetch(scriptUrl,{
+            method:'POST',mode:'no-cors',
+            headers:{'Content-Type':'text/plain'},
+            body:JSON.stringify({action:'finalizarReciboChunk',uploadId:uploadId,nomeArquivo:nome,totalChunks:total})
+          }).then(function(){
+            // Polling via GET para buscar o resultado
+            var tentativas=0;
+            function pollResultado(){
+              tentativas++;
+              var p=encodeURIComponent(JSON.stringify({action:'buscarRecibo',nomeArquivo:nome+'.pdf'}));
+              fetch(scriptUrl+'?payload='+p,{method:'GET',cache:'no-cache'})
+              .then(function(r){return r.json();})
+              .then(function(res){
+                if(res&&res.success&&res.url){
+                  atualizarProgresso(idx,'ok');
+                  var idx2=historicEntregas.findIndex(function(e){return e.id===doc.id;});
+                  if(idx2!==-1){historicEntregas[idx2].reciboUrl=res.url;historicEntregas[idx2].assinado=true;}
+                  var mal=maletas.find(function(m){return m.revendedor===doc.revendedor;});
+                  if(mal){mal.reciboUrl=res.url;salvarMaletas();}
+                  mostrarLinkRecibo(res.url,doc.revendedor);
+                  renderUltimasEntregas();renderMaletasAtivas();
+                  showToast('✅ PDF salvo no Drive!','success');
+                } else if(tentativas<15){
+                  setTimeout(pollResultado,3000);
+                } else {
+                  var el=document.getElementById(progressId); if(el) el.remove();
+                  showToast('Timeout — tente salvar novamente','warning');
+                }
+              }).catch(function(){ if(tentativas<15) setTimeout(pollResultado,3000); });
+            }
+            setTimeout(pollResultado,5000);
+          }).catch(function(e){
+            var el=document.getElementById(progressId); if(el) el.remove();
+            showToast('Erro: '+e.message,'warning');
+          });
         }
       }).catch(function(e){
         var el=document.getElementById(progressId); if(el) el.remove();
