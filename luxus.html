@@ -1620,8 +1620,8 @@ function confirmarNovaMaleta(){
 
 function renderListaMaletas(){
   var el = document.getElementById('lista-maletas'); if(!el) return;
-  // Só mostra maletas não entregues
-  var maletasAtivas = maletas.filter(function(m){ return !m.entregue; });
+  // Mostra todas as maletas — pendentes primeiro, depois entregues
+  var maletasAtivas = maletas.slice().sort(function(a,b){ return (a.entregue?1:0)-(b.entregue?1:0); });
   if(!maletasAtivas.length){ el.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1.5rem 0;">Nenhuma maleta criada.</p>'; return; }
   el.innerHTML = maletasAtivas.map(function(m){
     var ativa = maletaAtual && maletaAtual.id === m.id;
@@ -2647,8 +2647,16 @@ function baixarEntrega(){
   if (_entregaAss) {
     var imgAss=new Image();
     imgAss.onload=function(){
-      var dx=(W-imgAss.width)/2;
-      ctx.drawImage(imgAss,dx,y,imgAss.width,imgAss.height);
+      // Escala a assinatura para caber em 200x60px, alinhada à esquerda
+      var maxW=200, maxH=60;
+      var scale=Math.min(maxW/imgAss.width, maxH/imgAss.height);
+      var dw=imgAss.width*scale, dh=imgAss.height*scale;
+      ctx.drawImage(imgAss,16,y,dw,dh);
+      // Linha de assinatura e nome abaixo
+      ctx.strokeStyle='#1f2937'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(16,y+dh+8); ctx.lineTo(240,y+dh+8); ctx.stroke();
+      ctx.fillStyle='#334155'; ctx.font='11px sans-serif'; ctx.fillText(doc.revendedor,16,y+dh+22);
+      var revDocCpf2=revendedores.find(function(r){return r.Nome===doc.revendedor;});
+      if(revDocCpf2&&revDocCpf2.CPF){ctx.fillStyle='#94a3b8';ctx.font='10px sans-serif';ctx.fillText('CPF: '+revDocCpf2.CPF,16,y+dh+34);}
       finalDownloadEntrega(c,doc);
     };
     imgAss.src=_entregaAss; return;
