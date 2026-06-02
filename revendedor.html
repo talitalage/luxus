@@ -404,6 +404,27 @@ body { font-family:var(--font); background:var(--dark); color:var(--text); min-h
 var SCRIPT='https://script.google.com/macros/s/AKfycbwQ4bVp3C3G5g34OsYb1Tr6nAtUgnN22Ln-bbetgpZe3-3-48KyzgtIDmhoQHlYyE7U/exec';
 var itens=[],vendidos=[],rev=null,reciboUrl=null,filtro='todos',sel=null;
 
+function gerarFavicon(iniciais){
+  var c=document.createElement('canvas');
+  c.width=64; c.height=64;
+  var ctx=c.getContext('2d');
+  // Fundo gradiente dourado
+  var g=ctx.createLinearGradient(0,0,64,64);
+  g.addColorStop(0,'#e8d48a'); g.addColorStop(.5,'#c9a84c'); g.addColorStop(1,'#9a7535');
+  ctx.fillStyle=g;
+  ctx.roundRect(0,0,64,64,12);
+  ctx.fill();
+  // Texto
+  ctx.fillStyle='#0c0c0e';
+  ctx.font='bold 26px Inter Tight, sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(iniciais,32,33);
+  // Aplica como favicon
+  var link=document.querySelector('link[rel="icon"]')||document.createElement('link');
+  link.rel='icon'; link.type='image/png'; link.href=c.toDataURL();
+  document.head.appendChild(link);
+}
+
 function fmt(v){ return 'R$ '+(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function toast(msg,t){ var el=document.getElementById('toast'); el.textContent=msg; el.className='toast '+(t||''); el.classList.add('show'); setTimeout(function(){el.classList.remove('show');},3000); }
 function getToken(){ return new URLSearchParams(window.location.search).get('token')||''; }
@@ -443,6 +464,12 @@ function init(){
     });
 
     if(!rev){ erro('Acesso não autorizado.'); return; }
+
+    // Favicon com iniciais
+    var partes=rev.Nome.split(' ');
+    var iniciais=(partes[0][0]+(partes[partes.length-1][0]||'')).toUpperCase();
+    gerarFavicon(iniciais);
+    document.title='Maleta '+iniciais+' — LUXUS';
 
     itens=inv.filter(function(i){ return (i.Status==='Consignado'||i.Status==='Em Maleta')&&i.Revendedor===rev.Nome; });
 
