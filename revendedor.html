@@ -16,9 +16,10 @@
   --font:'Inter Tight',sans-serif;
 }
 [data-theme="light"] {
+  --gold:#8a5e1a; --gold-light:#7a5218; --gold-dark:#5c3d10;
   --dark:#f8f5f0; --dark-2:#ffffff; --dark-3:#f0ece4;
   --text:#1a1410; --text-muted:#6b6358; --text-dim:#9a9280;
-  --border:rgba(154,117,53,.15); --border-hover:rgba(154,117,53,.4);
+  --border:rgba(138,94,26,.18); --border-hover:rgba(138,94,26,.4);
 }
 [data-theme="light"] body { background:var(--dark); }
 [data-theme="light"] .header { background:rgba(248,245,240,.95); }
@@ -509,7 +510,7 @@ function init(){
     var partes=rev.Nome.split(' ');
     var iniciais=(partes[0][0]+(partes[partes.length-1][0]||'')).toUpperCase();
     gerarFavicon(iniciais);
-    document.title='Maleta '+iniciais+' — LUXUS';
+    document.title=partes[0]+' | LUXUS';
 
     itens=inv.filter(function(i){ return (i.Status==='Consignado'||i.Status==='Em Maleta')&&i.Revendedor===rev.Nome; });
 
