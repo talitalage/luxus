@@ -1992,7 +1992,7 @@ function renderMaletasAtivas(){
 
   // Revendedores que têm maleta em preparo NÃO entregue — não duplicar
   var revsEmPreparo = {};
-  maletas.forEach(function(m){ if(m.revendedor && !m.entregue) revsEmPreparo[m.revendedor]=true; });
+  maletas.forEach(function(m){ if(m.revendedor) revsEmPreparo[m.revendedor]=true; }); // exclui revendedores com qualquer maleta (entregue ou em preparo)
 
   // Agrupa apenas itens Consignado sem maleta em preparo correspondente
   var porRev = {};
