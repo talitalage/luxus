@@ -2059,12 +2059,12 @@ function renderMaletasAtivas(){
         : '<button onclick="abrirDocumentoAtivo(\''+nome+'\')" class="btn-primary" style="width:100%;padding:7px;font-size:12px;"><i class="fas fa-pen-nib" style="margin-right:5px;"></i>Assinar documento</button>')
       +(function(){
         var rev = revendedores.find(function(r){ return r.Nome===nome; });
-        if(!rev || !rev.CPF) return '';
-        var cpfNum = (rev.CPF||'').replace(/\D/g,'');
-        if(cpfNum.length < 6) return '';
+        if(!rev) return '';
         var partes = nome.split(' ');
         var iniciais = (partes[0][0]+(partes[partes.length-1][0]||'')).toUpperCase();
-        var token = iniciais + cpfNum.slice(0,6);
+        var cpfNum = (rev.CPF||'').replace(/\D/g,'');
+        // Usa iniciais + CPF se tiver 6+ dígitos, senão só iniciais
+        var token = cpfNum.length >= 6 ? iniciais + cpfNum.slice(0,6) : iniciais;
         var link = 'https://talitalage.github.io/luxus/revendedor.html?token='+token;
         return '<button onclick="copiarLinkRevendedor(\''+link+'\')" class="btn-secondary" style="width:100%;padding:7px;font-size:12px;color:#6366f1;border-color:#a5b4fc;" title="'+link+'">'
           +'<i class="fas fa-link" style="margin-right:5px;"></i>Link da revendedora</button>';
