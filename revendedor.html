@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Minha Maleta — LUXUS</title>
+<title>LUXUS</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
@@ -510,7 +510,8 @@ function init(){
     var partes=rev.Nome.split(' ');
     var iniciais=(partes[0][0]+(partes[partes.length-1][0]||'')).toUpperCase();
     gerarFavicon(iniciais);
-    document.title=partes[0]+' | LUXUS';
+    var firstName=partes[0];
+    document.title=firstName+' | LUXUS';
 
     itens=inv.filter(function(i){ return (i.Status==='Consignado'||i.Status==='Em Maleta')&&i.Revendedor===rev.Nome; });
 
@@ -518,7 +519,6 @@ function init(){
     if(mal) reciboUrl=mal.reciboUrl;
 
     document.getElementById('h-rev').textContent=rev.Nome;
-    var firstName=rev.Nome.split(' ')[0];
     document.getElementById('hero-name').textContent='Olá, '+firstName+' ✨';
     var dataEnt=mal&&mal.dataCriacao?new Date(mal.dataCriacao).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}):'';
     document.getElementById('hero-date').textContent=dataEnt?'Entrega em '+dataEnt:'';
