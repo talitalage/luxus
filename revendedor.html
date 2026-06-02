@@ -311,7 +311,7 @@ body { font-family:var(--font); background:var(--dark); color:var(--text); min-h
     </div>
     <div class="header-right">
       <div class="header-rev" id="h-rev"></div>
-      <div class="header-date" id="h-date"></div>
+      <div class="header-date" id="h-clock"></div>
     </div>
   </div>
 
@@ -386,7 +386,12 @@ body { font-family:var(--font); background:var(--dark); color:var(--text); min-h
       <div class="modal-item-desc" id="m-desc"></div>
       <div class="modal-item-cat" id="m-cat"></div>
     </div>
-    <div class="modal-row"><span class="modal-row-l">Preço de venda</span><span class="modal-row-r gold" id="m-price"></span></div>
+    <div class="modal-row">
+      <span class="modal-row-l">Preço de venda</span>
+      <input id="m-price" type="number" step="0.01" min="0"
+        style="background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--gold-light);font-size:1rem;font-weight:700;font-family:var(--font);text-align:right;width:120px;outline:none;padding:2px 0;"
+        onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'">
+    </div>
     <div class="modal-row"><span class="modal-row-l">Data</span><span class="modal-row-r" id="m-date"></span></div>
     <button class="btn-confirm" id="btn-ok" onclick="confirmar()"><i class="fas fa-check-circle"></i>Confirmar Venda</button>
     <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
@@ -402,6 +407,15 @@ var itens=[],vendidos=[],rev=null,reciboUrl=null,filtro='todos',sel=null;
 function fmt(v){ return 'R$ '+(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function toast(msg,t){ var el=document.getElementById('toast'); el.textContent=msg; el.className='toast '+(t||''); el.classList.add('show'); setTimeout(function(){el.classList.remove('show');},3000); }
 function getToken(){ return new URLSearchParams(window.location.search).get('token')||''; }
+
+// Relógio no header
+function atualizarRelogio(){
+  var el=document.getElementById('h-clock'); if(!el) return;
+  var now=new Date();
+  el.textContent=now.toLocaleDateString('pt-BR')+' · '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+setInterval(atualizarRelogio,1000);
+atualizarRelogio();
 
 function tab(id){
   ['itens','resumo','doc'].forEach(function(t){document.getElementById('t-'+t).style.display=t===id?'':'none';});
@@ -435,12 +449,11 @@ function init(){
     var mal=mals.find(function(m){ return m.revendedor===rev.Nome; });
     if(mal) reciboUrl=mal.reciboUrl;
 
-    var firstName=rev.Nome.split(' ')[0];
     document.getElementById('h-rev').textContent=rev.Nome;
+    var firstName=rev.Nome.split(' ')[0];
     document.getElementById('hero-name').textContent='Olá, '+firstName+' ✨';
     var dataEnt=mal&&mal.dataCriacao?new Date(mal.dataCriacao).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}):'';
     document.getElementById('hero-date').textContent=dataEnt?'Entrega em '+dataEnt:'';
-    document.getElementById('h-date').textContent=dataEnt||'';
 
     renderCards(); renderItens();
     document.getElementById('loading').style.display='none';
@@ -542,23 +555,24 @@ function abrirModal(item){
   document.getElementById('m-code').textContent=item.Codigo||'—';
   document.getElementById('m-desc').textContent=item.Descricao||'—';
   document.getElementById('m-cat').textContent=(item.Tipo||'')+(item.Categoria?' · '+item.Categoria:'');
-  document.getElementById('m-price').textContent=fmt(item.Venda||0);
-  document.getElementById('m-date').textContent=new Date().toLocaleDateString('pt-BR');
+  document.getElementById('m-price').value=(parseFloat(item.Venda)||0).toFixed(2);
+  document.getElementById('m-date').textContent=new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   var btn=document.getElementById('btn-ok');
   btn.disabled=false; btn.innerHTML='<i class="fas fa-check-circle"></i>Confirmar Venda';
   document.getElementById('modal').classList.add('open');
+  setTimeout(function(){ document.getElementById('m-price').focus(); document.getElementById('m-price').select(); },200);
 }
 
 function closeModal(){ document.getElementById('modal').classList.remove('open'); sel=null; }
 
 function confirmar(){
   if(!sel) return;
-  var item=sel;
-  // Controle local apenas — o fechamento é feito pelo sistema principal
+  var preco = parseFloat(document.getElementById('m-price').value)||0;
+  var item = Object.assign({},sel,{VendaRealizada: preco});
   vendidos.push(item);
-  itens=itens.filter(function(i){return i.rowId!==item.rowId;});
+  itens=itens.filter(function(i){return i.rowId!==sel.rowId;});
   renderCards(); renderItens(); closeModal();
-  toast('✓ Venda registrada!','ok');
+  toast('✓ Venda de '+fmt(preco)+' registrada!','ok');
 }
 
 document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
