@@ -16,11 +16,22 @@
   --font:'Inter Tight',sans-serif;
 }
 [data-theme="light"] {
-  --gold:#a06820; --gold-light:#8a5a18; --gold-dark:#6b4210;
-  --dark:#f8f5f0; --dark-2:#ffffff; --dark-3:#f0ece4;
+  --gold:#c9a84c; --gold-light:#b8942e; --gold-dark:#9a7820;
+  --dark:#f8f5f0; --dark-2:#ffffff; --dark-3:#f2ede5;
   --text:#1a1410; --text-muted:#6b6358; --text-dim:#9a9280;
-  --border:rgba(160,104,32,.18); --border-hover:rgba(160,104,32,.4);
+  --border:rgba(201,168,76,.25); --border-hover:rgba(201,168,76,.5);
 }
+[data-theme="light"] .card::after { opacity:.6; }
+[data-theme="light"] .cat-head-name { color:#9a7820; }
+[data-theme="light"] .item-code { color:#9a7820; }
+[data-theme="light"] .item-badge.badge-em-maos { background:rgba(201,168,76,.12); color:#9a7820; border-color:rgba(201,168,76,.3); }
+[data-theme="light"] .logo-mark { background:linear-gradient(135deg,#e8c97a,#c9a84c,#9a7535); }
+[data-theme="light"] .hero-greeting { color:#9a7820; }
+[data-theme="light"] .modal-item-code { color:#9a7820; }
+[data-theme="light"] .card-value.gold { color:#9a7820; }
+[data-theme="light"] .resumo-val.gold { color:#9a7820; }
+[data-theme="light"] .cat-card-name { color:#9a7820; }
+[data-theme="light"] .nav-btn.active { background:linear-gradient(135deg,#c9a84c,#9a7535); color:#fff; }
 [data-theme="light"] body { background:var(--dark); }
 [data-theme="light"] .header { background:rgba(248,245,240,.95); }
 [data-theme="light"] .hero { background:linear-gradient(160deg,#f5f0e8 0%,#ede8d8 60%,#f5f0e8 100%); }
