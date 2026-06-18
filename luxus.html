@@ -314,7 +314,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
         <div style="display:flex;gap:6px;margin-bottom:1rem;">
           <input type="text" id="maleta-codigo" class="barcode-input" placeholder="Bipe ou digite o código — Enter"
             onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarItemMaleta();}"
-            oninput="clearTimeout(this._t);this._t=setTimeout(function(){var v=document.getElementById('maleta-codigo').value.trim();if(v.length>3)adicionarItemMaleta();},600)"
+            
             style="flex:1;">
           <button onclick="abrirScanner('maleta-codigo',adicionarItemMaleta)" class="btn-secondary" style="padding:6px 10px;flex-shrink:0;"><i class="fas fa-camera"></i></button>
           <button onclick="adicionarItemMaleta()" class="btn-secondary" style="padding:6px 10px;flex-shrink:0;"><i class="fas fa-plus"></i></button>
@@ -2036,8 +2036,17 @@ function renderMaletasAtivas(){
     var assinado = (entrega && entrega.reciboUrl) || (maletaRef && maletaRef.reciboUrl);
     var confirmada = (entrega && entrega.confirmada) || (maletaRef && maletaRef.entregue);
     var reciboUrlFinal = (entrega && entrega.reciboUrl) || (maletaRef && maletaRef.reciboUrl) || '';
-    var data = entrega ? new Date(entrega.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : null;
+    // Usa a data do complemento mais recente se houver, senão a da entrega principal
+    var todasMaletas = maletas.filter(function(m){ return m.revendedor===nome && m.entregue; })
+      .sort(function(a,b){ return new Date(b.dataEntrega||b.dataCriacao||0)-new Date(a.dataEntrega||a.dataCriacao||0); });
+    var maisRecente = todasMaletas[0];
+    var dataRef = maisRecente ? (maisRecente.dataEntrega||maisRecente.dataCriacao) : (entrega ? entrega.data : null);
+    var _dr = dataRef ? new Date(dataRef) : null;
+    var data = _dr ? (_dr.getDate().toString().padStart(2,'0')+'/'
+      +(_dr.getMonth()+1).toString().padStart(2,'0')+'/'+_dr.getFullYear()
+      +', '+_dr.getHours().toString().padStart(2,'0')+':'+_dr.getMinutes().toString().padStart(2,'0')) : null;
 
+    var collapseId = 'mc-'+nome.replace(/[^a-zA-Z0-9]/g,'_');
     return '<div class="card-light" style="padding:1rem;">'
       // Cabeçalho
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;">'
@@ -2054,8 +2063,11 @@ function renderMaletasAtivas(){
           : '<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:600;white-space:nowrap;"><i class="fas fa-clock" style="margin-right:3px;"></i>Pendente</span>')
       +'<button onclick="editarMaletaAtiva(\''+nome.replace(/'/g,"\\'")+'\')" class="btn-secondary" style="padding:5px 8px;font-size:12px;margin-left:6px;flex-shrink:0;" title="Editar maleta"><i class="fas fa-pen"></i></button>'
       +'<button onclick="excluirMaletaAtiva(\''+nome.replace(/'/g,"\\'")+'\')" class="btn-secondary" style="padding:5px 8px;font-size:12px;color:#dc2626;border-color:#fca5a5;flex-shrink:0;" title="Excluir maleta" onmouseover="this.style.background=\'#fef2f2\'" onmouseout="this.style.background=\'\'"><i class="fas fa-trash"></i></button>'
+      
+      +'<button onclick="toggleMaletaCard(collapseId)" style="background:none;border:none;cursor:pointer;padding:5px 8px;color:var(--gray-400);"><i class="fas fa-chevron-up" id="'+('icon-'+collapseId)+'"  ></i></button>'
       +'</div>'
       // Resumo categorias
+      +'<div id="'+collapseId+'">' 
       +'<div style="margin-bottom:.75rem;padding:.625rem .75rem;background:var(--gray-50);border-radius:6px;display:flex;flex-wrap:wrap;gap:6px;">'
       +function(){
         var grupos={};
@@ -2085,7 +2097,8 @@ function renderMaletasAtivas(){
         return '<button onclick="copiarLinkRevendedor(\''+link+'\')" class="btn-secondary" style="width:100%;padding:7px;font-size:12px;color:#6366f1;border-color:#a5b4fc;" title="'+link+'">'
           +'<i class="fas fa-link" style="margin-right:5px;"></i>Link da revendedora</button>';
       }())
-      +'</div>'
+      +'</div>' 
+      +'</div>'  // fecha collapseId
       +'</div>';
   }).join('');
   el.innerHTML = htmlComplementos + el.innerHTML;
@@ -2107,6 +2120,16 @@ function assinarComplemento(id){
   };
   _entregaDoc = doc;
   abrirModalEntrega(doc);
+}
+
+
+function toggleMaletaCard(id){
+  var el=document.getElementById(id);
+  var icon=document.getElementById('icon-'+id);
+  if(!el)return;
+  var fechado=el.style.display==='none';
+  el.style.display=fechado?'block':'none';
+  if(icon)icon.className='fas fa-chevron-'+(fechado?'up':'down');
 }
 
 function copiarLinkRevendedor(link){
