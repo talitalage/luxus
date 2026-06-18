@@ -2068,7 +2068,7 @@ function renderMaletasAtivas(){
       +'<div style="display:flex;gap:6px;flex-direction:column;">'
       +(reciboUrlFinal
         ? '<div style="display:flex;gap:6px;">'
-          +'<button onclick="window.open(\''+reciboUrlFinal+'\',\'_blank\')" class="btn-secondary" style="flex:1;padding:7px;font-size:12px;color:#10b981;border-color:#86efac;"><i class="fas fa-eye" style="margin-right:5px;"></i>Ver documento</button>'
+          +'<button onclick="abrirDocumentos(\''+nome+'\')" class="btn-secondary" style="flex:1;padding:7px;font-size:12px;color:#10b981;border-color:#86efac;"><i class="fas fa-eye" style="margin-right:5px;"></i>Ver documento</button>'
           +'<button onclick="downloadEntregaDoRev(\''+nome+'\')" class="btn-secondary" style="padding:7px 10px;font-size:12px;"><i class="fas fa-download"></i></button>'
           +'</div>'
         : '<button onclick="abrirDocumentoAtivo(\''+nome+'\')" class="btn-primary" style="width:100%;padding:7px;font-size:12px;"><i class="fas fa-pen-nib" style="margin-right:5px;"></i>Assinar documento</button>')
@@ -4892,6 +4892,68 @@ function salvarItem(){
 function excluirItem(){var rowId=document.getElementById('edit-rowid').value;if(!rowId){fecharModal('modal-item');return;}var item=inventory.find(function(i){return i.rowId==rowId;});if(!confirm('Excluir o produto '+(item?item.Codigo:rowId)+'?'))return;inventory=inventory.filter(function(i){return i.rowId!=rowId;});fecharModal('modal-item');renderDashboard();showToast('Produto excluído!','success');var payloadDel={action:'uploadTudo',inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas};fetch(scriptUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payloadDel)}).catch(function(){});try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas}));}catch(e){}}
 function verFoto(url){if(url)window.open(url,'_blank');}
 
+
+
+// =====================================================
+// MODAL DE DOCUMENTOS (múltiplos recibos)
+// =====================================================
+function abrirDocumentos(nomeRev){
+  // Coleta todas as maletas do revendedor com reciboUrl
+  var docs = maletas.filter(function(m){
+    return m.revendedor === nomeRev && m.reciboUrl;
+  }).sort(function(a,b){
+    return new Date(a.dataEntrega||a.dataCriacao||0) - new Date(b.dataEntrega||b.dataCriacao||0);
+  });
+
+  if(docs.length === 0){ showToast('Nenhum documento disponível','warning'); return; }
+  if(docs.length === 1){ window.open(docs[0].reciboUrl,'_blank'); return; }
+
+  // Múltiplos — abre modal
+  var modal = document.getElementById('modal-documentos');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'modal-documentos';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = '<div class="modal-box" style="max-width:420px;">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">'
+      +'<div>'
+      +'<h3 style="font-size:15px;font-weight:700;color:var(--gray-800);" id="modal-docs-titulo">Documentos</h3>'
+      +'<p style="font-size:12px;color:var(--gray-500);" id="modal-docs-sub"></p>'
+      +'</div>'
+      +'<button onclick="fecharModal(\'modal-documentos\')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-400);">×</button>'
+      +'</div>'
+      +'<div id="modal-docs-lista"></div>'
+      +'</div>';
+    document.body.appendChild(modal);
+  }
+
+  document.getElementById('modal-docs-titulo').textContent = 'Documentos — ' + nomeRev;
+  document.getElementById('modal-docs-sub').textContent = docs.length + ' recibo(s)';
+
+  document.getElementById('modal-docs-lista').innerHTML = docs.map(function(m, i){
+    var d = new Date(m.dataEntrega || m.dataCriacao || '');
+    var dataStr = d.getDate().toString().padStart(2,'0')+'/'
+      +(d.getMonth()+1).toString().padStart(2,'0')+'/'+d.getFullYear()
+      +' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+    var isComp = m.complemento || m.nome.toLowerCase().indexOf('complemento') !== -1;
+    var cor = isComp ? '#f59e0b' : '#10b981';
+    var icon = isComp ? 'fa-plus-circle' : 'fa-file-pdf';
+    var label = isComp ? 'Complemento' : 'Entrega principal';
+    var url = encodeURIComponent(m.reciboUrl||'');
+    return '<div data-url="'+url+'" onclick="abrirReciboDoc(this)" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--gray-200);border-radius:10px;margin-bottom:8px;cursor:pointer;">'
+      +'<div style="width:38px;height:38px;border-radius:10px;background:'+cor+'22;display:flex;align-items:center;justify-content:center;flex-shrink:0;">'
+      +'<i class="fas '+icon+'" style="color:'+cor+';font-size:16px;"></i>'
+      +'</div>'
+      +'<div style="flex:1;min-width:0;">'
+      +'<div style="font-weight:600;font-size:13px;color:var(--gray-800);">'+m.nome+'</div>'
+      +'<div style="font-size:11px;color:var(--gray-500);">'+label+' &middot; '+dataStr+'</div>'
+      +'</div>'
+      +'<i class="fas fa-external-link-alt" style="color:var(--gray-400);font-size:12px;"></i>'
+      +'</div>';
+  }).join('');
+
+  abrirModal('modal-documentos');
+}
 
 // =====================================================
 // COMPLEMENTO DE MALETA
