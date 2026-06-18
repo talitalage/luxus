@@ -2072,7 +2072,7 @@ function renderMaletasAtivas(){
           +'<button onclick="downloadEntregaDoRev(\''+nome+'\')" class="btn-secondary" style="padding:7px 10px;font-size:12px;"><i class="fas fa-download"></i></button>'
           +'</div>'
         : '<button onclick="abrirDocumentoAtivo(\''+nome+'\')" class="btn-primary" style="width:100%;padding:7px;font-size:12px;"><i class="fas fa-pen-nib" style="margin-right:5px;"></i>Assinar documento</button>')
-      +'<button onclick="abrirComplemento(\''+nome.replace(/\'/g,\"\\'\")+'\')" class="btn-secondary" style="width:100%;padding:7px;font-size:12px;color:#f59e0b;border-color:#fcd34d;" onmouseover="this.style.background='#fffbeb'" onmouseout="this.style.background=''"><i class="fas fa-plus-circle" style="margin-right:5px;"></i>Entregar complemento</button>'
+      +'<button onclick="abrirComplementoById(this)" data-rev="'+encodeURIComponent(nome)+'" class="btn-secondary" style="width:100%;padding:7px;font-size:12px;color:#f59e0b;border-color:#fcd34d;"><i class="fas fa-plus-circle" style="margin-right:5px;"></i>Entregar complemento</button>'
       +(function(){
         var rev = revendedores.find(function(r){ return r.Nome===nome; });
         if(!rev) return '';
@@ -4899,6 +4899,11 @@ function verFoto(url){if(url)window.open(url,'_blank');}
 var _complementoRev = null;
 var _complementoItens = []; // itens selecionados para o complemento
 
+function abrirComplementoById(btn){
+  var nomeRev = decodeURIComponent(btn.getAttribute('data-rev'));
+  abrirComplemento(nomeRev);
+}
+
 function abrirComplemento(nomeRev){
   _complementoRev = nomeRev;
   _complementoItens = [];
@@ -4912,7 +4917,7 @@ function abrirComplemento(nomeRev){
     modal.innerHTML = '<div class="modal-box" style="max-width:560px;max-height:90vh;overflow-y:auto;">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">'
       +'<h3 style="font-size:15px;font-weight:700;color:var(--gray-800);">Complemento — <span id="comp-rev-nome"></span></h3>'
-      +'<button onclick="fecharModal('modal-complemento')" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--gray-500);">×</button>'
+      +'<button onclick="fecharModal(&quot;modal-complemento&quot;)" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--gray-500);">×</button>'
       +'</div>'
       // Scan
       +'<div style="display:flex;gap:8px;margin-bottom:1rem;">'
@@ -4925,7 +4930,7 @@ function abrirComplemento(nomeRev){
       +'<div id="comp-totais" style="background:var(--gray-50);border-radius:8px;padding:.75rem;margin-bottom:1rem;font-size:13px;"></div>'
       // Botões
       +'<div style="display:flex;gap:8px;">'
-      +'<button onclick="fecharModal('modal-complemento')" class="btn-secondary" style="flex:1;">Cancelar</button>'
+      +'<button onclick="fecharModal(\'modal-complemento\')" class="btn-secondary" style="flex:1;">Cancelar</button>'
       +'<button onclick="confirmarComplemento()" class="btn-primary" style="flex:1;"><i class="fas fa-pen-nib" style="margin-right:5px;"></i>Gerar documento</button>'
       +'</div>'
       +'</div>';
