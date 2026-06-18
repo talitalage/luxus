@@ -2006,6 +2006,22 @@ function renderMaletasAtivas(){
     return;
   }
 
+  // Renderiza complementos pendentes de assinatura no topo
+  var complementosPendentes = maletas.filter(function(m){ return m.complemento && !m.entregue; });
+  var htmlComplementos = complementosPendentes.map(function(m){
+    return '<div class="card-light" style="padding:1rem;border-left:3px solid #f59e0b;margin-bottom:.75rem;">'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;">'
+      +'<div style="width:38px;height:38px;border-radius:10px;background:#fffbeb;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">➕</div>'
+      +'<div style="flex:1;min-width:0;">'
+      +'<div style="font-weight:700;font-size:14px;color:var(--gray-800);">'+m.nome+'</div>'
+      +'<div style="font-size:11px;color:var(--gray-500);">'+m.itens.length+' item(s) · '+fmt(m.itens.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0))+'</div>'
+      +'</div>'
+      +'<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:600;">Pendente</span>'
+      +'</div>'
+      +'<button onclick="assinarComplemento('+m.id+')" class="btn-primary" style="width:100%;padding:7px;font-size:12px;"><i class="fas fa-pen-nib" style="margin-right:5px;"></i>Assinar documento</button>'
+      +'</div>';
+  }).join('');
+
   el.innerHTML = revNomes.map(function(nome){
     var itens = porRev[nome];
     var totalCusto = itens.reduce(function(s,i){ return s+(parseFloat(i.Custo)||0); },0);
@@ -2056,14 +2072,14 @@ function renderMaletasAtivas(){
           +'<button onclick="downloadEntregaDoRev(\''+nome+'\')" class="btn-secondary" style="padding:7px 10px;font-size:12px;"><i class="fas fa-download"></i></button>'
           +'</div>'
         : '<button onclick="abrirDocumentoAtivo(\''+nome+'\')" class="btn-primary" style="width:100%;padding:7px;font-size:12px;"><i class="fas fa-pen-nib" style="margin-right:5px;"></i>Assinar documento</button>')
+      +'<button onclick="abrirComplemento(\''+nome.replace(/\'/g,\"\\'\")+'\')" class="btn-secondary" style="width:100%;padding:7px;font-size:12px;color:#f59e0b;border-color:#fcd34d;" onmouseover="this.style.background='#fffbeb'" onmouseout="this.style.background=''"><i class="fas fa-plus-circle" style="margin-right:5px;"></i>Entregar complemento</button>'
       +(function(){
         var rev = revendedores.find(function(r){ return r.Nome===nome; });
-        if(!rev || !rev.CPF) return '';
-        var cpfNum = (rev.CPF||'').replace(/\D/g,'');
-        if(cpfNum.length < 6) return '';
+        if(!rev) return '';
         var partes = nome.split(' ');
         var iniciais = (partes[0][0]+(partes[partes.length-1][0]||'')).toUpperCase();
-        var token = iniciais + cpfNum.slice(0,6);
+        var cpfNum = (rev.CPF||'').replace(/\D/g,'');
+        var token = cpfNum.length >= 6 ? iniciais + cpfNum.slice(0,6) : iniciais;
         var link = 'https://talitalage.github.io/luxus/revendedor.html?token='+token;
         return '<button onclick="copiarLinkRevendedor(\''+link+'\')" class="btn-secondary" style="width:100%;padding:7px;font-size:12px;color:#6366f1;border-color:#a5b4fc;" title="'+link+'">'
           +'<i class="fas fa-link" style="margin-right:5px;"></i>Link da revendedora</button>';
@@ -2071,6 +2087,25 @@ function renderMaletasAtivas(){
       +'</div>'
       +'</div>';
   }).join('');
+  el.innerHTML = htmlComplementos + el.innerHTML;
+}
+
+function assinarComplemento(id){
+  var m = maletas.find(function(m){ return m.id===id; });
+  if(!m) return;
+  var rev = revendedores.find(function(r){ return r.Nome===m.revendedor; });
+  var pct = rev ? (parseFloat(rev.Percentual)||50) : 50;
+  var totalCusto = m.itens.reduce(function(s,i){ return s+(parseFloat(i.Custo)||0); },0);
+  var doc = {
+    id: m.id, tipo:'entrega', data: m.dataCriacao,
+    revendedor: m.revendedor, nomeMaleta: m.nome,
+    totalItens: m.itens.length, totalCusto: totalCusto,
+    percentual: pct, comissao: totalCusto*(pct/100),
+    totalAcertar: totalCusto + totalCusto*(pct/100),
+    itens: m.itens, complemento: true
+  };
+  _entregaDoc = doc;
+  abrirModalEntrega(doc);
 }
 
 function copiarLinkRevendedor(link){
@@ -2533,6 +2568,8 @@ function confirmarEntregaMaleta(){
   if(idx!==-1) historicEntregas[idx].confirmada=true;
   var mal=maletas.find(function(m){return m.id===doc.id||m.nome===doc.nomeMaleta||(doc.revendedor&&m.revendedor===doc.revendedor);});
   if(mal){mal.entregue=true;addLogMaleta(mal,'Entrega confirmada — itens passaram para Consignado');salvarMaletas();}
+  // Se for complemento, marca entregue na maleta de complemento correspondente
+  if(doc.complemento){ var mComp=maletas.find(function(m){return m.id===doc.id&&m.complemento;}); if(mComp){mComp.entregue=true;salvarMaletas();} }
   fecharModal('modal-entrega');
   renderDashboard();renderMaletasAtivas();renderListaMaletas();
   showToast('Entrega confirmada! Itens consignados para '+doc.revendedor,'success');
@@ -4854,6 +4891,170 @@ function salvarItem(){
 }
 function excluirItem(){var rowId=document.getElementById('edit-rowid').value;if(!rowId){fecharModal('modal-item');return;}var item=inventory.find(function(i){return i.rowId==rowId;});if(!confirm('Excluir o produto '+(item?item.Codigo:rowId)+'?'))return;inventory=inventory.filter(function(i){return i.rowId!=rowId;});fecharModal('modal-item');renderDashboard();showToast('Produto excluído!','success');var payloadDel={action:'uploadTudo',inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas};fetch(scriptUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payloadDel)}).catch(function(){});try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas}));}catch(e){}}
 function verFoto(url){if(url)window.open(url,'_blank');}
+
+
+// =====================================================
+// COMPLEMENTO DE MALETA
+// =====================================================
+var _complementoRev = null;
+var _complementoItens = []; // itens selecionados para o complemento
+
+function abrirComplemento(nomeRev){
+  _complementoRev = nomeRev;
+  _complementoItens = [];
+
+  // Cria modal se não existir
+  var modal = document.getElementById('modal-complemento');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'modal-complemento';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = '<div class="modal-box" style="max-width:560px;max-height:90vh;overflow-y:auto;">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">'
+      +'<h3 style="font-size:15px;font-weight:700;color:var(--gray-800);">Complemento — <span id="comp-rev-nome"></span></h3>'
+      +'<button onclick="fecharModal('modal-complemento')" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--gray-500);">×</button>'
+      +'</div>'
+      // Scan
+      +'<div style="display:flex;gap:8px;margin-bottom:1rem;">'
+      +'<input id="comp-scan" type="text" placeholder="Bipe ou digite o código..." style="flex:1;padding:8px 12px;border:1.5px solid #3b82f6;border-radius:8px;font-size:14px;font-family:monospace;" autocomplete="off" />'
+      +'<button onclick="adicionarItemComplemento()" class="btn-primary" style="padding:8px 14px;font-size:13px;">Adicionar</button>'
+      +'</div>'
+      // Lista itens
+      +'<div id="comp-lista" style="margin-bottom:1rem;min-height:60px;"></div>'
+      // Totais
+      +'<div id="comp-totais" style="background:var(--gray-50);border-radius:8px;padding:.75rem;margin-bottom:1rem;font-size:13px;"></div>'
+      // Botões
+      +'<div style="display:flex;gap:8px;">'
+      +'<button onclick="fecharModal('modal-complemento')" class="btn-secondary" style="flex:1;">Cancelar</button>'
+      +'<button onclick="confirmarComplemento()" class="btn-primary" style="flex:1;"><i class="fas fa-pen-nib" style="margin-right:5px;"></i>Gerar documento</button>'
+      +'</div>'
+      +'</div>';
+    document.body.appendChild(modal);
+    // Enter no scan
+    setTimeout(function(){
+      var inp = document.getElementById('comp-scan');
+      if(inp) inp.addEventListener('keydown', function(e){ if(e.key==='Enter') adicionarItemComplemento(); });
+    }, 100);
+  }
+  document.getElementById('comp-rev-nome').textContent = nomeRev;
+  _complementoItens = [];
+  renderComplementoLista();
+  abrirModal('modal-complemento');
+  setTimeout(function(){ var inp=document.getElementById('comp-scan'); if(inp) inp.focus(); }, 200);
+}
+
+function adicionarItemComplemento(){
+  var codigo = (document.getElementById('comp-scan').value||'').trim().toUpperCase();
+  if(!codigo){ showToast('Digite um código','warning'); return; }
+  // Busca no inventário — Em Estoque primeiro
+  var item = inventory.find(function(i){
+    return (String(i.Codigo).toUpperCase()===codigo || String(i.rowId)===codigo)
+      && i.Status==='Em Estoque';
+  });
+  if(!item){
+    showToast('Código "'+codigo+'" não encontrado em estoque','warning');
+    document.getElementById('comp-scan').select();
+    return;
+  }
+  _complementoItens.push(item);
+  document.getElementById('comp-scan').value='';
+  document.getElementById('comp-scan').focus();
+  renderComplementoLista();
+}
+
+function removerItemComplemento(idx){
+  _complementoItens.splice(idx,1);
+  renderComplementoLista();
+}
+
+function renderComplementoLista(){
+  var lista = document.getElementById('comp-lista');
+  var totais = document.getElementById('comp-totais');
+  if(!lista) return;
+  if(!_complementoItens.length){
+    lista.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1rem 0;">Nenhum item adicionado.</p>';
+    totais.innerHTML='';
+    return;
+  }
+  lista.innerHTML = _complementoItens.map(function(item,i){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:white;border:1px solid var(--gray-200);border-radius:6px;margin-bottom:4px;font-size:12px;">'
+      +'<span style="color:#1e40af;font-weight:700;font-family:monospace;min-width:70px;">'+item.Codigo+'</span>'
+      +'<span style="flex:1;color:var(--gray-700);">'+item.Descricao+'</span>'
+      +'<span style="color:var(--gray-500);">'+item.Categoria+'</span>'
+      +'<span style="font-weight:700;color:var(--gray-800);min-width:60px;text-align:right;">'+fmt(parseFloat(item.Custo)||0)+'</span>'
+      +'<button onclick="removerItemComplemento('+i+')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:14px;padding:0 4px;">×</button>'
+      +'</div>';
+  }).join('');
+  var totalCusto = _complementoItens.reduce(function(s,i){ return s+(parseFloat(i.Custo)||0); },0);
+  var rev = revendedores.find(function(r){ return r.Nome===_complementoRev; });
+  var pct = rev ? (parseFloat(rev.Percentual)||50) : 50;
+  var margem = totalCusto * (pct/100);
+  var total = totalCusto + margem;
+  totais.innerHTML = '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
+    +'<span style="color:var(--gray-600);">'+_complementoItens.length+' item(s) · Soma dos custos</span>'
+    +'<span style="font-weight:700;">'+fmt(totalCusto)+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
+    +'<span style="color:var(--gray-600);">Margem ('+pct+'%)</span>'
+    +'<span style="font-weight:700;color:#f59e0b;">'+fmt(margem)+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;border-top:1px solid var(--gray-200);padding-top:6px;margin-top:4px;">'
+    +'<span style="font-weight:700;">Total a receber</span>'
+    +'<span style="font-weight:700;color:#10b981;font-size:14px;">'+fmt(total)+'</span></div>';
+}
+
+function confirmarComplemento(){
+  if(!_complementoItens.length){ showToast('Adicione ao menos um item','warning'); return; }
+  // Conta complementos existentes para esse revendedor
+  var nComp = maletas.filter(function(m){
+    return m.revendedor===_complementoRev && m.complemento;
+  }).length + 1;
+
+  // Marca itens como Consignado
+  _complementoItens.forEach(function(item){
+    var inv_item = inventory.find(function(i){ return i.rowId===item.rowId; });
+    if(inv_item){ inv_item.Status='Consignado'; inv_item.Revendedor=_complementoRev; }
+  });
+
+  // Cria maleta de complemento
+  var novaData = new Date().toISOString();
+  var novaDataSemZ = novaData.replace('Z','').slice(0,16)+':00';
+  var maleta = {
+    id: Date.now(),
+    nome: 'Complemento '+nComp+' — '+_complementoRev,
+    dataCriacao: novaDataSemZ,
+    dataEntrega: novaDataSemZ,
+    revendedor: _complementoRev,
+    complemento: true,
+    entregue: false,
+    reciboUrl: null,
+    itens: JSON.parse(JSON.stringify(_complementoItens))
+  };
+  maletas.push(maleta);
+  salvarMaletas();
+
+  // Renderiza e abre o documento de entrega
+  fecharModal('modal-complemento');
+  renderDashboard();
+  showToast('Complemento criado! Gere o documento.','success');
+
+  // Abre o modal de assinatura direto com esse complemento
+  var doc = {
+    id: maleta.id,
+    tipo: 'entrega',
+    data: novaDataSemZ,
+    revendedor: _complementoRev,
+    nomeMaleta: maleta.nome,
+    totalItens: _complementoItens.length,
+    totalCusto: _complementoItens.reduce(function(s,i){ return s+(parseFloat(i.Custo)||0); },0),
+    itens: _complementoItens,
+    complemento: true
+  };
+  var rev = revendedores.find(function(r){ return r.Nome===_complementoRev; });
+  doc.percentual = rev ? (parseFloat(rev.Percentual)||50) : 50;
+  doc.comissao = doc.totalCusto * (doc.percentual/100);
+  doc.totalAcertar = doc.totalCusto + doc.comissao;
+  _entregaDoc = doc;
+  abrirModalEntrega(doc);
+}
 
 // =====================================================
 // COLUNAS
