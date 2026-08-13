@@ -2241,6 +2241,14 @@ function removerItemMaletaAtiva(rowId, nomeRev){
   inventory[idx].Status = 'Em Estoque';
   inventory[idx].Revendedor = '';
   syncDrive({action:'editInventario',rowId:rowId,status:'Em Estoque',revendedor:''});
+
+  // Remove também da maleta correspondente
+  var maletaRef = maletas.find(function(m){ return m.revendedor===nomeRev; });
+  if(maletaRef && maletaRef.itens){
+    maletaRef.itens = maletaRef.itens.filter(function(x){ return String(x.rowId)!==String(rowId); });
+    salvarMaletas();
+  }
+
   if(window._renderItensModalAtiva) window._renderItensModalAtiva();
   renderMaletasAtivas();
   renderDashboard();
@@ -2257,6 +2265,17 @@ function adicionarItemMaletaAtiva(nomeRev){
   encontrado.Status = 'Consignado';
   encontrado.Revendedor = nomeRev;
   syncDrive({action:'editInventario',rowId:encontrado.rowId,status:'Consignado',revendedor:nomeRev});
+
+  // Adiciona também na maleta correspondente para persistir
+  var maletaRef = maletas.find(function(m){ return m.revendedor===nomeRev; });
+  if(maletaRef){
+    if(!maletaRef.itens) maletaRef.itens = [];
+    if(!maletaRef.itens.find(function(x){ return String(x.rowId)===String(encontrado.rowId); })){
+      maletaRef.itens.push(encontrado);
+    }
+    salvarMaletas();
+  }
+
   document.getElementById('input-add-maleta-ativa').value = '';
   if(window._renderItensModalAtiva) window._renderItensModalAtiva();
   renderMaletasAtivas();
@@ -2474,13 +2493,13 @@ function abrirModalEntrega(doc) {
   var pct = (rev && rev.Percentual) || 30;
   var totalCusto = doc.itens.reduce(function(s,i){ return s + (parseFloat(i.Custo)||0); }, 0);
   var totalVenda = doc.itens.reduce(function(s,i){ return s + (parseFloat(i.Venda)||0); }, 0);
-  var margem = totalVenda * ((100 - pct) / 100); // margem do dono sobre venda
-  var totalAcertar = totalCusto + margem;         // custo + margem
+  var margem = totalCusto * (pct / 100); // margem = pct% sobre o custo
+  var totalAcertar = totalCusto + margem;
   doc.totalCusto = totalCusto;
-  doc.percentual = (100 - pct);                   // percentual da margem
+  doc.percentual = pct;
   doc.comissao = margem;
   doc.totalAcertar = totalAcertar;
-  document.getElementById('entrega-doc-pct').textContent = (100 - pct);
+  document.getElementById('entrega-doc-pct').textContent = pct;
   document.getElementById('entrega-doc-soma-custo').textContent = fmt(totalCusto);
   document.getElementById('entrega-doc-comissao').textContent = fmt(margem);
   document.getElementById('entrega-doc-valor').textContent = fmt(totalAcertar);
@@ -4905,30 +4924,15 @@ function salvarItem(){
   renderDashboard();
   fecharModal('modal-item');
   showToast('Item salvo!','success');
-  // Usa operação incremental — envia só o item alterado, não o inventário inteiro
-  syncDriveComCallback(payload, null);
-  atualizarCache();
+  // Envia inventário completo para evitar sobrescrita parcial do JSON
+  var payloadCompleto = {action:'uploadTudo', inventory:inventory, revendedores:revendedores,
+    categorias:categorias, fechamentos:historicFechamentos, entregas:historicEntregas, maletas:maletas};
+  fetch(scriptUrl, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify(payloadCompleto)}).catch(function(){});
+  try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,
+    categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas}));}catch(e){}
 }
-function excluirItem(){
-  var rowId=document.getElementById('edit-rowid').value;
-  if(!rowId){fecharModal('modal-item');return;}
-  var item=inventory.find(function(i){return i.rowId==rowId;});
-  if(!confirm('Excluir o produto '+(item?item.Codigo:rowId)+'?'))return;
-  inventory=inventory.filter(function(i){return i.rowId!=rowId;});
-  fecharModal('modal-item');
-  renderDashboard();
-  showToast('Produto excluído!','success');
-  // Incremental — envia só o rowId a excluir
-  syncDriveComCallback({action:'delInventario', rowId:parseInt(rowId)}, null);
-  atualizarCache();
-}
-function atualizarCache(){
-  try{localStorage.setItem('luxus_cache',JSON.stringify({
-    inventory:inventory,revendedores:revendedores,categorias:categorias,
-    fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas
-  }));}catch(e){}
-}
-
+function excluirItem(){var rowId=document.getElementById('edit-rowid').value;if(!rowId){fecharModal('modal-item');return;}var item=inventory.find(function(i){return i.rowId==rowId;});if(!confirm('Excluir o produto '+(item?item.Codigo:rowId)+'?'))return;inventory=inventory.filter(function(i){return i.rowId!=rowId;});fecharModal('modal-item');renderDashboard();showToast('Produto excluído!','success');var payloadDel={action:'uploadTudo',inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas};fetch(scriptUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payloadDel)}).catch(function(){});try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas}));}catch(e){}}
 function verFoto(url){if(url)window.open(url,'_blank');}
 
 
