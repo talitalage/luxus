@@ -2050,7 +2050,7 @@ function renderMaletasAtivas(){
       +', '+_dr.getHours().toString().padStart(2,'0')+':'+_dr.getMinutes().toString().padStart(2,'0')) : null;
 
     var collapseId = 'mc-'+nome.replace(/[^a-zA-Z0-9]/g,'_');
-    var chevronBtn = '<button onclick="toggleMaletaCard(\"'+collapseId+'\")" style="background:none;border:none;cursor:pointer;padding:5px 8px;color:var(--gray-400);flex-shrink:0;"><i class="fas fa-chevron-up" id="icon-'+collapseId+'"></i></button>';
+    var chevronBtn = '<button onclick="toggleMaletaCard(\"'+collapseId+'\")" style="background:none;border:none;cursor:pointer;padding:5px 8px;color:var(--gray-400);flex-shrink:0;"><i class="fas fa-chevron-down" id="icon-'+collapseId+'"></i></button>';
     return '<div class="card-light" style="padding:1rem;" data-collapse="'+collapseId+'">' 
       // Cabeçalho
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;">'
@@ -2070,7 +2070,7 @@ function renderMaletasAtivas(){
       +chevronBtn
       +'</div>'
       // Resumo categorias
-      +'<div id="'+collapseId+'">' 
+      +'<div id="'+collapseId+'" style="display:none;">' 
       +'<div style="margin-bottom:.75rem;padding:.625rem .75rem;background:var(--gray-50);border-radius:6px;display:flex;flex-wrap:wrap;gap:6px;">'
       +function(){
         var grupos={};
@@ -2088,6 +2088,28 @@ function renderMaletasAtivas(){
           +'<button onclick="downloadEntregaDoRev(\''+nome+'\')" class="btn-secondary" style="padding:7px 10px;font-size:12px;"><i class="fas fa-download"></i></button>'
           +'</div>'
         : '<button onclick="abrirDocumentoAtivo(\''+nome+'\')" class="btn-primary" style="width:100%;padding:7px;font-size:12px;"><i class="fas fa-pen-nib" style="margin-right:5px;"></i>Assinar documento</button>')
+      // Lista complementos entregues para este revendedor
+      +(function(){
+        var comps = maletas.filter(function(m){ return m.revendedor===nome && m.entregue && (m.complemento || m.nome.toLowerCase().indexOf('complemento')!==-1); });
+        if(!comps.length) return '';
+        var html = '<div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--gray-200);">';
+        html += '<div style="font-size:11px;color:var(--gray-400);margin-bottom:4px;">Complementos entregues</div>';
+        comps.forEach(function(m,i){
+          var nComp = i+1;
+          var nItens = m.itens ? m.itens.length : 0;
+          var custoComp = m.itens ? m.itens.reduce(function(s,x){return s+(parseFloat(x.Custo)||0);},0) : 0;
+          var hasRecibo = m.reciboUrl ? true : false;
+          html += '<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;background:var(--gray-50);border-radius:6px;margin-bottom:4px;font-size:12px;">';
+          html += '<span style="color:#f59e0b;"><i class="fas fa-plus-circle"></i></span>';
+          html += '<span style="flex:1;color:var(--gray-700);">Complemento '+nComp+' &middot; '+nItens+' itens &middot; '+fmt(custoComp)+'</span>';
+          if(hasRecibo){
+            html += '<button onclick="window.open(\''+m.reciboUrl+'\',\'_blank\')" style="background:none;border:none;cursor:pointer;color:#10b981;font-size:11px;padding:2px 6px;"><i class="fas fa-eye"></i> Ver</button>';
+          }
+          html += '</div>';
+        });
+        html += '</div>';
+        return html;
+      }())
       +'<button onclick="abrirComplementoById(this)" data-rev="'+encodeURIComponent(nome)+'" class="btn-secondary" style="width:100%;padding:7px;font-size:12px;color:#f59e0b;border-color:#fcd34d;"><i class="fas fa-plus-circle" style="margin-right:5px;"></i>Entregar complemento</button>'
       +(function(){
         var rev = revendedores.find(function(r){ return r.Nome===nome; });
@@ -2622,6 +2644,16 @@ function confirmarEntregaMaleta(){
     mal.entregue = true;
     if(!mal.revendedor && doc.revendedor) mal.revendedor = doc.revendedor;
     if(!mal.revendedorId && doc.revendedorId) mal.revendedorId = doc.revendedorId;
+    // Garante que todos os itens da maleta estão Consignado no inventário
+    var nomeRev = mal.revendedor || doc.revendedor || '';
+    (mal.itens||[]).forEach(function(mItem){
+      var invItem = inventory.find(function(i){ return String(i.rowId)===String(mItem.rowId); });
+      if(invItem){
+        invItem.Status = 'Consignado';
+        invItem.Revendedor = nomeRev;
+        syncDrive({action:'editInventario', rowId:invItem.rowId, status:'Consignado', revendedor:nomeRev});
+      }
+    });
     addLogMaleta(mal,'Entrega confirmada — itens passaram para Consignado');
     salvarMaletas();
   }
