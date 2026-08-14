@@ -2008,6 +2008,11 @@ function sincronizarMaletasPendentes(){
 function renderUltimasEntregas(){ /* mantido para compatibilidade — lista de entregas está no histórico */ }
 
 function renderMaletasAtivas(){
+  // Preserva estado expandido dos cards antes de re-renderizar
+  var estadosExpandidos = {};
+  document.querySelectorAll('[id^="mc-"]').forEach(function(el){
+    estadosExpandidos[el.id] = el.style.display !== 'none';
+  });
   var el = document.getElementById('lista-maletas-ativas'); if(!el) return;
 
   // Revendedores que têm maleta em preparo NÃO entregue — não duplicar
@@ -2067,7 +2072,7 @@ function renderMaletasAtivas(){
       +', '+_dr.getHours().toString().padStart(2,'0')+':'+_dr.getMinutes().toString().padStart(2,'0')) : null;
 
     var collapseId = 'mc-'+nome.replace(/[^a-zA-Z0-9]/g,'_');
-    var chevronBtn = '<button data-cid="'+collapseId+'" onclick="toggleMaletaCard(this.getAttribute(\'data-cid\'))" style="background:none;border:none;cursor:pointer;padding:5px 8px;color:var(--gray-400);flex-shrink:0;"><i class="fas fa-chevron-down" id="icon-'+collapseId+'"></i></button>';
+    var chevronBtn = '<button data-cid="'+collapseId+'" onclick="event.stopPropagation();toggleMaletaCard(this.getAttribute(\'data-cid\'))" style="background:none;border:none;cursor:pointer;padding:5px 8px;color:var(--gray-400);flex-shrink:0;"><i class="fas fa-chevron-down" id="icon-'+collapseId+'"></i></button>';
     return '<div class="card-light" style="padding:1rem;" data-collapse="'+collapseId+'">' 
       // Cabeçalho
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;">'
@@ -2144,6 +2149,15 @@ function renderMaletasAtivas(){
       +'</div>';
   }).join('');
   el.innerHTML = htmlComplementos + el.innerHTML;
+  // Restaura estado expandido
+  Object.keys(estadosExpandidos).forEach(function(id){
+    var div = document.getElementById(id);
+    var icon = document.getElementById('icon-'+id);
+    if(div){
+      div.style.display = estadosExpandidos[id] ? 'block' : 'none';
+      if(icon) icon.className = 'fas fa-chevron-'+(estadosExpandidos[id]?'up':'down');
+    }
+  });
 }
 
 function assinarComplemento(id){
@@ -2172,6 +2186,8 @@ function toggleMaletaCard(id){
   var fechado=el.style.display==='none';
   el.style.display=fechado?'block':'none';
   if(icon)icon.className='fas fa-chevron-'+(fechado?'up':'down');
+  // Previne propagação para não colapsar imediatamente
+  if(event && event.stopPropagation) event.stopPropagation();
 }
 
 function copiarLinkRevendedor(link){
