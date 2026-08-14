@@ -2581,11 +2581,12 @@ function initCanvasEntrega() {
   var c = document.getElementById('canvas-entrega');
   if (!c) return;
   var rect = c.getBoundingClientRect();
-  c.width = rect.width * 2; c.height = rect.height * 2;
+  var dpr = window.devicePixelRatio || 1;
+  c.width = rect.width * dpr; c.height = rect.height * dpr;
   _entregaAssCtx = c.getContext('2d');
-  _entregaAssCtx.scale(2,2);
+  _entregaAssCtx.scale(dpr, dpr);
   _entregaAssCtx.strokeStyle = '#1e293b'; _entregaAssCtx.lineWidth = 2; _entregaAssCtx.lineCap = 'round'; _entregaAssCtx.lineJoin = 'round';
-  function pos(e) { var r=c.getBoundingClientRect(),s=e.touches?e.touches[0]:e; return{x:s.clientX-r.left,y:s.clientY-r.top}; }
+  function pos(e) { var r=c.getBoundingClientRect(),s=e.touches?e.touches[0]:e; return{x:(s.clientX-r.left),y:(s.clientY-r.top)}; }
   c.onmousedown = c.ontouchstart = function(e){e.preventDefault();_entregaAssDesenhando=true;var p=pos(e);_entregaAssCtx.beginPath();_entregaAssCtx.moveTo(p.x,p.y);};
   c.onmousemove = c.ontouchmove = function(e){e.preventDefault();if(!_entregaAssDesenhando)return;var p=pos(e);_entregaAssCtx.lineTo(p.x,p.y);_entregaAssCtx.stroke();};
   c.onmouseup = c.ontouchend = function(){_entregaAssDesenhando=false;_entregaAss=c.toDataURL('image/png');};
@@ -3498,8 +3499,12 @@ function renderConferencia() {
     }).join('');
   }
 
-  // Lista encontrados (chips)
-  document.getElementById('conf-lista-ok').innerHTML = encontrados.map(function(item) {
+  // Lista encontrados (chips) — último bipado no topo
+  var encontradosOrdenados = confBipados.slice().reverse().map(function(rid){
+    return confEsperados.find(function(i){ return i.rowId === rid; }) ||
+           inventory.find(function(i){ return i.rowId === rid; });
+  }).filter(Boolean);
+  document.getElementById('conf-lista-ok').innerHTML = encontradosOrdenados.map(function(item) {
     return '<span style="background:#f0fdf4;border:1px solid #86efac;color:#15803d;font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;font-family:monospace;">'
       + item.Codigo + '</span>';
   }).join('');
