@@ -689,6 +689,23 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
       </tr></thead>
       <tbody id="rel-tbody-comissoes"></tbody><tfoot id="rel-tfoot-comissoes"></tfoot>
     </table></div>
+
+  <!-- ── RESUMO POR REVENDEDOR ─────────────────────────────── -->
+  <h3 class="section-title" style="margin-top:1.5rem;"><i class="fas fa-users"></i>Resumo por revendedor</h3>
+  <div id="rel-resumo-revs" style="display:flex;flex-direction:column;gap:.75rem;"></div>
+
+  <!-- ── AGING DE MALETAS ───────────────────────────────────── -->
+  <h3 class="section-title" style="margin-top:1.5rem;"><i class="fas fa-clock"></i>Aging de maletas</h3>
+  <div id="rel-aging" style="display:flex;flex-direction:column;gap:.75rem;"></div>
+
+  <!-- ── CAPITAL EM RISCO ───────────────────────────────────── -->
+  <h3 class="section-title" style="margin-top:1.5rem;"><i class="fas fa-exclamation-triangle"></i>Capital em risco</h3>
+  <div id="rel-capital-risco" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:.5rem;"></div>
+
+  <!-- ── PROJEÇÃO DE RECEBIMENTO ────────────────────────────── -->
+  <h3 class="section-title" style="margin-top:1.5rem;"><i class="fas fa-hand-holding-usd"></i>Projeção de recebimento</h3>
+  <div id="rel-projecao" style="display:flex;flex-direction:column;gap:.75rem;"></div>
+
   </div>
 </div>
 
@@ -2050,7 +2067,7 @@ function renderMaletasAtivas(){
       +', '+_dr.getHours().toString().padStart(2,'0')+':'+_dr.getMinutes().toString().padStart(2,'0')) : null;
 
     var collapseId = 'mc-'+nome.replace(/[^a-zA-Z0-9]/g,'_');
-    var chevronBtn = '<button onclick="toggleMaletaCard(\"'+collapseId+'\")" style="background:none;border:none;cursor:pointer;padding:5px 8px;color:var(--gray-400);flex-shrink:0;"><i class="fas fa-chevron-down" id="icon-'+collapseId+'"></i></button>';
+    var chevronBtn = '<button data-cid="'+collapseId+'" onclick="toggleMaletaCard(this.getAttribute(\'data-cid\'))" style="background:none;border:none;cursor:pointer;padding:5px 8px;color:var(--gray-400);flex-shrink:0;"><i class="fas fa-chevron-down" id="icon-'+collapseId+'"></i></button>';
     return '<div class="card-light" style="padding:1rem;" data-collapse="'+collapseId+'">' 
       // Cabeçalho
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;">'
@@ -4490,8 +4507,167 @@ function confirmarLimparHistorico(){if(!confirm('Limpar todo o histórico?'))ret
 // =====================================================
 function setRelPeriodo(dias,btn){relPeriodoDias=dias;document.querySelectorAll('[id^="rp-"]').forEach(function(el){el.classList.remove('active');});if(btn)btn.classList.add('active');document.getElementById('rel-data-ini').value='';document.getElementById('rel-data-fim').value='';renderRelatorio();}
 function getRelFiltroVendidos(){var iniInput=document.getElementById('rel-data-ini').value;var fimInput=document.getElementById('rel-data-fim').value;var revFiltro=document.getElementById('rel-revendedor').value;var dataIni=null,dataFim=new Date();dataFim.setHours(23,59,59,999);if(iniInput&&fimInput){dataIni=new Date(iniInput+'T00:00:00');dataFim=new Date(fimInput+'T23:59:59');}else if(relPeriodoDias>0){dataIni=new Date();dataIni.setDate(dataIni.getDate()-relPeriodoDias);dataIni.setHours(0,0,0,0);}return inventory.filter(function(i){if(i.Status!=='Vendido')return false;if(revFiltro&&i.Revendedor!==revFiltro)return false;var dataRef=i.DataVenda||i.Data;if(dataIni&&dataRef&&new Date(dataRef)<dataIni)return false;return true;});}
+
+// =====================================================
+// RELATÓRIO AVANÇADO — 4 NOVAS SEÇÕES
+// =====================================================
+
+function renderResumoRevs(){
+  var el=document.getElementById('rel-resumo-revs'); if(!el) return;
+  var revs = revendedores.slice().sort(function(a,b){return a.Nome.localeCompare(b.Nome);});
+  if(!revs.length){el.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1rem;">Nenhum revendedor cadastrado.</p>';return;}
+  el.innerHTML = revs.map(function(rev){
+    var itens = inventory.filter(function(i){return i.Revendedor===rev.Nome && i.Status==='Consignado';});
+    if(!itens.length) return '';
+    var custo = itens.reduce(function(s,i){return s+pN(i.Custo);},0);
+    var margem = custo * (pN(rev.Percentual)/100);
+    var totalEsperado = custo + margem;
+    // Data da maleta mais antiga
+    var maleta = maletas.filter(function(m){return m.revendedor===rev.Nome && m.entregue;})
+      .sort(function(a,b){return new Date(a.dataCriacao||0)-new Date(b.dataCriacao||0)})[0];
+    var diasStr = '';
+    if(maleta){
+      var dias = Math.floor((new Date()-new Date(maleta.dataCriacao||maleta.dataEntrega||0))/86400000);
+      diasStr = '<span style="font-size:11px;color:var(--gray-400);">há '+dias+' dia'+(dias!==1?'s':'')+'</span>';
+    }
+    var pct = pN(rev.Percentual);
+    return '<div class="card-light" style="padding:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">'
+      +'<div style="width:40px;height:40px;border-radius:10px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#185FA5;flex-shrink:0;">'
+      +(function(){var p=rev.Nome.split(' ');return(p[0][0]+(p[p.length-1][0]||'')).toUpperCase();}())
+      +'</div>'
+      +'<div style="flex:1;min-width:120px;">'
+      +'<div style="font-weight:700;font-size:14px;color:var(--gray-800);">'+rev.Nome+'</div>'
+      +'<div style="font-size:11px;color:var(--gray-500);">'+itens.length+' itens consignados · '+pct+'% margem · '+diasStr+'</div>'
+      +'</div>'
+      +'<div style="text-align:right;min-width:100px;">'
+      +'<div style="font-size:11px;color:var(--gray-500);">Capital investido</div>'
+      +'<div style="font-weight:700;font-size:15px;color:var(--gray-800);">'+fmt(custo)+'</div>'
+      +'</div>'
+      +'<div style="text-align:right;min-width:100px;">'
+      +'<div style="font-size:11px;color:var(--gray-500);">Margem esperada</div>'
+      +'<div style="font-weight:700;font-size:15px;color:#f59e0b;">'+fmt(margem)+'</div>'
+      +'</div>'
+      +'<div style="text-align:right;min-width:120px;">'
+      +'<div style="font-size:11px;color:var(--gray-500);">Total a receber</div>'
+      +'<div style="font-weight:700;font-size:16px;color:#10b981;">'+fmt(totalEsperado)+'</div>'
+      +'</div>'
+      +'</div>';
+  }).filter(Boolean).join('') || '<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1rem;">Nenhum item consignado.</p>';
+}
+
+function renderAgingMaletas(){
+  var el=document.getElementById('rel-aging'); if(!el) return;
+  var entregues = maletas.filter(function(m){return m.entregue && m.revendedor;})
+    .sort(function(a,b){return new Date(a.dataCriacao||0)-new Date(b.dataCriacao||0);});
+  if(!entregues.length){el.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1rem;">Nenhuma maleta entregue.</p>';return;}
+  el.innerHTML = entregues.map(function(m){
+    var dias = Math.floor((new Date()-new Date(m.dataCriacao||m.dataEntrega||0))/86400000);
+    var cor = dias > 60 ? '#dc2626' : dias > 30 ? '#f59e0b' : '#10b981';
+    var bg  = dias > 60 ? '#fef2f2' : dias > 30 ? '#fffbeb' : '#f0fdf4';
+    var label = dias > 60 ? 'Atenção' : dias > 30 ? 'Monitorar' : 'Ok';
+    var itens = inventory.filter(function(i){return i.Revendedor===m.revendedor && i.Status==='Consignado';});
+    var custo = itens.reduce(function(s,i){return s+pN(i.Custo);},0);
+    return '<div class="card-light" style="padding:.875rem 1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;border-left:4px solid '+cor+';">'
+      +'<div style="flex:1;min-width:140px;">'
+      +'<div style="font-weight:600;font-size:13px;color:var(--gray-800);">'+m.nome+'</div>'
+      +'<div style="font-size:11px;color:var(--gray-500);">'+m.revendedor+'</div>'
+      +'</div>'
+      +'<div style="text-align:center;min-width:80px;">'
+      +'<div style="font-size:22px;font-weight:800;color:'+cor+';">'+dias+'</div>'
+      +'<div style="font-size:11px;color:var(--gray-400);">dias</div>'
+      +'</div>'
+      +'<div style="text-align:right;min-width:100px;">'
+      +'<div style="font-size:11px;color:var(--gray-500);">'+itens.length+' itens</div>'
+      +'<div style="font-weight:700;font-size:14px;color:var(--gray-700);">'+fmt(custo)+'</div>'
+      +'</div>'
+      +'<span style="background:'+bg+';color:'+cor+';border:1px solid '+cor+';border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;">'+label+'</span>'
+      +'</div>';
+  }).join('');
+}
+
+function renderCapitalRisco(){
+  var el=document.getElementById('rel-capital-risco'); if(!el) return;
+  var cons = inventory.filter(function(i){return i.Status==='Consignado';});
+  var estoq = inventory.filter(function(i){return i.Status==='Em Estoque';});
+  var totalCons = cons.reduce(function(s,i){return s+pN(i.Custo);},0);
+  var totalEst  = estoq.reduce(function(s,i){return s+pN(i.Custo);},0);
+  var totalGeral = totalCons + totalEst;
+  var pctRisco = totalGeral > 0 ? ((totalCons/totalGeral)*100).toFixed(1) : 0;
+  var totalMargem = revendedores.reduce(function(s,r){
+    var itensRev = cons.filter(function(i){return i.Revendedor===r.Nome;});
+    var custoRev = itensRev.reduce(function(s2,i){return s2+pN(i.Custo);},0);
+    return s + custoRev*(pN(r.Percentual)/100);
+  },0);
+  var totalReceber = totalCons + totalMargem;
+
+  var cards = [
+    {label:'Capital com revendedores',val:fmt(totalCons),sub:cons.length+' itens',cor:'#dc2626',bg:'#fef2f2',icon:'fa-hand-holding'},
+    {label:'Capital em estoque',val:fmt(totalEst),sub:estoq.length+' itens',cor:'#2563eb',bg:'#eff6ff',icon:'fa-warehouse'},
+    {label:'% em risco',val:pctRisco+'%',sub:'do capital total',cor:'#f59e0b',bg:'#fffbeb',icon:'fa-chart-pie'},
+    {label:'Margem esperada',val:fmt(totalMargem),sub:'se fechar tudo',cor:'#7c3aed',bg:'#f5f3ff',icon:'fa-percentage'},
+    {label:'Total a receber',val:fmt(totalReceber),sub:'custo + margem',cor:'#10b981',bg:'#f0fdf4',icon:'fa-coins'},
+  ];
+  el.innerHTML = cards.map(function(c){
+    return '<div style="background:'+c.bg+';border:1px solid '+c.cor+'33;border-radius:12px;padding:1rem;text-align:center;">'
+      +'<i class="fas '+c.icon+'" style="font-size:20px;color:'+c.cor+';margin-bottom:8px;display:block;"></i>'
+      +'<div style="font-size:11px;color:var(--gray-500);margin-bottom:4px;">'+c.label+'</div>'
+      +'<div style="font-size:20px;font-weight:800;color:'+c.cor+';">'+c.val+'</div>'
+      +'<div style="font-size:11px;color:var(--gray-400);margin-top:2px;">'+c.sub+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function renderProjecao(){
+  var el=document.getElementById('rel-projecao'); if(!el) return;
+  var revs = revendedores.slice().sort(function(a,b){return a.Nome.localeCompare(b.Nome);});
+  var linhas = revs.map(function(rev){
+    var itens = inventory.filter(function(i){return i.Revendedor===rev.Nome && i.Status==='Consignado';});
+    if(!itens.length) return null;
+    var custo = itens.reduce(function(s,i){return s+pN(i.Custo);},0);
+    var pct = pN(rev.Percentual);
+    var margem = custo*(pct/100);
+    var total = custo+margem;
+    return {nome:rev.Nome, itens:itens.length, custo:custo, pct:pct, margem:margem, total:total};
+  }).filter(Boolean);
+
+  if(!linhas.length){el.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1rem;">Nenhum item consignado.</p>';return;}
+
+  var totalCusto  = linhas.reduce(function(s,r){return s+r.custo;},0);
+  var totalMargem = linhas.reduce(function(s,r){return s+r.margem;},0);
+  var totalGeral  = linhas.reduce(function(s,r){return s+r.total;},0);
+
+  el.innerHTML = '<div class="card-light" style="overflow:hidden;">'
+    +'<table style="width:100%;border-collapse:collapse;">'
+    +'<thead><tr style="background:var(--gray-50);">'
+    +'<th style="padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Revendedor</th>'
+    +'<th style="padding:10px 14px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Itens</th>'
+    +'<th style="padding:10px 14px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Custo</th>'
+    +'<th style="padding:10px 14px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Margem %</th>'
+    +'<th style="padding:10px 14px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Margem R$</th>'
+    +'<th style="padding:10px 14px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Total a receber</th>'
+    +'</tr></thead><tbody>'
+    + linhas.map(function(r){
+      return '<tr style="border-bottom:1px solid var(--gray-200);">'
+        +'<td style="padding:10px 14px;font-size:13px;font-weight:600;color:var(--gray-800);">'+r.nome+'</td>'
+        +'<td style="padding:10px 14px;text-align:center;font-size:13px;color:var(--gray-600);">'+r.itens+'</td>'
+        +'<td style="padding:10px 14px;text-align:right;font-size:13px;color:var(--gray-700);">'+fmt(r.custo)+'</td>'
+        +'<td style="padding:10px 14px;text-align:center;"><span style="background:#f5f3ff;color:#5b21b6;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:600;">'+r.pct+'%</span></td>'
+        +'<td style="padding:10px 14px;text-align:right;font-size:13px;color:#f59e0b;font-weight:600;">'+fmt(r.margem)+'</td>'
+        +'<td style="padding:10px 14px;text-align:right;font-size:14px;font-weight:700;color:#10b981;">'+fmt(r.total)+'</td>'
+        +'</tr>';
+    }).join('')
+    +'</tbody><tfoot><tr style="background:var(--gray-50);border-top:2px solid var(--gray-200);">'
+    +'<td style="padding:10px 14px;font-size:13px;font-weight:700;color:var(--gray-700);">Total</td>'
+    +'<td style="padding:10px 14px;text-align:center;font-size:13px;font-weight:700;">'+linhas.reduce(function(s,r){return s+r.itens;},0)+'</td>'
+    +'<td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:700;color:var(--gray-700);">'+fmt(totalCusto)+'</td>'
+    +'<td></td>'
+    +'<td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:700;color:#f59e0b;">'+fmt(totalMargem)+'</td>'
+    +'<td style="padding:10px 14px;text-align:right;font-size:15px;font-weight:800;color:#10b981;">'+fmt(totalGeral)+'</td>'
+    +'</tr></tfoot></table></div>';
+}
+
 function initRelatorio(){var sel=document.getElementById('rel-revendedor');var cur=sel?sel.value:'';var opts='<option value="">Todos</option>';revendedores.forEach(function(r){opts+='<option value="'+r.Nome+'"'+(cur===r.Nome?' selected':'')+'>'+r.Nome+'</option>';});if(sel)sel.innerHTML=opts;renderRelatorio();}
-function renderRelatorio(){var vendidos=getRelFiltroVendidos();var estoque=inventory.filter(function(i){return i.Status==='Em Estoque';});var receita=vendidos.reduce(function(s,i){return s+pN(i.Venda);},0);var custo=vendidos.reduce(function(s,i){return s+pN(i.Custo);},0);var lucro=receita-custo;var margem=receita>0?((lucro/receita)*100).toFixed(1):0;var custoEst=estoque.reduce(function(s,i){return s+pN(i.Custo);},0);document.getElementById('rel-k-qtd').textContent=vendidos.length;document.getElementById('rel-k-receita').textContent=fmt(receita);document.getElementById('rel-k-custo').textContent=fmt(custo);document.getElementById('rel-k-lucro').textContent=fmt(lucro);document.getElementById('rel-k-margem').textContent=margem+'% margem';document.getElementById('rel-k-estoque').textContent=estoque.length;document.getElementById('rel-k-estoque-val').textContent=fmt(custoEst)+' em custo';renderChartMes(vendidos);renderRankingRevs(vendidos);renderRelCats(vendidos);renderTopProdutos(vendidos);renderTabelaEstoque();renderComissoes();}
+function renderRelatorio(){var vendidos=getRelFiltroVendidos();var estoque=inventory.filter(function(i){return i.Status==='Em Estoque';});var receita=vendidos.reduce(function(s,i){return s+pN(i.Venda);},0);var custo=vendidos.reduce(function(s,i){return s+pN(i.Custo);},0);var lucro=receita-custo;var margem=receita>0?((lucro/receita)*100).toFixed(1):0;var custoEst=estoque.reduce(function(s,i){return s+pN(i.Custo);},0);document.getElementById('rel-k-qtd').textContent=vendidos.length;document.getElementById('rel-k-receita').textContent=fmt(receita);document.getElementById('rel-k-custo').textContent=fmt(custo);document.getElementById('rel-k-lucro').textContent=fmt(lucro);document.getElementById('rel-k-margem').textContent=margem+'% margem';document.getElementById('rel-k-estoque').textContent=estoque.length;document.getElementById('rel-k-estoque-val').textContent=fmt(custoEst)+' em custo';renderChartMes(vendidos);renderRankingRevs(vendidos);renderRelCats(vendidos);renderTopProdutos(vendidos);renderTabelaEstoque();renderComissoes();renderResumoRevs();renderAgingMaletas();renderCapitalRisco();renderProjecao();}
 function renderChartMes(vendidos){var meses={};for(var i=11;i>=0;i--){var d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);var k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');meses[k]={label:d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}),qtd:0,valor:0};}vendidos.forEach(function(i){if(!i.Data)return;var d=new Date(i.Data);var k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(meses[k]){meses[k].qtd++;meses[k].valor+=pN(i.Venda);}});var labels=Object.values(meses).map(function(m){return m.label;});var valores=Object.values(meses).map(function(m){return m.valor;});var qtds=Object.values(meses).map(function(m){return m.qtd;});var canvas=document.getElementById('chart-vendas-mes');if(!canvas)return;if(chartVendasMes){chartVendasMes.destroy();chartVendasMes=null;}if(typeof Chart==='undefined'){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';s.onload=function(){_buildChart(canvas,labels,valores,qtds);};document.head.appendChild(s);}else{_buildChart(canvas,labels,valores,qtds);}}
 function _buildChart(canvas,labels,valores,qtds){chartVendasMes=new Chart(canvas,{type:'bar',data:{labels:labels,datasets:[{label:'Receita (R$)',data:valores,backgroundColor:'rgba(30,64,175,.75)',borderRadius:4,yAxisID:'y'},{label:'Qtd',data:qtds,type:'line',borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.12)',pointBackgroundColor:'#f59e0b',tension:.3,yAxisID:'y2'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{position:'left',grid:{color:'rgba(0,0,0,.05)'},ticks:{callback:function(v){return 'R$'+v;},font:{size:11}}},y2:{position:'right',grid:{drawOnChartArea:false},ticks:{font:{size:11}}},x:{grid:{display:false},ticks:{font:{size:11}}}}}})}
 function renderRankingRevs(vendidos){var container=document.getElementById('rel-ranking-revs');if(!container)return;var map={};vendidos.forEach(function(i){var r=i.Revendedor||'(direto)';if(!map[r])map[r]={valor:0,qtd:0};map[r].valor+=pN(i.Venda);map[r].qtd++;});var sorted=Object.entries(map).sort(function(a,b){return b[1].valor-a[1].valor;});var maxVal=sorted[0]?sorted[0][1].valor:1;if(!sorted.length){container.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1.5rem 0;">Nenhuma venda no período</p>';return;}var medals=['🥇','🥈','🥉'];var html='';sorted.forEach(function(entry,idx){var nome=entry[0],d=entry[1];var pct=((d.valor/maxVal)*100).toFixed(0);var cor=idx===0?'#1e40af':idx===1?'#3b82f6':'#93c5fd';html+='<div style="margin-bottom:4px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><span style="font-size:13px;font-weight:600;color:var(--gray-800);">'+(medals[idx]||'')+' '+nome+'</span><span style="font-size:12px;color:var(--gray-500);">'+d.qtd+' · <strong style="color:#1e40af;">'+fmt(d.valor)+'</strong></span></div><div style="height:6px;background:var(--gray-100);border-radius:3px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+cor+';border-radius:3px;"></div></div></div>';});container.innerHTML=html;}
