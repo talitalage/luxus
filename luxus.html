@@ -1859,6 +1859,7 @@ function entregarMaleta(){
 
   _entregaDoc = { id:Date.now(), tipo:'entrega', data:dataEntrega, revendedor:rev.Nome, revendedorId:sel.value,
     nomeMaleta:maletaAtual.nome,
+    maletaId:maletaAtual.id,  // ID real da maleta para busca confiável
     itens:maletaAtual.itens.slice(), totalItens:maletaAtual.itens.length,
     valorTotal:maletaAtual.itens.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0),
     valorCusto:maletaAtual.itens.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0)
@@ -2612,11 +2613,11 @@ function confirmarEntregaMaleta(){
   if(batchItems.length) syncDrive({action:'batchEditInventario',items:batchItems});
   var idx=historicEntregas.findIndex(function(e){return e.id===doc.id;});
   if(idx!==-1) historicEntregas[idx].confirmada=true;
-  // Busca a maleta por múltiplos critérios
-  var mal = maletas.find(function(m){ return m.id===doc.id; })
+  // Busca a maleta pelo ID real (maletaId), depois fallbacks
+  var mal = (doc.maletaId && maletas.find(function(m){ return m.id===doc.maletaId; }))
+    || (maletaAtual && maletas.find(function(m){ return m.id===maletaAtual.id; }))
     || maletas.find(function(m){ return m.nome===doc.nomeMaleta && !m.entregue; })
-    || maletas.find(function(m){ return doc.revendedor && m.revendedor===doc.revendedor && !m.entregue; })
-    || (maletaAtual && maletas.find(function(m){ return m.id===maletaAtual.id; }));
+    || maletas.find(function(m){ return doc.revendedor && m.revendedor===doc.revendedor && !m.entregue; });
   if(mal){
     mal.entregue = true;
     if(!mal.revendedor && doc.revendedor) mal.revendedor = doc.revendedor;
