@@ -1330,6 +1330,7 @@ function loadData() {
       if(Array.isArray(dc.entregas))    historicEntregas=dc.entregas;
       if(Array.isArray(dc.maletas))     maletas=dc.maletas;
       carregarRevendedoresSelects();
+      carregarRevendedoresFechamento();
       renderRevendedores();
       renderDashboard();
       renderUltimasEntradas();
@@ -1361,6 +1362,7 @@ function loadData() {
     // Atualiza cache local
     try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas}));}catch(e){}
     carregarRevendedoresSelects();
+    carregarRevendedoresFechamento();
     renderRevendedores();
     renderDashboard();
     renderUltimasEntradas();
@@ -2610,8 +2612,18 @@ function confirmarEntregaMaleta(){
   if(batchItems.length) syncDrive({action:'batchEditInventario',items:batchItems});
   var idx=historicEntregas.findIndex(function(e){return e.id===doc.id;});
   if(idx!==-1) historicEntregas[idx].confirmada=true;
-  var mal=maletas.find(function(m){return m.id===doc.id||m.nome===doc.nomeMaleta||(doc.revendedor&&m.revendedor===doc.revendedor);});
-  if(mal){mal.entregue=true;addLogMaleta(mal,'Entrega confirmada — itens passaram para Consignado');salvarMaletas();}
+  // Busca a maleta por múltiplos critérios
+  var mal = maletas.find(function(m){ return m.id===doc.id; })
+    || maletas.find(function(m){ return m.nome===doc.nomeMaleta && !m.entregue; })
+    || maletas.find(function(m){ return doc.revendedor && m.revendedor===doc.revendedor && !m.entregue; })
+    || (maletaAtual && maletas.find(function(m){ return m.id===maletaAtual.id; }));
+  if(mal){
+    mal.entregue = true;
+    if(!mal.revendedor && doc.revendedor) mal.revendedor = doc.revendedor;
+    if(!mal.revendedorId && doc.revendedorId) mal.revendedorId = doc.revendedorId;
+    addLogMaleta(mal,'Entrega confirmada — itens passaram para Consignado');
+    salvarMaletas();
+  }
   // Se for complemento, marca entregue na maleta de complemento correspondente
   if(doc.complemento){ var mComp=maletas.find(function(m){return m.id===doc.id&&m.complemento;}); if(mComp){mComp.entregue=true;salvarMaletas();} }
   fecharModal('modal-entrega');
@@ -4738,7 +4750,25 @@ function sincronizarMaletasPendentes(){
   showToast(naoRepresentados.length+' item(s) em maleta sem revendedor — use o botão Atrelar','info');
 }
 
-function carregarRevendedoresSelects(){var opts='<option value="">Em Estoque</option>';revendedores.forEach(function(r){opts+='<option value="'+r.Nome+'">'+r.Nome+'</option>';});var e1=document.getElementById('entrada-revendedor');if(e1)e1.innerHTML=opts;var opts2='<option value="">Selecione...</option>';revendedores.forEach(function(r){opts2+='<option value="'+r.Nome+'">'+r.Nome+'</option>';});var e2=document.getElementById('edit-revendedor');if(e2)e2.innerHTML=opts2;}
+function carregarRevendedoresSelects(){
+  var opts='<option value="">Em Estoque</option>';
+  revendedores.forEach(function(r){opts+='<option value="'+r.Nome+'">'+r.Nome+'</option>';});
+  var e1=document.getElementById('entrada-revendedor');if(e1)e1.innerHTML=opts;
+  var opts2='<option value="">Selecione...</option>';
+  revendedores.forEach(function(r){opts2+='<option value="'+r.Nome+'">'+r.Nome+'</option>';});
+  var e2=document.getElementById('edit-revendedor');if(e2)e2.innerHTML=opts2;
+  // Atualiza também o fechamento
+  carregarRevendedoresFechamento();
+  // Atualiza também o dropdown da maleta ativa
+  var sel=document.getElementById('maleta-revendedor-sel');
+  if(sel){
+    var curVal=sel.value;
+    sel.innerHTML='<option value="">Selecione o revendedor...</option>';
+    revendedores.forEach(function(r){
+      sel.innerHTML+='<option value="'+r.rowId+'"'+(curVal===String(r.rowId)?' selected':'')+'>'+r.Nome+'</option>';
+    });
+  }
+}
 
 // =====================================================
 // CATEGORIAS
