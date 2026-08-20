@@ -391,7 +391,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
       <div class="card-light" style="padding:1.25rem;">
         <h4 style="font-size:12px;font-weight:600;color:var(--gray-700);margin-bottom:8px;">Registrar Devolução</h4>
         <div style="display:flex;gap:6px;margin-bottom:8px;">
-          <input type="text" id="fechamento-codigo" class="barcode-input" placeholder="Código do produto" onkeydown="if(event.key==='Enter'){event.preventDefault();registrarDevolucao();}" oninput="clearTimeout(this._t);this._t=setTimeout(function(){var v=document.getElementById('fechamento-codigo').value.trim();if(v.length>3)registrarDevolucao();},600)" style="flex:1;">
+          <input type="text" id="fechamento-codigo" class="barcode-input" placeholder="Código do produto" onkeydown="if(event.key==='Enter'){event.preventDefault();registrarDevolucao();}" style="flex:1;">
           <button onclick="abrirScanner('fechamento-codigo')" class="btn-secondary" style="padding:6px 10px;flex-shrink:0;" title="Usar câmera"><i class="fas fa-camera"></i></button>
         </div>
         <button onclick="registrarDevolucao()" class="btn-primary" style="width:100%;"><i class="fas fa-undo" style="margin-right:6px;"></i>Registrar</button>
@@ -523,8 +523,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
             <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;"><i class="fas fa-barcode" style="margin-right:4px;"></i>Bipe os itens encontrados</label>
             <div style="display:flex;gap:6px;">
               <input type="text" id="conf-codigo" class="barcode-input" placeholder="Código — Enter" style="flex:1;"
-                onkeydown="if(event.key==='Enter'){event.preventDefault();registrarConferencia();}"
-                oninput="clearTimeout(this._t);this._t=setTimeout(function(){var v=document.getElementById('conf-codigo').value.trim();if(v.length>3)registrarConferencia();},600)">
+                onkeydown="if(event.key==='Enter'){event.preventDefault();registrarConferencia();}">
               <button onclick="abrirScanner('conf-codigo',registrarConferencia)" class="btn-secondary" style="padding:6px 10px;flex-shrink:0;" title="Câmera"><i class="fas fa-camera"></i></button>
             </div>
           </div>
@@ -4000,7 +3999,17 @@ function registrarDevolucao(){
   if(encontrados.length===1){addDev(encontrados[0]);}
   else{selecionarItemDuplicado(encontrados,addDev);document.getElementById('fechamento-codigo').value='';}
 }
-function renderDevolucoes(){var el=document.getElementById('lista-devolucoes');var empty=document.getElementById('lista-devolucoes-empty');if(!devolucoes.length){el.innerHTML='';if(empty)empty.style.display='block';return;}if(empty)empty.style.display='none';renderConsignados();var html='';devolucoes.forEach(function(item,idx){html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;"><div><span style="font-family:monospace;font-size:12px;font-weight:600;color:#b45309;">'+item.Codigo+'</span><span style="font-size:12px;color:var(--gray-600);margin-left:8px;">'+(item.Descricao||'—')+'</span></div><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:12px;font-weight:600;">'+fmt(item.Venda)+'</span><button onclick="removerDevolucao('+idx+')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'var(--gray-400)\'"><i class="fas fa-times"></i></button></div></div>';});el.innerHTML=html;}
+function renderDevolucoes(){var el=document.getElementById('lista-devolucoes');var empty=document.getElementById('lista-devolucoes-empty');if(!devolucoes.length){el.innerHTML='';if(empty)empty.style.display='block';return;}if(empty)empty.style.display='none';renderConsignados();var html='';devolucoes.slice().reverse().forEach(function(item,revIdx){var idx=devolucoes.length-1-revIdx;html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;gap:8px;"><div style="flex:1;min-width:0;"><span style="font-family:monospace;font-size:12px;font-weight:700;color:#b45309;">'+item.Codigo+'</span><span style="font-size:12px;color:var(--gray-600);margin-left:8px;">'+(item.Descricao||'—')+'</span></div><div style="display:flex;align-items:center;gap:10px;flex-shrink:0;"><span style="font-size:13px;font-weight:600;">'+fmt(item.Venda)+'</span><button onclick="removerDevolucao('+idx+')" style="background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;cursor:pointer;color:#ef4444;padding:4px 10px;font-size:13px;font-weight:700;" title="Remover">✕</button></div></div>';});el.innerHTML=html;}
+function adicionarDevolucaoPorRowId(rowId){
+  var item=produtosConsignados.find(function(p){return p.rowId===rowId;});
+  if(!item)return;
+  if(devolucoes.find(function(d){return d.rowId===rowId;})){showToast('Já na lista','warning');return;}
+  devolucoes.push(item);renderDevolucoes();atualizarResumoFechamento();showToast('Devolução registrada','success');
+}
+function removerDevolucaoPorRowId(rowId){
+  var idx=devolucoes.findIndex(function(d){return d.rowId===rowId;});
+  if(idx!==-1){devolucoes.splice(idx,1);renderDevolucoes();atualizarResumoFechamento();showToast('Devolução removida','success');}
+}
 function removerDevolucao(idx){devolucoes.splice(idx,1);renderDevolucoes();atualizarResumoFechamento();}
 function limparDevolucoes(){if(!devolucoes.length)return;if(confirm('Limpar todas as devoluções?')){devolucoes=[];renderDevolucoes();atualizarResumoFechamento();}}
 function atualizarResumoFechamento(){
@@ -4167,7 +4176,7 @@ function abrirModalAssinatura(reg){
   var itensEl=document.getElementById('recibo-itens');
   if(itensEl){
     itensEl.innerHTML=(reg.itensVendidos||[]).map(function(i){
-      return '<span style="background:var(--gray-100);border:1px solid var(--gray-200);border-radius:4px;padding:2px 7px;font-size:11px;color:var(--gray-700);">'+i.Codigo+'</span>';
+      return '<span style="background:var(--gray-100);border:1px solid var(--gray-200);border-radius:4px;padding:2px 7px;font-size:11px;color:var(--gray-700);">'+(i.Descricao||i.Codigo)+'</span>';
     }).join('');
   }
 
@@ -4397,6 +4406,25 @@ function compartilharWhatsApp(){
   window.open(url,'_blank');
 }
 
+function salvarRascunhoFechamento(){
+  var nome=document.getElementById('fechamento-revendedor').value;
+  if(!nome){showToast('Selecione um revendedor','warning');return;}
+  var rascunho={revendedor:nome,devolucoes:devolucoes.slice(),data:new Date().toISOString()};
+  try{localStorage.setItem('luxus_rascunho_fech_'+nome,JSON.stringify(rascunho));showToast('Rascunho salvo!','success');}
+  catch(e){showToast('Erro ao salvar rascunho','error');}
+}
+function carregarRascunhoFechamento(nome){
+  try{
+    var raw=localStorage.getItem('luxus_rascunho_fech_'+nome);
+    if(!raw)return;
+    var rascunho=JSON.parse(raw);
+    if(rascunho.devolucoes&&rascunho.devolucoes.length){
+      if(confirm('Rascunho com '+rascunho.devolucoes.length+' devolução(ões). Carregar?')){
+        devolucoes=rascunho.devolucoes;renderDevolucoes();atualizarResumoFechamento();showToast('Rascunho carregado!','success');
+      }
+    }
+  }catch(e){}
+}
 function finalizarFechamento(){
   var nome=document.getElementById('fechamento-revendedor').value;
   if(!nome){showToast('Selecione um revendedor','warning');return;}
@@ -4407,11 +4435,17 @@ function finalizarFechamento(){
   var devolvidos=devolucoes.slice();
   var dataVenda=new Date().toISOString();
 
-    // Devolvidos: pergunta se volta ao estoque ou fica em maleta
+    // Devolvidos: pergunta destino
   var opcaoDevolvidos='estoque';
   if(devolvidos.length>0){
-    var resp=confirm('Os '+devolvidos.length+' item(s) devolvidos voltam ao ESTOQUE? Clique OK para Estoque ou Cancelar para Manter em Maleta.');
-    opcaoDevolvidos=resp?'estoque':'maleta';
+    var opcao=window.prompt(
+      'Os '+devolvidos.length+' item(s) devolvidos:\n'+
+      'Digite 1 para voltar ao ESTOQUE\n'+
+      'Digite 2 para continuar na MALETA (nova entrega)',
+      '1'
+    );
+    if(opcao===null) return; // cancelou
+    opcaoDevolvidos = opcao.trim()==='2' ? 'maleta' : 'estoque';
   }
 
   // Vendidos: marca como Vendido e limpa revendedor
