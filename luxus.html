@@ -1702,7 +1702,7 @@ function renderDetalhesMaleta(){
   document.getElementById('maleta-total-itens').textContent = m.itens.length+' item(s)';
   document.getElementById('maleta-total-custo').textContent = fmt(m.itens.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0));
 
-  lista.innerHTML = m.itens.map(function(item, idx){
+  lista.innerHTML = m.itens.slice().reverse().map(function(item, idx){ idx = m.itens.length - 1 - idx;
     var inv = inventory.find(function(i){ return String(i.rowId)===String(item.rowId); });
     var status = inv ? inv.Status : item.Status;
     var corStatus = status==='Em Estoque'?'#10b981':status==='Em Maleta'?'#f59e0b':'#6366f1';
@@ -3084,14 +3084,14 @@ function reabrirEntrega(id) {
 // =====================================================
 function calcularParcelas() {
   var n=parseInt(document.getElementById('fechamento-parcelas').value)||1;
-  var resumoLucro=document.getElementById('resumo-lucro');
-  if(!resumoLucro)return;
-  var lucro=parseFloat(resumoLucro.textContent.replace(/[^0-9,]/g,'').replace(',','.'))||0;
-  if(lucro>0&&n>1){
-    var parc=(lucro/n);
-    document.getElementById('fechamento-valor-parcela').value=parc.toFixed(2);
-    atualizarPreviewParcelas(n,parc);
+  // Não sobrescreve o valor — apenas atualiza o preview com o que já está no campo
+  var v=parseFloat(document.getElementById('fechamento-valor-parcela').value)||0;
+  if(n<=1){
+    document.getElementById('fechamento-parcelas-preview').style.display='none';
+    return;
   }
+  if(v>0) atualizarPreviewParcelas(n,v);
+  document.getElementById('fechamento-valor-parcela').focus();
 }
 
 function calcularTotalParcelas() {
