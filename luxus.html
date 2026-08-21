@@ -5235,15 +5235,14 @@ function salvarItem(){
   renderDashboard();
   fecharModal('modal-item');
   showToast('Item salvo!','success');
-  // Envia inventário completo para evitar sobrescrita parcial do JSON
-  var payloadCompleto = {action:'uploadTudo', inventory:inventory, revendedores:revendedores,
-    categorias:categorias, fechamentos:historicFechamentos, entregas:historicEntregas, maletas:maletas};
-  fetch(scriptUrl, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'},
-    body:JSON.stringify(payloadCompleto)}).catch(function(){});
+  syncDriveComCallback(payload, null);
+  atualizarCache();
+}
+function excluirItem(){var rowId=document.getElementById('edit-rowid').value;if(!rowId){fecharModal('modal-item');return;}var item=inventory.find(function(i){return i.rowId==rowId;});if(!confirm('Excluir o produto '+(item?item.Codigo:rowId)+'?'))return;inventory=inventory.filter(function(i){return i.rowId!=rowId;});fecharModal('modal-item');renderDashboard();showToast('Produto excluído!','success');syncDrive({action:'delInventario',rowId:parseInt(rowId)});atualizarCache();}
+function atualizarCache(){
   try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,
     categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas}));}catch(e){}
 }
-function excluirItem(){var rowId=document.getElementById('edit-rowid').value;if(!rowId){fecharModal('modal-item');return;}var item=inventory.find(function(i){return i.rowId==rowId;});if(!confirm('Excluir o produto '+(item?item.Codigo:rowId)+'?'))return;inventory=inventory.filter(function(i){return i.rowId!=rowId;});fecharModal('modal-item');renderDashboard();showToast('Produto excluído!','success');var payloadDel={action:'uploadTudo',inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas};fetch(scriptUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payloadDel)}).catch(function(){});try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas}));}catch(e){}}
 function verFoto(url){if(url)window.open(url,'_blank');}
 
 
