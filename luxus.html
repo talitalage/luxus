@@ -1384,6 +1384,7 @@ function loadData() {
       renderStatus();
       renderCategorias();
       aplicarVisibilidadeCards();
+    carregarEstadoVisibilidade();
     }catch(e){}
   }
 
@@ -3721,8 +3722,11 @@ function renderRevendedores(){
 function renderCategorias(){
   ['Semi Joia','Perfume'].forEach(function(tipo){
     var safe=tipo.replace(/\s/g,'_');
+    // Tenta os dois padrões de ID
     var cid='cats-'+safe;
-    var el=document.getElementById(cid); if(!el) return;
+    var cidAlt=tipo==='Semi Joia'?'categorias-semijoia':'categorias-perfume';
+    var el=document.getElementById(cid)||document.getElementById(cidAlt);
+    if(!el) return;
     var cats=(categorias[tipo]||[]).slice().sort();
     var html=cats.map(function(cat){
       return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;">'
@@ -3735,6 +3739,67 @@ function renderCategorias(){
     }).join('');
     el.innerHTML=html||'<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:12px 0;">Nenhuma categoria</p>';
   });
+}
+
+
+function initRelatorio(){
+  var sel=document.getElementById('rel-revendedor');
+  if(sel){
+    var cur=sel.value;
+    sel.innerHTML='<option value="">Todos</option>';
+    revendedores.forEach(function(r){
+      sel.innerHTML+='<option value="'+r.Nome+'"'+(cur===r.Nome?' selected':'')+'>'+r.Nome+'</option>';
+    });
+  }
+  renderRelatorio();
+}
+
+function renderRelatorio(){
+  var periodo=document.getElementById('rel-periodo')?document.getElementById('rel-periodo').value:'30';
+  var dataIni=document.getElementById('rel-data-ini')?document.getElementById('rel-data-ini').value:'';
+  var dataFim=document.getElementById('rel-data-fim')?document.getElementById('rel-data-fim').value:'';
+  var revFiltro=document.getElementById('rel-revendedor')?document.getElementById('rel-revendedor').value:'';
+
+  var agora=new Date();
+  var ini=dataIni?new Date(dataIni):new Date(agora-parseInt(periodo||30)*86400000);
+  var fim=dataFim?new Date(dataFim+'T23:59:59'):agora;
+
+  var vendidos=inventory.filter(function(i){
+    if(i.Status!=='Vendido') return false;
+    if(revFiltro && i.Revendedor!==revFiltro) return false;
+    var dv=i.DataVenda?new Date(i.DataVenda):null;
+    if(dv && (dv<ini||dv>fim)) return false;
+    return true;
+  });
+
+  // KPIs
+  var totalVendas=vendidos.length;
+  var totalReceita=vendidos.reduce(function(s,i){return s+pN(i.Venda);},0);
+  var totalCusto=vendidos.reduce(function(s,i){return s+pN(i.Custo);},0);
+  var lucro=totalReceita-totalCusto;
+  var margem=totalReceita>0?((lucro/totalReceita)*100).toFixed(1):0;
+  var emEstoque=inventory.filter(function(i){return i.Status==='Em Estoque';}).length;
+  var custoEstoque=inventory.filter(function(i){return i.Status==='Em Estoque';}).reduce(function(s,i){return s+pN(i.Custo);},0);
+
+  var el=function(id){return document.getElementById(id);};
+  if(el('kpi-vendas'))el('kpi-vendas').textContent=totalVendas;
+  if(el('kpi-receita'))el('kpi-receita').textContent=fmt(totalReceita);
+  if(el('kpi-custo'))el('kpi-custo').textContent=fmt(totalCusto);
+  if(el('kpi-lucro'))el('kpi-lucro').textContent=fmt(lucro);
+  if(el('kpi-margem'))el('kpi-margem').textContent=margem+'%';
+  if(el('kpi-estoque'))el('kpi-estoque').textContent=emEstoque;
+  if(el('kpi-custo-estoque'))el('kpi-custo-estoque').textContent=fmt(custoEstoque)+' em custo';
+
+  renderChartMes(vendidos);
+  renderRankingRevs(vendidos);
+  renderRelCats(vendidos);
+  renderTopProdutos(vendidos);
+  renderTabelaEstoque();
+  renderComissoes();
+  renderResumoRevs();
+  renderAgingMaletas();
+  renderCapitalRisco();
+  renderProjecao();
 }
 
 function renderResumoRevs(){
@@ -3866,13 +3931,42 @@ function renderProjecao(){
     +'</tr></tfoot></table></div>';
 }
 
+function toggleDashCard(key, visible){
+  try{
+    var cfg = JSON.parse(localStorage.getItem('luxus_cards_visibility')||'{}');
+    cfg[key] = visible;
+    localStorage.setItem('luxus_cards_visibility', JSON.stringify(cfg));
+  }catch(e){}
+  aplicarVisibilidadeCards();
+}
+
+function carregarEstadoVisibilidade(){
+  try{
+    var cfg = JSON.parse(localStorage.getItem('luxus_cards_visibility')||'{}');
+    ['semijoia','perfume','estoque','consignado'].forEach(function(key){
+      var el = document.getElementById('vis-'+key);
+      if(el && cfg[key]===false) el.checked = false;
+    });
+  }catch(e){}
+}
+
 function aplicarVisibilidadeCards(){
   try{
     var cfg = JSON.parse(localStorage.getItem('luxus_cards_visibility')||'{}');
-    document.querySelectorAll('[data-card-id]').forEach(function(el){
-      var id = el.getAttribute('data-card-id');
-      if(cfg[id]===false) el.style.display='none';
-      else el.style.display='';
+    var mapa = {
+      'semijoia': 'dash-card-semijoia',
+      'perfume':  'dash-card-perfume',
+      'estoque':  'dash-card-estoque',
+      'consignado': 'dash-card-consignado'
+    };
+    Object.keys(mapa).forEach(function(key){
+      var el = document.getElementById(mapa[key]);
+      if(!el) return;
+      if(cfg[key]===false || cfg[key]==='false'){
+        el.style.display='none';
+      } else {
+        el.style.display='';
+      }
     });
   }catch(e){}
 }
