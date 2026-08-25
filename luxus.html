@@ -504,6 +504,12 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
             </select>
           </div>
           <div style="margin-bottom:.75rem;">
+            <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Filtrar por revendedor</label>
+            <select id="conf-filtro-revendedor" onchange="carregarMaletasConf()" style="width:100%;">
+              <option value="todos">Todos os revendedores</option>
+            </select>
+          </div>
+          <div style="margin-bottom:.75rem;">
             <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px;">Filtrar por maleta</label>
             <select id="conf-filtro-maleta" onchange="iniciarConferencia()" style="width:100%;">
               <option value="todos">Todas as maletas</option>
@@ -710,6 +716,26 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
   <h3 class="section-title" style="margin-top:1.5rem;"><i class="fas fa-hand-holding-usd"></i>Projeção de recebimento</h3>
   <div id="rel-projecao" style="display:flex;flex-direction:column;gap:.75rem;"></div>
 
+  </div>
+</div>
+
+<!-- MODAL DESTINO DEVOLVIDOS -->
+<div id="modal-destino-devolvidos" class="modal-overlay" style="display:none;justify-content:center;align-items:center;">
+  <div class="modal-box" style="max-width:380px;text-align:center;">
+    <div style="font-size:2rem;margin-bottom:.75rem;">📦</div>
+    <h3 style="font-size:16px;font-weight:700;color:var(--gray-800);margin-bottom:.5rem;">Destino dos itens devolvidos</h3>
+    <p id="modal-destino-txt" style="font-size:13px;color:var(--gray-500);margin-bottom:1.5rem;"></p>
+    <div style="display:flex;flex-direction:column;gap:.75rem;">
+      <button onclick="_confirmarDestinoDevolvidos('estoque')" class="btn-primary" style="padding:.875rem;font-size:14px;">
+        <i class="fas fa-warehouse" style="margin-right:8px;"></i>Voltar ao Estoque
+      </button>
+      <button onclick="_confirmarDestinoDevolvidos('maleta')" class="btn-secondary" style="padding:.875rem;font-size:14px;color:#f59e0b;border-color:#fcd34d;">
+        <i class="fas fa-briefcase" style="margin-right:8px;"></i>Continuar na Maleta
+      </button>
+      <button onclick="fecharModal('modal-destino-devolvidos')" class="btn-secondary" style="padding:.875rem;font-size:14px;">
+        Cancelar
+      </button>
+    </div>
   </div>
 </div>
 
@@ -2038,7 +2064,7 @@ function renderMaletasAtivas(){
 
   // Agrupa maletas entregues por revendedor
   var grupos = {};
-  maletas.filter(function(m){ return m.entregue && m.revendedor; }).forEach(function(m){
+  maletas.filter(function(m){ return m.entregue && m.revendedor && !m.fechada; }).forEach(function(m){
     if(!grupos[m.revendedor]) grupos[m.revendedor] = [];
     grupos[m.revendedor].push(m);
   });
@@ -2100,14 +2126,17 @@ function renderMaletasAtivas(){
       // Botão complemento
       var compBtn = '<button data-rev="'+encodeURIComponent(nome)+'" onclick="abrirComplementoById(this)" style="background:none;border:1px solid #fcd34d;border-radius:6px;color:#f59e0b;cursor:pointer;padding:4px 10px;font-size:11px;font-weight:600;white-space:nowrap;"><i class="fas fa-plus" style="margin-right:4px;"></i>Complemento</button>';
 
+      var mId = m.id;
       return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--gray-200);border-radius:8px;margin-bottom:6px;flex-wrap:wrap;">'
         +'<div style="flex:1;min-width:120px;">'
         +'<div style="font-weight:600;font-size:13px;color:var(--gray-800);">'+m.nome+'</div>'
         +'<div style="font-size:11px;color:var(--gray-500);">'+m.itens.length+' itens · '+fmt(itensCusto)+' · '+dataStr+'</div>'
         +'</div>'
-        +'<div style="display:flex;gap:6px;flex-shrink:0;">'
+        +'<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;">'
         +docBtn
         +compBtn
+        +'<button onclick="editarNomeMaleta('+mId+')" style="background:none;border:1px solid #93c5fd;border-radius:6px;color:#2563eb;cursor:pointer;padding:4px 8px;font-size:11px;" title="Editar"><i class="fas fa-pen"></i></button>'
+        +'<button onclick="excluirMaletaById('+mId+')" style="background:none;border:1px solid #fca5a5;border-radius:6px;color:#dc2626;cursor:pointer;padding:4px 8px;font-size:11px;" title="Excluir"><i class="fas fa-trash"></i></button>'
         +'</div>'
         +'</div>';
     }).join('');
@@ -2170,6 +2199,33 @@ function toggleMaletaCard(id){
   if(icon)icon.className='fas fa-chevron-'+(fechado?'up':'down');
   // Previne propagação para não colapsar imediatamente
   if(event && event.stopPropagation) event.stopPropagation();
+}
+
+function editarNomeMaleta(id){
+  var m = maletas.find(function(x){return x.id===id;});
+  if(!m) return;
+  var novoNome = prompt('Novo nome para a maleta:', m.nome);
+  if(!novoNome || !novoNome.trim()) return;
+  m.nome = novoNome.trim();
+  salvarMaletas();
+  renderMaletasAtivas();
+  showToast('Nome atualizado!','success');
+}
+
+function excluirMaletaById(id){
+  var m = maletas.find(function(x){return x.id===id;});
+  if(!m) return;
+  if(!confirm('Excluir a maleta "'+m.nome+'"? Os itens voltam ao estoque.')) return;
+  // Devolve itens ao estoque
+  (m.itens||[]).forEach(function(item){
+    var inv = inventory.find(function(i){return i.rowId===item.rowId;});
+    if(inv){ inv.Status='Em Estoque'; inv.Revendedor=''; syncDrive({action:'editInventario',rowId:inv.rowId,status:'Em Estoque',revendedor:''}); }
+  });
+  maletas = maletas.filter(function(x){return x.id!==id;});
+  salvarMaletas();
+  renderMaletasAtivas();
+  renderDashboard();
+  showToast('Maleta excluída!','success');
 }
 
 function copiarLinkRevendedor(link){
@@ -3443,6 +3499,23 @@ function atualizarMaletasConf() {
   });
 }
 
+function carregarMaletasConf(){
+  var rev = document.getElementById('conf-filtro-revendedor').value;
+  var selMaleta = document.getElementById('conf-filtro-maleta');
+  selMaleta.innerHTML = '<option value="todos">Todas as maletas</option>';
+  var lista = (rev && rev !== 'todos')
+    ? maletas.filter(function(m){ return m.revendedor===rev && m.entregue; })
+    : maletas.filter(function(m){ return m.entregue; });
+  lista.sort(function(a,b){ return new Date(b.dataEntrega||b.dataCriacao||0)-new Date(a.dataEntrega||a.dataCriacao||0); });
+  lista.forEach(function(m){
+    var d = new Date(m.dataEntrega||m.dataCriacao||'');
+    var dataStr = d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0')+'/'+d.getFullYear();
+    var label = (rev && rev !== 'todos') ? m.nome+' ('+dataStr+')' : m.nome+' — '+m.revendedor+' ('+dataStr+')';
+    selMaleta.innerHTML += '<option value="'+m.id+'">'+label+'</option>';
+  });
+  iniciarConferencia();
+}
+
 function iniciarConferencia() {
   confBipados = [];
   var status    = document.getElementById('conf-filtro-status').value;
@@ -3596,7 +3669,7 @@ function switchSubtab(sub){
   if(sub==='historico')renderHistorico();
   if(sub==='financeiro')renderFinanceiro();
   if(sub==='entrega'){renderUltimasEntregas();carregarSelectEntrega();renderMaletasAtivas();carregarMaletas();}
-  if(sub==='conferencia'){atualizarCategoriasConf();atualizarMaletasConf();iniciarConferencia();}
+  if(sub==='conferencia'){var selRevConf=document.getElementById('conf-filtro-revendedor');if(selRevConf){selRevConf.innerHTML='<option value="todos">Todos os revendedores</option>';revendedores.forEach(function(r){selRevConf.innerHTML+='<option value="'+r.Nome+'">'+r.Nome+'</option>';});carregarMaletasConf();}atualizarCategoriasConf();atualizarMaletasConf();iniciarConferencia();}
 }
 
 // =====================================================
@@ -4420,6 +4493,25 @@ function compartilharWhatsApp(){
   window.open(url,'_blank');
 }
 
+var _pendingFechamento = null;
+
+function _abrirModalDestinoDevolvidos(n){
+  var el = document.getElementById('modal-destino-devolvidos');
+  var txt = document.getElementById('modal-destino-txt');
+  if(txt) txt.textContent = n+' item(s) foram devolvidos. O que fazer com eles?';
+  if(el){ el.style.display='flex'; }
+}
+
+function _confirmarDestinoDevolvidos(opcao){
+  fecharModal('modal-destino-devolvidos');
+  if(!_pendingFechamento) return;
+  var p = _pendingFechamento;
+  _pendingFechamento = null;
+  _executarFechamento(p.vendidos, p.devolvidos, opcao, p.dataVenda, p.nome);
+}
+
+function _executarFechamento(vendidos, devolvidos, opcaoDevolvidos, dataVenda, nome){
+
 function salvarRascunhoFechamento(){
   var nome=document.getElementById('fechamento-revendedor').value;
   if(!nome){showToast('Selecione um revendedor','warning');return;}
@@ -4449,18 +4541,13 @@ function finalizarFechamento(){
   var devolvidos=devolucoes.slice();
   var dataVenda=new Date().toISOString();
 
-    // Devolvidos: pergunta destino
-  var opcaoDevolvidos='estoque';
+    // Devolvidos: pergunta destino via modal
   if(devolvidos.length>0){
-    var opcao=window.prompt(
-      'Os '+devolvidos.length+' item(s) devolvidos:\n'+
-      'Digite 1 para voltar ao ESTOQUE\n'+
-      'Digite 2 para continuar na MALETA (nova entrega)',
-      '1'
-    );
-    if(opcao===null) return; // cancelou
-    opcaoDevolvidos = opcao.trim()==='2' ? 'maleta' : 'estoque';
+    _pendingFechamento = {vendidos:vendidos, devolvidos:devolvidos, dataVenda:dataVenda, nome:nome};
+    _abrirModalDestinoDevolvidos(devolvidos.length);
+    return; // continua em _confirmarDestinoDevolvidos()
   }
+  _executarFechamento(vendidos, devolvidos, 'estoque', dataVenda, nome);
 
   // Vendidos: marca como Vendido e limpa revendedor
   vendidos.forEach(function(item){
@@ -4489,6 +4576,19 @@ function finalizarFechamento(){
     batchItems.push({rowId:item.rowId,status:novoStatus,revendedor:'',dataVenda:''});
   });
   if(batchItems.length) syncDrive({action:'batchEditInventario',items:batchItems});
+
+  // Marca a maleta selecionada como fechada (remove de Maletas Ativas)
+  var maletaFechId = parseInt(document.getElementById('fechamento-maleta').value)||0;
+  if(maletaFechId){
+    var mFech = maletas.find(function(m){return m.id===maletaFechId;});
+    if(mFech){ mFech.entregue=false; mFech.fechada=true; salvarMaletas(); }
+  } else {
+    // Fecha todas as maletas do revendedor que foram incluídas
+    maletas.filter(function(m){return m.revendedor===nome && m.entregue;}).forEach(function(m){
+      m.entregue=false; m.fechada=true;
+    });
+    salvarMaletas();
+  }
 
   // Se devolvidos foram para maleta, cria entrada na lista de entregas pendentes
   if(opcaoDevolvidos==='maleta' && devolvidos.length>0){
@@ -4562,7 +4662,8 @@ function finalizarFechamento(){
     valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,
     nParcelas:nParc,valorParcela:vParc,itensVendidos:reg.itensVendidos,itensDevolvidos:reg.itensDevolvidos});
   setTimeout(function(){abrirModalAssinatura(reg);},400);
-}
+
+}}
 
 // =====================================================
 // HISTÓRICO
