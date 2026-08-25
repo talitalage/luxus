@@ -381,7 +381,11 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
     <div style="display:flex;flex-direction:column;gap:1rem;">
       <div class="card-light" style="padding:1.25rem;">
         <label style="font-size:11px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Revendedor</label>
-        <select id="fechamento-revendedor" onchange="carregarProdutosRevendedor()"><option value="">Escolha...</option></select>
+        <select id="fechamento-revendedor" onchange="carregarMaletasFechamento()"><option value="">Escolha...</option></select>
+        <div id="fechamento-maleta-wrap" style="display:none;margin-top:8px;">
+          <label style="font-size:11px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Maleta</label>
+          <select id="fechamento-maleta" onchange="carregarProdutosRevendedor()"><option value="">Todas as maletas</option></select>
+        </div>
         <div id="info-revendedor" style="display:none;margin-top:10px;display:flex;gap:6px;">
           <div style="flex:1;text-align:center;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;padding:6px 4px;"><div style="font-size:10px;color:var(--gray-500);">Itens</div><div id="total-consignado" style="font-size:1.1rem;font-weight:700;color:var(--primary);">0</div></div>
           <div style="flex:1;text-align:center;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;padding:6px 4px;"><div style="font-size:10px;color:var(--gray-500);">Comissão</div><div id="percentual-revendedor" style="font-size:1.1rem;font-weight:700;color:#f59e0b;">0%</div></div>
@@ -3942,9 +3946,41 @@ function renderUltimasEntradas(){var ultimas=inventory.slice().sort(function(a,b
 // FECHAMENTO
 // =====================================================
 function carregarRevendedoresFechamento(){var sel=document.getElementById('fechamento-revendedor');var opts='<option value="">Escolha um revendedor...</option>';revendedores.forEach(function(r){opts+='<option value="'+r.Nome+'">'+r.Nome+'</option>';});sel.innerHTML=opts;}
+function carregarMaletasFechamento(){
+  var nome = document.getElementById('fechamento-revendedor').value;
+  var wrap = document.getElementById('fechamento-maleta-wrap');
+  var sel = document.getElementById('fechamento-maleta');
+  if(!nome){ wrap.style.display='none'; produtosConsignados=[]; devolucoes=[]; atualizarResumoFechamento(); renderConsignados(); return; }
+
+  // Busca maletas entregues dessa revendedora
+  var maletasRev = maletas.filter(function(m){ return m.revendedor===nome && m.entregue; })
+    .sort(function(a,b){ return new Date(b.dataEntrega||b.dataCriacao||0) - new Date(a.dataEntrega||a.dataCriacao||0); });
+
+  if(maletasRev.length > 1){
+    wrap.style.display = 'block';
+    sel.innerHTML = '<option value="">Todas as maletas</option>';
+    maletasRev.forEach(function(m){
+      var d = new Date(m.dataEntrega||m.dataCriacao||'');
+      var dataStr = d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0')+'/'+d.getFullYear();
+      sel.innerHTML += '<option value="'+m.id+'">'+m.nome+' — '+m.itens.length+' itens ('+dataStr+')</option>';
+    });
+  } else {
+    wrap.style.display = 'none';
+    sel.value = '';
+  }
+  carregarProdutosRevendedor();
+}
+
 function carregarProdutosRevendedor(){var nome=document.getElementById('fechamento-revendedor').value;if(!nome){document.getElementById('info-revendedor').style.display='none';produtosConsignados=[];devolucoes=[];atualizarResumoFechamento();renderConsignados();return;}var rev=revendedores.find(function(r){return r.Nome===nome;});if(!rev){showToast('Revendedor não encontrado','error');return;}
 // Inclui todos os itens do revendedor que não estão Em Estoque — Consignado e Vendido (pelo revendedor)
-produtosConsignados=inventory.filter(function(i){return i.Revendedor===nome&&i.Status!=='Em Estoque';});devolucoes=[];var vTotal=produtosConsignados.reduce(function(s,i){return s+pN(i.Venda);},0);document.getElementById('info-revendedor').style.display='flex';document.getElementById('percentual-revendedor').textContent=(rev.Percentual||30)+'%';document.getElementById('total-consignado').textContent=produtosConsignados.length;document.getElementById('valor-total-consignado').textContent=fmt(vTotal);if(!produtosConsignados.length)showToast('Este revendedor não possui produtos consignados','warning');atualizarResumoFechamento();renderConsignados();document.getElementById('lista-devolucoes').innerHTML='';document.getElementById('lista-devolucoes-empty').style.display='block';document.getElementById('fechamento-codigo').value='';document.getElementById('fechamento-codigo').focus();carregarRascunhoFechamento(nome);}
+var maletaSelId = parseInt(document.getElementById('fechamento-maleta').value)||0;
+  if(maletaSelId){
+    var maletaSel = maletas.find(function(m){return m.id===maletaSelId;});
+    var idsNaMaleta = maletaSel ? new Set(maletaSel.itens.map(function(i){return i.rowId;})) : new Set();
+    produtosConsignados = inventory.filter(function(i){return i.Revendedor===nome && i.Status!=='Em Estoque' && idsNaMaleta.has(i.rowId);});
+  } else {
+    produtosConsignados=inventory.filter(function(i){return i.Revendedor===nome&&i.Status!=='Em Estoque';});
+  }devolucoes=[];var vTotal=produtosConsignados.reduce(function(s,i){return s+pN(i.Venda);},0);document.getElementById('info-revendedor').style.display='flex';document.getElementById('percentual-revendedor').textContent=(rev.Percentual||30)+'%';document.getElementById('total-consignado').textContent=produtosConsignados.length;document.getElementById('valor-total-consignado').textContent=fmt(vTotal);if(!produtosConsignados.length)showToast('Este revendedor não possui produtos consignados','warning');atualizarResumoFechamento();renderConsignados();document.getElementById('lista-devolucoes').innerHTML='';document.getElementById('lista-devolucoes-empty').style.display='block';document.getElementById('fechamento-codigo').value='';document.getElementById('fechamento-codigo').focus();carregarRascunhoFechamento(nome);}
 function renderConsignados(){var lista=document.getElementById('lista-consignados');var empty=document.getElementById('consignados-empty');var badge=document.getElementById('badge-consignados');if(!lista)return;if(!produtosConsignados||!produtosConsignados.length){lista.innerHTML='';if(empty)empty.style.display='block';if(badge)badge.textContent='0';return;}if(empty)empty.style.display='none';if(badge)badge.textContent=produtosConsignados.length;var html='';produtosConsignados.forEach(function(item){var dev=devolucoes.find(function(d){return d.Codigo===item.Codigo;});var bg=dev?'#f0fdf4':'white';var bc=dev?'#86efac':'var(--gray-200)';var sIcon=dev?'<span style="font-size:10px;background:#dcfce7;color:#166634;padding:2px 6px;border-radius:10px;font-weight:600;">Devolvido</span>':'<span style="font-size:10px;background:#eff6ff;color:#1e40af;padding:2px 6px;border-radius:10px;font-weight:600;">Consignado</span>';
     var rowId=item.rowId; var isDev=!!dev;
     html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:'+bg+';border:1px solid '+bc+';border-radius:6px;gap:8px;">'
