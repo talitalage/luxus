@@ -2008,16 +2008,13 @@ function sincronizarMaletasPendentes(){
 function renderUltimasEntregas(){ /* mantido para compatibilidade — lista de entregas está no histórico */ }
 
 function renderMaletasAtivas(){
-  // Preserva estado expandido dos cards antes de re-renderizar
+  // Preserva estado expandido
   var estadosExpandidos = {};
-  document.querySelectorAll('[id^="mc-"]').forEach(function(el){
+  document.querySelectorAll('[id^="mrev-"]').forEach(function(el){
     estadosExpandidos[el.id] = el.style.display !== 'none';
   });
-  var el = document.getElementById('lista-maletas-ativas'); if(!el) return;
 
-  // Maletas entregues — uma por card, ordenadas por data mais recente
-  var maletasAtivas = maletas.filter(function(m){ return m.entregue && m.revendedor; })
-    .sort(function(a,b){ return new Date(b.dataEntrega||b.dataCriacao||0) - new Date(a.dataEntrega||a.dataCriacao||0); });
+  var el = document.getElementById('lista-maletas-ativas'); if(!el) return;
 
   // Complementos pendentes no topo
   var complementosPendentes = maletas.filter(function(m){ return m.complemento && !m.entregue; });
@@ -2035,46 +2032,36 @@ function renderMaletasAtivas(){
       +'</div>';
   }).join('');
 
-  if(!maletasAtivas.length){
+  // Agrupa maletas entregues por revendedor
+  var grupos = {};
+  maletas.filter(function(m){ return m.entregue && m.revendedor; }).forEach(function(m){
+    if(!grupos[m.revendedor]) grupos[m.revendedor] = [];
+    grupos[m.revendedor].push(m);
+  });
+
+  // Ordena maletas de cada grupo por data desc
+  Object.keys(grupos).forEach(function(rev){
+    grupos[rev].sort(function(a,b){
+      return new Date(b.dataEntrega||b.dataCriacao||0) - new Date(a.dataEntrega||a.dataCriacao||0);
+    });
+  });
+
+  var revNomes = Object.keys(grupos).sort();
+
+  if(!revNomes.length){
     el.innerHTML = htmlComplementos + '<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:2rem 0;">Nenhuma maleta ativa.</p>';
     return;
   }
 
-  el.innerHTML = htmlComplementos + maletasAtivas.map(function(maleta){
-    var nome = maleta.revendedor;
-    var itens = maleta.itens || [];
-    var totalCusto = itens.reduce(function(s,i){ return s+(parseFloat(i.Custo)||0); },0);
+  el.innerHTML = htmlComplementos + revNomes.map(function(nome){
+    var maletasRev = grupos[nome];
     var rev = revendedores.find(function(r){ return r.Nome===nome; });
-    var pct = rev ? (parseFloat(rev.Percentual)||50) : 50;
-    var collapseId = 'mc-'+maleta.id;
-    var chevronBtn = '<button data-cid="'+collapseId+'" onclick="event.stopPropagation();toggleMaletaCard(this.getAttribute(\'data-cid\'))" style="background:none;border:none;cursor:pointer;padding:5px 8px;color:var(--gray-400);flex-shrink:0;"><i class="fas fa-chevron-down" id="icon-'+collapseId+'"></i></button>';
-
-    // Data
-    var dataRef = maleta.dataEntrega || maleta.dataCriacao || '';
-    var _dr = dataRef ? new Date(dataRef) : null;
-    var data = _dr ? (_dr.getDate().toString().padStart(2,'0')+'/'
-      +(_dr.getMonth()+1).toString().padStart(2,'0')+'/'+_dr.getFullYear()
-      +', '+_dr.getHours().toString().padStart(2,'0')+':'+_dr.getMinutes().toString().padStart(2,'0')) : null;
-
-    // Categorias
-    var cats = {};
-    itens.forEach(function(i){ cats[i.Categoria]=(cats[i.Categoria]||0)+1; });
-    var catsHtml = Object.keys(cats).sort().map(function(c){
-      return '<span style="background:var(--gray-100);border-radius:12px;padding:2px 8px;font-size:11px;color:var(--gray-600);">'+c+' ('+cats[c]+')</span>';
-    }).join('');
-
-    // Botões de documento
-    var docBtns = '';
-    var todosRecibos = maletas.filter(function(m2){ return m2.revendedor===nome && m2.entregue && m2.reciboUrl; });
-    var _nomeEnc = encodeURIComponent(nome);
-    if(todosRecibos.length > 1){
-      docBtns = '<button data-rev="'+_nomeEnc+'" onclick="abrirDocumentos(decodeURIComponent(this.getAttribute(\'data-rev\')))" class="btn-secondary" style="flex:1;padding:7px;font-size:12px;color:#10b981;border-color:#86efac;"><i class="fas fa-eye" style="margin-right:5px;"></i>Ver documentos</button>';
-    } else if(maleta.reciboUrl){
-      var _url = encodeURIComponent(maleta.reciboUrl);
-      docBtns = '<button data-url="'+_url+'" onclick="window.open(decodeURIComponent(this.getAttribute(\'data-url\')),\'_blank\')" class="btn-secondary" style="flex:1;padding:7px;font-size:12px;color:#10b981;border-color:#86efac;"><i class="fas fa-eye" style="margin-right:5px;"></i>Ver documento</button>';
-    } else {
-      docBtns = '<button onclick="assinarMaletaExistente('+maleta.id+')" class="btn-secondary" style="flex:1;padding:7px;font-size:12px;color:#f59e0b;border-color:#fcd34d;"><i class="fas fa-pen-nib" style="margin-right:5px;"></i>Assinar documento</button>';
-    }
+    var totalItens = maletasRev.reduce(function(s,m){return s+m.itens.length;},0);
+    var totalCusto = maletasRev.reduce(function(s,m){
+      return s+m.itens.reduce(function(s2,i){return s2+(parseFloat(i.Custo)||0);},0);
+    },0);
+    var collapseId = 'mrev-'+nome.replace(/[^a-zA-Z0-9]/g,'_');
+    var iniciais = (function(){ var p=nome.split(' '); return(p[0][0]+(p[p.length-1][0]||'')).toUpperCase(); }());
 
     // Link revendedora
     var linkBtn = '';
@@ -2082,36 +2069,58 @@ function renderMaletasAtivas(){
       var cpfNum=(rev.CPF||'').replace(/\D/g,'');
       if(cpfNum.length>=6){
         var partes=nome.split(' ');
-        var iniciais=(partes[0][0]+(partes[partes.length-1][0]||'')).toUpperCase();
-        var token=iniciais+cpfNum.slice(0,6);
+        var ini=(partes[0][0]+(partes[partes.length-1][0]||'')).toUpperCase();
+        var token=ini+cpfNum.slice(0,6);
         var link='https://talitalage.github.io/luxus/revendedor.html?token='+token;
-        var _lnk=encodeURIComponent(link);
-        linkBtn='<button data-url="'+_lnk+'" onclick="copiarLinkRevendedor(decodeURIComponent(this.getAttribute(\'data-url\')))" class="btn-secondary" style="width:100%;padding:7px;font-size:12px;color:#6366f1;border-color:#a5b4fc;"><i class="fas fa-link" style="margin-right:5px;"></i>Link da revendedora</button>';
+        linkBtn='<button data-url="'+encodeURIComponent(link)+'" onclick="copiarLinkRevendedor(decodeURIComponent(this.getAttribute(\'data-url\')))" class="btn-secondary" style="width:100%;padding:7px;font-size:12px;color:#6366f1;border-color:#a5b4fc;margin-top:6px;"><i class="fas fa-link" style="margin-right:5px;"></i>Link da revendedora</button>';
       }
     }
 
-    return '<div class="card-light" style="padding:1rem;" data-collapse="'+collapseId+'">'
-      // Cabeçalho
-      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;">'
-      +'<div style="width:38px;height:38px;border-radius:10px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--primary);flex-shrink:0;">'
-      +(function(){var p=nome.split(' ');return(p[0][0]+(p[p.length-1][0]||'')).toUpperCase();}())
-      +'</div>'
+    // Linhas de maleta dentro do grupo
+    var maletasHtml = maletasRev.map(function(m){
+      var itensCusto = m.itens.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0);
+      var dataRef = m.dataEntrega || m.dataCriacao || '';
+      var _dr = dataRef ? new Date(dataRef) : null;
+      var dataStr = _dr ? (_dr.getDate().toString().padStart(2,'0')+'/'
+        +(_dr.getMonth()+1).toString().padStart(2,'0')+'/'+_dr.getFullYear()
+        +' '+_dr.getHours().toString().padStart(2,'0')+':'+_dr.getMinutes().toString().padStart(2,'0')) : '—';
+
+      // Botão documento
+      var docBtn = '';
+      if(m.reciboUrl){
+        docBtn = '<button data-url="'+encodeURIComponent(m.reciboUrl)+'" onclick="window.open(decodeURIComponent(this.getAttribute(\'data-url\')),\'_blank\')" style="background:none;border:1px solid #86efac;border-radius:6px;color:#10b981;cursor:pointer;padding:4px 10px;font-size:11px;font-weight:600;white-space:nowrap;"><i class="fas fa-eye" style="margin-right:4px;"></i>Ver</button>';
+      } else {
+        docBtn = '<button onclick="assinarMaletaExistente('+m.id+')" style="background:none;border:1px solid #fcd34d;border-radius:6px;color:#f59e0b;cursor:pointer;padding:4px 10px;font-size:11px;font-weight:600;white-space:nowrap;"><i class="fas fa-pen-nib" style="margin-right:4px;"></i>Assinar</button>';
+      }
+
+      // Botão complemento
+      var compBtn = '<button data-rev="'+encodeURIComponent(nome)+'" onclick="abrirComplementoById(this)" style="background:none;border:1px solid #fcd34d;border-radius:6px;color:#f59e0b;cursor:pointer;padding:4px 10px;font-size:11px;font-weight:600;white-space:nowrap;"><i class="fas fa-plus" style="margin-right:4px;"></i>Complemento</button>';
+
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--gray-200);border-radius:8px;margin-bottom:6px;flex-wrap:wrap;">'
+        +'<div style="flex:1;min-width:120px;">'
+        +'<div style="font-weight:600;font-size:13px;color:var(--gray-800);">'+m.nome+'</div>'
+        +'<div style="font-size:11px;color:var(--gray-500);">'+m.itens.length+' itens · '+fmt(itensCusto)+' · '+dataStr+'</div>'
+        +'</div>'
+        +'<div style="display:flex;gap:6px;flex-shrink:0;">'
+        +docBtn
+        +compBtn
+        +'</div>'
+        +'</div>';
+    }).join('');
+
+    return '<div class="card-light" style="padding:1rem;margin-bottom:.75rem;">'
+      // Cabeçalho revendedora — clicável
+      +'<div style="display:flex;align-items:center;gap:10px;cursor:pointer;" data-cid="'+collapseId+'" onclick="toggleMaletaCard(this.getAttribute(\'data-cid\'))">'
+      +'<div style="width:38px;height:38px;border-radius:10px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--primary);flex-shrink:0;">'+iniciais+'</div>'
       +'<div style="flex:1;min-width:0;">'
-      +'<div style="font-weight:700;font-size:14px;color:var(--gray-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+maleta.nome+'</div>'
-      +'<div style="font-size:11px;color:var(--gray-500);">'+nome+' · '+itens.length+' item(s) · '+fmt(totalCusto)+(data?' · '+data:'')+'</div>'
+      +'<div style="font-weight:700;font-size:14px;color:var(--gray-800);">'+nome+'</div>'
+      +'<div style="font-size:11px;color:var(--gray-500);">'+maletasRev.length+' maleta(s) · '+totalItens+' itens · '+fmt(totalCusto)+'</div>'
       +'</div>'
-      +'<span style="background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:600;flex-shrink:0;">Entregue</span>'
-      +'<button data-rev="'+encodeURIComponent(nome)+'" onclick="abrirModalItensAtiva(decodeURIComponent(this.getAttribute(\'data-rev\')))" class="btn-secondary" style="padding:5px 8px;font-size:12px;color:#2563eb;border-color:#93c5fd;flex-shrink:0;" title="Ver itens"><i class="fas fa-list"></i></button>'
-      +'<button data-rev="'+encodeURIComponent(nome)+'" onclick="excluirMaletaAtiva(decodeURIComponent(this.getAttribute(\'data-rev\')))" class="btn-secondary" style="padding:5px 8px;font-size:12px;color:#dc2626;border-color:#fca5a5;flex-shrink:0;" title="Excluir maleta"><i class="fas fa-trash"></i></button>'
-      +chevronBtn
+      +'<i class="fas fa-chevron-down" id="icon-'+collapseId+'" style="color:var(--gray-400);font-size:14px;"></i>'
       +'</div>'
       // Corpo colapsável
-      +'<div id="'+collapseId+'" style="display:none;">'
-      +'<div style="margin-bottom:.75rem;padding:.625rem .75rem;background:var(--gray-50);border-radius:6px;display:flex;flex-wrap:wrap;gap:6px;">'+catsHtml+'</div>'
-      +'<div style="display:flex;gap:8px;margin-bottom:8px;">'
-      +docBtns
-      +'</div>'
-      +'<button onclick="abrirComplementoById(this)" data-rev="'+encodeURIComponent(nome)+'" class="btn-secondary" style="width:100%;padding:7px;font-size:12px;color:#f59e0b;border-color:#fcd34d;"><i class="fas fa-plus-circle" style="margin-right:5px;"></i>Entregar complemento</button>'
+      +'<div id="'+collapseId+'" style="display:none;margin-top:.75rem;">'
+      +maletasHtml
       +linkBtn
       +'</div>'
       +'</div>';
