@@ -3675,6 +3675,17 @@ function switchSubtab(sub){
 // =====================================================
 // DASHBOARD
 // =====================================================
+function aplicarVisibilidadeCards(){
+  try{
+    var cfg = JSON.parse(localStorage.getItem('luxus_cards_visibility')||'{}');
+    document.querySelectorAll('[data-card-id]').forEach(function(el){
+      var id = el.getAttribute('data-card-id');
+      if(cfg[id]===false) el.style.display='none';
+      else el.style.display='';
+    });
+  }catch(e){}
+}
+
 function renderDashboard(){
   var c=cfgCards;
   var itemsTotal=inventory.filter(function(i){
