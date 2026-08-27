@@ -457,7 +457,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
     <div class="card-light">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--gray-200);flex-wrap:wrap;gap:10px;">
         <div style="display:flex;align-items:center;gap:12px;">
-          <h3 style="font-size:.9rem;font-weight:600;color:var(--gray-700);margin:0;"><i class="fas fa-history" style="color:var(--primary);margin-right:6px;"></i>Histórico de Fechamentos</h3>
+          <h3 style="font-size:.9rem;font-weight:600;color:var(--gray-700);margin:0;"><i class="fas fa-history" style="color:var(--primary);margin-right:6px;"></i>Histórico de Vendas</h3>
           <span id="badge-historico" style="font-size:11px;background:var(--gray-100);color:var(--gray-600);padding:2px 8px;border-radius:10px;font-weight:600;">0 registros</span>
         </div>
         <div style="display:flex;gap:8px;">
@@ -1261,7 +1261,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
       <div style="margin-bottom:.75rem;">
         <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Bipe os itens</label>
         <div style="display:flex;gap:8px;margin-top:4px;">
-          <input id="pacote-codigo" type="text" placeholder="Código do produto..." style="flex:1;font-family:var(--font-mono);text-transform:uppercase;" onkeydown="if(event.key==='Enter'){adicionarItemPacote();this.value='';this.focus();}">
+          <input id="pacote-codigo" type="text" placeholder="Código ou descrição..." style="flex:1;font-family:var(--font-mono);text-transform:uppercase;" onkeydown="if(event.key==='Enter'){adicionarItemPacote();this.value='';this.focus();}">
           <button onclick="adicionarItemPacote()" class="btn-secondary" style="padding:.5rem .75rem;"><i class="fas fa-plus"></i></button>
           <button onclick="abrirScanner('pacote-codigo', function(){adicionarItemPacote();})" class="btn-secondary" style="padding:.5rem .75rem;"><i class="fas fa-camera"></i></button>
         </div>
@@ -1424,7 +1424,7 @@ function loadData() {
     try{
       var dc=JSON.parse(cache);
       if(Array.isArray(dc.inventory))    inventory=dc.inventory;
-      if(Array.isArray(dc.revendedores)) revendedores=dc.revendedores;
+      if(Array.isArray(dc.revendedores)) revendedores=normalizarRevendedores(dc.revendedores);
       if(dc.categorias&&!Array.isArray(dc.categorias)) categorias=dc.categorias;
       if(Array.isArray(dc.fechamentos))  historicFechamentos=dc.fechamentos;
       if(Array.isArray(dc.entregas))    historicEntregas=dc.entregas;
@@ -1452,7 +1452,7 @@ function loadData() {
   .then(function(t){
     var d=JSON.parse(t);
     if(Array.isArray(d.inventory))    inventory=d.inventory;
-    if(Array.isArray(d.revendedores)) revendedores=d.revendedores;
+    if(Array.isArray(d.revendedores)) revendedores=normalizarRevendedores(d.revendedores);
     if(d.categorias&&!Array.isArray(d.categorias)) categorias=d.categorias;
     if(Array.isArray(d.fechamentos))  historicFechamentos=d.fechamentos;
     if(Array.isArray(d.entregas))    historicEntregas=d.entregas;
@@ -2163,7 +2163,7 @@ function renderMaletasAtivas(){
     var linkBtn = '';
     if(rev){
       var cpfNum=(rev.CPF||'').replace(/\D/g,'');
-      var celNum=(rev.Contato||'').replace(/\D/g,'');
+      var celNum=String(rev.Contato||'').replace(/\D/g,'');
       var chave = cpfNum.length>=6 ? cpfNum.slice(0,6) : celNum.length>=6 ? celNum.slice(0,6) : '';
       if(chave){
         var partes=nome.split(' ');
@@ -3746,6 +3746,17 @@ function switchSubtab(sub){
 
 // ── FUNÇÕES RESTAURADAS ──────────────────────────────────────────
 
+function normalizarRevendedores(lista){
+  return (lista||[]).map(function(r){
+    r.rowId = Number(r.rowId) || r.rowId;
+    r.Percentual = Number(r.Percentual) || 50;
+    r.Nome = String(r.Nome||'');
+    r.Contato = String(r.Contato||'');
+    r.CPF = String(r.CPF||'');
+    return r;
+  });
+}
+
 function carregarRevendedoresSelects(){
   var opts='<option value="">Em Estoque</option>';
   revendedores.forEach(function(r){opts+='<option value="'+r.Nome+'">'+r.Nome+'</option>';});
@@ -4080,8 +4091,12 @@ function carregarEstadoVisibilidade(){
     var cfg = JSON.parse(localStorage.getItem('luxus_cards_visibility')||'{}');
     ['semijoia','perfume','estoque','consignado'].forEach(function(key){
       var el = document.getElementById('vis-'+key);
-      if(el && cfg[key]===false) el.checked = false;
+      if(el){
+        var visivel = cfg[key] !== false;
+        el.checked = visivel;
+      }
     });
+    aplicarVisibilidadeCards();
   }catch(e){}
 }
 
