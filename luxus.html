@@ -1186,56 +1186,109 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
 <!-- MODAL RECIBOS SALVOS -->
 <!-- MODAL VENDA AVULSA -->
 <div id="modal-venda-avulsa" class="modal-overlay">
-  <div class="modal-content" style="max-width:480px;width:95%;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+  <div class="modal-content" style="max-width:520px;width:95%;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
       <h3 style="font-size:1.1rem;font-weight:700;color:var(--gray-800);"><i class="fas fa-cash-register" style="color:var(--primary);margin-right:8px;"></i>Venda Avulsa</h3>
       <button onclick="fecharModal('modal-venda-avulsa')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>
     </div>
-    <div style="margin-bottom:.75rem;">
-      <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Código do produto *</label>
-      <div style="display:flex;gap:8px;margin-top:4px;">
-        <input id="avulsa-codigo" type="text" placeholder="Código ou descrição..." style="flex:1;font-family:var(--font-mono);text-transform:uppercase;" oninput="this.value=this.value.toUpperCase();buscarItemAvulsa()" onkeydown="if(event.key==='Enter')buscarItemAvulsa()">
-        <button onclick="buscarItemAvulsa()" class="btn-secondary" style="padding:.5rem .75rem;"><i class="fas fa-search"></i></button>
-        <button onclick="abrirScanner('avulsa-codigo',buscarItemAvulsa)" class="btn-secondary" style="padding:.5rem .75rem;" title="Usar câmera"><i class="fas fa-camera"></i></button>
-      </div>
+
+    <!-- Abas -->
+    <div style="display:flex;gap:4px;margin-bottom:1rem;background:var(--gray-100);border-radius:10px;padding:4px;">
+      <button id="tab-avulsa-unitaria" onclick="switchAbaAvulsa('unitaria')" style="flex:1;padding:8px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:var(--primary);color:white;transition:.2s;">
+        <i class="fas fa-tag" style="margin-right:5px;"></i>Unitária
+      </button>
+      <button id="tab-avulsa-pacote" onclick="switchAbaAvulsa('pacote')" style="flex:1;padding:8px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--gray-600);transition:.2s;">
+        <i class="fas fa-box" style="margin-right:5px;"></i>Pacote
+      </button>
     </div>
-    <div id="avulsa-item-card" style="display:none;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:1rem;margin-bottom:.75rem;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem;">
-        <div>
-          <div id="avulsa-item-nome" style="font-weight:600;color:var(--gray-800);font-size:14px;"></div>
-          <div id="avulsa-item-tipo" style="font-size:12px;color:var(--gray-500);margin-top:2px;"></div>
-        </div>
-        <div id="avulsa-item-status-badge"></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
-        <div style="background:white;border:1px solid var(--gray-200);border-radius:6px;padding:.5rem;text-align:center;">
-          <div style="font-size:10px;color:var(--gray-400);">Custo</div>
-          <div id="avulsa-item-custo" style="font-weight:600;font-size:13px;color:var(--gray-700);"></div>
-        </div>
-        <div style="background:white;border:1px solid var(--gray-200);border-radius:6px;padding:.5rem;text-align:center;">
-          <div style="font-size:10px;color:var(--gray-400);">Preço de venda</div>
-          <div id="avulsa-item-venda" style="font-weight:700;font-size:13px;color:#10b981;"></div>
-        </div>
-      </div>
-    </div>
-    <div id="avulsa-erro" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:.75rem;font-size:13px;color:#dc2626;margin-bottom:.75rem;"></div>
-    <div id="avulsa-form" style="display:none;">
+
+    <!-- ABA UNITÁRIA -->
+    <div id="aba-avulsa-unitaria">
       <div style="margin-bottom:.75rem;">
-        <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Valor de venda (R$)</label>
-        <input id="avulsa-valor" type="number" step="0.01" placeholder="0,00" style="width:100%;margin-top:4px;font-size:15px;font-weight:600;">
+        <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Código do produto *</label>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <input id="avulsa-codigo" type="text" placeholder="Código ou descrição..." style="flex:1;font-family:var(--font-mono);text-transform:uppercase;" oninput="this.value=this.value.toUpperCase();" onkeydown="if(event.key==='Enter')buscarItemAvulsa()">
+          <button onclick="buscarItemAvulsa()" class="btn-secondary" style="padding:.5rem .75rem;"><i class="fas fa-search"></i></button>
+          <button onclick="abrirScanner('avulsa-codigo',buscarItemAvulsa)" class="btn-secondary" style="padding:.5rem .75rem;" title="Usar câmera"><i class="fas fa-camera"></i></button>
+        </div>
       </div>
-      <div style="margin-bottom:1rem;">
-        <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Observação (opcional)</label>
-        <input id="avulsa-obs" type="text" placeholder="Ex: desconto aplicado, pagamento à vista..." style="width:100%;margin-top:4px;">
+      <div id="avulsa-item-card" style="display:none;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:1rem;margin-bottom:.75rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem;">
+          <div>
+            <div id="avulsa-item-nome" style="font-weight:600;color:var(--gray-800);font-size:14px;"></div>
+            <div id="avulsa-item-tipo" style="font-size:12px;color:var(--gray-500);margin-top:2px;"></div>
+          </div>
+          <div id="avulsa-item-status-badge"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+          <div style="background:white;border:1px solid var(--gray-200);border-radius:6px;padding:.5rem;text-align:center;">
+            <div style="font-size:10px;color:var(--gray-400);">Custo</div>
+            <div id="avulsa-item-custo" style="font-weight:600;font-size:13px;color:var(--gray-700);"></div>
+          </div>
+          <div style="background:white;border:1px solid var(--gray-200);border-radius:6px;padding:.5rem;text-align:center;">
+            <div style="font-size:10px;color:var(--gray-400);">Preço de venda</div>
+            <div id="avulsa-item-venda" style="font-weight:700;font-size:13px;color:#10b981;"></div>
+          </div>
+        </div>
       </div>
+      <div id="avulsa-erro" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:.75rem;font-size:13px;color:#dc2626;margin-bottom:.75rem;"></div>
+      <div id="avulsa-form" style="display:none;">
+        <div style="margin-bottom:.75rem;">
+          <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Valor de venda (R$)</label>
+          <input id="avulsa-valor" type="number" step="0.01" placeholder="0,00" style="width:100%;margin-top:4px;font-size:15px;font-weight:600;">
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Observação (opcional)</label>
+          <input id="avulsa-obs" type="text" placeholder="Ex: desconto aplicado, pagamento à vista..." style="width:100%;margin-top:4px;">
+        </div>
+        <div style="display:flex;gap:.75rem;">
+          <button onclick="fecharModal('modal-venda-avulsa')" class="btn-secondary" style="flex:1;">Cancelar</button>
+          <button onclick="confirmarVendaAvulsa()" class="btn-primary" style="flex:1;"><i class="fas fa-check" style="margin-right:6px;"></i>Confirmar venda</button>
+        </div>
+      </div>
+      <div id="avulsa-inicial" style="text-align:center;padding:1rem 0;color:var(--gray-400);font-size:13px;">
+        <i class="fas fa-barcode" style="font-size:2rem;display:block;margin-bottom:.5rem;"></i>
+        Bipe ou digite o código do produto para iniciar
+      </div>
+    </div>
+
+    <!-- ABA PACOTE -->
+    <div id="aba-avulsa-pacote" style="display:none;">
+      <div style="margin-bottom:.75rem;">
+        <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Nome do comprador *</label>
+        <input id="pacote-comprador" type="text" placeholder="Nome do cliente..." style="width:100%;margin-top:4px;">
+      </div>
+      <div style="margin-bottom:.75rem;">
+        <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Bipe os itens</label>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <input id="pacote-codigo" type="text" placeholder="Código do produto..." style="flex:1;font-family:var(--font-mono);text-transform:uppercase;" onkeydown="if(event.key==='Enter'){adicionarItemPacote();this.value='';this.focus();}">
+          <button onclick="adicionarItemPacote()" class="btn-secondary" style="padding:.5rem .75rem;"><i class="fas fa-plus"></i></button>
+          <button onclick="abrirScanner('pacote-codigo', function(){adicionarItemPacote();})" class="btn-secondary" style="padding:.5rem .75rem;"><i class="fas fa-camera"></i></button>
+        </div>
+      </div>
+
+      <!-- Lista de itens -->
+      <div id="pacote-lista" style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;margin-bottom:.75rem;"></div>
+
+      <!-- Resumo -->
+      <div id="pacote-resumo" style="display:none;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:.875rem;margin-bottom:.75rem;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+          <span style="color:var(--gray-600);">Total dos itens</span>
+          <span id="pacote-total" style="font-weight:700;color:var(--gray-800);"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;">
+          <span style="color:var(--gray-600);">Itens</span>
+          <span id="pacote-qtd" style="font-weight:600;color:var(--gray-700);"></span>
+        </div>
+        <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Valor recebido (R$)</label>
+        <input id="pacote-recebido" type="number" step="0.01" placeholder="0,00" style="width:100%;margin-top:4px;font-size:15px;font-weight:600;" oninput="atualizarResumoPacote()">
+        <div id="pacote-saldo" style="margin-top:8px;text-align:center;font-size:13px;font-weight:700;padding:6px;border-radius:8px;display:none;"></div>
+      </div>
+
       <div style="display:flex;gap:.75rem;">
         <button onclick="fecharModal('modal-venda-avulsa')" class="btn-secondary" style="flex:1;">Cancelar</button>
-        <button onclick="confirmarVendaAvulsa()" class="btn-primary" style="flex:1;"><i class="fas fa-check" style="margin-right:6px;"></i>Confirmar venda</button>
+        <button onclick="confirmarVendaPacote()" class="btn-primary" style="flex:1;" id="btn-confirmar-pacote" disabled><i class="fas fa-check" style="margin-right:6px;"></i>Confirmar pacote</button>
       </div>
-    </div>
-    <div id="avulsa-inicial" style="text-align:center;padding:1rem 0;color:var(--gray-400);font-size:13px;">
-      <i class="fas fa-barcode" style="font-size:2rem;display:block;margin-bottom:.5rem;"></i>
-      Bipe ou digite o código do produto para iniciar
     </div>
   </div>
 </div>
@@ -1618,12 +1671,20 @@ function renderLogMaleta(){
 function salvarMaletas(){
   localStorage.setItem('luxus_maletas', JSON.stringify(maletas));
   if(!scriptUrl) return;
-  // Salva maletas embutidas no payload do uploadTudo (via POST no-cors)
-  // e confirma via GET leve (só as maletas sem itens para verificar)
+  // Envia só metadados das maletas (sem itens[]) para reduzir payload
+  var maletasMeta = maletas.map(function(m){
+    return {
+      id: m.id, nome: m.nome, revendedor: m.revendedor, revendedorId: m.revendedorId,
+      dataCriacao: m.dataCriacao, dataEntrega: m.dataEntrega, entregue: m.entregue,
+      fechada: m.fechada, reciboUrl: m.reciboUrl, complemento: m.complemento,
+      dataFechamento: m.dataFechamento, log: m.log,
+      _qtdItens: (m.itens||[]).length  // só conta, não envia os itens
+    };
+  });
   fetch(scriptUrl, {
     method:'POST', mode:'no-cors',
     headers:{'Content-Type':'text/plain'},
-    body:JSON.stringify({action:'salvarMaletas', maletas:maletas})
+    body:JSON.stringify({action:'salvarMaletas', maletas:maletasMeta})
   }).catch(function(){});
 }
 
@@ -3808,6 +3869,74 @@ function renderRelatorio(){
   renderProjecao();
 }
 
+
+function editarRevendedor(rowId){
+  var rev = revendedores.find(function(r){ return String(r.rowId)===String(rowId); });
+  if(!rev) return;
+  document.getElementById('rev-rowid').value = rev.rowId;
+  document.getElementById('rev-nome').value = rev.Nome||'';
+  document.getElementById('rev-contato').value = rev.Contato||'';
+  document.getElementById('rev-percentual').value = rev.Percentual||50;
+  document.getElementById('rev-cpf').value = rev.CPF||'';
+  document.getElementById('modal-revendedor-titulo').textContent = 'Editar Revendedor';
+  abrirModal('modal-revendedor');
+}
+
+function novoRevendedor(){
+  document.getElementById('rev-rowid').value = '';
+  document.getElementById('rev-nome').value = '';
+  document.getElementById('rev-contato').value = '';
+  document.getElementById('rev-percentual').value = 50;
+  document.getElementById('rev-cpf').value = '';
+  document.getElementById('modal-revendedor-titulo').textContent = 'Novo Revendedor';
+  abrirModal('modal-revendedor');
+}
+
+function salvarRevendedor(){
+  var rowId = document.getElementById('rev-rowid').value;
+  var nome = document.getElementById('rev-nome').value.trim();
+  var contato = document.getElementById('rev-contato').value.trim();
+  var percentual = parseFloat(document.getElementById('rev-percentual').value)||50;
+  var cpf = document.getElementById('rev-cpf').value.trim();
+
+  if(!nome){ showToast('Informe o nome','warning'); return; }
+
+  if(rowId){
+    // Editar existente
+    var rev = revendedores.find(function(r){ return String(r.rowId)===String(rowId); });
+    if(rev){
+      rev.Nome = nome; rev.Contato = contato; rev.Percentual = percentual; rev.CPF = cpf;
+      syncDrive({action:'editRevendedor', rowId:String(rowId), nome:nome, contato:contato, percentual:percentual, cpf:cpf});
+    }
+  } else {
+    // Novo revendedor
+    var novoId = Date.now();
+    var novo = {rowId: novoId, Nome: nome, Contato: contato, Percentual: percentual, CPF: cpf};
+    revendedores.push(novo);
+    syncDriveComCallback({action:'addRevendedor', nome:nome, contato:contato, percentual:percentual, cpf:cpf}, function(res){
+      if(res && res.rowId) novo.rowId = res.rowId;
+    });
+  }
+
+  fecharModal('modal-revendedor');
+  renderRevendedores();
+  carregarRevendedoresSelects();
+  atualizarCache();
+  showToast('Revendedor salvo!','success');
+}
+
+function excluirRevendedor(rowId){
+  var rev = revendedores.find(function(r){ return String(r.rowId)===String(rowId); });
+  if(!rev) return;
+  if(!confirm('Excluir '+rev.Nome+'?')) return;
+  revendedores = revendedores.filter(function(r){ return String(r.rowId)!==String(rowId); });
+  syncDrive({action:'delRevendedor', rowId:String(rowId)});
+  renderRevendedores();
+  carregarRevendedoresSelects();
+  atualizarCache();
+  showToast('Revendedor excluído!','success');
+}
+
 function renderResumoRevs(){
   var el=document.getElementById('rel-resumo-revs'); if(!el) return;
   var revs=revendedores.slice().sort(function(a,b){return a.Nome.localeCompare(b.Nome);});
@@ -5067,6 +5196,168 @@ function abrirVendaAvulsa(){
   document.getElementById('avulsa-erro').style.display='none';
   document.getElementById('avulsa-inicial').style.display='block';
   abrirModal('modal-venda-avulsa');
+}
+
+
+// ── VENDA AVULSA — ABAS ──────────────────────────────
+function switchAbaAvulsa(aba){
+  var isUnitaria = aba === 'unitaria';
+  document.getElementById('aba-avulsa-unitaria').style.display = isUnitaria ? '' : 'none';
+  document.getElementById('aba-avulsa-pacote').style.display   = isUnitaria ? 'none' : '';
+  document.getElementById('tab-avulsa-unitaria').style.background = isUnitaria ? 'var(--primary)' : 'transparent';
+  document.getElementById('tab-avulsa-unitaria').style.color    = isUnitaria ? 'white' : 'var(--gray-600)';
+  document.getElementById('tab-avulsa-pacote').style.background = isUnitaria ? 'transparent' : 'var(--primary)';
+  document.getElementById('tab-avulsa-pacote').style.color      = isUnitaria ? 'var(--gray-600)' : 'white';
+}
+
+// ── PACOTE ────────────────────────────────────────────
+var _pacoteItens = [];
+
+function abrirModalVendaAvulsa(){
+  _pacoteItens = [];
+  renderListaPacote();
+  document.getElementById('pacote-comprador').value = '';
+  document.getElementById('pacote-codigo').value = '';
+  document.getElementById('pacote-recebido').value = '';
+  document.getElementById('pacote-resumo').style.display = 'none';
+  document.getElementById('btn-confirmar-pacote').disabled = true;
+  switchAbaAvulsa('unitaria');
+  abrirModal('modal-venda-avulsa');
+}
+
+function adicionarItemPacote(){
+  var codigo = (document.getElementById('pacote-codigo').value||'').trim().toUpperCase();
+  if(!codigo) return;
+  var item = inventory.find(function(i){
+    return ((i.Codigo||'').toUpperCase()===codigo||(i.Descricao||'').toUpperCase()===codigo);
+  });
+  if(!item){ showToast('Item não encontrado: '+codigo,'warning'); return; }
+  _pacoteItens.push(item);
+  document.getElementById('pacote-codigo').value = '';
+  document.getElementById('pacote-codigo').focus();
+  renderListaPacote();
+}
+
+function removerItemPacote(idx){
+  _pacoteItens.splice(idx, 1);
+  renderListaPacote();
+}
+
+function renderListaPacote(){
+  var lista = document.getElementById('pacote-lista');
+  var resumo = document.getElementById('pacote-resumo');
+  var btn = document.getElementById('btn-confirmar-pacote');
+
+  if(!_pacoteItens.length){
+    lista.innerHTML = '<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:.5rem;">Nenhum item adicionado.</p>';
+    resumo.style.display = 'none';
+    btn.disabled = true;
+    return;
+  }
+
+  lista.innerHTML = _pacoteItens.slice().reverse().map(function(item, revIdx){
+    var idx = _pacoteItens.length - 1 - revIdx;
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;">'
+      +'<div style="flex:1;min-width:0;">'
+      +'<span style="font-family:monospace;font-size:11px;font-weight:700;color:var(--primary);">'+item.Codigo+'</span>'
+      +' <span style="font-size:12px;color:var(--gray-600);">'+(item.Descricao||'—')+'</span>'
+      +'</div>'
+      +'<span style="font-size:12px;font-weight:600;color:var(--gray-700);flex-shrink:0;">'+fmt(item.Venda||0)+'</span>'
+      +'<button onclick="removerItemPacote('+idx+')" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:13px;flex-shrink:0;">✕</button>'
+      +'</div>';
+  }).join('');
+
+  var total = _pacoteItens.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0);
+  document.getElementById('pacote-total').textContent = fmt(total);
+  document.getElementById('pacote-qtd').textContent = _pacoteItens.length+' item(s)';
+  resumo.style.display = '';
+  btn.disabled = false;
+  atualizarResumoPacote();
+}
+
+function atualizarResumoPacote(){
+  var total = _pacoteItens.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0);
+  var recebido = parseFloat(document.getElementById('pacote-recebido').value)||0;
+  var saldo = recebido - total;
+  var elSaldo = document.getElementById('pacote-saldo');
+  if(recebido > 0){
+    elSaldo.style.display = '';
+    if(saldo >= 0){
+      elSaldo.style.background = '#f0fdf4';
+      elSaldo.style.color = '#15803d';
+      elSaldo.textContent = saldo === 0 ? '✓ Pagamento exato!' : '✓ Troco: '+fmt(saldo);
+    } else {
+      elSaldo.style.background = '#fef2f2';
+      elSaldo.style.color = '#dc2626';
+      elSaldo.textContent = '⚠ Ainda deve: '+fmt(Math.abs(saldo));
+    }
+  } else {
+    elSaldo.style.display = 'none';
+  }
+}
+
+function confirmarVendaPacote(){
+  var comprador = (document.getElementById('pacote-comprador').value||'').trim();
+  if(!comprador){ showToast('Informe o nome do comprador','warning'); return; }
+  if(!_pacoteItens.length){ showToast('Adicione pelo menos um item','warning'); return; }
+
+  var total = _pacoteItens.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0);
+  var recebido = parseFloat(document.getElementById('pacote-recebido').value)||0;
+  var saldo = recebido - total;
+  var dataVenda = new Date().toISOString();
+
+  // Marca cada item como Vendido no inventário
+  var batchItems = [];
+  _pacoteItens.forEach(function(item){
+    var inv = inventory.find(function(i){return i.rowId===item.rowId;});
+    if(inv){
+      inv.Status = 'Vendido';
+      inv.DataVenda = dataVenda;
+      inv.Revendedor = '';
+      batchItems.push({rowId:inv.rowId, status:'Vendido', revendedor:'', dataVenda:dataVenda});
+    }
+  });
+  if(batchItems.length) syncDrive({action:'batchEditInventario', items:batchItems});
+
+  // Registra no histórico financeiro como venda avulsa
+  if(!historicFechamentos) historicFechamentos = [];
+  var registro = {
+    id: Date.now(),
+    data: dataVenda,
+    tipo: 'pacote',
+    comprador: comprador,
+    revendedor: comprador,
+    percentual: 0,
+    qtdConsignados: _pacoteItens.length,
+    qtdVendidos: _pacoteItens.length,
+    qtdDevolvidos: 0,
+    valorVendido: total,
+    valorRecebido: recebido,
+    saldo: saldo,
+    comissao: 0,
+    lucro: total,
+    itensVendidos: _pacoteItens.map(function(i){return {Codigo:i.Codigo, Descricao:i.Descricao, Venda:i.Venda};}),
+    maletasFechadas: []
+  };
+  historicFechamentos.unshift(registro);
+  syncDrive({action:'addFechamento',
+    id:registro.id, data:registro.data, revendedor:comprador, percentual:0,
+    qtdConsignados:registro.qtdConsignados, qtdVendidos:registro.qtdVendidos,
+    qtdDevolvidos:0, valorConsignado:total, valorDevolvido:0,
+    valorVendido:total, comissao:0, lucro:total,
+    reciboUrl:'', maletasFechadas:[]
+  });
+
+  atualizarCache();
+  fecharModal('modal-venda-avulsa');
+  renderDashboard();
+  renderHistorico();
+
+  var msg = saldo >= 0
+    ? (saldo===0 ? 'Pago exato!' : 'Troco: '+fmt(saldo))
+    : 'Ainda deve: '+fmt(Math.abs(saldo));
+  showToast('Pacote confirmado! '+_pacoteItens.length+' itens · '+msg, 'success');
+  _pacoteItens = [];
 }
 
 function buscarItemAvulsa(){
