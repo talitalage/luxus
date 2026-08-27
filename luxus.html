@@ -2152,10 +2152,10 @@ function renderMaletasAtivas(){
   el.innerHTML = htmlComplementos + revNomes.map(function(nome){
     var maletasRev = grupos[nome];
     var rev = revendedores.find(function(r){ return r.Nome===nome; });
-    var totalItens = maletasRev.reduce(function(s,m){return s+m.itens.length;},0);
-    var totalCusto = maletasRev.reduce(function(s,m){
-      return s+m.itens.reduce(function(s2,i){return s2+(parseFloat(i.Custo)||0);},0);
-    },0);
+    // Calcula pelo inventário (itens[] não está disponível no Sheets)
+    var itensRev = inventory.filter(function(i){ return i.Revendedor===nome && i.Status==='Consignado'; });
+    var totalItens = itensRev.length;
+    var totalCusto = itensRev.reduce(function(s,i){ return s+(parseFloat(i.Custo)||0); },0);
     var collapseId = 'mrev-'+nome.replace(/[^a-zA-Z0-9]/g,'_');
     var iniciais = (function(){ var p=nome.split(' '); return(p[0][0]+(p[p.length-1][0]||'')).toUpperCase(); }());
 
@@ -2176,7 +2176,12 @@ function renderMaletasAtivas(){
 
     // Linhas de maleta dentro do grupo
     var maletasHtml = maletasRev.map(function(m){
-      var itensCusto = m.itens.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0);
+      var itensMaleta = inventory.filter(function(i){ return i.Revendedor===nome && i.Status==='Consignado'; });
+      var itensCusto = itensMaleta.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0);
+      // Se há mais de uma maleta, divide proporcionalmente por _qtdItens
+      var qtdMaleta = parseInt(m._qtdItens)||0;
+      var qtdTotal = maletasRev.reduce(function(s,x){return s+(parseInt(x._qtdItens)||0);},0);
+      if(qtdTotal > 0 && maletasRev.length > 1) itensCusto = Math.round((itensCusto * qtdMaleta / qtdTotal) * 100) / 100;
       var dataRef = m.dataEntrega || m.dataCriacao || '';
       var _dr = dataRef ? new Date(dataRef) : null;
       var dataStr = _dr ? (_dr.getDate().toString().padStart(2,'0')+'/'
