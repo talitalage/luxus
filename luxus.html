@@ -4109,15 +4109,19 @@ function aplicarVisibilidadeCards(){
       'estoque':  'dash-card-estoque',
       'consignado': 'dash-card-consignado'
     };
+    var visiveis = 0;
     Object.keys(mapa).forEach(function(key){
       var el = document.getElementById(mapa[key]);
       if(!el) return;
-      if(cfg[key]===false || cfg[key]==='false'){
-        el.style.display='none';
-      } else {
-        el.style.display='';
-      }
+      var visivel = cfg[key] !== false && cfg[key] !== 'false';
+      el.style.display = visivel ? '' : 'none';
+      if(visivel) visiveis++;
     });
+    // Ajusta o grid para ocupar toda a largura com os cards visíveis
+    var grid = document.getElementById('dash-cards-grid');
+    if(grid && visiveis > 0){
+      grid.style.gridTemplateColumns = 'repeat('+visiveis+',1fr)';
+    }
   }catch(e){}
 }
 
