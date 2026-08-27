@@ -1423,7 +1423,7 @@ function loadData() {
   if(cache){
     try{
       var dc=JSON.parse(cache);
-      if(Array.isArray(dc.inventory))    inventory=dc.inventory;
+      if(Array.isArray(dc.inventory))    inventory=normalizarInventario(dc.inventory);
       if(Array.isArray(dc.revendedores)) revendedores=normalizarRevendedores(dc.revendedores);
       if(dc.categorias&&!Array.isArray(dc.categorias)) categorias=dc.categorias;
       if(Array.isArray(dc.fechamentos))  historicFechamentos=dc.fechamentos;
@@ -1451,7 +1451,7 @@ function loadData() {
   .then(function(r){return r.text();})
   .then(function(t){
     var d=JSON.parse(t);
-    if(Array.isArray(d.inventory))    inventory=d.inventory;
+    if(Array.isArray(d.inventory))    inventory=normalizarInventario(d.inventory);
     if(Array.isArray(d.revendedores)) revendedores=normalizarRevendedores(d.revendedores);
     if(d.categorias&&!Array.isArray(d.categorias)) categorias=d.categorias;
     if(Array.isArray(d.fechamentos))  historicFechamentos=d.fechamentos;
@@ -3751,6 +3751,24 @@ function switchSubtab(sub){
 
 // ── FUNÇÕES RESTAURADAS ──────────────────────────────────────────
 
+function normalizarInventario(inv){
+  return (inv||[]).map(function(i){
+    i.rowId = Number(i.rowId) || i.rowId;
+    i.Custo = Number(i.Custo) || 0;
+    i.Venda = Number(i.Venda) || 0;
+    // Sheets converte "000080" em 80 — restaura zeros
+    var c = String(i.Codigo||'').trim();
+    if(c && /^[0-9]+$/.test(c) && c.length < 6) c = c.padStart(6,'0');
+    i.Codigo = c;
+    i.Descricao = String(i.Descricao||'');
+    i.Status = String(i.Status||'');
+    i.Revendedor = String(i.Revendedor||'');
+    i.Tipo = String(i.Tipo||'');
+    i.Categoria = String(i.Categoria||'');
+    return i;
+  });
+}
+
 function normalizarRevendedores(lista){
   return (lista||[]).map(function(r){
     r.rowId = Number(r.rowId) || r.rowId;
@@ -5262,8 +5280,10 @@ function abrirModalVendaAvulsa(){
 function adicionarItemPacote(){
   var codigo = (document.getElementById('pacote-codigo').value||'').trim().toUpperCase();
   if(!codigo) return;
+  var codigoPad = codigo.padStart(6,'0');
   var item = inventory.find(function(i){
-    return ((i.Codigo||'').toUpperCase()===codigo||(i.Descricao||'').toUpperCase()===codigo);
+    var cod = (i.Codigo||'').toUpperCase();
+    return cod===codigo || cod===codigoPad || (i.Descricao||'').toUpperCase()===codigo;
   });
   if(!item){ showToast('Item não encontrado: '+codigo,'warning'); return; }
   _pacoteItens.push(item);
