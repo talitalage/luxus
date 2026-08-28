@@ -104,6 +104,7 @@ body.device-tablet .filter-chip{font-size:11.5px;padding:3px 11px;}
 body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resolução alta aguenta */
 </style>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -639,11 +640,11 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
   <div class="card-light" style="padding:1.25rem;margin-bottom:1.25rem;">
     <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
       <span style="font-size:12px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;">Período</span>
-      <button class="filter-chip active" id="rp-7"   onclick="setRelPeriodo(7,this)">7 dias</button>
+      <button class="filter-chip"        id="rp-7"   onclick="setRelPeriodo(7,this)">7 dias</button>
       <button class="filter-chip"        id="rp-30"  onclick="setRelPeriodo(30,this)">30 dias</button>
       <button class="filter-chip"        id="rp-90"  onclick="setRelPeriodo(90,this)">90 dias</button>
       <button class="filter-chip"        id="rp-365" onclick="setRelPeriodo(365,this)">12 meses</button>
-      <button class="filter-chip"        id="rp-0"   onclick="setRelPeriodo(0,this)">Tudo</button>
+      <button class="filter-chip active" id="rp-0"   onclick="setRelPeriodo(0,this)">Tudo</button>
       <div style="width:1px;height:18px;background:var(--gray-200);margin:0 4px;"></div>
       <label style="font-size:12px;color:var(--gray-600);">De</label>
       <input type="date" id="rel-data-ini" style="width:150px;" onchange="renderRelatorio()">
@@ -3891,7 +3892,7 @@ function renderCategorias(){
 
 
 function renderChartMes(vendidos){
-  var ctx=document.getElementById('chart-mes'); if(!ctx) return;
+  var ctx=document.getElementById('chart-mes')||document.getElementById('chart-vendas-mes'); if(!ctx) return;
   var meses={};
   vendidos.forEach(function(i){
     var d=i.DataVenda?new Date(i.DataVenda):null; if(!d) return;
@@ -3908,7 +3909,7 @@ function renderChartMes(vendidos){
 }
 
 function renderRankingRevs(vendidos){
-  var el=document.getElementById('ranking-revs'); if(!el) return;
+  var el=document.getElementById('rel-ranking-revs'); if(!el) return;
   var revMap={};
   vendidos.forEach(function(i){
     var r=i.Revendedor||'Direto';
@@ -3952,7 +3953,7 @@ function renderTopProdutos(vendidos){
     if(!prodMap[k]) prodMap[k]={desc:i.Descricao||i.Codigo||'?',receita:0,qtd:0};
     prodMap[k].receita+=pN(i.Venda); prodMap[k].qtd++;
   });
-  var lista=Object.keys(prodMap).map(function(k){return{cod:k,desc:prodMap[k].desc,receita:prodMap[k].receita,qtd:prodMap[k].qtd};}).sort(function(a,b){return b.receita-a.receita;}).slice(0,10);
+  var lista=Object.keys(prodMap).map(function(k){return{cod:k,desc:prodMap[k].desc,receita:prodMap[k].receita,qtd:prodMap[k].qtd};}).filter(function(x){return x.qtd>1;}).sort(function(a,b){return b.receita-a.receita;}).slice(0,10);
   if(!lista.length){el.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1rem;">Nenhuma venda.</p>';return;}
   el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:13px;">'
     +'<thead><tr style="background:var(--gray-50);"><th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--gray-500);">Produto</th><th style="padding:8px 12px;text-align:center;font-size:11px;color:var(--gray-500);">Qtd</th><th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--gray-500);">Receita</th></tr></thead><tbody>'
@@ -4020,18 +4021,21 @@ function renderComissoes(){
 
 function setRelPeriodo(dias){
   // Atualiza botões de período
-  document.querySelectorAll('.rel-periodo-btn').forEach(function(btn){
-    btn.style.background = btn.dataset.dias===String(dias)?'var(--primary)':'var(--gray-100)';
-    btn.style.color = btn.dataset.dias===String(dias)?'white':'var(--gray-600)';
+  document.querySelectorAll('[onclick*="setRelPeriodo"]').forEach(function(btn){
+    var d=btn.getAttribute('onclick').match(/setRelPeriodo\((\d+)\)/);
+    if(d){
+      var ativo = d[1]===String(dias);
+      btn.style.background = ativo?'var(--primary)':'';
+      btn.style.color = ativo?'white':'';
+      btn.className = ativo?'btn-primary':'btn-secondary';
+    }
   });
-  // Limpa datas customizadas se selecionou período fixo
-  if(dias !== 'custom'){
-    var ini=document.getElementById('rel-data-ini');
-    var fim=document.getElementById('rel-data-fim');
-    if(ini) ini.value='';
-    if(fim) fim.value='';
-  }
-  // Atualiza select de período se existir
+  // Limpa datas customizadas
+  var ini=document.getElementById('rel-data-ini');
+  var fim=document.getElementById('rel-data-fim');
+  if(ini) ini.value='';
+  if(fim) fim.value='';
+  // Atualiza select de período
   var sel=document.getElementById('rel-periodo');
   if(sel) sel.value=String(dias);
   renderRelatorio();
@@ -4050,20 +4054,23 @@ function initRelatorio(){
 }
 
 function renderRelatorio(){
-  var periodo=document.getElementById('rel-periodo')?document.getElementById('rel-periodo').value:'30';
+  var periodo=document.getElementById('rel-periodo')?document.getElementById('rel-periodo').value:'0';
   var dataIni=document.getElementById('rel-data-ini')?document.getElementById('rel-data-ini').value:'';
   var dataFim=document.getElementById('rel-data-fim')?document.getElementById('rel-data-fim').value:'';
   var revFiltro=document.getElementById('rel-revendedor')?document.getElementById('rel-revendedor').value:'';
 
   var agora=new Date();
-  var ini=dataIni?new Date(dataIni):new Date(agora-parseInt(periodo||30)*86400000);
+  var usarFiltroData = (periodo!=='0' && periodo!=='') || dataIni || dataFim;
+  var ini=dataIni?new Date(dataIni):(periodo&&periodo!=='0'?new Date(agora-(parseInt(periodo)||30)*86400000):null);
   var fim=dataFim?new Date(dataFim+'T23:59:59'):agora;
 
   var vendidos=inventory.filter(function(i){
     if(i.Status!=='Vendido') return false;
     if(revFiltro && i.Revendedor!==revFiltro) return false;
-    var dv=i.DataVenda?new Date(i.DataVenda):null;
-    if(dv && (dv<ini||dv>fim)) return false;
+    if(usarFiltroData && ini){
+      var dv=i.DataVenda?new Date(i.DataVenda):null;
+      if(!dv || dv<ini || dv>fim) return false;
+    }
     return true;
   });
 
