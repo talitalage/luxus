@@ -3353,11 +3353,29 @@ function excluirDivida(revId, diIdx){
 
 function abrirPagamento(revId, diIdx) {
   var rev = revendedores.find(function(r){return String(r.rowId)===String(revId);});
-  if (!rev||!rev.dividas||!rev.dividas[diIdx]) return;
-  var d = rev.dividas[diIdx];
-  var saldo = (d.saldo !== undefined && d.saldo !== null ? parseFloat(d.saldo) : parseFloat(d.valor)||0);
+  if (!rev) return;
+
+  // Reconstrói a lista de dívidas igual ao renderFinanceiro
+  var lancs = (window.historicFinanceiro||[]).filter(function(l){ return l.revendedor === rev.Nome; });
+  var fechRev = historicFechamentos.filter(function(f){
+    return f.revendedor === rev.Nome
+      && !lancs.find(function(l){ return String(l.fechamentoId)===String(f.id)||String(l.id)===String(f.id); });
+  });
+  var divFech = fechRev.map(function(f){
+    var valor = parseFloat(f.lucro||0)||parseFloat(f.valorVendido||0);
+    var valorPago = parseFloat(f.valorRecebido||0);
+    var saldo = Math.max(0, valor-valorPago);
+    return {id:f.id, data:f.data, descricao:'Fechamento — '+(f.maletasFechadas&&f.maletasFechadas.length?f.maletasFechadas.map(function(m){return m.nome;}).join(', '):''), valor:valor, valorPago:valorPago, saldo:saldo, pago:saldo<=0};
+  });
+  var dividas = lancs.concat(divFech).concat(rev.dividas||[]);
+
+  var d = dividas[diIdx];
+  if (!d) return;
+
+  var saldo = parseFloat(d.saldo||0)||Math.max(0, parseFloat(d.valor||0)-parseFloat(d.valorPago||0));
   var valorPago = parseFloat(d.valorPago)||0;
   _pagamentoAtual = { revId: revId, diIdx: diIdx, divida: d };
+
   document.getElementById('pagamento-info').innerHTML =
     '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--gray-600);">Revendedor</span><strong>'+rev.Nome+'</strong></div>'
     +'<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--gray-600);">Descrição</span><span>'+d.descricao+'</span></div>'
@@ -3372,34 +3390,31 @@ function abrirPagamento(revId, diIdx) {
 function confirmarPagamento() {
   if (!_pagamentoAtual) return;
   var valor = parseFloat(document.getElementById('pagamento-valor').value)||0;
-  var obs = document.getElementById('pagamento-obs').value;
   if (!valor) { showToast('Informe o valor recebido','warning'); return; }
-  var rev = revendedores.find(function(r){return String(r.rowId)===String(_pagamentoAtual.revId);});
-  if (!rev) return;
-  var d = rev.dividas[_pagamentoAtual.diIdx];
-  var saldoAtual = (d.saldo !== undefined && d.saldo !== null) ? parseFloat(d.saldo) : parseFloat(d.valor)||0;
-  // Garante que saldo nunca seja negativo
-  if (saldoAtual < 0) saldoAtual = 0;
-  var novoSaldo = parseFloat((saldoAtual - valor).toFixed(2));
-  if (novoSaldo < 0) novoSaldo = 0;
+  var d = _pagamentoAtual.divida;
+  var saldoAtual = parseFloat(d.saldo||0)||Math.max(0, parseFloat(d.valor||0)-parseFloat(d.valorPago||0));
+  var novoSaldo = Math.max(0, parseFloat((saldoAtual - valor).toFixed(2)));
+  var novoValorPago = parseFloat(((parseFloat(d.valorPago)||0) + valor).toFixed(2));
 
-  // Registra no histórico de pagamentos da parcela
-  if (!d.historicoPagamentos) d.historicoPagamentos = [];
-  d.historicoPagamentos.push({ data: new Date().toISOString(), valor: valor, obs: obs });
-  d.valorPago = parseFloat(((d.valorPago||0) + valor).toFixed(2));
-  d.saldo = novoSaldo <= 0 ? 0 : novoSaldo;
+  // Atualiza no Sheets (aba Financeiro)
+  syncDrive({
+    action: 'registrarPagamento',
+    id: String(d.id),
+    pagamento: valor
+  });
+
+  // Atualiza em memória
+  d.valorPago = novoValorPago;
+  d.saldo = novoSaldo;
   d.pago = novoSaldo <= 0;
-  if (d.pago) d.dataPagamento = new Date().toISOString();
 
-  syncDrive({ action: 'editRevendedor', rowId: rev.rowId, dividas: rev.dividas });
+  // Atualiza historicFinanceiro em memória
+  var lanc = (window.historicFinanceiro||[]).find(function(l){ return String(l.id)===String(d.id); });
+  if(lanc){ lanc.valorPago=novoValorPago; lanc.saldo=novoSaldo; lanc.pago=novoSaldo<=0; }
+
   fecharModal('modal-pagamento');
   renderFinanceiro();
-
-  if (novoSaldo > 0) {
-    showToast('Pagamento de '+fmt(valor)+' registrado — saldo restante: '+fmt(novoSaldo), 'success');
-  } else {
-    showToast('Parcela quitada!', 'success');
-  }
+  showToast(novoSaldo>0?'Pagamento de '+fmt(valor)+' registrado — saldo: '+fmt(novoSaldo):'Parcela quitada!','success');
   _pagamentoAtual = null;
 }
 
