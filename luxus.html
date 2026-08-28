@@ -3889,6 +3889,134 @@ function renderCategorias(){
 }
 
 
+
+function renderChartMes(vendidos){
+  var ctx=document.getElementById('chart-mes'); if(!ctx) return;
+  var meses={};
+  vendidos.forEach(function(i){
+    var d=i.DataVenda?new Date(i.DataVenda):null; if(!d) return;
+    var k=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2);
+    if(!meses[k]) meses[k]={receita:0,itens:0};
+    meses[k].receita+=pN(i.Venda); meses[k].itens++;
+  });
+  var labels=Object.keys(meses).sort();
+  var receitas=labels.map(function(k){return meses[k].receita;});
+  var itens=labels.map(function(k){return meses[k].itens;});
+  if(window._chartMes) window._chartMes.destroy();
+  if(!labels.length){ctx.parentElement.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:2rem;">Nenhuma venda no período.</p>';return;}
+  window._chartMes=new Chart(ctx,{type:'line',data:{labels:labels.map(function(k){var p=k.split('-');return new Date(p[0],p[1]-1).toLocaleDateString('pt-BR',{month:'short',year:'2-digit'});}),datasets:[{label:'Receita',data:receitas,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',yAxisID:'y',tension:.3,fill:true},{label:'Itens',data:itens,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.1)',yAxisID:'y1',tension:.3,fill:false}]},options:{responsive:true,plugins:{legend:{display:true}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return 'R$'+v.toLocaleString('pt-BR');}}},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false}}}}});
+}
+
+function renderRankingRevs(vendidos){
+  var el=document.getElementById('ranking-revs'); if(!el) return;
+  var revMap={};
+  vendidos.forEach(function(i){
+    var r=i.Revendedor||'Direto';
+    if(!revMap[r]) revMap[r]={receita:0,itens:0};
+    revMap[r].receita+=pN(i.Venda); revMap[r].itens++;
+  });
+  var lista=Object.keys(revMap).map(function(r){return{nome:r,receita:revMap[r].receita,itens:revMap[r].itens};}).sort(function(a,b){return b.receita-a.receita;});
+  if(!lista.length){el.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1rem;">Nenhuma venda no período.</p>';return;}
+  var max=lista[0].receita||1;
+  el.innerHTML=lista.map(function(r){
+    var pct=(r.receita/max*100).toFixed(0);
+    return '<div style="margin-bottom:.75rem;">'
+      +'<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;"><span style="font-weight:600;color:var(--gray-700);">'+r.nome+'</span><span style="color:var(--primary);font-weight:700;">'+fmt(r.receita)+'</span></div>'
+      +'<div style="background:var(--gray-200);border-radius:99px;height:6px;"><div style="background:var(--primary);width:'+pct+'%;height:6px;border-radius:99px;transition:.3s;"></div></div>'
+      +'<div style="font-size:11px;color:var(--gray-400);margin-top:2px;">'+r.itens+' item(s) vendido(s)</div>'
+      +'</div>';
+  }).join('');
+}
+
+function renderRelCats(vendidos){
+  var el=document.getElementById('rel-cats'); if(!el) return;
+  var catMap={};
+  vendidos.forEach(function(i){
+    var c=i.Categoria||'Sem categoria';
+    if(!catMap[c]) catMap[c]={receita:0,itens:0};
+    catMap[c].receita+=pN(i.Venda); catMap[c].itens++;
+  });
+  var lista=Object.keys(catMap).map(function(c){return{cat:c,receita:catMap[c].receita,itens:catMap[c].itens};}).sort(function(a,b){return b.receita-a.receita;});
+  if(!lista.length){el.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1rem;">Nenhuma venda.</p>';return;}
+  el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+    +'<thead><tr style="background:var(--gray-50);"><th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--gray-500);">Categoria</th><th style="padding:8px 12px;text-align:center;font-size:11px;color:var(--gray-500);">Itens</th><th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--gray-500);">Receita</th></tr></thead><tbody>'
+    +lista.map(function(r){return '<tr style="border-bottom:1px solid var(--gray-100);"><td style="padding:7px 12px;font-weight:600;color:var(--gray-700);">'+r.cat+'</td><td style="padding:7px 12px;text-align:center;color:var(--gray-600);">'+r.itens+'</td><td style="padding:7px 12px;text-align:right;font-weight:700;color:var(--primary);">'+fmt(r.receita)+'</td></tr>';}).join('')
+    +'</tbody></table>';
+}
+
+function renderTopProdutos(vendidos){
+  var el=document.getElementById('rel-top-produtos'); if(!el) return;
+  var prodMap={};
+  vendidos.forEach(function(i){
+    var k=i.Codigo||i.Descricao||'?';
+    if(!prodMap[k]) prodMap[k]={desc:i.Descricao||i.Codigo||'?',receita:0,qtd:0};
+    prodMap[k].receita+=pN(i.Venda); prodMap[k].qtd++;
+  });
+  var lista=Object.keys(prodMap).map(function(k){return{cod:k,desc:prodMap[k].desc,receita:prodMap[k].receita,qtd:prodMap[k].qtd};}).sort(function(a,b){return b.receita-a.receita;}).slice(0,10);
+  if(!lista.length){el.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1rem;">Nenhuma venda.</p>';return;}
+  el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+    +'<thead><tr style="background:var(--gray-50);"><th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--gray-500);">Produto</th><th style="padding:8px 12px;text-align:center;font-size:11px;color:var(--gray-500);">Qtd</th><th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--gray-500);">Receita</th></tr></thead><tbody>'
+    +lista.map(function(r){return '<tr style="border-bottom:1px solid var(--gray-100);"><td style="padding:7px 12px;"><div style="font-family:monospace;font-size:11px;color:var(--primary);">'+r.cod+'</div><div style="font-size:12px;color:var(--gray-600);">'+r.desc+'</div></td><td style="padding:7px 12px;text-align:center;color:var(--gray-600);">'+r.qtd+'</td><td style="padding:7px 12px;text-align:right;font-weight:700;color:var(--primary);">'+fmt(r.receita)+'</td></tr>';}).join('')
+    +'</tbody></table>';
+}
+
+function renderTabelaEstoque(){
+  var el=document.getElementById('rel-estoque'); if(!el) return;
+  var tipoMap={};
+  inventory.forEach(function(i){
+    var t=i.Tipo||'Outros'; var c=i.Categoria||'Sem categoria';
+    if(!tipoMap[t]) tipoMap[t]={};
+    if(!tipoMap[t][c]) tipoMap[t][c]={estoque:0,consignado:0,vendido:0,custoEst:0,vendaEst:0,vendaCons:0};
+    var m=tipoMap[t][c];
+    if(i.Status==='Em Estoque'){m.estoque++;m.custoEst+=pN(i.Custo);m.vendaEst+=pN(i.Venda);}
+    else if(i.Status==='Consignado'){m.consignado++;m.vendaCons+=pN(i.Venda);}
+    else if(i.Status==='Vendido'){m.vendido++;}
+  });
+  var rows='';
+  Object.keys(tipoMap).sort().forEach(function(t){
+    Object.keys(tipoMap[t]).sort().forEach(function(c){
+      var m=tipoMap[t][c];
+      rows+='<tr style="border-bottom:1px solid var(--gray-100);">'
+        +'<td style="padding:7px 12px;"><span style="background:'+(t==='Semi Joia'?'#eff6ff':'#fdf4ff')+';color:'+(t==='Semi Joia'?'#1e40af':'#7e22ce')+';padding:2px 7px;border-radius:10px;font-size:11px;font-weight:600;">'+t+'</span></td>'
+        +'<td style="padding:7px 12px;font-weight:600;color:var(--gray-700);">'+c+'</td>'
+        +'<td style="padding:7px 12px;text-align:center;color:#10b981;font-weight:600;">'+m.estoque+'</td>'
+        +'<td style="padding:7px 12px;text-align:center;color:#f59e0b;font-weight:600;">'+m.consignado+'</td>'
+        +'<td style="padding:7px 12px;text-align:center;color:#6366f1;font-weight:600;">'+m.vendido+'</td>'
+        +'<td style="padding:7px 12px;text-align:right;color:var(--gray-700);">'+fmt(m.custoEst)+'</td>'
+        +'<td style="padding:7px 12px;text-align:right;color:var(--primary);font-weight:600;">'+fmt(m.vendaEst)+'</td>'
+        +'<td style="padding:7px 12px;text-align:right;color:#f59e0b;font-weight:600;">'+fmt(m.vendaCons)+'</td>'
+        +'</tr>';
+    });
+  });
+  el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+    +'<thead><tr style="background:var(--gray-50);border-bottom:2px solid var(--gray-200);">'
+    +'<th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--gray-500);">Tipo</th>'
+    +'<th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--gray-500);">Categoria</th>'
+    +'<th style="padding:8px 12px;text-align:center;font-size:11px;color:#10b981;">Estoque</th>'
+    +'<th style="padding:8px 12px;text-align:center;font-size:11px;color:#f59e0b;">Consignado</th>'
+    +'<th style="padding:8px 12px;text-align:center;font-size:11px;color:#6366f1;">Vendido</th>'
+    +'<th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--gray-500);">Custo Estoque</th>'
+    +'<th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--primary);">Valor Estoque</th>'
+    +'<th style="padding:8px 12px;text-align:right;font-size:11px;color:#f59e0b;">Valor Consignado</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function renderComissoes(){
+  var el=document.getElementById('rel-comissoes'); if(!el) return;
+  if(!historicFechamentos.length){el.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1rem;">Nenhum fechamento.</p>';return;}
+  el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+    +'<thead><tr style="background:var(--gray-50);"><th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--gray-500);">Data</th><th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--gray-500);">Revendedor</th><th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--gray-500);">Vendido</th><th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--gray-500);">Comissão</th><th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--gray-500);">Lucro</th></tr></thead><tbody>'
+    +historicFechamentos.map(function(f){
+      return '<tr style="border-bottom:1px solid var(--gray-100);">'
+        +'<td style="padding:7px 12px;color:var(--gray-600);">'+new Date(f.data).toLocaleDateString('pt-BR')+'</td>'
+        +'<td style="padding:7px 12px;font-weight:600;color:var(--gray-700);">'+f.revendedor+'</td>'
+        +'<td style="padding:7px 12px;text-align:right;color:#b45309;font-weight:600;">'+fmt(pN(f.valorVendido))+'</td>'
+        +'<td style="padding:7px 12px;text-align:right;color:#6d28d9;font-weight:600;">'+fmt(pN(f.comissao))+'</td>'
+        +'<td style="padding:7px 12px;text-align:right;color:#059669;font-weight:700;">'+fmt(pN(f.lucro))+'</td>'
+        +'</tr>';
+    }).join('')+'</tbody></table>';
+}
+
 function initRelatorio(){
   var sel=document.getElementById('rel-revendedor');
   if(sel){
