@@ -1455,6 +1455,7 @@ function loadData() {
     if(Array.isArray(d.revendedores)) revendedores=normalizarRevendedores(d.revendedores);
     if(d.categorias&&!Array.isArray(d.categorias)) categorias=d.categorias;
     if(Array.isArray(d.fechamentos))  historicFechamentos=d.fechamentos;
+    if(Array.isArray(d.financeiro))   window.historicFinanceiro=d.financeiro;
     if(Array.isArray(d.entregas))    historicEntregas=d.entregas;
     if(Array.isArray(d.maletas))    maletas=d.maletas;
     if(d.titulo)    {localStorage.setItem('luxus_titulo',d.titulo);   document.getElementById('site-title-display').textContent=d.titulo;document.title=d.titulo+' - Sistema de Gestão';}
@@ -3225,27 +3226,27 @@ function atualizarPreviewParcelas(n,v) {
 var _pagamentoAtual = null;
 
 function renderFinanceiro() {
-  // Constrói dívidas a partir dos fechamentos
+  // Constrói dívidas combinando: lancamentos do Sheets + fechamentos
   var devedores = revendedores.map(function(r) {
-    var fechRev = historicFechamentos.filter(function(f){ return f.revendedor === r.Nome; });
-    var dividas = fechRev.map(function(f){
-      var valor = parseFloat(f.totalAcertar||0) || (parseFloat(f.valorVendido||0) + parseFloat(f.comissao||0));
+    // Lançamentos do Sheets (aba Financeiro)
+    var lancs = (window.historicFinanceiro||[]).filter(function(l){ return l.revendedor === r.Nome; });
+    // Fechamentos que ainda não têm lançamento financeiro
+    var fechRev = historicFechamentos.filter(function(f){
+      return f.revendedor === r.Nome && !lancs.find(function(l){ return String(l.fechamentoId)===String(f.id); });
+    });
+    var divFech = fechRev.map(function(f){
+      var valor = parseFloat(f.lucro||0) || parseFloat(f.valorVendido||0);
       var valorPago = parseFloat(f.valorRecebido||0);
       var saldo = Math.max(0, valor - valorPago);
-      return {
-        id: f.id, data: f.data,
-        descricao: 'Fechamento — '+(f.maletasFechadas&&f.maletasFechadas.length?f.maletasFechadas.map(function(m){return m.nome;}).join(', '):''),
-        valor: valor, valorPago: valorPago, saldo: saldo,
-        pago: saldo <= 0, reciboUrl: f.reciboUrl||''
-      };
+      return {id:f.id, data:f.data,
+        descricao:'Fechamento — '+(f.maletasFechadas&&f.maletasFechadas.length?f.maletasFechadas.map(function(m){return m.nome;}).join(', '):''),
+        valor:valor, valorPago:valorPago, saldo:saldo, pago:saldo<=0};
     });
-    // Também inclui dívidas antigas do campo dividas (retrocompatibilidade)
-    var diviasAntidas = r.dividas || [];
-    dividas = dividas.concat(diviasAntidas);
-    var totalDevido  = dividas.reduce(function(s,d){ return s + (parseFloat(d.valor)||0); }, 0);
-    var totalPago    = dividas.reduce(function(s,d){ return s + (parseFloat(d.valorPago)||0); }, 0);
-    var totalAberto  = dividas.filter(function(d){return !d.pago;}).reduce(function(s,d){ return s + (parseFloat(d.saldo)||parseFloat(d.valor)||0); }, 0);
-    return { rev: r, dividas: dividas, totalDevido: totalDevido, totalPago: totalPago, totalAberto: totalAberto };
+    var dividas = lancs.concat(divFech).concat(r.dividas||[]);
+    var totalDevido = dividas.reduce(function(s,d){return s+(parseFloat(d.valor)||0);},0);
+    var totalPago   = dividas.reduce(function(s,d){return s+(parseFloat(d.valorPago)||0);},0);
+    var totalAberto = dividas.filter(function(d){return !d.pago;}).reduce(function(s,d){return s+(parseFloat(d.saldo)||parseFloat(d.valor)||0);},0);
+    return {rev:r, dividas:dividas, totalDevido:totalDevido, totalPago:totalPago, totalAberto:totalAberto};
   }).filter(function(x){ return x.dividas.length > 0; });
 
   var somaAberto   = devedores.reduce(function(s,x){ return s + x.totalAberto; }, 0);
