@@ -3248,16 +3248,16 @@ function renderFinanceiro() {
     var dividas = lancs.concat(divFech).concat(r.dividas||[]);
     var totalDevido = dividas.reduce(function(s,d){return s+(parseFloat(d.valor)||0);},0);
     var totalPago   = dividas.reduce(function(s,d){return s+(parseFloat(d.valorPago)||0);},0);
-    var totalAberto = dividas.filter(function(d){return !d.pago;}).reduce(function(s,d){return s+(parseFloat(d.saldo)||parseFloat(d.valor)||0);},0);
+    var totalAberto = dividas.filter(function(d){return !d.pago;}).reduce(function(s,d){var sl=parseFloat(d.saldo)||0;if(!sl)sl=Math.max(0,(parseFloat(d.valor)||0)-(parseFloat(d.valorPago)||0));return s+sl;},0);
     return {rev:r, dividas:dividas, totalDevido:totalDevido, totalPago:totalPago, totalAberto:totalAberto};
   }).filter(function(x){ return x.dividas.length > 0; });
 
   var somaAberto   = devedores.reduce(function(s,x){ return s + x.totalAberto; }, 0);
-  var somaPago     = devedores.reduce(function(s,x){ return s + x.totalPago; }, 0);
+  var somaPago     = devedores.reduce(function(s,x){ return s + x.totalPago; }, 0); // total pago
   var countDev     = devedores.filter(function(x){ return x.totalAberto > 0; }).length;
 
   // Cards
-  document.getElementById('fin-total-aberto').textContent    = fmt(somaAberto);
+  document.getElementById('fin-total-aberto').textContent    = fmt(somaAberto); // saldo real
   document.getElementById('fin-count-devedores').textContent = countDev;
   document.getElementById('fin-total-recebido').textContent  = fmt(somaPago);
 
