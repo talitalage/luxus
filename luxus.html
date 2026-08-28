@@ -4017,6 +4017,26 @@ function renderComissoes(){
     }).join('')+'</tbody></table>';
 }
 
+
+function setRelPeriodo(dias){
+  // Atualiza botões de período
+  document.querySelectorAll('.rel-periodo-btn').forEach(function(btn){
+    btn.style.background = btn.dataset.dias===String(dias)?'var(--primary)':'var(--gray-100)';
+    btn.style.color = btn.dataset.dias===String(dias)?'white':'var(--gray-600)';
+  });
+  // Limpa datas customizadas se selecionou período fixo
+  if(dias !== 'custom'){
+    var ini=document.getElementById('rel-data-ini');
+    var fim=document.getElementById('rel-data-fim');
+    if(ini) ini.value='';
+    if(fim) fim.value='';
+  }
+  // Atualiza select de período se existir
+  var sel=document.getElementById('rel-periodo');
+  if(sel) sel.value=String(dias);
+  renderRelatorio();
+}
+
 function initRelatorio(){
   var sel=document.getElementById('rel-revendedor');
   if(sel){
