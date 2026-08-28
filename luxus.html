@@ -3851,8 +3851,8 @@ function renderRevendedores(){
     return;
   }
   el.innerHTML=revendedores.map(function(r){
-    var cpf=r.CPF?'CPF: '+r.CPF+' · ':'Sem contato · ';
-    var contato=r.Contato?'('+r.Contato+') · ':'';
+    var contato=r.Contato?'('+r.Contato+') · ':'Sem contato · ';
+    var cpf=r.CPF?'CPF: '+r.CPF+' · ':'';
     return '<div class="card-light" style="padding:.875rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:8px;">'
       +'<div>'
       +'<div style="font-weight:600;font-size:14px;color:var(--gray-800);">'+r.Nome+'</div>'
