@@ -1456,6 +1456,8 @@ function loadData() {
     if(d.categorias&&!Array.isArray(d.categorias)) categorias=d.categorias;
     if(Array.isArray(d.fechamentos))  historicFechamentos=d.fechamentos;
     if(Array.isArray(d.financeiro))   window.historicFinanceiro=d.financeiro;
+    // Re-renderiza financeiro se aba ativa
+    if(document.getElementById('subtab-financeiro') && document.getElementById('subtab-financeiro').style.display!=='none') renderFinanceiro();
     if(Array.isArray(d.entregas))    historicEntregas=d.entregas;
     if(Array.isArray(d.maletas))    maletas=d.maletas;
     if(d.titulo)    {localStorage.setItem('luxus_titulo',d.titulo);   document.getElementById('site-title-display').textContent=d.titulo;document.title=d.titulo+' - Sistema de Gestão';}
