@@ -3230,9 +3230,12 @@ function renderFinanceiro() {
   var devedores = revendedores.map(function(r) {
     // Lançamentos do Sheets (aba Financeiro)
     var lancs = (window.historicFinanceiro||[]).filter(function(l){ return l.revendedor === r.Nome; });
-    // Fechamentos que ainda não têm lançamento financeiro
+    // Fechamentos que ainda não têm lançamento no Financeiro do Sheets
     var fechRev = historicFechamentos.filter(function(f){
-      return f.revendedor === r.Nome && !lancs.find(function(l){ return String(l.fechamentoId)===String(f.id); });
+      return f.revendedor === r.Nome 
+        && !lancs.find(function(l){ 
+            return String(l.fechamentoId)===String(f.id) || String(l.id)===String(f.id); 
+          });
     });
     var divFech = fechRev.map(function(f){
       var valor = parseFloat(f.lucro||0) || parseFloat(f.valorVendido||0);
