@@ -3225,11 +3225,26 @@ function atualizarPreviewParcelas(n,v) {
 var _pagamentoAtual = null;
 
 function renderFinanceiro() {
+  // Constrói dívidas a partir dos fechamentos
   var devedores = revendedores.map(function(r) {
-    var dividas = r.dividas || [];
+    var fechRev = historicFechamentos.filter(function(f){ return f.revendedor === r.Nome; });
+    var dividas = fechRev.map(function(f){
+      var valor = parseFloat(f.totalAcertar||0) || (parseFloat(f.valorVendido||0) + parseFloat(f.comissao||0));
+      var valorPago = parseFloat(f.valorRecebido||0);
+      var saldo = Math.max(0, valor - valorPago);
+      return {
+        id: f.id, data: f.data,
+        descricao: 'Fechamento — '+(f.maletasFechadas&&f.maletasFechadas.length?f.maletasFechadas.map(function(m){return m.nome;}).join(', '):''),
+        valor: valor, valorPago: valorPago, saldo: saldo,
+        pago: saldo <= 0, reciboUrl: f.reciboUrl||''
+      };
+    });
+    // Também inclui dívidas antigas do campo dividas (retrocompatibilidade)
+    var diviasAntidas = r.dividas || [];
+    dividas = dividas.concat(diviasAntidas);
     var totalDevido  = dividas.reduce(function(s,d){ return s + (parseFloat(d.valor)||0); }, 0);
     var totalPago    = dividas.reduce(function(s,d){ return s + (parseFloat(d.valorPago)||0); }, 0);
-    var totalAberto  = dividas.filter(function(d){return !d.pago;}).reduce(function(s,d){ return s + ((d.saldo !== undefined && d.saldo !== null ? parseFloat(d.saldo) : parseFloat(d.valor)||0)); }, 0);
+    var totalAberto  = dividas.filter(function(d){return !d.pago;}).reduce(function(s,d){ return s + (parseFloat(d.saldo)||parseFloat(d.valor)||0); }, 0);
     return { rev: r, dividas: dividas, totalDevido: totalDevido, totalPago: totalPago, totalAberto: totalAberto };
   }).filter(function(x){ return x.dividas.length > 0; });
 
@@ -3922,7 +3937,7 @@ function editarRevendedor(rowId){
   document.getElementById('rev-contato').value = rev.Contato||'';
   document.getElementById('rev-percentual').value = rev.Percentual||50;
   document.getElementById('rev-cpf').value = rev.CPF||'';
-  document.getElementById('modal-revendedor-titulo').textContent = 'Editar Revendedor';
+  document.getElementById('titulo-modal-rev').textContent = 'Editar Revendedor';
   abrirModal('modal-revendedor');
 }
 
@@ -3932,7 +3947,7 @@ function novoRevendedor(){
   document.getElementById('rev-contato').value = '';
   document.getElementById('rev-percentual').value = 50;
   document.getElementById('rev-cpf').value = '';
-  document.getElementById('modal-revendedor-titulo').textContent = 'Novo Revendedor';
+  document.getElementById('titulo-modal-rev').textContent = 'Novo Revendedor';
   abrirModal('modal-revendedor');
 }
 
