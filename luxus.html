@@ -104,7 +104,7 @@ body.device-tablet .filter-chip{font-size:11.5px;padding:3px 11px;}
 body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resolução alta aguenta */
 </style>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -672,6 +672,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
   </div>
   <div class="card-light" style="padding:1.25rem;margin-bottom:1.25rem;">
     <h3 class="section-title"><i class="fas fa-warehouse"></i>Estoque atual</h3>
+    <div id="rel-estoque" style="overflow-x:auto;margin-top:.5rem;"></div>
     <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">
       <thead><tr style="background:var(--gray-50);border-bottom:2px solid var(--gray-200);">
         <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Tipo</th>
@@ -688,6 +689,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
   </div>
   <div class="card-light" style="padding:1.25rem;">
     <h3 class="section-title"><i class="fas fa-percent"></i>Comissões pagas</h3>
+    <div id="rel-comissoes" style="overflow-x:auto;margin-top:.5rem;"></div>
     <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">
       <thead><tr style="background:var(--gray-50);border-bottom:2px solid var(--gray-200);">
         <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Revendedor</th>
