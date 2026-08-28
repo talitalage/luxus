@@ -4084,13 +4084,13 @@ function renderRelatorio(){
   var custoEstoque=inventory.filter(function(i){return i.Status==='Em Estoque';}).reduce(function(s,i){return s+pN(i.Custo);},0);
 
   var el=function(id){return document.getElementById(id);};
-  if(el('kpi-vendas'))el('kpi-vendas').textContent=totalVendas;
-  if(el('kpi-receita'))el('kpi-receita').textContent=fmt(totalReceita);
-  if(el('kpi-custo'))el('kpi-custo').textContent=fmt(totalCusto);
-  if(el('kpi-lucro'))el('kpi-lucro').textContent=fmt(lucro);
-  if(el('kpi-margem'))el('kpi-margem').textContent=margem+'%';
-  if(el('kpi-estoque'))el('kpi-estoque').textContent=emEstoque;
-  if(el('kpi-custo-estoque'))el('kpi-custo-estoque').textContent=fmt(custoEstoque)+' em custo';
+  if(el('rel-k-qtd'))el('rel-k-qtd').textContent=totalVendas;
+  if(el('rel-k-receita'))el('rel-k-receita').textContent=fmt(totalReceita);
+  if(el('rel-k-custo'))el('rel-k-custo').textContent=fmt(totalCusto);
+  if(el('rel-k-lucro'))el('rel-k-lucro').textContent=fmt(lucro);
+  if(el('rel-k-margem'))el('rel-k-margem').textContent=margem+'% margem';
+  if(el('rel-k-estoque'))el('rel-k-estoque').textContent=emEstoque;
+  if(el('rel-k-estoque-val'))el('rel-k-estoque-val').textContent=fmt(custoEstoque)+' em custo';
 
   renderChartMes(vendidos);
   renderRankingRevs(vendidos);
@@ -5243,7 +5243,7 @@ function finalizarFechamento(){
   var batchItems=[];
   vendidos.forEach(function(item){
     var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});
-    batchItems.push({rowId:item.rowId,status:'Vendido',revendedor:'',dataVenda:idx!==-1?inventory[idx].DataVenda:dataVenda});
+    var _rev1 = inventory.find(function(i){return i.rowId===item.rowId;}); batchItems.push({rowId:item.rowId,status:'Vendido',revendedor:(_rev1&&_rev1.Revendedor)||nome,dataVenda:dataVenda});
   });
   devolvidos.forEach(function(item){
     var novoStatus=opcaoDevolvidos==='estoque'?'Em Estoque':'Em Maleta';
@@ -5559,7 +5559,7 @@ function confirmarVendaPacote(){
       inv.Status = 'Vendido';
       inv.DataVenda = dataVenda;
       inv.Revendedor = '';
-      batchItems.push({rowId:inv.rowId, status:'Vendido', revendedor:'', dataVenda:dataVenda});
+      batchItems.push({rowId:inv.rowId, status:'Vendido', revendedor:inv.Revendedor||nome, dataVenda:dataVenda});
     }
   });
   if(batchItems.length) syncDrive({action:'batchEditInventario', items:batchItems});
