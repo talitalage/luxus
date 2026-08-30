@@ -1210,12 +1210,22 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
       <div id="avulsa-erro" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:.75rem;font-size:13px;color:#dc2626;margin-bottom:.75rem;"></div>
       <div id="avulsa-form" style="display:none;">
         <div style="margin-bottom:.75rem;">
+          <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Nome do comprador (opcional)</label>
+          <input id="avulsa-comprador" type="text" placeholder="Nome do cliente..." style="width:100%;margin-top:4px;">
+        </div>
+        <div style="margin-bottom:.75rem;">
           <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Valor de venda (R$)</label>
           <input id="avulsa-valor" type="number" step="0.01" placeholder="0,00" style="width:100%;margin-top:4px;font-size:15px;font-weight:600;">
         </div>
-        <div style="margin-bottom:1rem;">
-          <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Observação (opcional)</label>
-          <input id="avulsa-obs" type="text" placeholder="Ex: desconto aplicado, pagamento à vista..." style="width:100%;margin-top:4px;">
+        <div style="display:flex;gap:8px;margin-bottom:.75rem;">
+          <div style="flex:1;">
+            <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Desconto (R$)</label>
+            <input id="avulsa-desc" type="number" step="0.01" placeholder="0,00" style="width:100%;margin-top:4px;">
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Valor recebido (R$)</label>
+            <input id="avulsa-recebido" type="number" step="0.01" placeholder="0,00" style="width:100%;margin-top:4px;">
+          </div>
         </div>
         <div style="display:flex;gap:.75rem;">
           <button onclick="fecharModal('modal-venda-avulsa')" class="btn-secondary" style="flex:1;">Cancelar</button>
@@ -5865,19 +5875,52 @@ function confirmarVendaAvulsa(){
   if(!_avulsaItem){showToast('Nenhum produto selecionado','warning');return;}
   var valor=parseFloat(document.getElementById('avulsa-valor').value)||0;
   if(!valor){showToast('Informe o valor de venda','warning');return;}
-  if(!confirm('Confirmar venda de "'+(_avulsaItem.Descricao||_avulsaItem.Codigo)+'" por '+fmt(valor)+'?'))return;
+  var comprador=(document.getElementById('avulsa-comprador')?document.getElementById('avulsa-comprador').value.trim():'') || 'Venda direta';
+  var recebido=parseFloat(document.getElementById('avulsa-recebido')?document.getElementById('avulsa-recebido').value:0)||valor;
+  var desconto=parseFloat(document.getElementById('avulsa-desc')?document.getElementById('avulsa-desc').value:0)||0;
+  var valorFinal=Math.max(0,valor-desconto);
+  var saldo=recebido-valorFinal;
 
   var dataVenda=new Date().toISOString();
   var idx=inventory.findIndex(function(i){return i.rowId===_avulsaItem.rowId;});
   if(idx!==-1){
     inventory[idx].Status='Vendido';
-    inventory[idx].Venda=valor;
+    inventory[idx].Venda=valorFinal;
     inventory[idx].DataVenda=dataVenda;
-    if(inventory[idx].Status!=='Em Estoque')inventory[idx].Revendedor='';
+    inventory[idx].Revendedor='';
   }
-  syncDrive({action:'editInventario',rowId:_avulsaItem.rowId,status:'Vendido',venda:valor,revendedor:'',dataVenda:dataVenda});
+  syncDrive({action:'editInventario',rowId:_avulsaItem.rowId,status:'Vendido',venda:valorFinal,revendedor:'',dataVenda:dataVenda});
+
+  // Registra no histórico
+  var lucro = valorFinal - pN(_avulsaItem.Custo);
+  var registro={id:Date.now(),data:dataVenda,tipo:'avulsa',comprador:comprador,
+    revendedor:comprador,percentual:0,qtdConsignados:1,qtdVendidos:1,qtdDevolvidos:0,
+    valorConsignado:pN(_avulsaItem.Custo),valorDevolvido:0,valorVendido:valorFinal,
+    valorRecebido:recebido,saldo:saldo,comissao:0,lucro:lucro,
+    itensVendidos:[{Codigo:_avulsaItem.Codigo,Descricao:_avulsaItem.Descricao,Venda:valorFinal}],
+    maletasFechadas:[]};
+  historicFechamentos.unshift(registro);
+  syncDrive({action:'addFechamento',id:registro.id,data:registro.data,revendedor:comprador,
+    percentual:0,qtdConsignados:1,qtdVendidos:1,qtdDevolvidos:0,
+    valorConsignado:registro.valorConsignado,valorDevolvido:0,valorVendido:valorFinal,
+    comissao:0,lucro:lucro,reciboUrl:'',maletasFechadas:[]});
+
+  // Se houver saldo devedor, registra no Financeiro
+  if(saldo<0){
+    var lanc={id:Date.now()+1,data:dataVenda,revendedor:comprador,
+      descricao:'Venda unitária — '+(_avulsaItem.Descricao||_avulsaItem.Codigo),
+      valor:Math.abs(saldo),valorPago:0,saldo:Math.abs(saldo),pago:false,fechamentoId:registro.id};
+    if(!window.historicFinanceiro) window.historicFinanceiro=[];
+    window.historicFinanceiro.unshift(lanc);
+    syncDrive({action:'addLancamentoFinanceiro',id:lanc.id,data:lanc.data,
+      revendedor:comprador,descricao:lanc.descricao,valor:lanc.valor,
+      valorPago:0,saldo:lanc.valor,pago:false,fechamentoId:registro.id});
+  }
+
+  atualizarCache();
   fecharModal('modal-venda-avulsa');
   renderDashboard();
+  renderHistorico();
   showToast('Venda registrada — '+(_avulsaItem.Descricao||_avulsaItem.Codigo),'success');
   _avulsaItem=null;
 }
