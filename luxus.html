@@ -707,9 +707,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
   <h3 class="section-title" style="margin-top:1.5rem;"><i class="fas fa-users"></i>Resumo por revendedor</h3>
   <div id="rel-resumo-revs" style="display:flex;flex-direction:column;gap:.75rem;"></div>
 
-  <!-- ── AGING DE MALETAS ───────────────────────────────────── -->
-  <h3 class="section-title" style="margin-top:1.5rem;"><i class="fas fa-clock"></i>Aging de maletas</h3>
-  <div id="rel-aging" style="display:flex;flex-direction:column;gap:.75rem;"></div>
+
 
   <!-- ── CAPITAL EM RISCO ───────────────────────────────────── -->
   <h3 class="section-title" style="margin-top:1.5rem;"><i class="fas fa-exclamation-triangle"></i>Capital em risco</h3>
@@ -2162,6 +2160,8 @@ function renderMaletasAtivas(){
     var itensRev = inventory.filter(function(i){ return i.Revendedor===nome && i.Status==='Consignado'; });
     var totalItens = itensRev.length;
     var totalCusto = itensRev.reduce(function(s,i){ return s+(parseFloat(i.Custo)||0); },0);
+    // Fallback: soma _qtdItens das maletas se inventário não tiver itens
+    if(!totalItens) totalItens = maletasRev.reduce(function(s,m){return s+(parseInt(m._qtdItens)||0);},0);
     var collapseId = 'mrev-'+nome.replace(/[^a-zA-Z0-9]/g,'_');
     var iniciais = (function(){ var p=nome.split(' '); return(p[0][0]+(p[p.length-1][0]||'')).toUpperCase(); }());
 
@@ -2182,12 +2182,27 @@ function renderMaletasAtivas(){
 
     // Linhas de maleta dentro do grupo
     var maletasHtml = maletasRev.map(function(m){
+      // Calcula direto do inventário — fonte de verdade
       var itensMaleta = inventory.filter(function(i){ return i.Revendedor===nome && i.Status==='Consignado'; });
-      var itensCusto = itensMaleta.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0);
-      // Se há mais de uma maleta, divide proporcionalmente por _qtdItens
+      var totalItensRev = itensMaleta.length;
+      var totalCustoRev = itensMaleta.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0);
+      // Distribui proporcionalmente entre maletas pelo _qtdItens salvo
       var qtdMaleta = parseInt(m._qtdItens)||0;
-      var qtdTotal = maletasRev.reduce(function(s,x){return s+(parseInt(x._qtdItens)||0);},0);
-      if(qtdTotal > 0 && maletasRev.length > 1) itensCusto = Math.round((itensCusto * qtdMaleta / qtdTotal) * 100) / 100;
+      var qtdTotalMaletas = maletasRev.reduce(function(s,x){return s+(parseInt(x._qtdItens)||0);},0);
+      if(maletasRev.length === 1){
+        // Só uma maleta — mostra tudo
+        qtdMaleta = totalItensRev;
+        var itensCusto = totalCustoRev;
+      } else if(qtdTotalMaletas > 0){
+        // Múltiplas maletas — proporcional pelo _qtdItens
+        var proporcao = qtdMaleta / qtdTotalMaletas;
+        var itensCusto = Math.round(totalCustoRev * proporcao * 100) / 100;
+        qtdMaleta = Math.round(totalItensRev * proporcao);
+      } else {
+        // _qtdItens zerado — divide igualmente
+        qtdMaleta = Math.round(totalItensRev / maletasRev.length);
+        var itensCusto = Math.round(totalCustoRev / maletasRev.length * 100) / 100;
+      }
       var dataRef = m.dataEntrega || m.dataCriacao || '';
       var _dr = dataRef ? new Date(dataRef) : null;
       var dataStr = _dr ? (_dr.getDate().toString().padStart(2,'0')+'/'
@@ -4101,7 +4116,7 @@ function renderRelatorio(){
   renderTabelaEstoque();
   renderComissoes();
   renderResumoRevs();
-  renderAgingMaletas();
+
   renderCapitalRisco();
   renderProjecao();
 }
