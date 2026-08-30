@@ -4756,7 +4756,8 @@ function carregarMaletasFechamento(){
     maletasRev.forEach(function(m){
       var d = new Date(m.dataEntrega||m.dataCriacao||'');
       var dataStr = d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0')+'/'+d.getFullYear();
-      sel.innerHTML += '<option value="'+m.id+'">'+m.nome+' — '+m.itens.length+' itens ('+dataStr+')</option>';
+      var qtd = parseInt(m._qtdItens)||m.itens.length||0;
+      sel.innerHTML += '<option value="'+m.id+'">'+m.nome+' — '+qtd+' itens ('+dataStr+')</option>';
     });
   } else {
     wrap.style.display = 'none';
