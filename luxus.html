@@ -5478,8 +5478,7 @@ function verDetalhesFechamento(id){
     // Busca itens do inventário se itensVendidos não estiver salvo
     var itensMostrar = reg.itensVendidos&&reg.itensVendidos.length ? reg.itensVendidos
       : inventory.filter(function(i){
-          return i.Status==='Vendido' && i.Revendedor===reg.revendedor
-            && i.DataVenda && Math.abs(new Date(i.DataVenda)-new Date(reg.data)) < 86400000*2;
+          return i.Status==='Vendido' && i.Revendedor===reg.revendedor;
         }).map(function(i){return {Codigo:i.Codigo,Descricao:i.Descricao,Venda:i.Venda};});
 
     // Listagem de itens vendidos
