@@ -1450,7 +1450,12 @@ function loadData() {
     if(Array.isArray(d.inventory))    inventory=normalizarInventario(d.inventory);
     if(Array.isArray(d.revendedores)) revendedores=normalizarRevendedores(d.revendedores);
     if(d.categorias&&!Array.isArray(d.categorias)) categorias=d.categorias;
-    if(Array.isArray(d.fechamentos))  historicFechamentos=d.fechamentos;
+    if(Array.isArray(d.fechamentos)){
+      historicFechamentos=d.fechamentos.map(function(f){
+        if(!f.itensVendidos) try{f.itensVendidos=JSON.parse(f._itensVendidosStr||'[]');}catch(e){f.itensVendidos=[];}
+        return f;
+      });
+    }
     if(Array.isArray(d.financeiro))   window.historicFinanceiro=d.financeiro;
     // Re-renderiza abas ativas
     if(document.getElementById('subtab-financeiro') && document.getElementById('subtab-financeiro').style.display!=='none') renderFinanceiro();
@@ -5452,28 +5457,30 @@ function verDetalhesFechamento(id){
   var reg = historicFechamentos.find(function(f){ return String(f.id)===String(id); });
   if(!reg) return;
 
-  var html = '<div style="padding:1rem;">'
-    +'<div style="display:flex;justify-content:space-between;margin-bottom:.5rem;">'
-    +'<strong style="font-size:15px;">'+reg.revendedor+'</strong>'
-    +'<span style="font-size:13px;color:var(--gray-500);">'+new Date(reg.data).toLocaleDateString('pt-BR')+'</span>'
+  var html = '<div style="padding:.5rem 0;">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">'
+    +'<strong style="font-size:14px;color:var(--gray-800);">'+reg.revendedor+'</strong>'
+    +'<span style="font-size:12px;color:var(--gray-500);">'+new Date(reg.data).toLocaleDateString('pt-BR')+'</span>'
     +'</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem;">'
-    +'<div style="background:var(--gray-50);padding:.75rem;border-radius:8px;text-align:center;">'
-    +'<div style="font-size:11px;color:var(--gray-500);">Consignados</div><div style="font-weight:700;">'+reg.qtdConsignados+'</div></div>'
-    +'<div style="background:var(--gray-50);padding:.75rem;border-radius:8px;text-align:center;">'
-    +'<div style="font-size:11px;color:var(--gray-500);">Vendidos</div><div style="font-weight:700;color:#059669;">'+reg.qtdVendidos+'</div></div>'
-    +'<div style="background:var(--gray-50);padding:.75rem;border-radius:8px;text-align:center;">'
-    +'<div style="font-size:11px;color:var(--gray-500);">Devolvidos</div><div style="font-weight:700;color:#f59e0b;">'+reg.qtdDevolvidos+'</div></div>'
-    +'<div style="background:var(--gray-50);padding:.75rem;border-radius:8px;text-align:center;">'
-    +'<div style="font-size:11px;color:var(--gray-500);">Valor vendido</div><div style="font-weight:700;color:#2563eb;">'+fmt(reg.valorVendido||0)+'</div></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;margin-bottom:.75rem;">'
+    +'<div style="background:var(--gray-50);padding:.5rem;border-radius:8px;text-align:center;">'
+    +'<div style="font-size:10px;color:var(--gray-500);">Consig.</div><div style="font-weight:700;font-size:15px;">'+reg.qtdConsignados+'</div></div>'
+    +'<div style="background:var(--gray-50);padding:.5rem;border-radius:8px;text-align:center;">'
+    +'<div style="font-size:10px;color:var(--gray-500);">Vendidos</div><div style="font-weight:700;font-size:15px;color:#059669;">'+reg.qtdVendidos+'</div></div>'
+    +'<div style="background:var(--gray-50);padding:.5rem;border-radius:8px;text-align:center;">'
+    +'<div style="font-size:10px;color:var(--gray-500);">Devol.</div><div style="font-weight:700;font-size:15px;color:#f59e0b;">'+reg.qtdDevolvidos+'</div></div>'
+    +'<div style="background:#eff6ff;padding:.5rem;border-radius:8px;text-align:center;">'
+    +'<div style="font-size:10px;color:var(--gray-500);">Vendido</div><div style="font-weight:700;font-size:13px;color:#2563eb;">'+fmt(reg.valorVendido||0)+'</div></div>'
     +'</div>'
-    +'<div style="display:flex;justify-content:space-between;padding:.75rem;background:#f0fdf4;border-radius:8px;margin-bottom:.5rem;">'
-    +'<span style="color:var(--gray-600);">Comissão ('+reg.percentual+'%)</span>'
-    +'<strong style="color:#f59e0b;">'+fmt(reg.comissao||0)+'</strong>'
+    +'<div style="display:flex;gap:.5rem;margin-bottom:.75rem;">'
+    +'<div style="flex:1;display:flex;justify-content:space-between;padding:.6rem .75rem;background:#fef9c3;border-radius:8px;">'
+    +'<span style="font-size:12px;color:var(--gray-600);">Comissão ('+reg.percentual+'%)</span>'
+    +'<strong style="color:#d97706;">'+fmt(reg.comissao||0)+'</strong>'
     +'</div>'
-    +'<div style="display:flex;justify-content:space-between;padding:.75rem;background:#eff6ff;border-radius:8px;">'
-    +'<span style="color:var(--gray-600);">Seu lucro</span>'
-    +'<strong style="color:#059669;font-size:16px;">'+fmt(reg.lucro||0)+'</strong>'
+    +'<div style="flex:1;display:flex;justify-content:space-between;padding:.6rem .75rem;background:#f0fdf4;border-radius:8px;">'
+    +'<span style="font-size:12px;color:var(--gray-600);">Seu lucro</span>'
+    +'<strong style="color:#059669;">'+fmt(reg.lucro||0)+'</strong>'
+    +'</div>'
     +'</div>'
     +'</div>';
 
@@ -5799,7 +5806,7 @@ function confirmarVendaPacote(){
     qtdConsignados:registro.qtdConsignados, qtdVendidos:registro.qtdVendidos,
     qtdDevolvidos:0, valorConsignado:total, valorDevolvido:0,
     valorVendido:total, valorConsignado:_pacoteItens.reduce(function(s,i){return s+pN(i.Custo);},0), comissao:0, lucro:parseFloat((total-_pacoteItens.reduce(function(s,i){return s+pN(i.Custo);},0)).toFixed(2)),
-    reciboUrl:'', maletasFechadas:[]
+    reciboUrl:'', maletasFechadas:[], itensVendidos:registro.itensVendidos||[]
   });
 
   // Se houver saldo devedor, registra no Financeiro
