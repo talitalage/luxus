@@ -656,14 +656,14 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
     </div>
   </div>
   <div class="grid-stats-5" style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:1.25rem;">
-    <div class="card-light" style="padding:1.25rem;text-align:center;"><div style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Vendas no período</div><div id="rel-k-qtd" style="font-size:1.75rem;font-weight:700;color:var(--gray-800);">0</div><div style="font-size:11px;color:var(--gray-400);">produtos</div></div>
-    <div class="card-light" style="padding:1.25rem;text-align:center;"><div style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Receita total</div><div id="rel-k-receita" style="font-size:1.4rem;font-weight:700;color:#059669;">R$ 0</div><div style="font-size:11px;color:var(--gray-400);">valor de venda</div></div>
-    <div class="card-light" style="padding:1.25rem;text-align:center;"><div style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Custo total</div><div id="rel-k-custo" style="font-size:1.4rem;font-weight:700;color:#dc2626;">R$ 0</div><div style="font-size:11px;color:var(--gray-400);">capital investido</div></div>
-    <div class="card-light" style="padding:1.25rem;text-align:center;"><div style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Lucro bruto</div><div id="rel-k-lucro" style="font-size:1.4rem;font-weight:700;color:#1e40af;">R$ 0</div><div id="rel-k-margem" style="font-size:11px;color:var(--gray-400);">0% margem</div></div>
+    <div class="card-light" style="padding:1.25rem;text-align:center;"><div style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Receita total</div><div id="rel-k-receita" style="font-size:1.4rem;font-weight:700;color:#059669;">R$ 0</div><div id="rel-k-receita-sub" style="font-size:11px;color:var(--gray-400);">valor de venda</div></div>
+    <div class="card-light" style="padding:1.25rem;text-align:center;"><div style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Comissão paga</div><div id="rel-k-comissao" style="font-size:1.4rem;font-weight:700;color:#f59e0b;">R$ 0</div><div style="font-size:11px;color:var(--gray-400);">revendedoras</div></div>
+    <div class="card-light" style="padding:1.25rem;text-align:center;"><div style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Seu lucro</div><div id="rel-k-lucro" style="font-size:1.4rem;font-weight:700;color:#2563eb;">R$ 0</div><div id="rel-k-margem" style="font-size:11px;color:var(--gray-400);">0% margem</div></div>
+    <div class="card-light" style="padding:1.25rem;text-align:center;"><div style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Consignado</div><div id="rel-k-consignado" style="font-size:1.75rem;font-weight:700;color:#f59e0b;">0</div><div id="rel-k-consignado-val" style="font-size:11px;color:var(--gray-400);">R$ 0 em custo</div></div>
     <div class="card-light" style="padding:1.25rem;text-align:center;"><div style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Em estoque</div><div id="rel-k-estoque" style="font-size:1.75rem;font-weight:700;color:var(--gray-800);">0</div><div id="rel-k-estoque-val" style="font-size:11px;color:var(--gray-400);">R$ 0 em custo</div></div>
   </div>
   <div class="grid-relatorio-2" style="display:grid;grid-template-columns:1fr 340px;gap:1.25rem;margin-bottom:1.25rem;">
-    <div class="card-light" style="padding:1.25rem;"><h3 class="section-title"><i class="fas fa-chart-bar"></i>Vendas por mês</h3><div style="position:relative;width:100%;height:220px;"><canvas id="chart-vendas-mes"></canvas></div></div>
+    <div class="card-light" style="padding:1.25rem;"><h3 class="section-title"><i class="fas fa-chart-bar"></i>Vendas</h3><div style="position:relative;width:100%;height:220px;"><canvas id="chart-vendas-mes"></canvas></div></div>
     <div class="card-light" style="padding:1.25rem;"><h3 class="section-title"><i class="fas fa-trophy"></i>Desempenho revendedores</h3><div id="rel-ranking-revs" style="display:flex;flex-direction:column;gap:8px;"></div></div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;">
@@ -1467,8 +1467,11 @@ function loadData() {
     if(d.categorias&&!Array.isArray(d.categorias)) categorias=d.categorias;
     if(Array.isArray(d.fechamentos))  historicFechamentos=d.fechamentos;
     if(Array.isArray(d.financeiro))   window.historicFinanceiro=d.financeiro;
-    // Re-renderiza financeiro se aba ativa
+    // Re-renderiza abas ativas
     if(document.getElementById('subtab-financeiro') && document.getElementById('subtab-financeiro').style.display!=='none') renderFinanceiro();
+    // Re-renderiza relatório se aba ativa
+    var tabRel=document.getElementById('tab-relatorio');
+    if(tabRel && tabRel.classList.contains('active')) renderRelatorio();
     if(Array.isArray(d.entregas))    historicEntregas=d.entregas;
     if(Array.isArray(d.maletas))    maletas=d.maletas;
     if(d.titulo)    {localStorage.setItem('luxus_titulo',d.titulo);   document.getElementById('site-title-display').textContent=d.titulo;document.title=d.titulo+' - Sistema de Gestão';}
@@ -3907,19 +3910,30 @@ function renderCategorias(){
 
 function renderChartMes(vendidos){
   var ctx=document.getElementById('chart-mes')||document.getElementById('chart-vendas-mes'); if(!ctx) return;
-  var meses={};
+  var periodo=document.getElementById('rel-periodo')?parseInt(document.getElementById('rel-periodo').value)||0:0;
+  // Agrupa por dia se período curto (<=90 dias), por mês se longo ou tudo
+  var porDia = periodo>0 && periodo<=90;
+  var grupos={};
   vendidos.forEach(function(i){
     var d=i.DataVenda?new Date(i.DataVenda):null; if(!d) return;
-    var k=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2);
-    if(!meses[k]) meses[k]={receita:0,itens:0};
-    meses[k].receita+=pN(i.Venda); meses[k].itens++;
+    var k = porDia
+      ? d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)
+      : d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2);
+    if(!grupos[k]) grupos[k]={receita:0,itens:0};
+    grupos[k].receita+=pN(i.Venda); grupos[k].itens++;
   });
-  var labels=Object.keys(meses).sort();
-  var receitas=labels.map(function(k){return meses[k].receita;});
-  var itens=labels.map(function(k){return meses[k].itens;});
+  var labels=Object.keys(grupos).sort();
+  var receitas=labels.map(function(k){return grupos[k].receita;});
+  var itens=labels.map(function(k){return grupos[k].itens;});
   if(window._chartMes) window._chartMes.destroy();
   if(!labels.length){ctx.parentElement.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:2rem;">Nenhuma venda no período.</p>';return;}
-  window._chartMes=new Chart(ctx,{type:'line',data:{labels:labels.map(function(k){var p=k.split('-');return new Date(p[0],p[1]-1).toLocaleDateString('pt-BR',{month:'short',year:'2-digit'});}),datasets:[{label:'Receita',data:receitas,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',yAxisID:'y',tension:.3,fill:true},{label:'Itens',data:itens,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.1)',yAxisID:'y1',tension:.3,fill:false}]},options:{responsive:true,plugins:{legend:{display:true}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return 'R$'+v.toLocaleString('pt-BR');}}},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false}}}}});
+  var labelsFormatadas=labels.map(function(k){
+    var p=k.split('-');
+    return porDia
+      ? p[2]+'/'+p[1]
+      : new Date(p[0],p[1]-1).toLocaleDateString('pt-BR',{month:'short',year:'2-digit'});
+  });
+  window._chartMes=new Chart(ctx,{type:'line',data:{labels:labelsFormatadas,datasets:[{label:'Receita (R$)',data:receitas,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',yAxisID:'y',tension:.3,fill:true},{label:'Itens',data:itens,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.1)',yAxisID:'y1',tension:.3,fill:false}]},options:{responsive:true,plugins:{legend:{display:true}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return 'R$'+v.toLocaleString('pt-BR');}}},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false}}}}});
 }
 
 function renderRankingRevs(vendidos){
@@ -4098,15 +4112,24 @@ function renderRelatorio(){
   var custoEstoque=inventory.filter(function(i){return i.Status==='Em Estoque';}).reduce(function(s,i){return s+pN(i.Custo);},0);
 
   var el=function(id){return document.getElementById(id);};
+  var totalCons=inventory.filter(function(i){return i.Status==='Consignado';});
+  var qtdCons=totalCons.length;
+  var custoCons=totalCons.reduce(function(s,i){return s+pN(i.Custo);},0);
+  // Comissão e lucro baseados no cálculo correto
+  var totalComissao=vendidos.reduce(function(s,i){var lb=pN(i.Venda)-pN(i.Custo);var r=revendedores.find(function(rv){return rv.Nome===i.Revendedor;});var pct=(r?pN(r.Percentual):50)/100;return s+lb*pct;},0);
+  var totalLucro=vendidos.reduce(function(s,i){var lb=pN(i.Venda)-pN(i.Custo);var r=revendedores.find(function(rv){return rv.Nome===i.Revendedor;});var pct=(r?pN(r.Percentual):50)/100;return s+lb*(1-pct);},0);
   if(el('rel-k-qtd'))el('rel-k-qtd').textContent=totalVendas;
   if(el('rel-k-receita'))el('rel-k-receita').textContent=fmt(totalReceita);
-  if(el('rel-k-custo'))el('rel-k-custo').textContent=fmt(totalCusto);
-  if(el('rel-k-lucro'))el('rel-k-lucro').textContent=fmt(lucro);
-  if(el('rel-k-margem'))el('rel-k-margem').textContent=margem+'% margem';
+  if(el('rel-k-receita-sub'))el('rel-k-receita-sub').textContent=totalVendas+' produto'+(totalVendas!==1?'s':'');
+  if(el('rel-k-comissao'))el('rel-k-comissao').textContent=fmt(totalComissao);
+  if(el('rel-k-lucro'))el('rel-k-lucro').textContent=fmt(totalLucro);
+  if(el('rel-k-margem'))el('rel-k-margem').textContent=totalReceita>0?(totalLucro/totalReceita*100).toFixed(1)+'% margem':'0% margem';
+  if(el('rel-k-consignado'))el('rel-k-consignado').textContent=qtdCons;
+  if(el('rel-k-consignado-val'))el('rel-k-consignado-val').textContent=fmt(custoCons)+' em custo';
   if(el('rel-k-estoque'))el('rel-k-estoque').textContent=emEstoque;
   if(el('rel-k-estoque-val'))el('rel-k-estoque-val').textContent=fmt(custoEstoque)+' em custo';
 
-  renderChartMes(vendidos);
+  setTimeout(function(){ renderChartMes(vendidos); }, 100);
   renderRankingRevs(vendidos);
   renderRelCats(vendidos);
   renderTopProdutos(vendidos);
@@ -4285,6 +4308,16 @@ function renderProjecao(){
   var tC=linhas.reduce(function(s,r){return s+r.custo;},0);
   var tM=linhas.reduce(function(s,r){return s+r.margem;},0);
   var tG=linhas.reduce(function(s,r){return s+r.total;},0);
+  // Calcula lucro para cada linha
+  linhas.forEach(function(r){
+    var lucroBruto = r.total - r.custo; // venda esperada - custo
+    r.lucro = parseFloat((lucroBruto * (1 - r.pct/100)).toFixed(2));
+    r.comissao = parseFloat((lucroBruto * (r.pct/100)).toFixed(2));
+    r.vendaEsperada = r.total; // custo + margem = venda esperada
+  });
+  var tL = linhas.reduce(function(s,r){return s+r.lucro;},0);
+  var tCom = linhas.reduce(function(s,r){return s+r.comissao;},0);
+
   el.innerHTML='<div class="card-light" style="overflow:hidden;">'
     +'<table style="width:100%;border-collapse:collapse;">'
     +'<thead><tr style="background:var(--gray-50);">'
@@ -4292,8 +4325,9 @@ function renderProjecao(){
     +'<th style="padding:10px 14px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--gray-500);">Itens</th>'
     +'<th style="padding:10px 14px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--gray-500);">Custo</th>'
     +'<th style="padding:10px 14px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--gray-500);">%</th>'
-    +'<th style="padding:10px 14px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--gray-500);">Margem</th>'
-    +'<th style="padding:10px 14px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--gray-500);">Total</th>'
+    +'<th style="padding:10px 14px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--gray-500);">Comissão</th>'
+    +'<th style="padding:10px 14px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--gray-500);">Seu Lucro</th>'
+    +'<th style="padding:10px 14px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--gray-500);">Total a receber</th>'
     +'</tr></thead><tbody>'
     +linhas.map(function(r){
       return '<tr style="border-bottom:1px solid var(--gray-200);">'
@@ -4301,8 +4335,9 @@ function renderProjecao(){
         +'<td style="padding:10px 14px;text-align:center;font-size:13px;">'+r.itens+'</td>'
         +'<td style="padding:10px 14px;text-align:right;font-size:13px;">'+fmt(r.custo)+'</td>'
         +'<td style="padding:10px 14px;text-align:center;"><span style="background:#f5f3ff;color:#5b21b6;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:600;">'+r.pct+'%</span></td>'
-        +'<td style="padding:10px 14px;text-align:right;font-size:13px;color:#f59e0b;font-weight:600;">'+fmt(r.margem)+'</td>'
-        +'<td style="padding:10px 14px;text-align:right;font-size:14px;font-weight:700;color:#10b981;">'+fmt(r.total)+'</td>'
+        +'<td style="padding:10px 14px;text-align:right;font-size:13px;color:#f59e0b;font-weight:600;">'+fmt(r.comissao)+'</td>'
+        +'<td style="padding:10px 14px;text-align:right;font-size:13px;color:#10b981;font-weight:700;">'+fmt(r.lucro)+'</td>'
+        +'<td style="padding:10px 14px;text-align:right;font-size:14px;font-weight:700;color:#2563eb;">'+fmt(r.total)+'</td>'
         +'</tr>';
     }).join('')
     +'</tbody><tfoot><tr style="background:var(--gray-50);border-top:2px solid var(--gray-200);">'
@@ -4310,8 +4345,9 @@ function renderProjecao(){
     +'<td style="padding:10px 14px;text-align:center;font-weight:700;">'+linhas.reduce(function(s,r){return s+r.itens;},0)+'</td>'
     +'<td style="padding:10px 14px;text-align:right;font-weight:700;">'+fmt(tC)+'</td>'
     +'<td></td>'
-    +'<td style="padding:10px 14px;text-align:right;font-weight:700;color:#f59e0b;">'+fmt(tM)+'</td>'
-    +'<td style="padding:10px 14px;text-align:right;font-size:15px;font-weight:800;color:#10b981;">'+fmt(tG)+'</td>'
+    +'<td style="padding:10px 14px;text-align:right;font-weight:700;color:#f59e0b;">'+fmt(tCom)+'</td>'
+    +'<td style="padding:10px 14px;text-align:right;font-weight:700;color:#10b981;">'+fmt(tL)+'</td>'
+    +'<td style="padding:10px 14px;text-align:right;font-size:15px;font-weight:800;color:#2563eb;">'+fmt(tG)+'</td>'
     +'</tr></tfoot></table></div>';
 }
 
