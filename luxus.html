@@ -3917,7 +3917,7 @@ function renderChartMes(vendidos){
       ? p[2]+'/'+p[1]
       : new Date(p[0],p[1]-1).toLocaleDateString('pt-BR',{month:'short',year:'2-digit'});
   });
-  window._chartMes=new Chart(ctx,{type:'line',data:{labels:labelsFormatadas,datasets:[{label:'Receita (R$)',data:receitas,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',yAxisID:'y',tension:.3,fill:true},{label:'Itens',data:itens,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.1)',yAxisID:'y1',tension:.3,fill:false}]},options:{responsive:true,plugins:{legend:{display:true}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return 'R$'+v.toLocaleString('pt-BR');}}},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false}}}}});
+  window._chartMes=new Chart(ctx,{type:'bar',data:{labels:labelsFormatadas,datasets:[{label:'Receita (R$)',data:receitas,backgroundColor:'rgba(37,99,235,.7)',borderColor:'#2563eb',borderRadius:6,yAxisID:'y'},{label:'Itens',data:itens,backgroundColor:'rgba(245,158,11,.7)',borderColor:'#f59e0b',borderRadius:6,yAxisID:'y1'}]},options:{responsive:true,plugins:{legend:{display:true}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return 'R$'+v.toLocaleString('pt-BR');}}},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false}}}}});
 }
 
 function renderRankingRevs(vendidos){
