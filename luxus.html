@@ -4100,8 +4100,23 @@ function renderRelatorio(){
   var qtdCons=totalCons.length;
   var custoCons=totalCons.reduce(function(s,i){return s+pN(i.Custo);},0);
   // Comissão e lucro baseados no cálculo correto
-  var totalComissao=vendidos.reduce(function(s,i){var lb=pN(i.Venda)-pN(i.Custo);var r=revendedores.find(function(rv){return rv.Nome===i.Revendedor;});var pct=(r?pN(r.Percentual):50)/100;return s+lb*pct;},0);
-  var totalLucro=vendidos.reduce(function(s,i){var lb=pN(i.Venda)-pN(i.Custo);var r=revendedores.find(function(rv){return rv.Nome===i.Revendedor;});var pct=(r?pN(r.Percentual):50)/100;return s+lb*(1-pct);},0);
+  var totalComissao=0, totalLucro=0;
+  vendidos.forEach(function(i){
+    var lb=pN(i.Venda)-pN(i.Custo);
+    var r=revendedores.find(function(rv){return rv.Nome===i.Revendedor;});
+    if(r){
+      // Venda via revendedora — divide lucro bruto
+      var pct=pN(r.Percentual)/100;
+      totalComissao+=lb*pct;
+      totalLucro+=lb*(1-pct);
+    } else {
+      // Venda avulsa — lucro bruto todo seu (sem comissão)
+      totalLucro+=lb;
+    }
+  });
+  // Desconta custo dos brindes (itens vendidos a R$ 0)
+  var custoBrindes=vendidos.filter(function(i){return pN(i.Venda)===0;}).reduce(function(s,i){return s+pN(i.Custo);},0);
+  totalLucro-=custoBrindes;
   if(el('rel-k-qtd'))el('rel-k-qtd').textContent=totalVendas;
   if(el('rel-k-receita'))el('rel-k-receita').textContent=fmt(totalReceita);
   if(el('rel-k-receita-sub'))el('rel-k-receita-sub').textContent=totalVendas+' produto'+(totalVendas!==1?'s':'');
@@ -4333,6 +4348,36 @@ function renderProjecao(){
         +'</tr>';
     }).join('')
     +'</tbody></table></div>';
+}
+
+
+function salvarCfgCards(){
+  try{
+    var cfg={};
+    ['cfg-total-tipo','cfg-vendas-periodo','cfg-vendas-revendedor','cfg-vendas-tipo',
+     'cfg-cons-escopo','cfg-cons-revendedor','cfg-cons-tipo','cfg-capital-tipo'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el) cfg[id]=el.value;
+    });
+    ['cfg-vendas-lucro','cfg-cons-custo','cfg-capital-venda'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el) cfg[id]=el.checked;
+    });
+    localStorage.setItem('luxus_cfg_cards',JSON.stringify(cfg));
+    renderDashboard();
+  }catch(e){}
+}
+
+function carregarCfgCards(){
+  try{
+    var cfg=JSON.parse(localStorage.getItem('luxus_cfg_cards')||'{}');
+    Object.keys(cfg).forEach(function(id){
+      var el=document.getElementById(id);
+      if(!el) return;
+      if(typeof cfg[id]==='boolean') el.checked=cfg[id];
+      else el.value=cfg[id];
+    });
+  }catch(e){}
 }
 
 function switchCfgCard(aba){
@@ -5391,6 +5436,56 @@ function finalizarFechamento(){
 // =====================================================
 // HISTÓRICO
 // =====================================================
+
+
+function verDetalhesFechamento(id){
+  var reg = historicFechamentos.find(function(f){ return String(f.id)===String(id); });
+  if(!reg) return;
+
+  var html = '<div style="padding:1rem;">'
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:.5rem;">'
+    +'<strong style="font-size:15px;">'+reg.revendedor+'</strong>'
+    +'<span style="font-size:13px;color:var(--gray-500);">'+new Date(reg.data).toLocaleDateString('pt-BR')+'</span>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem;">'
+    +'<div style="background:var(--gray-50);padding:.75rem;border-radius:8px;text-align:center;">'
+    +'<div style="font-size:11px;color:var(--gray-500);">Consignados</div><div style="font-weight:700;">'+reg.qtdConsignados+'</div></div>'
+    +'<div style="background:var(--gray-50);padding:.75rem;border-radius:8px;text-align:center;">'
+    +'<div style="font-size:11px;color:var(--gray-500);">Vendidos</div><div style="font-weight:700;color:#059669;">'+reg.qtdVendidos+'</div></div>'
+    +'<div style="background:var(--gray-50);padding:.75rem;border-radius:8px;text-align:center;">'
+    +'<div style="font-size:11px;color:var(--gray-500);">Devolvidos</div><div style="font-weight:700;color:#f59e0b;">'+reg.qtdDevolvidos+'</div></div>'
+    +'<div style="background:var(--gray-50);padding:.75rem;border-radius:8px;text-align:center;">'
+    +'<div style="font-size:11px;color:var(--gray-500);">Valor vendido</div><div style="font-weight:700;color:#2563eb;">'+fmt(reg.valorVendido||0)+'</div></div>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:space-between;padding:.75rem;background:#f0fdf4;border-radius:8px;margin-bottom:.5rem;">'
+    +'<span style="color:var(--gray-600);">Comissão ('+reg.percentual+'%)</span>'
+    +'<strong style="color:#f59e0b;">'+fmt(reg.comissao||0)+'</strong>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:space-between;padding:.75rem;background:#eff6ff;border-radius:8px;">'
+    +'<span style="color:var(--gray-600);">Seu lucro</span>'
+    +'<strong style="color:#059669;font-size:16px;">'+fmt(reg.lucro||0)+'</strong>'
+    +'</div>'
+    +(reg.reciboUrl?'<div style="margin-top:1rem;"><a href="'+reg.reciboUrl+'" target="_blank" style="color:var(--primary);font-size:13px;"><i class="fas fa-file-pdf" style="margin-right:4px;"></i>Ver recibo</a></div>':'')
+    +'</div>';
+
+  // Mostra num modal simples
+  var modal = document.getElementById('modal-detalhes-fech');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'modal-detalhes-fech';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = '<div class="modal-box" style="max-width:420px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">'
+      +'<h3 style="font-size:15px;font-weight:700;color:var(--gray-800);">Detalhes do fechamento</h3>'
+      +'<button onclick="fecharModal(\'modal-detalhes-fech\')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.2rem;"><i class="fas fa-times"></i></button>'
+      +'</div>'
+      +'<div id="detalhes-fech-content"></div>'
+      +'</div>';
+    document.body.appendChild(modal);
+  }
+  document.getElementById('detalhes-fech-content').innerHTML = html;
+  abrirModal('modal-detalhes-fech');
+}
 
 function editarDataFechamento(id){
   var fech = historicFechamentos.find(function(f){ return String(f.id)===String(id); });
