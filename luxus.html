@@ -3900,8 +3900,17 @@ function renderChartMes(vendidos){
   var labels=Object.keys(grupos).sort();
   var receitas=labels.map(function(k){return grupos[k].receita;});
   var itens=labels.map(function(k){return grupos[k].itens;});
-  if(window._chartMes) window._chartMes.destroy();
-  if(!labels.length){ctx.parentElement.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:2rem;">Nenhuma venda no período.</p>';return;}
+  if(window._chartMes){ window._chartMes.destroy(); window._chartMes=null; }
+  if(!labels.length){
+    ctx.style.display='none';
+    var semDados=ctx.parentElement.querySelector('.sem-dados-chart');
+    if(!semDados){semDados=document.createElement('p');semDados.className='sem-dados-chart';semDados.style.cssText='font-size:13px;color:var(--gray-400);text-align:center;padding:2rem;';ctx.parentElement.appendChild(semDados);}
+    semDados.textContent='Nenhuma venda no período.';
+    return;
+  }
+  ctx.style.display='';
+  var semDados=ctx.parentElement.querySelector('.sem-dados-chart');
+  if(semDados) semDados.remove();
   var labelsFormatadas=labels.map(function(k){
     var p=k.split('-');
     return porDia
