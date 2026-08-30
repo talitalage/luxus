@@ -5682,7 +5682,7 @@ function confirmarVendaPacote(){
     id:registro.id, data:registro.data, revendedor:comprador, percentual:0,
     qtdConsignados:registro.qtdConsignados, qtdVendidos:registro.qtdVendidos,
     qtdDevolvidos:0, valorConsignado:total, valorDevolvido:0,
-    valorVendido:total, comissao:0, lucro:total,
+    valorVendido:total, valorConsignado:_pacoteItens.reduce(function(s,i){return s+pN(i.Custo);},0), comissao:0, lucro:parseFloat((total-_pacoteItens.reduce(function(s,i){return s+pN(i.Custo);},0)).toFixed(2)),
     reciboUrl:'', maletasFechadas:[]
   });
 
