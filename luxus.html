@@ -5475,12 +5475,19 @@ function verDetalhesFechamento(id){
     +'<span style="color:var(--gray-600);">Seu lucro</span>'
     +'<strong style="color:#059669;font-size:16px;">'+fmt(reg.lucro||0)+'</strong>'
     +'</div>'
+    // Busca itens do inventário se itensVendidos não estiver salvo
+    var itensMostrar = reg.itensVendidos&&reg.itensVendidos.length ? reg.itensVendidos
+      : inventory.filter(function(i){
+          return i.Status==='Vendido' && i.Revendedor===reg.revendedor
+            && i.DataVenda && Math.abs(new Date(i.DataVenda)-new Date(reg.data)) < 86400000*2;
+        }).map(function(i){return {Codigo:i.Codigo,Descricao:i.Descricao,Venda:i.Venda};});
+
     // Listagem de itens vendidos
-    +(reg.itensVendidos&&reg.itensVendidos.length?
+    +(itensMostrar&&itensMostrar.length?
       '<div style="margin-top:1rem;">'
       +'<div style="font-size:11px;font-weight:600;color:var(--gray-500);text-transform:uppercase;margin-bottom:6px;">Itens vendidos ('+reg.itensVendidos.length+')</div>'
       +'<div style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">'
-      +reg.itensVendidos.map(function(i){
+      +itensMostrar.map(function(i){
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:var(--gray-50);border-radius:6px;font-size:12px;">'
           +'<span style="font-family:monospace;color:var(--primary);font-weight:600;">'+i.Codigo+'</span>'
           +'<span style="color:var(--gray-600);flex:1;margin:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(i.Descricao||'—')+'</span>'
