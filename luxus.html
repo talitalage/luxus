@@ -673,35 +673,10 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
   <div class="card-light" style="padding:1.25rem;margin-bottom:1.25rem;">
     <h3 class="section-title"><i class="fas fa-warehouse"></i>Estoque atual</h3>
     <div id="rel-estoque" style="overflow-x:auto;margin-top:.5rem;"></div>
-    <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">
-      <thead><tr style="background:var(--gray-50);border-bottom:2px solid var(--gray-200);">
-        <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Tipo</th>
-        <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Categoria</th>
-        <th style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Em Estoque</th>
-        <th style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Consignado</th>
-        <th style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Vendido</th>
-        <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Custo estoque</th>
-        <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Valor estoque</th>
-        <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Valor consignado</th>
-      </tr></thead>
-      <tbody id="rel-tbody-estoque"></tbody>
-    </table></div>
   </div>
   <div class="card-light" style="padding:1.25rem;">
     <h3 class="section-title"><i class="fas fa-percent"></i>Comissões pagas</h3>
     <div id="rel-comissoes" style="overflow-x:auto;margin-top:.5rem;"></div>
-    <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">
-      <thead><tr style="background:var(--gray-50);border-bottom:2px solid var(--gray-200);">
-        <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Revendedor</th>
-        <th style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Fechamentos</th>
-        <th style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Vendidos</th>
-        <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Receita</th>
-        <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Comissão</th>
-        <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">Lucro</th>
-        <th style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--gray-500);font-weight:600;">%</th>
-      </tr></thead>
-      <tbody id="rel-tbody-comissoes"></tbody>
-    </table></div>
 
   <!-- ── RESUMO POR REVENDEDOR ─────────────────────────────── -->
   <h3 class="section-title" style="margin-top:1.5rem;"><i class="fas fa-users"></i>Resumo por revendedor</h3>
@@ -1609,7 +1584,7 @@ function switchTab(tab){
   if(tab==='entrada'){renderUltimasEntradas();setTimeout(function(){var c=document.getElementById('entrada-codigo');if(c){c.removeAttribute('readonly');c.focus();}},100);}
   else if(tab==='config'){renderRevendedores();renderStatus();renderCategorias();carregarCfgCards();}
   else if(tab==='dashboard'){renderDashboard();}
-  else if(tab==='relatorio'){initRelatorio();}
+  else if(tab==='relatorio'){initRelatorio();setTimeout(function(){var v=inventory.filter(function(i){return i.Status==='Vendido';});renderChartMes(v);},300);}
 }
 
 // =====================================================
