@@ -5637,7 +5637,7 @@ function confirmarVendaPacote(){
       inv.Status = 'Vendido';
       inv.DataVenda = dataVenda;
       inv.Revendedor = '';
-      batchItems.push({rowId:inv.rowId, status:'Vendido', revendedor:inv.Revendedor||nome, dataVenda:dataVenda});
+      batchItems.push({rowId:inv.rowId, status:'Vendido', revendedor:'', dataVenda:dataVenda});
     }
   });
   if(batchItems.length) syncDrive({action:'batchEditInventario', items:batchItems});
