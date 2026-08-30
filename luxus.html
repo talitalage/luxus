@@ -5475,17 +5475,20 @@ function verDetalhesFechamento(id){
     +'<span style="color:var(--gray-600);">Seu lucro</span>'
     +'<strong style="color:#059669;font-size:16px;">'+fmt(reg.lucro||0)+'</strong>'
     +'</div>'
-    // Busca itens do inventário se itensVendidos não estiver salvo
-    var itensMostrar = reg.itensVendidos&&reg.itensVendidos.length ? reg.itensVendidos
-      : inventory.filter(function(i){
-          return i.Status==='Vendido' && i.Revendedor===reg.revendedor;
-        }).map(function(i){return {Codigo:i.Codigo,Descricao:i.Descricao,Venda:i.Venda};});
+    +'</div>';
 
-    // Listagem de itens vendidos
-    +(itensMostrar&&itensMostrar.length?
+  // Busca itens do inventário se itensVendidos não estiver salvo
+  var itensMostrar = reg.itensVendidos&&reg.itensVendidos.length ? reg.itensVendidos
+    : inventory.filter(function(i){
+        return i.Status==='Vendido' && i.Revendedor===reg.revendedor;
+      }).map(function(i){return {Codigo:i.Codigo,Descricao:i.Descricao,Venda:i.Venda};});
+
+  // Adiciona listagem de itens
+  if(itensMostrar&&itensMostrar.length){
+    html = html.replace('</div>', '') + 
       '<div style="margin-top:1rem;">'
       +'<div style="font-size:11px;font-weight:600;color:var(--gray-500);text-transform:uppercase;margin-bottom:6px;">Itens vendidos ('+itensMostrar.length+')</div>'
-      +'<div style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">'
+      +'<div style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">'
       +itensMostrar.map(function(i){
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:var(--gray-50);border-radius:6px;font-size:12px;">'
           +'<span style="font-family:monospace;color:var(--primary);font-weight:600;">'+i.Codigo+'</span>'
@@ -5493,10 +5496,13 @@ function verDetalhesFechamento(id){
           +'<span style="font-weight:600;color:var(--gray-700);flex-shrink:0;">'+fmt(i.Venda||0)+'</span>'
           +'</div>';
       }).join('')
-      +'</div></div>'
-    :'')
-    +(reg.reciboUrl?'<div style="margin-top:1rem;"><a href="'+reg.reciboUrl+'" target="_blank" style="color:var(--primary);font-size:13px;"><i class="fas fa-file-pdf" style="margin-right:4px;"></i>Ver recibo</a></div>':'')
-    +'</div>';
+      +'</div></div>';
+    html += reg.reciboUrl?'<div style="margin-top:1rem;"><a href="'+reg.reciboUrl+'" target="_blank" style="color:var(--primary);font-size:13px;"><i class="fas fa-file-pdf" style="margin-right:4px;"></i>Ver recibo</a></div>':'';
+    html += '</div>';
+  } else {
+    html += reg.reciboUrl?'<div style="margin-top:1rem;"><a href="'+reg.reciboUrl+'" target="_blank" style="color:var(--primary);font-size:13px;"><i class="fas fa-file-pdf" style="margin-right:4px;"></i>Ver recibo</a></div>':'';
+    html += '</div>';
+  }
 
   // Mostra num modal simples
   var modal = document.getElementById('modal-detalhes-fech');
