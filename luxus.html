@@ -1281,6 +1281,16 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
           <span style="color:var(--gray-600);">Itens</span>
           <span id="pacote-qtd" style="font-weight:600;color:var(--gray-700);"></span>
         </div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <div style="flex:1;">
+            <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Desconto (R$)</label>
+            <input id="pacote-desconto" type="number" step="0.01" placeholder="0,00" style="width:100%;margin-top:4px;font-size:13px;" oninput="atualizarResumoPacote()">
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Desconto (%)</label>
+            <input id="pacote-desconto-pct" type="number" step="1" min="0" max="100" placeholder="0" style="width:100%;margin-top:4px;font-size:13px;" oninput="atualizarResumoPacote()">
+          </div>
+        </div>
         <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Valor recebido (R$)</label>
         <input id="pacote-recebido" type="number" step="0.01" placeholder="0,00" style="width:100%;margin-top:4px;font-size:15px;font-weight:600;" oninput="atualizarResumoPacote()">
         <div id="pacote-saldo" style="margin-top:8px;text-align:center;font-size:13px;font-weight:700;padding:6px;border-radius:8px;display:none;"></div>
@@ -5487,6 +5497,29 @@ function adicionarItemPacote(){
   renderListaPacote();
 }
 
+function marcarBrindePacote(input){
+  var idx = parseInt(input.getAttribute('data-idx'));
+  if(!_pacoteItens[idx]) return;
+  _pacoteItens[idx]._brinde = input.checked;
+  // Zera ou restaura o valor
+  var valorOriginal = _pacoteItens[idx]._valorOriginal || _pacoteItens[idx].Venda || 0;
+  if(input.checked){
+    _pacoteItens[idx]._valorOriginal = _pacoteItens[idx].Venda;
+    _pacoteItens[idx].Venda = 0;
+  } else {
+    _pacoteItens[idx].Venda = valorOriginal;
+  }
+  renderListaPacote();
+  atualizarResumoPacote();
+}
+
+function editarValorPacote(input){
+  var idx = parseInt(input.getAttribute('data-idx'));
+  var novoValor = parseFloat(input.value)||0;
+  if(_pacoteItens[idx]) _pacoteItens[idx].Venda = novoValor;
+  atualizarResumoPacote();
+}
+
 function removerItemPacote(idx){
   _pacoteItens.splice(idx, 1);
   renderListaPacote();
@@ -5511,7 +5544,8 @@ function renderListaPacote(){
       +'<span style="font-family:monospace;font-size:11px;font-weight:700;color:var(--primary);">'+item.Codigo+'</span>'
       +' <span style="font-size:12px;color:var(--gray-600);">'+(item.Descricao||'—')+'</span>'
       +'</div>'
-      +'<span style="font-size:12px;font-weight:600;color:var(--gray-700);flex-shrink:0;">'+fmt(item.Venda||0)+'</span>'
+      +'<input type="number" step="0.01" value="'+(item.Venda||0)+'" data-idx="'+idx+'" onchange="editarValorPacote(this)" style="width:80px;padding:2px 6px;border:1px solid var(--gray-300);border-radius:5px;font-size:12px;font-weight:600;text-align:right;">'
+      +'<label style="display:flex;align-items:center;gap:3px;font-size:11px;color:var(--gray-500);cursor:pointer;white-space:nowrap;"><input type="checkbox" data-idx="'+idx+'" onchange="marcarBrindePacote(this)"'+(item._brinde?' checked':'')+'>🎁</label>'
       +'<button onclick="removerItemPacote('+idx+')" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:13px;flex-shrink:0;">✕</button>'
       +'</div>';
   }).join('');
@@ -5525,7 +5559,13 @@ function renderListaPacote(){
 }
 
 function atualizarResumoPacote(){
-  var total = _pacoteItens.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0);
+  var subtotal = _pacoteItens.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0);
+  var descontoVal = parseFloat(document.getElementById('pacote-desconto').value)||0;
+  var descontoPct = parseFloat(document.getElementById('pacote-desconto-pct').value)||0;
+  // Desconto em % tem prioridade se preenchido
+  if(descontoPct > 0) descontoVal = Math.round(subtotal * descontoPct / 100 * 100) / 100;
+  var total = Math.max(0, subtotal - descontoVal);
+  document.getElementById('pacote-total').textContent = fmt(total) + (descontoVal>0?' (desc. '+fmt(descontoVal)+')':'');
   var recebido = parseFloat(document.getElementById('pacote-recebido').value)||0;
   var saldo = recebido - total;
   var elSaldo = document.getElementById('pacote-saldo');
