@@ -2182,27 +2182,14 @@ function renderMaletasAtivas(){
 
     // Linhas de maleta dentro do grupo
     var maletasHtml = maletasRev.map(function(m){
-      // Calcula direto do inventário — fonte de verdade
-      var itensMaleta = inventory.filter(function(i){ return i.Revendedor===nome && i.Status==='Consignado'; });
-      var totalItensRev = itensMaleta.length;
-      var totalCustoRev = itensMaleta.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0);
-      // Distribui proporcionalmente entre maletas pelo _qtdItens salvo
+      // Usa _qtdItens do Sheets como fonte de verdade
       var qtdMaleta = parseInt(m._qtdItens)||0;
+      var totalCustoRev = inventory.filter(function(i){ return i.Revendedor===nome && i.Status==='Consignado'; })
+                          .reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0);
       var qtdTotalMaletas = maletasRev.reduce(function(s,x){return s+(parseInt(x._qtdItens)||0);},0);
-      if(maletasRev.length === 1){
-        // Só uma maleta — mostra tudo
-        qtdMaleta = totalItensRev;
-        var itensCusto = totalCustoRev;
-      } else if(qtdTotalMaletas > 0){
-        // Múltiplas maletas — proporcional pelo _qtdItens
-        var proporcao = qtdMaleta / qtdTotalMaletas;
-        var itensCusto = Math.round(totalCustoRev * proporcao * 100) / 100;
-        qtdMaleta = Math.round(totalItensRev * proporcao);
-      } else {
-        // _qtdItens zerado — divide igualmente
-        qtdMaleta = Math.round(totalItensRev / maletasRev.length);
-        var itensCusto = Math.round(totalCustoRev / maletasRev.length * 100) / 100;
-      }
+      var itensCusto = qtdTotalMaletas > 0
+        ? Math.round(totalCustoRev * (qtdMaleta / qtdTotalMaletas) * 100) / 100
+        : totalCustoRev;
       var dataRef = m.dataEntrega || m.dataCriacao || '';
       var _dr = dataRef ? new Date(dataRef) : null;
       var dataStr = _dr ? (_dr.getDate().toString().padStart(2,'0')+'/'
