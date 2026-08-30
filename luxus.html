@@ -5475,6 +5475,20 @@ function verDetalhesFechamento(id){
     +'<span style="color:var(--gray-600);">Seu lucro</span>'
     +'<strong style="color:#059669;font-size:16px;">'+fmt(reg.lucro||0)+'</strong>'
     +'</div>'
+    // Listagem de itens vendidos
+    +(reg.itensVendidos&&reg.itensVendidos.length?
+      '<div style="margin-top:1rem;">'
+      +'<div style="font-size:11px;font-weight:600;color:var(--gray-500);text-transform:uppercase;margin-bottom:6px;">Itens vendidos ('+reg.itensVendidos.length+')</div>'
+      +'<div style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">'
+      +reg.itensVendidos.map(function(i){
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:var(--gray-50);border-radius:6px;font-size:12px;">'
+          +'<span style="font-family:monospace;color:var(--primary);font-weight:600;">'+i.Codigo+'</span>'
+          +'<span style="color:var(--gray-600);flex:1;margin:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(i.Descricao||'—')+'</span>'
+          +'<span style="font-weight:600;color:var(--gray-700);flex-shrink:0;">'+fmt(i.Venda||0)+'</span>'
+          +'</div>';
+      }).join('')
+      +'</div></div>'
+    :'')
     +(reg.reciboUrl?'<div style="margin-top:1rem;"><a href="'+reg.reciboUrl+'" target="_blank" style="color:var(--primary);font-size:13px;"><i class="fas fa-file-pdf" style="margin-right:4px;"></i>Ver recibo</a></div>':'')
     +'</div>';
 
