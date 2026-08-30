@@ -4315,6 +4315,19 @@ function renderProjecao(){
     +'</tr></tfoot></table></div>';
 }
 
+function switchCfgCard(aba){
+  ['total','vendas','consignado','capital'].forEach(function(t){
+    var el = document.getElementById('cfgcard-'+t);
+    var btn = document.getElementById('cfgcard-tab-'+t);
+    if(el) el.style.display = t===aba ? 'flex' : 'none';
+    if(btn){
+      btn.style.background = t===aba ? 'var(--white)' : 'transparent';
+      btn.style.color = t===aba ? 'var(--primary)' : 'var(--gray-500)';
+      btn.style.fontWeight = t===aba ? '600' : '500';
+    }
+  });
+}
+
 function toggleDashCard(key, visible){
   try{
     var cfg = JSON.parse(localStorage.getItem('luxus_cards_visibility')||'{}');
@@ -5293,11 +5306,11 @@ function finalizarFechamento(){
   var pct=((rev&&rev.Percentual)||30)/100;
   var vc=produtosConsignados.reduce(function(s,i){return s+pN(i.Custo);},0);
   var vd=devolvidos.reduce(function(s,i){return s+pN(i.Custo);},0);
-  var custoVendido=vc-vd;
-  var vv=vendidos.reduce(function(s,i){return s+pN(i.Venda);},0);
-  var com=custoVendido*pct;
-  var margem=custoVendido*(1-pct);
-  var luc=custoVendido+margem;
+  var custoVendido=vc-vd;  // custo dos itens vendidos
+  var vv=vendidos.reduce(function(s,i){return s+pN(i.Venda);},0);  // preço de venda
+  var lucroBruto=parseFloat((vv-custoVendido).toFixed(2));  // lucro bruto = venda - custo
+  var com=parseFloat((lucroBruto*pct).toFixed(2));          // comissão = % sobre lucro bruto
+  var luc=parseFloat((lucroBruto-com).toFixed(2));           // seu lucro = lucro bruto - comissão
 
   // Parcelas
   var nParc=parseInt(document.getElementById('fechamento-parcelas').value)||1;
@@ -5636,6 +5649,31 @@ function confirmarVendaPacote(){
     valorVendido:total, comissao:0, lucro:total,
     reciboUrl:'', maletasFechadas:[]
   });
+
+  // Se houver saldo devedor, registra no Financeiro
+  if(saldo < 0){
+    var lancamento = {
+      id: Date.now(),
+      data: dataVenda,
+      revendedor: comprador,
+      descricao: 'Venda avulsa — '+_pacoteItens.length+' item(s)',
+      valor: Math.abs(saldo),
+      valorPago: 0,
+      saldo: Math.abs(saldo),
+      pago: false,
+      fechamentoId: registro.id
+    };
+    if(!window.historicFinanceiro) window.historicFinanceiro = [];
+    window.historicFinanceiro.unshift(lancamento);
+    syncDrive({action:'addLancamentoFinanceiro',
+      id: lancamento.id, data: lancamento.data,
+      revendedor: comprador,
+      descricao: lancamento.descricao,
+      valor: lancamento.valor,
+      valorPago: 0, saldo: lancamento.valor,
+      pago: false, fechamentoId: registro.id
+    });
+  }
 
   atualizarCache();
   fecharModal('modal-venda-avulsa');
