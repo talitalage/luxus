@@ -4032,9 +4032,10 @@ function renderTabelaEstoque(){
 function renderComissoes(){
   var el=document.getElementById('rel-comissoes'); if(!el) return;
   if(!historicFechamentos.length){el.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1rem;">Nenhum fechamento.</p>';return;}
+  var fechamentosOrdenados=historicFechamentos.slice().sort(function(a,b){return new Date(b.data)-new Date(a.data);});
   el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:13px;">'
     +'<thead><tr style="background:var(--gray-50);"><th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--gray-500);">Data</th><th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--gray-500);">Revendedor</th><th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--gray-500);">Vendido</th><th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--gray-500);">Comissão</th><th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--gray-500);">Lucro</th></tr></thead><tbody>'
-    +historicFechamentos.map(function(f){
+    +fechamentosOrdenados.map(function(f){
       return '<tr style="border-bottom:1px solid var(--gray-100);">'
         +'<td style="padding:7px 12px;color:var(--gray-600);">'+new Date(f.data).toLocaleDateString('pt-BR')+'</td>'
         +'<td style="padding:7px 12px;font-weight:600;color:var(--gray-700);">'+f.revendedor+'</td>'
@@ -4324,21 +4325,19 @@ function renderProjecao(){
     var custo=itens.reduce(function(s,i){return s+pN(i.Custo);},0);
     var pct=pN(rev.Percentual);
     var margem=custo*(pct/100);
-    return {nome:rev.Nome,itens:itens.length,custo:custo,pct:pct,margem:margem,total:custo+margem};
+    var lucroBruto = margem; // venda esperada - custo
+    var comissao = parseFloat((lucroBruto * (pct/100)).toFixed(2));
+    var lucro = parseFloat((lucroBruto - comissao).toFixed(2));
+    // Total a receber = custo + seu lucro (a comissão fica com a revendedora, não soma aqui)
+    var total = custo + lucro;
+    return {nome:rev.Nome,itens:itens.length,custo:custo,pct:pct,margem:margem,comissao:comissao,lucro:lucro,total:total,vendaEsperada:custo+margem};
   }).filter(Boolean);
   if(!linhas.length){el.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1rem;">Nenhum item consignado.</p>';return;}
   var tC=linhas.reduce(function(s,r){return s+r.custo;},0);
   var tM=linhas.reduce(function(s,r){return s+r.margem;},0);
+  var tCom=linhas.reduce(function(s,r){return s+r.comissao;},0);
+  var tL=linhas.reduce(function(s,r){return s+r.lucro;},0);
   var tG=linhas.reduce(function(s,r){return s+r.total;},0);
-  // Calcula lucro para cada linha
-  linhas.forEach(function(r){
-    var lucroBruto = r.total - r.custo; // venda esperada - custo
-    r.lucro = parseFloat((lucroBruto * (1 - r.pct/100)).toFixed(2));
-    r.comissao = parseFloat((lucroBruto * (r.pct/100)).toFixed(2));
-    r.vendaEsperada = r.total; // custo + margem = venda esperada
-  });
-  var tL = linhas.reduce(function(s,r){return s+r.lucro;},0);
-  var tCom = linhas.reduce(function(s,r){return s+r.comissao;},0);
 
   el.innerHTML='<div class="card-light" style="overflow:hidden;">'
     +'<table style="width:100%;border-collapse:collapse;">'
