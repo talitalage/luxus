@@ -1801,25 +1801,28 @@ function renderDetalhesMaleta(){
   if(!m.itens.length){
     lista.innerHTML = '<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1.5rem 0;">Nenhum item na maleta.</p>';
     document.getElementById('maleta-resumo').style.display = 'none';
-    return;
-  }
-  document.getElementById('maleta-resumo').style.display = 'block';
-  document.getElementById('maleta-total-itens').textContent = m.itens.length+' item(s)';
-  document.getElementById('maleta-total-custo').textContent = fmt(m.itens.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0));
+    // Não retorna aqui — os botões de ação (Salvar/Entregar) precisam continuar visíveis
+    // mesmo com a maleta vazia, senão fica sem nenhum jeito de perceber que está vazia
+    // (e "Entregar" já avisa "A maleta está vazia" se clicado sem itens).
+  } else {
+    document.getElementById('maleta-resumo').style.display = 'block';
+    document.getElementById('maleta-total-itens').textContent = m.itens.length+' item(s)';
+    document.getElementById('maleta-total-custo').textContent = fmt(m.itens.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0));
 
-  lista.innerHTML = m.itens.slice().reverse().map(function(item, idx){ idx = m.itens.length - 1 - idx;
-    var inv = inventory.find(function(i){ return String(i.rowId)===String(item.rowId); });
-    var status = inv ? inv.Status : item.Status;
-    var corStatus = status==='Em Estoque'?'#10b981':status==='Em Maleta'?'#f59e0b':'#6366f1';
-    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;">'
-      + '<span style="font-family:monospace;font-size:11px;color:var(--primary);font-weight:600;min-width:70px;">'+item.Codigo+'</span>'
-      + '<span style="flex:1;font-size:12px;color:var(--gray-700);">'+(item.Descricao||'—')+'</span>'
-      + '<span style="font-size:11px;color:var(--gray-500);">'+(item.Tipo||'')+(item.Categoria?' · '+item.Categoria:'')+'</span>'
-      + '<span style="font-size:11px;font-weight:600;color:var(--gray-700);">'+fmt(item.Custo||0)+'</span>'
-      + '<span style="font-size:10px;color:'+corStatus+';border:1px solid '+corStatus+';border-radius:4px;padding:1px 5px;">'+status+'</span>'
-      + '<button onclick="removerItemMaleta('+idx+')" style="background:none;border:none;cursor:pointer;color:var(--gray-300);" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'var(--gray-300)\'"><i class="fas fa-times"></i></button>'
-      + '</div>';
-  }).join('');
+    lista.innerHTML = m.itens.slice().reverse().map(function(item, idx){ idx = m.itens.length - 1 - idx;
+      var inv = inventory.find(function(i){ return String(i.rowId)===String(item.rowId); });
+      var status = inv ? inv.Status : item.Status;
+      var corStatus = status==='Em Estoque'?'#10b981':status==='Em Maleta'?'#f59e0b':'#6366f1';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;">'
+        + '<span style="font-family:monospace;font-size:11px;color:var(--primary);font-weight:600;min-width:70px;">'+item.Codigo+'</span>'
+        + '<span style="flex:1;font-size:12px;color:var(--gray-700);">'+(item.Descricao||'—')+'</span>'
+        + '<span style="font-size:11px;color:var(--gray-500);">'+(item.Tipo||'')+(item.Categoria?' · '+item.Categoria:'')+'</span>'
+        + '<span style="font-size:11px;font-weight:600;color:var(--gray-700);">'+fmt(item.Custo||0)+'</span>'
+        + '<span style="font-size:10px;color:'+corStatus+';border:1px solid '+corStatus+';border-radius:4px;padding:1px 5px;">'+status+'</span>'
+        + '<button onclick="removerItemMaleta('+idx+')" style="background:none;border:none;cursor:pointer;color:var(--gray-300);" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'var(--gray-300)\'"><i class="fas fa-times"></i></button>'
+        + '</div>';
+    }).join('');
+  }
 
   // Botões de ação — sempre visíveis, adapta conforme estado
   var btnsEl = document.getElementById('maleta-btns');
@@ -1897,7 +1900,7 @@ function adicionarItemMaleta(){
       && statusOk
       && !maletaAtual.itens.find(function(x){ return String(x.rowId)===String(i.rowId); });
   });
-  if(!encontrados.length){ showToast('Nenhum item disponível com código: '+codigo,'warning'); return; }
+  if(!encontrados.length){ showToast('Código '+codigo+' não encontrado no estoque — cadastre o item em Inventário antes de adicionar à maleta.','warning'); return; }
 
   function addItem(item){
     maletaAtual.itens.push(item);
@@ -2807,6 +2810,7 @@ function limparAssEntrega() {
 
 function confirmarEntregaMaleta(){
   var doc=_entregaDoc; if(!doc) return;
+  if(!doc.itens || !doc.itens.length){ showToast('Este documento não tem itens — nada para confirmar.','warning'); return; }
   if(!confirm('Confirmar entrega para '+doc.revendedor+'?\nOs itens passarão para Consignado.')) return;
   var batchItems=[];
   doc.itens.forEach(function(item){
