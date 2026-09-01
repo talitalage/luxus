@@ -1063,6 +1063,19 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
   </div>
 </div>
 
+<!-- MODAL CONFIRMAÇÃO GENÉRICA — substitui os confirm() nativos do navegador,
+     que ficam bloqueados/silenciosos depois de várias caixas seguidas na mesma aba -->
+<div id="modal-confirmar-acao" class="modal-overlay">
+  <div class="modal-content" style="max-width:380px;width:95%;">
+    <h3 style="font-size:1rem;font-weight:700;color:var(--gray-800);margin-bottom:.75rem;"><i class="fas fa-question-circle" style="color:var(--primary);margin-right:8px;"></i>Confirmar</h3>
+    <p id="confirmar-acao-msg" style="font-size:13px;color:var(--gray-600);white-space:pre-line;margin-bottom:1.25rem;"></p>
+    <div style="display:flex;gap:.75rem;">
+      <button onclick="_confirmarAcaoNao()" class="btn-secondary" style="flex:1;">Cancelar</button>
+      <button onclick="_confirmarAcaoSim()" class="btn-primary" style="flex:1;"><i class="fas fa-check" style="margin-right:6px;"></i>Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL PAGAMENTO PARCELA -->
 <div id="modal-pagamento" class="modal-overlay">
   <div class="modal-content" style="max-width:420px;width:95%;">
@@ -1918,6 +1931,29 @@ function abrirDocumentoMaleta(){
 // em vez de só avisar "não encontrado", oferece cadastrar na hora e já
 // entra direto no fluxo que estava em andamento (maleta, entrega ou consignação).
 // =====================================================
+// =====================================================
+// CONFIRMAÇÃO GENÉRICA — troca o confirm() nativo do navegador por um modal do
+// próprio app. O confirm() nativo, depois de várias caixas seguidas na mesma aba,
+// pode passar a ser bloqueado silenciosamente pelo Chrome (opção "impedir que esta
+// página crie caixas de diálogo adicionais"), fazendo o clique parecer não fazer nada.
+// =====================================================
+var _confirmarAcaoCallback = null;
+function confirmarAcao(mensagem, callback){
+  document.getElementById('confirmar-acao-msg').textContent = mensagem;
+  _confirmarAcaoCallback = callback;
+  abrirModal('modal-confirmar-acao');
+}
+function _confirmarAcaoSim(){
+  var cb = _confirmarAcaoCallback;
+  _confirmarAcaoCallback = null;
+  fecharModal('modal-confirmar-acao');
+  if(cb) cb();
+}
+function _confirmarAcaoNao(){
+  _confirmarAcaoCallback = null;
+  fecharModal('modal-confirmar-acao');
+}
+
 var _cadastroRapido = { codigo:'', status:'', revendedor:'', callback:null };
 
 function abrirCadastroRapido(codigo, status, revendedor, callback){
@@ -2047,41 +2083,41 @@ function entregarMaleta(){
   if(!maletaAtual.itens.length){ showToast('A maleta está vazia','warning'); return; }
   var rev = revendedores.find(function(r){ return String(r.rowId)===String(sel.value); });
   if(!rev) return;
-  if(!confirm('Preparar entrega de "'+maletaAtual.nome+'" ('+maletaAtual.itens.length+' item(s)) para '+rev.Nome+'?\n\nO status mudará para Consignado após a assinatura.')) return;
+  confirmarAcao('Preparar entrega de "'+maletaAtual.nome+'" ('+maletaAtual.itens.length+' item(s)) para '+rev.Nome+'?\n\nO status mudará para Consignado após a assinatura.', function(){
+    var dataEntrega = new Date().toISOString();
 
-  var dataEntrega = new Date().toISOString();
+    // Atribui revendedor mas mantém Em Maleta até assinar
+    var batchItems = [];
+    maletaAtual.itens.forEach(function(item){
+      var idx=inventory.findIndex(function(i){return String(i.rowId)===String(item.rowId);});
+      if(idx!==-1){ inventory[idx].Revendedor=rev.Nome; }
+      batchItems.push({rowId:item.rowId,status:'Em Maleta',revendedor:rev.Nome,dataVenda:''});
+    });
+    if(batchItems.length) syncDrive({action:'batchEditInventario',items:batchItems});
 
-  // Atribui revendedor mas mantém Em Maleta até assinar
-  var batchItems = [];
-  maletaAtual.itens.forEach(function(item){
-    var idx=inventory.findIndex(function(i){return String(i.rowId)===String(item.rowId);});
-    if(idx!==-1){ inventory[idx].Revendedor=rev.Nome; }
-    batchItems.push({rowId:item.rowId,status:'Em Maleta',revendedor:rev.Nome,dataVenda:''});
+    maletaAtual.entregue = false; // só marca entregue após assinar
+    maletaAtual.revendedorId = sel.value;
+    maletaAtual.revendedor = rev.Nome;
+    maletaAtual.dataEntrega = dataEntrega;
+    addLogMaleta(maletaAtual, 'Maleta preparada para '+rev.Nome+' — aguardando assinatura');
+    salvarMaletas();
+
+    _entregaDoc = { id:Date.now(), tipo:'entrega', data:dataEntrega, revendedor:rev.Nome, revendedorId:sel.value,
+      nomeMaleta:maletaAtual.nome,
+      maletaId:maletaAtual.id,  // ID real da maleta para busca confiável
+      itens:maletaAtual.itens.slice(), totalItens:maletaAtual.itens.length,
+      valorTotal:maletaAtual.itens.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0),
+      valorCusto:maletaAtual.itens.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0)
+    };
+    historicEntregas.unshift(_entregaDoc);
+    syncDrive({action:'addEntrega',entrega:_entregaDoc});
+
+    renderListaMaletas();
+    renderDetalhesMaleta();
+    renderDashboard();
+    showToast('Abrindo documento para assinatura...','success');
+    setTimeout(function(){ abrirModalEntrega(_entregaDoc); }, 300);
   });
-  if(batchItems.length) syncDrive({action:'batchEditInventario',items:batchItems});
-
-  maletaAtual.entregue = false; // só marca entregue após assinar
-  maletaAtual.revendedorId = sel.value;
-  maletaAtual.revendedor = rev.Nome;
-  maletaAtual.dataEntrega = dataEntrega;
-  addLogMaleta(maletaAtual, 'Maleta preparada para '+rev.Nome+' — aguardando assinatura');
-  salvarMaletas();
-
-  _entregaDoc = { id:Date.now(), tipo:'entrega', data:dataEntrega, revendedor:rev.Nome, revendedorId:sel.value,
-    nomeMaleta:maletaAtual.nome,
-    maletaId:maletaAtual.id,  // ID real da maleta para busca confiável
-    itens:maletaAtual.itens.slice(), totalItens:maletaAtual.itens.length,
-    valorTotal:maletaAtual.itens.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0),
-    valorCusto:maletaAtual.itens.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0)
-  };
-  historicEntregas.unshift(_entregaDoc);
-  syncDrive({action:'addEntrega',entrega:_entregaDoc});
-
-  renderListaMaletas();
-  renderDetalhesMaleta();
-  renderDashboard();
-  showToast('Abrindo documento para assinatura...','success');
-  setTimeout(function(){ abrirModalEntrega(_entregaDoc); }, 300);
 }
 
 function editarNomeMaleta(){
@@ -2704,43 +2740,44 @@ function limparAssEntrega() {
 function confirmarEntregaMaleta(){
   var doc=_entregaDoc; if(!doc) return;
   if(!doc.itens || !doc.itens.length){ showToast('Este documento não tem itens — nada para confirmar.','warning'); return; }
-  if(!confirm('Confirmar entrega para '+doc.revendedor+'?\nOs itens passarão para Consignado.')) return;
-  var batchItems=[];
-  doc.itens.forEach(function(item){
-    var idx=inventory.findIndex(function(i){return String(i.rowId)===String(item.rowId);});
-    if(idx!==-1){inventory[idx].Status='Consignado';inventory[idx].Revendedor=doc.revendedor;}
-    batchItems.push({rowId:item.rowId,status:'Consignado',revendedor:doc.revendedor,dataVenda:''});
-  });
-  if(batchItems.length) syncDrive({action:'batchEditInventario',items:batchItems});
-  var idx=historicEntregas.findIndex(function(e){return e.id===doc.id;});
-  if(idx!==-1) historicEntregas[idx].confirmada=true;
-  // Busca a maleta pelo ID real (maletaId), depois fallbacks
-  var mal = (doc.maletaId && maletas.find(function(m){ return m.id===doc.maletaId; }))
-    || (maletaAtual && maletas.find(function(m){ return m.id===maletaAtual.id; }))
-    || maletas.find(function(m){ return m.nome===doc.nomeMaleta && !m.entregue; })
-    || maletas.find(function(m){ return doc.revendedor && m.revendedor===doc.revendedor && !m.entregue; });
-  if(mal){
-    mal.entregue = true;
-    if(!mal.revendedor && doc.revendedor) mal.revendedor = doc.revendedor;
-    if(!mal.revendedorId && doc.revendedorId) mal.revendedorId = doc.revendedorId;
-    // Garante que todos os itens da maleta estão Consignado no inventário
-    var nomeRev = mal.revendedor || doc.revendedor || '';
-    (mal.itens||[]).forEach(function(mItem){
-      var invItem = inventory.find(function(i){ return String(i.rowId)===String(mItem.rowId); });
-      if(invItem){
-        invItem.Status = 'Consignado';
-        invItem.Revendedor = nomeRev;
-        syncDrive({action:'editInventario', rowId:invItem.rowId, status:'Consignado', revendedor:nomeRev});
-      }
+  confirmarAcao('Confirmar entrega para '+doc.revendedor+'?\nOs itens passarão para Consignado.', function(){
+    var batchItems=[];
+    doc.itens.forEach(function(item){
+      var idx=inventory.findIndex(function(i){return String(i.rowId)===String(item.rowId);});
+      if(idx!==-1){inventory[idx].Status='Consignado';inventory[idx].Revendedor=doc.revendedor;}
+      batchItems.push({rowId:item.rowId,status:'Consignado',revendedor:doc.revendedor,dataVenda:''});
     });
-    addLogMaleta(mal,'Entrega confirmada — itens passaram para Consignado');
-    salvarMaletas();
-  }
-  // Se for complemento, marca entregue na maleta de complemento correspondente
-  if(doc.complemento){ var mComp=maletas.find(function(m){return m.id===doc.id&&m.complemento;}); if(mComp){mComp.entregue=true;salvarMaletas();} }
-  fecharModal('modal-entrega');
-  renderDashboard();renderMaletasAtivas();renderListaMaletas();
-  showToast('Entrega confirmada! Itens consignados para '+doc.revendedor,'success');
+    if(batchItems.length) syncDrive({action:'batchEditInventario',items:batchItems});
+    var idx=historicEntregas.findIndex(function(e){return e.id===doc.id;});
+    if(idx!==-1) historicEntregas[idx].confirmada=true;
+    // Busca a maleta pelo ID real (maletaId), depois fallbacks
+    var mal = (doc.maletaId && maletas.find(function(m){ return m.id===doc.maletaId; }))
+      || (maletaAtual && maletas.find(function(m){ return m.id===maletaAtual.id; }))
+      || maletas.find(function(m){ return m.nome===doc.nomeMaleta && !m.entregue; })
+      || maletas.find(function(m){ return doc.revendedor && m.revendedor===doc.revendedor && !m.entregue; });
+    if(mal){
+      mal.entregue = true;
+      if(!mal.revendedor && doc.revendedor) mal.revendedor = doc.revendedor;
+      if(!mal.revendedorId && doc.revendedorId) mal.revendedorId = doc.revendedorId;
+      // Garante que todos os itens da maleta estão Consignado no inventário
+      var nomeRev = mal.revendedor || doc.revendedor || '';
+      (mal.itens||[]).forEach(function(mItem){
+        var invItem = inventory.find(function(i){ return String(i.rowId)===String(mItem.rowId); });
+        if(invItem){
+          invItem.Status = 'Consignado';
+          invItem.Revendedor = nomeRev;
+          syncDrive({action:'editInventario', rowId:invItem.rowId, status:'Consignado', revendedor:nomeRev});
+        }
+      });
+      addLogMaleta(mal,'Entrega confirmada — itens passaram para Consignado');
+      salvarMaletas();
+    }
+    // Se for complemento, marca entregue na maleta de complemento correspondente
+    if(doc.complemento){ var mComp=maletas.find(function(m){return m.id===doc.id&&m.complemento;}); if(mComp){mComp.entregue=true;salvarMaletas();} }
+    fecharModal('modal-entrega');
+    renderDashboard();renderMaletasAtivas();renderListaMaletas();
+    showToast('Entrega confirmada! Itens consignados para '+doc.revendedor,'success');
+  });
 }
 
 function downloadEntregaLocal(){
