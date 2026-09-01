@@ -1014,8 +1014,10 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
         <div style="font-size:11px;color:var(--gray-400);margin-bottom:4px;">Assinatura do revendedor — confirmo o recebimento dos itens acima</div>
         <img id="entrega-ass-img" style="display:none;max-height:60px;border-bottom:1px solid var(--gray-300);">
         <div id="entrega-ass-vazio" style="height:40px;border-bottom:1px solid var(--gray-800);"></div>
-        <div id="entrega-ass-nome" style="font-size:11px;color:var(--gray-600);margin-top:4px;font-weight:500;"></div>
-        <div id="entrega-ass-cpf" style="font-size:10px;color:var(--gray-400);margin-top:1px;"></div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px;flex-wrap:wrap;">
+          <div id="entrega-ass-nome" style="font-size:11px;color:var(--gray-600);font-weight:500;"></div>
+          <div id="entrega-ass-cpf" style="font-size:10px;color:var(--gray-400);"></div>
+        </div>
       </div>
     </div>
     <div style="margin-bottom:.75rem;flex-shrink:0;">
@@ -2273,6 +2275,31 @@ function assinarComplemento(id){
   abrirModalEntrega(doc);
 }
 
+// Reabre o documento de entrega de uma maleta já criada (que ainda não foi assinada/salva)
+// para permitir assinar e gerar o recibo. Usado pelo botão "Assinar" em Maletas ativas.
+function assinarMaletaExistente(id){
+  var m = maletas.find(function(x){ return x.id===id; });
+  if(!m){ showToast('Maleta não encontrada','warning'); return; }
+  // m.itens só existe enquanto a maleta está na sessão atual (o Sheets guarda só a contagem em _qtdItens).
+  // Se não tiver os itens em memória, usa como base os itens consignados dessa revendedora no inventário.
+  var itensDoc = (m.itens && m.itens.length) ? m.itens
+    : inventory.filter(function(i){ return i.Revendedor===m.revendedor && i.Status==='Consignado'; });
+  if(!itensDoc.length){ showToast('Não encontrei os itens dessa maleta para gerar o documento.','warning'); return; }
+  var rev = revendedores.find(function(r){ return r.Nome===m.revendedor; });
+  var pct = rev ? (parseFloat(rev.Percentual)||50) : 50;
+  var totalCusto = itensDoc.reduce(function(s,i){ return s+(parseFloat(i.Custo)||0); },0);
+  var doc = {
+    id: m.id, tipo:'entrega', data: m.dataEntrega||m.dataCriacao,
+    revendedor: m.revendedor, revendedorId: m.revendedorId||'', nomeMaleta: m.nome, maletaId: m.id,
+    totalItens: itensDoc.length, totalCusto: totalCusto,
+    percentual: pct, comissao: totalCusto*(pct/100),
+    totalAcertar: totalCusto + totalCusto*(pct/100),
+    itens: itensDoc, complemento: !!m.complemento, confirmada: !!m.entregue, reciboUrl: m.reciboUrl||''
+  };
+  _entregaDoc = doc;
+  abrirModalEntrega(doc);
+}
+
 
 function toggleMaletaCard(id){
   var el=document.getElementById(id);
@@ -2685,7 +2712,7 @@ function abrirModalEntrega(doc) {
   document.getElementById('entrega-doc-valor').textContent = fmt(totalAcertar);
   document.getElementById('entrega-ass-nome').textContent = doc.revendedor;
   var revEnt = revendedores.find(function(r){ return r.Nome === doc.revendedor; });
-  var cpfEnt = revEnt && revEnt.CPF ? 'CPF: ' + revEnt.CPF : '';
+  var cpfEnt = revEnt && revEnt.CPF ? '· CPF: ' + revEnt.CPF : '';
   document.getElementById('entrega-ass-cpf').textContent = cpfEnt;
   document.getElementById('entrega-ass-img').style.display = 'none';
   document.getElementById('entrega-ass-vazio').style.display = 'block';
@@ -2917,18 +2944,27 @@ function baixarEntrega(){
   ctx.textAlign='left'; y+=80;
   ctx.strokeStyle='#cbd5e1'; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(16,y); ctx.lineTo(W-16,y); ctx.stroke(); ctx.setLineDash([]); y+=10;
   ctx.fillStyle='#94a3b8'; ctx.font='10px sans-serif'; ctx.fillText('Assinatura do revendedor — confirmo o recebimento',16,y+12); y+=26;
+  var revDocCpf=revendedores.find(function(r){return r.Nome===doc.revendedor;});
+  var legendaAss=doc.revendedor+(revDocCpf&&revDocCpf.CPF?'  ·  CPF: '+revDocCpf.CPF:'');
   if (_entregaAss) {
     var imgAss=new Image();
     imgAss.onload=function(){
-      var dx=(W-imgAss.width)/2;
-      ctx.drawImage(imgAss,dx,y,imgAss.width,imgAss.height);
+      // A imagem da assinatura sai no tamanho real do canvas (pode vir em alta resolução em telas retina);
+      // redimensiona mantendo a proporção pra caber numa caixa fixa no documento, sem estourar o layout.
+      var maxW=220, maxH=70;
+      var escalaImg=Math.min(maxW/imgAss.width, maxH/imgAss.height, 1);
+      var dw=imgAss.width*escalaImg, dh=imgAss.height*escalaImg;
+      var dx=(W-dw)/2;
+      ctx.drawImage(imgAss,dx,y,dw,dh);
+      ctx.textAlign='center'; ctx.fillStyle='#334155'; ctx.font='11px sans-serif';
+      ctx.fillText(legendaAss,W/2,y+dh+16);
+      ctx.textAlign='left';
       finalDownloadEntrega(c,doc);
     };
     imgAss.src=_entregaAss; return;
   }
   ctx.strokeStyle='#1f2937'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(16,y+50); ctx.lineTo(240,y+50); ctx.stroke();
-  ctx.fillStyle='#334155'; ctx.font='11px sans-serif'; ctx.fillText(doc.revendedor,16,y+64);
-  var revDocCpf=revendedores.find(function(r){return r.Nome===doc.revendedor;});if(revDocCpf&&revDocCpf.CPF){ctx.fillStyle='#94a3b8';ctx.font='10px sans-serif';ctx.fillText('CPF: '+revDocCpf.CPF,16,y+78);}
+  ctx.fillStyle='#334155'; ctx.font='11px sans-serif'; ctx.fillText(legendaAss,16,y+64);
   finalDownloadEntrega(c,doc);
 }
 
