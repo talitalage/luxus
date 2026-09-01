@@ -1037,6 +1037,32 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
   </div>
 </div>
 
+<!-- MODAL CADASTRO RÁPIDO (item bipado que ainda não existe no estoque) -->
+<div id="modal-cadastro-rapido" class="modal-overlay">
+  <div class="modal-content" style="max-width:420px;width:95%;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem;">
+      <h3 style="font-size:1rem;font-weight:700;color:var(--gray-800);"><i class="fas fa-barcode" style="color:var(--primary);margin-right:8px;"></i>Item não cadastrado</h3>
+      <button onclick="fecharModal('modal-cadastro-rapido')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>
+    </div>
+    <p style="font-size:12px;color:var(--gray-500);margin-bottom:1rem;">O código <strong id="cr-codigo-label" style="font-family:monospace;color:var(--primary);"></strong> ainda não existe no estoque. Cadastre agora pra já adicionar direto aqui.</p>
+    <div style="display:flex;flex-direction:column;gap:.75rem;">
+      <div><label style="font-size:13px;font-weight:500;color:var(--gray-700);display:block;margin-bottom:6px;">Descrição</label><input type="text" id="cr-descricao" placeholder="Ex: BR-00890F" onkeydown="if(event.key==='Enter')document.getElementById('cr-custo').focus();"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+        <div><label style="font-size:13px;font-weight:500;color:var(--gray-700);display:block;margin-bottom:6px;">Tipo</label><select id="cr-tipo" onchange="onChangeTipoCadastroRapido()"><option value="Semi Joia">Semi Joia</option><option value="Perfume">Perfume</option></select></div>
+        <div><label style="font-size:13px;font-weight:500;color:var(--gray-700);display:block;margin-bottom:6px;">Categoria</label><select id="cr-categoria"></select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+        <div><label style="font-size:13px;font-weight:500;color:var(--gray-700);display:block;margin-bottom:6px;">Custo (R$)</label><input type="number" id="cr-custo" step="0.01" placeholder="0,00" onkeydown="if(event.key==='Enter')document.getElementById('cr-venda').focus();"></div>
+        <div><label style="font-size:13px;font-weight:500;color:var(--gray-700);display:block;margin-bottom:6px;">Venda (R$)</label><input type="number" id="cr-venda" step="0.01" placeholder="0,00" onkeydown="if(event.key==='Enter')confirmarCadastroRapido();"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:.75rem;margin-top:1.25rem;">
+      <button onclick="fecharModal('modal-cadastro-rapido')" class="btn-secondary" style="flex:1;">Cancelar</button>
+      <button onclick="confirmarCadastroRapido()" class="btn-primary" style="flex:1;"><i class="fas fa-plus" style="margin-right:6px;"></i>Cadastrar e adicionar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL PAGAMENTO PARCELA -->
 <div id="modal-pagamento" class="modal-overlay">
   <div class="modal-content" style="max-width:420px;width:95%;">
@@ -1886,6 +1912,59 @@ function abrirDocumentoMaleta(){
   }
 }
 
+// =====================================================
+// CADASTRO RÁPIDO — item bipado/digitado que ainda não existe no estoque.
+// Usado por adicionarItemMaleta e adicionarItemMaletaAtiva:
+// em vez de só avisar "não encontrado", oferece cadastrar na hora e já
+// entra direto no fluxo que estava em andamento (maleta, entrega ou consignação).
+// =====================================================
+var _cadastroRapido = { codigo:'', status:'', revendedor:'', callback:null };
+
+function abrirCadastroRapido(codigo, status, revendedor, callback){
+  _cadastroRapido = { codigo:codigo, status:status, revendedor:revendedor, callback:callback };
+  document.getElementById('cr-codigo-label').textContent = codigo;
+  document.getElementById('cr-descricao').value = '';
+  document.getElementById('cr-custo').value = '';
+  document.getElementById('cr-venda').value = '';
+  document.getElementById('cr-tipo').value = 'Semi Joia';
+  onChangeTipoCadastroRapido();
+  abrirModal('modal-cadastro-rapido');
+}
+
+function onChangeTipoCadastroRapido(){
+  var tipo = document.getElementById('cr-tipo').value;
+  var sel = document.getElementById('cr-categoria');
+  var opts = '<option value="">Sem categoria</option>';
+  (categorias[tipo]||[]).forEach(function(c){ opts += '<option value="'+c+'">'+c+'</option>'; });
+  sel.innerHTML = opts;
+}
+
+function confirmarCadastroRapido(){
+  var descricao = (document.getElementById('cr-descricao').value||'').trim().toUpperCase();
+  if(!descricao){ showToast('Informe a descrição do item','warning'); return; }
+  var tipo = document.getElementById('cr-tipo').value;
+  var categoria = document.getElementById('cr-categoria').value;
+  var custo = parseFloat(document.getElementById('cr-custo').value)||0;
+  var venda = parseFloat(document.getElementById('cr-venda').value)||0;
+
+  var item = {
+    rowId: Date.now(), Codigo: _cadastroRapido.codigo, Descricao: descricao,
+    Tipo: tipo, Categoria: categoria, Custo: custo, Venda: venda,
+    Status: _cadastroRapido.status, Revendedor: _cadastroRapido.revendedor,
+    Foto: '', Data: new Date().toISOString()
+  };
+  inventory.push(item);
+  syncDrive({action:'addInventario', codigo:item.Codigo, descricao:item.Descricao, tipo:item.Tipo,
+    categoria:item.Categoria, custo:item.Custo, venda:item.Venda, status:item.Status,
+    revendedor:item.Revendedor, foto:''});
+  atualizarCache();
+  fecharModal('modal-cadastro-rapido');
+  renderDashboard();
+  var callback = _cadastroRapido.callback;
+  _cadastroRapido = { codigo:'', status:'', revendedor:'', callback:null };
+  if(callback) callback(item);
+}
+
 function adicionarItemMaleta(){
   if(!maletaAtual){ showToast('Selecione uma maleta primeiro','warning'); return; }
   var codigo = (document.getElementById('maleta-codigo').value||'').trim().toUpperCase();
@@ -1900,8 +1979,6 @@ function adicionarItemMaleta(){
       && statusOk
       && !maletaAtual.itens.find(function(x){ return String(x.rowId)===String(i.rowId); });
   });
-  if(!encontrados.length){ showToast('Código '+codigo+' não encontrado no estoque — cadastre o item em Inventário antes de adicionar à maleta.','warning'); return; }
-
   function addItem(item){
     maletaAtual.itens.push(item);
     var novoStatus = maletaAtual.entregue ? 'Consignado' : 'Em Maleta';
@@ -1921,6 +1998,14 @@ function adicionarItemMaleta(){
     renderDetalhesMaleta();
     document.getElementById('maleta-codigo').focus();
     showToast('✓ '+item.Codigo,'success');
+  }
+
+  if(!encontrados.length){
+    // Item ainda não cadastrado — oferece cadastrar na hora e já adicionar direto na maleta
+    var novoStatus = maletaAtual.entregue ? 'Consignado' : 'Em Maleta';
+    var novoRev = maletaAtual.entregue ? maletaAtual.revendedor : '';
+    abrirCadastroRapido(codigo, novoStatus, novoRev, addItem);
+    return;
   }
 
   selecionarItemDuplicado(encontrados, addItem);
@@ -2091,14 +2176,6 @@ function excluirMaletaById(id){
   showToast('Maleta excluída','success');
 }
 function excluirMaletaAtual(){if(maletaAtual)excluirMaletaById(maletaAtual.id);}
-
-
-// Compat: funções antigas apontam para novo sistema
-function adicionarEntrega(){ adicionarItemMaleta(); }
-function confirmarEntrega(){ entregarMaleta(); }
-function salvarRascunhoEntrega(){ salvarMaleta(); }
-function onChangeEntregaRevendedor(){}
-function limparEntrega(){ if(maletaAtual) maletaAtual.itens=[]; renderDetalhesMaleta(); }
 
 function sincronizarMaletasPendentes(){
   var itensMaleta=inventory.filter(function(i){return i.Status==='Em Maleta'&&!i.Revendedor;});
@@ -2471,100 +2548,35 @@ function adicionarItemMaletaAtiva(nomeRev){
   var encontrado = inventory.find(function(i){
     return (i.Codigo||'').toUpperCase()===codigo && i.Status==='Em Estoque';
   });
-  if(!encontrado){ showToast('Item não encontrado em estoque: '+codigo,'warning'); return; }
-  encontrado.Status = 'Consignado';
-  encontrado.Revendedor = nomeRev;
-  syncDrive({action:'editInventario',rowId:encontrado.rowId,status:'Consignado',revendedor:nomeRev});
 
-  // Adiciona também na maleta correspondente para persistir
-  var maletaRef = maletas.find(function(m){ return m.revendedor===nomeRev; });
-  if(maletaRef){
-    if(!maletaRef.itens) maletaRef.itens = [];
-    if(!maletaRef.itens.find(function(x){ return String(x.rowId)===String(encontrado.rowId); })){
-      maletaRef.itens.push(encontrado);
+  function addItemAtiva(item){
+    item.Status = 'Consignado';
+    item.Revendedor = nomeRev;
+    syncDrive({action:'editInventario',rowId:item.rowId,status:'Consignado',revendedor:nomeRev});
+
+    // Adiciona também na maleta correspondente para persistir
+    var maletaRef = maletas.find(function(m){ return m.revendedor===nomeRev; });
+    if(maletaRef){
+      if(!maletaRef.itens) maletaRef.itens = [];
+      if(!maletaRef.itens.find(function(x){ return String(x.rowId)===String(item.rowId); })){
+        maletaRef.itens.push(item);
+      }
+      salvarMaletas();
     }
-    salvarMaletas();
+
+    document.getElementById('input-add-maleta-ativa').value = '';
+    if(window._renderItensModalAtiva) window._renderItensModalAtiva();
+    renderMaletasAtivas();
+    renderDashboard();
+    showToast('✓ '+item.Codigo+' adicionado à maleta de '+nomeRev,'success');
   }
 
-  document.getElementById('input-add-maleta-ativa').value = '';
-  if(window._renderItensModalAtiva) window._renderItensModalAtiva();
-  renderMaletasAtivas();
-  renderDashboard();
-  showToast('✓ '+encontrado.Codigo+' adicionado à maleta de '+nomeRev,'success');
-}
-
-function abrirDocumentoAtivo(nomeRev){
-  // Sempre busca itens atualizados do inventário
-  var maletaRef = maletas.find(function(m){ return m.revendedor===nomeRev; });
-  // Usa itens do inventário atual (fonte da verdade), não da maleta em cache
-  var itens = inventory.filter(function(i){ return (i.Status==='Consignado'||i.Status==='Em Maleta') && i.Revendedor===nomeRev; });
-  if(!itens.length && maletaRef) itens = maletaRef.itens;
-  if(!itens.length){ showToast('Nenhum item para '+nomeRev,'warning'); return; }
-
-  var dataDoc = maletaRef && maletaRef.dataCriacao ? maletaRef.dataCriacao : new Date().toISOString();
-  // Sempre cria entrega com itens frescos
-  var entrega = { id: Date.now(), tipo:'entrega', data: dataDoc,
-    revendedor: nomeRev, revendedorId:'',
-    itens: itens.slice(), totalItens: itens.length,
-    valorTotal: itens.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0),
-    valorCusto: itens.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0)
-  };
-  _entregaDoc = entrega;
-  abrirModalEntrega(entrega);
-}
-
-function salvarRascunhoEntrega() {
-  var revSel = document.getElementById('entrega-revendedor');
-  if (!revSel.value) { showToast('Selecione o revendedor primeiro', 'warning'); return; }
-  if (!itensEntrega.length) { showToast('Adicione ao menos um item', 'warning'); return; }
-  var key = 'luxus_rascunho_entrega_' + revSel.value;
-  localStorage.setItem(key, JSON.stringify(itensEntrega.map(function(i){ return i.rowId; })));
-  showToast('Rascunho salvo — ' + itensEntrega.length + ' item(s)', 'success');
-}
-
-function onChangeEntregaRevendedor() {
-  var sel = document.getElementById('entrega-revendedor');
-  var revId = sel.value;
-  itensEntrega = [];
-
-  // Restaura rascunho salvo se existir
-  if (revId) {
-    var key = 'luxus_rascunho_entrega_' + revId;
-    var saved = localStorage.getItem(key);
-    if (saved) {
-      try {
-        var rowIds = JSON.parse(saved);
-        rowIds.forEach(function(rowId) {
-          var item = inventory.find(function(i){ return i.rowId === rowId; });
-          if (item && item.Status === 'Em Estoque') itensEntrega.push(item);
-        });
-        if (itensEntrega.length) showToast('Rascunho restaurado — ' + itensEntrega.length + ' item(s)', 'info');
-      } catch(e) {}
-    }
+  if(!encontrado){
+    // Item ainda não cadastrado — oferece cadastrar na hora e já consignar direto pra essa revendedora
+    abrirCadastroRapido(codigo, 'Consignado', nomeRev, addItemAtiva);
+    return;
   }
-
-  renderListaEntrega();
-  var box = document.getElementById('entrega-link-box');
-  var linkEl = document.getElementById('entrega-link');
-  if (revId && box && linkEl) {
-    var _revLink = revendedores.find(function(r){return r.rowId===revId||String(r.rowId)===String(revId);});
-    var _cpfLink = _revLink ? (_revLink.CPF||'').replace(/\D/g,'') : '';
-    var _partesLink = _revLink ? _revLink.Nome.split(' ') : [];
-    var _iniciaisLink = _revLink ? (_partesLink[0][0]+(_partesLink[_partesLink.length-1][0]||'')).toUpperCase() : '';
-    var url = _cpfLink.length>=6
-      ? 'https://talitalage.github.io/luxus/revendedor.html?token='+_iniciaisLink+_cpfLink.slice(0,6)
-      : 'https://talitalage.github.io/luxus/revendedor.html?token='+_iniciaisLink;
-    linkEl.value = url;
-    box.style.display = 'block';
-  } else if (box) {
-    box.style.display = 'none';
-  }
-}
-
-function copiarLink() {
-  var el = document.getElementById('entrega-link');
-  if (!el) return;
-  navigator.clipboard.writeText(el.value).then(function() { showToast('Link copiado!', 'success'); });
+  addItemAtiva(encontrado);
 }
 
 // Helper: quando há múltiplos itens com mesmo código, abre modal de seleção
@@ -2572,125 +2584,6 @@ function selecionarItemDuplicado(itens, callback) {
   // Seleciona automaticamente o primeiro — os demais ficam disponíveis para bipes futuros
   if (itens.length > 0) callback(itens[0]);
 }
-
-function adicionarEntrega() {
-  var codigo = (document.getElementById('entrega-codigo').value || '').trim().toUpperCase();
-  if (!codigo) return;
-
-  var encontrados = inventory.filter(function(i) {
-    return (i.Codigo || '').toUpperCase() === codigo
-      && i.Status === 'Em Estoque'
-      && !itensEntrega.find(function(x) { return x.rowId === i.rowId; });
-  });
-
-  if (!encontrados.length) { showToast('Nenhum item em estoque com código: ' + codigo, 'warning'); document.getElementById('entrega-codigo').value = ''; return; }
-
-  function addItem(item) {
-    itensEntrega.push(item);
-    document.getElementById('entrega-codigo').value = '';
-    document.getElementById('entrega-codigo').focus();
-    renderListaEntrega();
-  }
-
-  if (encontrados.length === 1) { addItem(encontrados[0]); }
-  else { selecionarItemDuplicado(encontrados, addItem); document.getElementById('entrega-codigo').value = ''; }
-}
-
-function renderListaEntrega() {
-  var lista = document.getElementById('lista-entrega');
-  var empty = document.getElementById('lista-entrega-empty');
-  var count = document.getElementById('entrega-count');
-  var resumo = document.getElementById('entrega-resumo');
-  var valorTotal = document.getElementById('entrega-valor-total');
-  count.textContent = itensEntrega.length;
-  if (itensEntrega.length === 0) { lista.innerHTML = ''; empty.style.display = 'block'; resumo.style.display = 'none'; return; }
-  empty.style.display = 'none';
-  resumo.style.display = 'block';
-  var total = itensEntrega.reduce(function(s, i) { return s + (parseFloat(i.Custo) || 0); }, 0);
-  valorTotal.textContent = 'R$ ' + total.toLocaleString('pt-BR', {minimumFractionDigits:2});
-
-  // Agrupa por categoria
-  var grupos = {}, ordem = [];
-  itensEntrega.forEach(function(item, idx){
-    var cat = item.Categoria || 'Outros';
-    if(!grupos[cat]){ grupos[cat]=[]; ordem.push(cat); }
-    grupos[cat].push({item:item, idx:idx});
-  });
-  ordem.sort();
-
-  var html = '';
-  ordem.forEach(function(cat){
-    var subtotal = grupos[cat].reduce(function(s,x){ return s+(parseFloat(x.item.Custo)||0); },0);
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px;background:var(--primary);border-radius:5px;margin-top:6px;margin-bottom:2px;">'
-      +'<span style="font-size:10px;font-weight:700;color:white;text-transform:uppercase;letter-spacing:.05em;">'+cat+' ('+grupos[cat].length+')</span>'
-      +'<span style="font-size:10px;font-weight:600;color:rgba(255,255,255,.8);">R$ '+subtotal.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span>'
-      +'</div>';
-    grupos[cat].forEach(function(x){
-      var item=x.item, idx=x.idx;
-      html += '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;margin-bottom:3px;">'
-        + '<span style="font-family:monospace;font-size:11px;color:var(--primary);font-weight:600;">' + item.Codigo + '</span>'
-        + '<span style="flex:1;font-size:12px;color:var(--gray-700);">' + (item.Descricao || '—') + '</span>'
-        + '<span style="font-size:11px;color:#10b981;font-weight:600;">R$' + (parseFloat(item.Venda)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span>'
-        + '<button onclick="removerEntrega(' + idx + ')" style="background:none;border:none;cursor:pointer;color:var(--gray-300);" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'var(--gray-300)\'"><i class="fas fa-times"></i></button>'
-        + '</div>';
-    });
-  });
-  lista.innerHTML = html;
-}
-
-function removerEntrega(idx) { itensEntrega.splice(idx, 1); renderListaEntrega(); }
-function limparEntrega() { itensEntrega = []; renderListaEntrega(); }
-
-function confirmarEntrega() {
-  var revSel = document.getElementById('entrega-revendedor');
-  var revId = revSel.value;
-  var revNome = revId ? revSel.options[revSel.selectedIndex].text : '';
-  if (!itensEntrega.length) { showToast('Adicione ao menos um item', 'warning'); return; }
-
-  var dataEntrega = new Date().toISOString();
-
-  // Sem revendedor — salva como maleta pendente
-  if (!revId) {
-    if (!confirm('Salvar maleta sem revendedor? Os itens ficarão com status "Em Maleta" até você atrelar um revendedor.')) return;
-    itensEntrega.forEach(function(item) {
-      var idx = inventory.findIndex(function(i) { return i.rowId === item.rowId; });
-      if (idx !== -1) { inventory[idx].Status = 'Em Maleta'; inventory[idx].Revendedor = ''; }
-      syncDrive({ action: 'editInventario', rowId: item.rowId, status: 'Em Maleta', revendedor: '' });
-    });
-    _entregaDoc = { id: Date.now(), tipo: 'maleta-pendente', data: dataEntrega, revendedor: '(sem revendedor)', revendedorId: '',
-      itens: itensEntrega.slice(), totalItens: itensEntrega.length,
-      valorTotal: itensEntrega.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0),
-      valorCusto: itensEntrega.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0)
-    };
-    historicEntregas.unshift(_entregaDoc);
-    syncDrive({ action: 'addEntrega', entrega: _entregaDoc });
-    itensEntrega = []; renderListaEntrega(); renderDashboard(); renderUltimasEntregas();
-    showToast('Maleta salva — atrelhe um revendedor depois', 'success');
-    return;
-  }
-
-  if (!confirm('Confirmar entrega de ' + itensEntrega.length + ' item(s) para ' + revNome + '?')) return;
-
-  itensEntrega.forEach(function(item) {
-    var idx = inventory.findIndex(function(i) { return i.rowId === item.rowId; });
-    if (idx !== -1) { inventory[idx].Status = 'Consignado'; inventory[idx].Revendedor = revNome; }
-    syncDrive({ action: 'editInventario', rowId: item.rowId, status: 'Consignado', revendedor: revNome });
-  });
-
-  _entregaDoc = { id: Date.now(), tipo: 'entrega', data: dataEntrega, revendedor: revNome, revendedorId: revId,
-    itens: itensEntrega.slice(), totalItens: itensEntrega.length,
-    valorTotal: itensEntrega.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0),
-    valorCusto: itensEntrega.reduce(function(s,i){return s+(parseFloat(i.Custo)||0);},0)
-  };
-  historicEntregas.unshift(_entregaDoc);
-  syncDrive({ action: 'addEntrega', entrega: _entregaDoc });
-  abrirModalEntrega(_entregaDoc);
-  itensEntrega = []; renderListaEntrega();
-  localStorage.removeItem('luxus_rascunho_entrega_' + revId);
-  renderDashboard(); renderUltimasEntregas();
-  showToast('Entrega confirmada!', 'success');
-}
-
 
 function abrirModalEntrega(doc) {
   document.getElementById('entrega-doc-titulo').textContent = localStorage.getItem('luxus_titulo') || 'LUXUS';
