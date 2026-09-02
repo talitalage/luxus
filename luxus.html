@@ -2650,11 +2650,11 @@ function abrirModalEntrega(doc) {
   document.getElementById('entrega-ass-vazio').style.display = 'block';
   var itensEl = document.getElementById('entrega-doc-itens');
   itensEl.innerHTML = doc.itens.map(function(i) {
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 6px;background:white;border:1px solid var(--gray-200);border-radius:4px;">'
-      + '<span style="font-family:monospace;font-size:11px;color:var(--primary);margin-right:8px;flex-shrink:0;">' + i.Codigo + '</span>'
-      + '<span style="flex:1;font-size:12px;color:var(--gray-700);">' + (i.Descricao||'—') + '</span>'
-      + '<span style="font-size:11px;color:var(--gray-500);margin-right:8px;">' + (i.Tipo||'') + (i.Categoria?' · '+i.Categoria:'') + '</span>'
-      + '<span style="font-size:12px;font-weight:600;color:var(--gray-700);white-space:nowrap;">' + fmt(parseFloat(i.Custo)||0) + '</span>'
+    return '<div style="display:flex;align-items:center;gap:14px;padding:4px 6px;background:white;border:1px solid var(--gray-200);border-radius:4px;">'
+      + '<span style="font-family:monospace;font-size:11px;color:var(--primary);flex:0 0 100px;">' + i.Codigo + '</span>'
+      + '<span style="flex:1;font-size:12px;color:var(--gray-700);min-width:0;">' + (i.Descricao||'—') + '</span>'
+      + '<span style="font-size:11px;color:var(--gray-500);flex:0 0 auto;">' + (i.Tipo||'') + (i.Categoria?' · '+i.Categoria:'') + '</span>'
+      + '<span style="font-size:12px;font-weight:600;color:var(--gray-700);white-space:nowrap;flex:0 0 auto;">' + fmt(parseFloat(i.Custo)||0) + '</span>'
       + '</div>';
   }).join('');
     // Pré-carrega assinatura armazenada se existir
@@ -2847,14 +2847,19 @@ function baixarEntrega(){
     ctx.textAlign='left'; y+=22;
 
     itens.forEach(function(item){
+      // 3 colunas bem separadas: Código | Descrição | Custo
       ctx.fillStyle='#fff'; ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=1;
       roundRect(ctx,16,y,W-32,22,4); ctx.fill(); ctx.stroke();
-      ctx.save(); ctx.rect(18,y,72,22); ctx.clip();
+      ctx.strokeStyle='#f1f5f9'; ctx.beginPath();
+      ctx.moveTo(150,y+3); ctx.lineTo(150,y+19);
+      ctx.moveTo(470,y+3); ctx.lineTo(470,y+19);
+      ctx.stroke();
+      ctx.save(); ctx.rect(20,y,122,22); ctx.clip();
       ctx.fillStyle='#1e40af'; ctx.font='bold 10px sans-serif';
       ctx.fillText(item.Codigo||'—',24,y+15); ctx.restore();
-      ctx.save(); ctx.rect(96,y,360,22); ctx.clip();
+      ctx.save(); ctx.rect(162,y,296,22); ctx.clip();
       ctx.fillStyle='#334155'; ctx.font='12px sans-serif';
-      ctx.fillText(item.Descricao||'—',98,y+15); ctx.restore();
+      ctx.fillText(item.Descricao||'—',166,y+15); ctx.restore();
       ctx.fillStyle='#475569'; ctx.font='bold 11px sans-serif'; ctx.textAlign='right';
       ctx.fillText(fmt(parseFloat(item.Custo)||0),W-20,y+15);
       ctx.textAlign='left'; y+=24;
