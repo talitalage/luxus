@@ -1047,14 +1047,14 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
     </div>
     <p style="font-size:12px;color:var(--gray-500);margin-bottom:1rem;">O código <strong id="cr-codigo-label" style="font-family:monospace;color:var(--primary);"></strong> ainda não existe no estoque. Cadastre agora pra já adicionar direto aqui.</p>
     <div style="display:flex;flex-direction:column;gap:.75rem;">
-      <div><label style="font-size:13px;font-weight:500;color:var(--gray-700);display:block;margin-bottom:6px;">Descrição</label><input type="text" id="cr-descricao" placeholder="Ex: BR-00890F" onkeydown="if(event.key==='Enter')document.getElementById('cr-custo').focus();"></div>
+      <div><label style="font-size:13px;font-weight:500;color:var(--gray-700);display:block;margin-bottom:6px;">Descrição</label><input type="text" id="cr-descricao" placeholder="Ex: BR-00890F" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')document.getElementById('cr-custo').focus();"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
         <div><label style="font-size:13px;font-weight:500;color:var(--gray-700);display:block;margin-bottom:6px;">Tipo</label><select id="cr-tipo" onchange="onChangeTipoCadastroRapido()"><option value="Semi Joia">Semi Joia</option><option value="Perfume">Perfume</option></select></div>
         <div><label style="font-size:13px;font-weight:500;color:var(--gray-700);display:block;margin-bottom:6px;">Categoria</label><select id="cr-categoria"></select></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
-        <div><label style="font-size:13px;font-weight:500;color:var(--gray-700);display:block;margin-bottom:6px;">Custo (R$)</label><input type="number" id="cr-custo" step="0.01" placeholder="0,00" onkeydown="if(event.key==='Enter')document.getElementById('cr-venda').focus();"></div>
-        <div><label style="font-size:13px;font-weight:500;color:var(--gray-700);display:block;margin-bottom:6px;">Venda (R$)</label><input type="number" id="cr-venda" step="0.01" placeholder="0,00" onkeydown="if(event.key==='Enter')confirmarCadastroRapido();"></div>
+        <div><label style="font-size:13px;font-weight:500;color:var(--gray-700);display:block;margin-bottom:6px;">Custo (R$)</label><input type="number" id="cr-custo" step="0.01" placeholder="0,00" onblur="var c=parseFloat(this.value)||0;var v=document.getElementById('cr-venda');if(c>0&&!v.value)v.value=(c*2).toFixed(2);" onkeydown="if(event.key==='Enter')document.getElementById('cr-venda').focus();"></div>
+        <div><label style="font-size:13px;font-weight:500;color:var(--gray-700);display:block;margin-bottom:6px;">Venda (R$) <span style="font-size:10px;color:var(--gray-400);font-weight:400;">2× custo</span></label><input type="number" id="cr-venda" step="0.01" placeholder="0,00" onkeydown="if(event.key==='Enter')confirmarCadastroRapido();"></div>
       </div>
     </div>
     <div style="display:flex;gap:.75rem;margin-top:1.25rem;">
@@ -2595,6 +2595,14 @@ function _abrirEditarMaletaAtiva(nomeRev, maletaParaRenomear){
   abrirModal(mid);
   renderItensModal();
   window._renderItensModalAtiva = renderItensModal;
+  // abrirModal() foca automaticamente o 1º campo do modal — quando tem o bloco de
+  // renomear, esse 1º campo é o nome, não o campo de bipar item. Como bipar é a ação
+  // mais comum aqui, força o foco pro campo de código depois, senão o código escaneado
+  // cai dentro do campo de nome (e "some" sem adicionar nada à lista).
+  setTimeout(function(){
+    var addInput = document.getElementById('input-add-maleta-ativa');
+    if(addInput) addInput.focus();
+  }, 220);
 }
 
 function removerItemMaletaAtiva(rowId, nomeRev){
@@ -2953,7 +2961,7 @@ function baixarEntrega(){
     imgAss.onload=function(){
       // A imagem da assinatura sai no tamanho real do canvas (pode vir em alta resolução em telas retina);
       // redimensiona mantendo a proporção pra caber numa caixa fixa no documento, sem estourar o layout.
-      var maxW=220, maxH=70;
+      var maxW=280, maxH=92;
       var escalaImg=Math.min(maxW/imgAss.width, maxH/imgAss.height, 1);
       var dw=imgAss.width*escalaImg, dh=imgAss.height*escalaImg;
       var dx=(W-dw)/2;
