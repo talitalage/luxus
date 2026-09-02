@@ -1032,6 +1032,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
       <button id="btn-salvar-entrega-drive" onclick="baixarEntrega()" class="btn-secondary" style="padding:.625rem;font-size:12px;"><i class="fas fa-cloud-upload-alt" style="margin-right:5px;"></i>Salvar PDF</button>
       <button onclick="downloadEntregaLocal()" class="btn-secondary" style="padding:.625rem;font-size:12px;"><i class="fas fa-download" style="margin-right:5px;"></i>Baixar PDF</button>
       <button onclick="compartilharEntregaWhatsApp()" class="btn-secondary" style="padding:.625rem;font-size:12px;color:#25D366;border-color:#25D366;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background=''"><i class="fab fa-whatsapp" style="margin-right:5px;"></i>WhatsApp</button>
+      <button id="btn-refazer-assinatura" onclick="refazerAssinaturaEntrega()" class="btn-secondary" style="padding:.625rem;font-size:12px;grid-column:1/-1;display:none;color:#b45309;border-color:#fde047;"><i class="fas fa-redo" style="margin-right:5px;"></i>Voltar recibo e assinar novamente</button>
       <button id="btn-confirmar-entrega" onclick="confirmarEntregaMaleta()" class="btn-primary" style="padding:.625rem;font-size:12px;grid-column:1/-1;"><i class="fas fa-check" style="margin-right:5px;"></i>Confirmar entrega</button>
     </div>
   </div>
@@ -2701,6 +2702,9 @@ function abrirModalEntrega(doc) {
         if(canvasWrap){canvasWrap.style.pointerEvents='';canvasWrap.style.opacity='1';}
       }
     }
+    // Botão Assinar novamente (só aparece se já tem PDF assinado)
+    var btnRefazer = document.getElementById('btn-refazer-assinatura');
+    if(btnRefazer){ btnRefazer.style.display = doc.reciboUrl ? '' : 'none'; }
     // Botão Confirmar entrega
     var btnConf = document.getElementById('btn-confirmar-entrega');
     if(btnConf){
@@ -2777,6 +2781,27 @@ function confirmarEntregaMaleta(){
     fecharModal('modal-entrega');
     renderDashboard();renderMaletasAtivas();renderListaMaletas();
     showToast('Entrega confirmada! Itens consignados para '+doc.revendedor,'success');
+  });
+}
+
+function refazerAssinaturaEntrega(){
+  var doc = _entregaDoc;
+  if(!doc){ showToast('Nenhum documento aberto','warning'); return; }
+  if(!doc.reciboUrl){ showToast('Este documento ainda não foi assinado.','warning'); return; }
+  confirmarAcao('Isso vai descartar o PDF assinado atual e liberar a assinatura para refazer.\nDeseja continuar?', function(){
+    doc.reciboUrl = '';
+    var idx = historicEntregas.findIndex(function(e){ return e.id===doc.id; });
+    if(idx!==-1){ historicEntregas[idx].reciboUrl=''; historicEntregas[idx].assinado=false; }
+    var mal = (doc.maletaId && maletas.find(function(m){ return m.id===doc.maletaId; }))
+      || (maletaAtual && maletas.find(function(m){ return m.id===maletaAtual.id; }))
+      || maletas.find(function(m){ return m.nome===doc.nomeMaleta; })
+      || maletas.find(function(m){ return doc.revendedor && m.revendedor===doc.revendedor; });
+    if(mal){ mal.reciboUrl=''; salvarMaletas(); }
+    limparAssEntrega();
+    _entregaAss = null;
+    renderMaletasAtivas(); renderListaMaletas(); renderUltimasEntregas();
+    showToast('Recibo liberado — pode assinar novamente.','success');
+    abrirModalEntrega(doc);
   });
 }
 
@@ -2914,8 +2939,12 @@ function finalDownloadEntrega(c,doc) {
     window._downloadLocal=false;
     try {
       var jsPDF = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
-      var pdf = new jsPDF({ orientation:'portrait', unit:'px', format:[c.width/1.5, c.height/1.5] });
-      pdf.addImage(dataUrl,'JPEG',0,0,c.width/1.5,c.height/1.5);
+      // Orientação precisa bater com o formato (largura x altura) informado — se width>height mas
+      // pedimos 'portrait', o jsPDF troca width/height sozinho pra forçar retrato, e a imagem
+      // (desenhada nas dimensões originais) fica mais larga que a página e sai cortada.
+      var fmtPdf = [c.width/1.5, c.height/1.5];
+      var pdf = new jsPDF({ orientation: fmtPdf[0]>fmtPdf[1]?'landscape':'portrait', unit:'px', format: fmtPdf });
+      pdf.addImage(dataUrl,'JPEG',0,0,fmtPdf[0],fmtPdf[1]);
       var nome = 'entrega_'+doc.revendedor.replace(/\s+/g,'_')+'_'+new Date(doc.data).toLocaleDateString('pt-BR').replace(/\//g,'')+'.pdf';
       pdf.save(nome);
       showToast('PDF baixado!','success');
@@ -2932,8 +2961,10 @@ function finalDownloadEntrega(c,doc) {
   var nome=nomeArquivo('entrega',doc.data,doc.revendedor);
   try {
     var jsPDF = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
-    var pdf = new jsPDF({ orientation:'portrait', unit:'px', format:[c.width/1.5, c.height/1.5] });
-    pdf.addImage(dataUrl,'JPEG',0,0,c.width/1.5,c.height/1.5);
+    // Mesmo ajuste: orientação dinâmica pra não deixar o jsPDF trocar width/height e cortar a imagem.
+    var fmtPdf = [c.width/1.5, c.height/1.5];
+    var pdf = new jsPDF({ orientation: fmtPdf[0]>fmtPdf[1]?'landscape':'portrait', unit:'px', format: fmtPdf });
+    pdf.addImage(dataUrl,'JPEG',0,0,fmtPdf[0],fmtPdf[1]);
     var pdfBase64 = pdf.output('datauristring').replace(/^data:[^,]+,/,'');
     var uploadId = Date.now().toString();
     var CHUNK = 80000; // 80KB
