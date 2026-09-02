@@ -307,7 +307,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
           </div>
           <div style="display:flex;gap:6px;align-items:center;">
             <span id="maleta-status-badge"></span>
-            <button onclick="editarNomeMaleta()" class="btn-secondary" style="padding:5px 10px;font-size:12px;" title="Renomear"><i class="fas fa-pen"></i></button>
+            <button onclick="if(maletaAtual)editarNomeMaleta(maletaAtual.id)" class="btn-secondary" style="padding:5px 10px;font-size:12px;" title="Renomear"><i class="fas fa-pen"></i></button>
             <button onclick="excluirMaletaAtual()" class="btn-secondary" style="padding:5px 10px;font-size:12px;color:#dc2626;border-color:#fca5a5;" title="Excluir"><i class="fas fa-trash"></i></button>
             <button onclick="document.getElementById('maleta-detalhe').style.display='none';" class="btn-secondary" style="padding:5px 10px;font-size:12px;"><i class="fas fa-times"></i></button>
           </div>
@@ -1918,12 +1918,9 @@ function abrirDocumentoMaleta(){
       reciboUrl: m.reciboUrl||null, assinado: !!m.reciboUrl
     };
   }
-  if(doc.reciboUrl){
-    window.open(doc.reciboUrl,'_blank');
-  } else {
-    _entregaDoc = doc;
-    abrirModalEntrega(doc);
-  }
+  if(!doc.maletaId) doc.maletaId = m.id;
+  _entregaDoc = doc;
+  abrirModalEntrega(doc);
 }
 
 // =====================================================
@@ -2192,10 +2189,10 @@ function confirmarSegurancaEdicao(){
 function editarNomeMaletaById(id){
   var m=maletas.find(function(x){return x.id===id;});if(!m)return;
   if(m.reciboUrl){
-    verificarSegurancaEdicao(function(){ maletaAtual=m; editarNomeMaleta(); });
+    verificarSegurancaEdicao(function(){ maletaAtual=m; editarNomeMaleta(id); });
     return;
   }
-  maletaAtual=m;editarNomeMaleta();
+  maletaAtual=m;editarNomeMaleta(id);
 }
 function excluirMaletaById(id){
   var m=maletas.find(function(x){return x.id===id;});if(!m)return;
@@ -2338,7 +2335,7 @@ function renderMaletasAtivas(){
         +'<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;">'
         +docBtn
         +compBtn
-        +'<button onclick="editarNomeMaleta('+mId+')" style="background:none;border:1px solid #93c5fd;border-radius:6px;color:#2563eb;cursor:pointer;padding:4px 8px;font-size:11px;" title="Editar"><i class="fas fa-pen"></i></button>'
+        +'<button onclick="abrirEditarMaleta('+mId+')" style="background:none;border:1px solid #93c5fd;border-radius:6px;color:#2563eb;cursor:pointer;padding:4px 8px;font-size:11px;" title="Editar"><i class="fas fa-pen"></i></button>'
         +'<button onclick="excluirMaletaById('+mId+')" style="background:none;border:1px solid #fca5a5;border-radius:6px;color:#dc2626;cursor:pointer;padding:4px 8px;font-size:11px;" title="Excluir"><i class="fas fa-trash"></i></button>'
         +'</div>'
         +'</div>';
@@ -2356,6 +2353,7 @@ function renderMaletasAtivas(){
       +'</div>'
       // Corpo colapsável
       +'<div id="'+collapseId+'" style="display:none;margin-top:.75rem;">'
+      +'<button data-rev="'+encodeURIComponent(nome)+'" onclick="editarMaletaAtivaById(this)" class="btn-secondary" style="width:100%;padding:7px;font-size:12px;color:#2563eb;border-color:#93c5fd;margin-bottom:.75rem;"><i class="fas fa-pen" style="margin-right:6px;"></i>Editar itens</button>'
       +maletasHtml
       +linkBtn
       +'</div>'
@@ -2382,11 +2380,11 @@ function assinarComplemento(id){
   var totalCusto = m.itens.reduce(function(s,i){ return s+(parseFloat(i.Custo)||0); },0);
   var doc = {
     id: m.id, tipo:'entrega', data: m.dataCriacao,
-    revendedor: m.revendedor, nomeMaleta: m.nome,
+    revendedor: m.revendedor, nomeMaleta: m.nome, maletaId: m.id,
     totalItens: m.itens.length, totalCusto: totalCusto,
     percentual: pct, comissao: totalCusto*(pct/100),
     totalAcertar: totalCusto + totalCusto*(pct/100),
-    itens: m.itens, complemento: true
+    itens: m.itens, complemento: true, reciboUrl: m.reciboUrl||''
   };
   _entregaDoc = doc;
   abrirModalEntrega(doc);
@@ -2495,6 +2493,35 @@ function excluirMaletaAtiva(nomeRev){
   showToast('Maleta de '+nomeRev+' excluída — '+itens.length+' item(s) devolvidos','success');
 }
 
+function editarMaletaAtivaById(btn){
+  var nomeRev = decodeURIComponent(btn.getAttribute('data-rev'));
+  editarMaletaAtiva(nomeRev);
+}
+
+// Pencil da maleta em "Maletas ativas": abre um único modal que permite
+// renomear ESSA maleta e também adicionar/remover itens (do revendedor,
+// já que o Sheets não guarda vínculo item↔maleta individual).
+function abrirEditarMaleta(id){
+  var m = maletas.find(function(x){ return x.id===id; });
+  if(!m) return;
+  if(m.reciboUrl){
+    verificarSegurancaEdicao(function(){ _abrirEditarMaletaAtiva(m.revendedor, m); });
+    return;
+  }
+  _abrirEditarMaletaAtiva(m.revendedor, m);
+}
+
+function _salvarNomeMaletaAtivaModal(id){
+  var m = maletas.find(function(x){ return x.id===id; });
+  if(!m) return;
+  var novoNome = (document.getElementById('editmal-nome').value||'').trim();
+  if(!novoNome){ showToast('Nome não pode ficar vazio','warning'); return; }
+  m.nome = novoNome;
+  salvarMaletas();
+  renderMaletasAtivas();
+  showToast('Nome da maleta atualizado!','success');
+}
+
 function editarMaletaAtiva(nomeRev){
   // Verifica se tem documento assinado
   var entrega = historicEntregas.find(function(e){ return e.revendedor===nomeRev && e.reciboUrl; });
@@ -2506,9 +2533,9 @@ function editarMaletaAtiva(nomeRev){
   _abrirEditarMaletaAtiva(nomeRev);
 }
 
-function _abrirEditarMaletaAtiva(nomeRev){
+function _abrirEditarMaletaAtiva(nomeRev, maletaParaRenomear){
   var itens = inventory.filter(function(i){ return i.Revendedor===nomeRev && (i.Status==='Consignado'||i.Status==='Em Maleta'); });
-  if(!itens.length){ showToast('Nenhum item para '+nomeRev,'warning'); return; }
+  if(!itens.length && !maletaParaRenomear){ showToast('Nenhum item para '+nomeRev,'warning'); return; }
 
   // Cria modal dinâmico se não existe
   var mid = 'modal-editar-maleta-ativa';
@@ -2536,12 +2563,23 @@ function _abrirEditarMaletaAtiva(nomeRev){
     document.getElementById('maleta-ativa-resumo').textContent = its.length+' item(s) · '+fmt(total);
   }
 
+  var blocoNome = '';
+  if(maletaParaRenomear){
+    blocoNome = '<div style="margin-bottom:.75rem;flex-shrink:0;">'
+      +'<label style="font-size:12px;font-weight:500;color:var(--gray-600);display:block;margin-bottom:4px;">Nome da maleta</label>'
+      +'<div style="display:flex;gap:6px;">'
+      +'<input type="text" id="editmal-nome" value="'+(maletaParaRenomear.nome||'').replace(/"/g,'&quot;')+'" style="flex:1;padding:.5rem;border:1.5px solid var(--gray-300);border-radius:8px;font-size:13px;box-sizing:border-box;" onkeydown="if(event.key===\'Enter\')_salvarNomeMaletaAtivaModal('+maletaParaRenomear.id+')">'
+      +'<button onclick="_salvarNomeMaletaAtivaModal('+maletaParaRenomear.id+')" class="btn-secondary" style="padding:6px 12px;font-size:12px;white-space:nowrap;">Salvar nome</button>'
+      +'</div></div>';
+  }
+
   modal.innerHTML = '<div class="modal-content" style="max-width:600px;width:95%;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-shrink:0;">'
-    +'<div><h3 style="font-size:1rem;font-weight:700;color:var(--gray-800);margin:0;"><i class="fas fa-briefcase" style="color:var(--primary);margin-right:8px;"></i>Maleta '+nomeRev+'</h3>'
+    +'<div><h3 style="font-size:1rem;font-weight:700;color:var(--gray-800);margin:0;"><i class="fas fa-briefcase" style="color:var(--primary);margin-right:8px;"></i>'+(maletaParaRenomear?'Editar maleta':'Maleta')+' '+nomeRev+'</h3>'
     +'<div id="maleta-ativa-resumo" style="font-size:12px;color:var(--gray-500);margin-top:2px;"></div></div>'
     +'<button onclick="fecharModal(\''+mid+'\')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>'
     +'</div>'
+    +blocoNome
     // Bipe para adicionar
     +'<div style="display:flex;gap:6px;margin-bottom:.75rem;flex-shrink:0;">'
     +'<input type="text" id="input-add-maleta-ativa" class="barcode-input" placeholder="Bipe ou código para adicionar item..." style="flex:1;" '
