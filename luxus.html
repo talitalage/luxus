@@ -5670,11 +5670,23 @@ function abrirVendaAvulsa(){
   _avulsaItem=null;
   document.getElementById('avulsa-codigo').value='';
   document.getElementById('avulsa-valor').value='';
-  document.getElementById('avulsa-obs').value='';
+  document.getElementById('avulsa-comprador').value='';
+  document.getElementById('avulsa-desc').value='';
+  document.getElementById('avulsa-recebido').value='';
   document.getElementById('avulsa-item-card').style.display='none';
   document.getElementById('avulsa-form').style.display='none';
   document.getElementById('avulsa-erro').style.display='none';
   document.getElementById('avulsa-inicial').style.display='block';
+  // Reseta também a aba Pacote (senão itens de uma venda avulsa anterior ficavam
+  // "grudados" ao reabrir o modal, e a aba podia continuar em Pacote em vez de voltar pra Unitária).
+  _pacoteItens = [];
+  renderListaPacote();
+  document.getElementById('pacote-comprador').value = '';
+  document.getElementById('pacote-codigo').value = '';
+  document.getElementById('pacote-recebido').value = '';
+  document.getElementById('pacote-resumo').style.display = 'none';
+  document.getElementById('btn-confirmar-pacote').disabled = true;
+  switchAbaAvulsa('unitaria');
   abrirModal('modal-venda-avulsa');
 }
 
