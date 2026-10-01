@@ -1100,6 +1100,29 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
   </div>
 </div>
 
+<!-- MODAL DÍVIDA MANUAL (lançamento avulso/correção no Financeiro) -->
+<div id="modal-divida-manual" class="modal-overlay">
+  <div class="modal-content" style="max-width:420px;width:95%;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="font-size:1.1rem;font-weight:700;color:var(--gray-800);">Lançar Valor Manual</h3>
+      <button onclick="fecharModal('modal-divida-manual')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1.25rem;"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="divida-manual-info" style="background:var(--gray-50);border-radius:8px;padding:.75rem;margin-bottom:.75rem;font-size:13px;"></div>
+    <div style="margin-bottom:.75rem;">
+      <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Descrição</label>
+      <input type="text" id="divida-manual-descricao" placeholder="Ex: Correção fechamento 01/10" style="margin-top:4px;">
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label style="font-size:12px;font-weight:500;color:var(--gray-600);">Valor (R$)</label>
+      <input type="number" id="divida-manual-valor" step="0.01" placeholder="0,00" style="margin-top:4px;">
+    </div>
+    <div style="display:flex;gap:.75rem;">
+      <button onclick="fecharModal('modal-divida-manual')" class="btn-secondary" style="flex:1;">Cancelar</button>
+      <button onclick="confirmarDividaManual()" class="btn-primary" style="flex:1;"><i class="fas fa-check" style="margin-right:6px;"></i>Lançar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL EXCLUSÃO EM LOTE -->
 <div id="modal-excluir-lote" class="modal-overlay">
   <div class="modal-content" style="max-width:420px;width:95%;">
@@ -3287,17 +3310,29 @@ function atualizarPreviewParcelas(n,v) {
 // =====================================================
 var _pagamentoAtual = null;
 
+// Decide se um fechamento já tem um lançamento "de verdade" (Sheets ou parcela) que o representa,
+// pra renderFinanceiro()/abrirPagamento() não sintetizarem uma linha duplicada/errada por cima dele.
+// Além do link direto por id, também considera coberto um lançamento manual (sem fechamentoId
+// próprio, ou seja, digitado direto na planilha por você) feito no MESMO DIA do fechamento — é o
+// caso de lançamentos antigos, de antes de existir o campo fechamentoId, que você já tinha corrigido
+// à mão na aba Financeiro (ex.: Tatiane, 25/08).
+function _fechamentoJaTemLancamento(f, lancs, rev){
+  var fDia = f.data ? new Date(f.data).toDateString() : null;
+  if(lancs.find(function(l){ return String(l.fechamentoId)===String(f.id) || String(l.id)===String(f.id); })) return true;
+  if(fDia && lancs.find(function(l){ return !l.fechamentoId && l.data && new Date(l.data).toDateString()===fDia; })) return true;
+  if((rev.dividas||[]).find(function(d){ return String(d.fechamentoId)===String(f.id); })) return true;
+  return false;
+}
+
 function renderFinanceiro() {
   // Constrói dívidas combinando: lancamentos do Sheets + fechamentos
   var devedores = revendedores.map(function(r) {
     // Lançamentos do Sheets (aba Financeiro)
     var lancs = (window.historicFinanceiro||[]).filter(function(l){ return l.revendedor === r.Nome; });
-    // Fechamentos que ainda não têm lançamento no Financeiro do Sheets
+    // Fechamentos que ainda não têm lançamento no Financeiro do Sheets NEM parcela já lançada em r.dividas
+    // (fechamentos antigos, de antes da função de parcelas, continuam caindo aqui normalmente)
     var fechRev = historicFechamentos.filter(function(f){
-      return f.revendedor === r.Nome 
-        && !lancs.find(function(l){ 
-            return String(l.fechamentoId)===String(f.id) || String(l.id)===String(f.id); 
-          });
+      return f.revendedor === r.Nome && !_fechamentoJaTemLancamento(f, lancs, r);
     });
     var divFech = fechRev.map(function(f){
       var valor = parseFloat(f.lucro||0) || parseFloat(f.valorVendido||0);
@@ -3351,7 +3386,9 @@ function renderFinanceiro() {
       + (x.totalAberto>0
           ? '<div style="font-size:11px;color:var(--gray-500);">Saldo devedor</div><div style="font-size:1.25rem;font-weight:700;color:#ef4444;">'+fmt(x.totalAberto)+'</div>'
           : '<div style="font-size:13px;font-weight:700;color:#10b981;">✓ Quitado</div>')
-      + '</div></div>'
+      + '</div>'
+      + '<button onclick="abrirDividaManual(\''+r.rowId+'\')" title="Lançar valor manual (ex: correção)" style="background:none;border:1px solid var(--gray-300);color:var(--gray-600);border-radius:6px;padding:6px 9px;cursor:pointer;margin-left:8px;"><i class="fas fa-plus"></i></button>'
+      + '</div>'
       // Tabela de lançamentos
       + '<table style="width:100%;border-collapse:collapse;font-size:13px;">'
       + '<thead><tr style="background:var(--gray-50);">'
@@ -3403,6 +3440,42 @@ function renderFinanceiro() {
     return html;
   }).join('');
 }
+var _dividaManualRevId = null;
+function abrirDividaManual(revId){
+  var rev = revendedores.find(function(r){return String(r.rowId)===String(revId);});
+  if(!rev) return;
+  _dividaManualRevId = revId;
+  document.getElementById('divida-manual-info').innerHTML =
+    '<div style="display:flex;justify-content:space-between;"><span style="color:var(--gray-600);">Revendedor</span><strong>'+rev.Nome+'</strong></div>';
+  document.getElementById('divida-manual-descricao').value = '';
+  document.getElementById('divida-manual-valor').value = '';
+  abrirModal('modal-divida-manual');
+}
+function confirmarDividaManual(){
+  var rev = revendedores.find(function(r){return String(r.rowId)===String(_dividaManualRevId);});
+  if(!rev) return;
+  var descricao = document.getElementById('divida-manual-descricao').value.trim();
+  var valor = parseFloat(document.getElementById('divida-manual-valor').value)||0;
+  if(!descricao){showToast('Informe uma descrição','warning');return;}
+  if(!valor){showToast('Informe o valor','warning');return;}
+  var d = {
+    id: Date.now(),
+    data: new Date().toISOString(),
+    descricao: descricao,
+    valor: parseFloat(valor.toFixed(2)),
+    valorPago: 0,
+    saldo: parseFloat(valor.toFixed(2)),
+    pago: false,
+    tipo: 'manual',
+    historicoPagamentos: []
+  };
+  if(!rev.dividas) rev.dividas=[];
+  rev.dividas.push(d);
+  syncDrive({action:'editRevendedor', rowId:rev.rowId, dividas:rev.dividas});
+  fecharModal('modal-divida-manual');
+  renderFinanceiro();
+  showToast('Valor lançado!','success');
+}
 function excluirDivida(revId, diIdx){
   if(!confirm('Excluir esta dívida?'))return;
   var rev=revendedores.find(function(r){return String(r.rowId)===String(revId);});
@@ -3420,8 +3493,7 @@ function abrirPagamento(revId, diIdx) {
   // Reconstrói a lista de dívidas igual ao renderFinanceiro
   var lancs = (window.historicFinanceiro||[]).filter(function(l){ return l.revendedor === rev.Nome; });
   var fechRev = historicFechamentos.filter(function(f){
-    return f.revendedor === rev.Nome
-      && !lancs.find(function(l){ return String(l.fechamentoId)===String(f.id)||String(l.id)===String(f.id); });
+    return f.revendedor === rev.Nome && !_fechamentoJaTemLancamento(f, lancs, rev);
   });
   var divFech = fechRev.map(function(f){
     var valor = parseFloat(f.lucro||0)||parseFloat(f.valorVendido||0);
@@ -5409,13 +5481,15 @@ function _executarFechamento(vendidos, devolvidos, opcaoDevolvidos, dataVenda, n
   var luc=parseFloat((vv-com).toFixed(2));           // a receber = venda - comissão (= custo vendido + margem)
 
   // Parcelas
+  var fechId=Date.now(); // mesmo id usado no reg abaixo, pra linkar as dívidas a este fechamento e não duplicar no Financeiro
   var nParc=parseInt(document.getElementById('fechamento-parcelas').value)||1;
   var vParc=parseFloat(document.getElementById('fechamento-valor-parcela').value)||(luc/nParc);
   var dividas=[];
   if(luc>0){
     for(var p=1;p<=nParc;p++){
       dividas.push({
-        id:Date.now()+p,
+        id:fechId+p,
+        fechamentoId:fechId,
         data:dataVenda,
         descricao:'Parcela '+p+'/'+nParc+' — Fechamento '+new Date().toLocaleDateString('pt-BR'),
         valor:parseFloat(vParc.toFixed(2)),
@@ -5433,7 +5507,7 @@ function _executarFechamento(vendidos, devolvidos, opcaoDevolvidos, dataVenda, n
     }
   }
 
-  var reg={id:Date.now(),data:dataVenda,revendedor:nome,percentual:(rev&&rev.Percentual)||30,
+  var reg={id:fechId,data:dataVenda,revendedor:nome,percentual:(rev&&rev.Percentual)||30,
     maletasFechadas:maletasFechadas,
     qtdConsignados:produtosConsignados.length,qtdVendidos:vendidos.length,qtdDevolvidos:devolvidos.length,
     valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,
