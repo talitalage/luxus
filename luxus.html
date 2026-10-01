@@ -5344,44 +5344,6 @@ function _confirmarDestinoDevolvidos(opcao){
 }
 
 function _executarFechamento(vendidos, devolvidos, opcaoDevolvidos, dataVenda, nome){
-
-function salvarRascunhoFechamento(){
-  var nome=document.getElementById('fechamento-revendedor').value;
-  if(!nome){showToast('Selecione um revendedor','warning');return;}
-  var rascunho={revendedor:nome,devolucoes:devolucoes.slice(),data:new Date().toISOString()};
-  try{localStorage.setItem('luxus_rascunho_fech_'+nome,JSON.stringify(rascunho));showToast('Rascunho salvo!','success');}
-  catch(e){showToast('Erro ao salvar rascunho','error');}
-}
-function carregarRascunhoFechamento(nome){
-  try{
-    var raw=localStorage.getItem('luxus_rascunho_fech_'+nome);
-    if(!raw)return;
-    var rascunho=JSON.parse(raw);
-    if(rascunho.devolucoes&&rascunho.devolucoes.length){
-      if(confirm('Rascunho com '+rascunho.devolucoes.length+' devolução(ões). Carregar?')){
-        devolucoes=rascunho.devolucoes;renderDevolucoes();atualizarResumoFechamento();showToast('Rascunho carregado!','success');
-      }
-    }
-  }catch(e){}
-}
-function finalizarFechamento(){
-  var nome=document.getElementById('fechamento-revendedor').value;
-  if(!nome){showToast('Selecione um revendedor','warning');return;}
-  if(!devolucoes.length&&produtosConsignados.length>0){if(!confirm('Nenhuma devolução. Tudo foi vendido. Continuar?'))return;}
-  if(!confirm('Confirmar fechamento?'))return;
-
-  var vendidos=produtosConsignados.filter(function(p){return!devolucoes.find(function(d){return d.rowId===p.rowId;});});
-  var devolvidos=devolucoes.slice();
-  var dataVenda=new Date().toISOString();
-
-    // Devolvidos: pergunta destino via modal
-  if(devolvidos.length>0){
-    _pendingFechamento = {vendidos:vendidos, devolvidos:devolvidos, dataVenda:dataVenda, nome:nome};
-    _abrirModalDestinoDevolvidos(devolvidos.length);
-    return; // continua em _confirmarDestinoDevolvidos()
-  }
-  _executarFechamento(vendidos, devolvidos, 'estoque', dataVenda, nome);
-
   // Vendidos: marca como Vendido e limpa revendedor
   vendidos.forEach(function(item){
     var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});
@@ -5496,8 +5458,45 @@ function finalizarFechamento(){
     valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,
     nParcelas:nParc,valorParcela:vParc,itensVendidos:reg.itensVendidos,itensDevolvidos:reg.itensDevolvidos});
   setTimeout(function(){abrirModalAssinatura(reg);},400);
+}
 
-}}
+function salvarRascunhoFechamento(){
+  var nome=document.getElementById('fechamento-revendedor').value;
+  if(!nome){showToast('Selecione um revendedor','warning');return;}
+  var rascunho={revendedor:nome,devolucoes:devolucoes.slice(),data:new Date().toISOString()};
+  try{localStorage.setItem('luxus_rascunho_fech_'+nome,JSON.stringify(rascunho));showToast('Rascunho salvo!','success');}
+  catch(e){showToast('Erro ao salvar rascunho','error');}
+}
+function carregarRascunhoFechamento(nome){
+  try{
+    var raw=localStorage.getItem('luxus_rascunho_fech_'+nome);
+    if(!raw)return;
+    var rascunho=JSON.parse(raw);
+    if(rascunho.devolucoes&&rascunho.devolucoes.length){
+      if(confirm('Rascunho com '+rascunho.devolucoes.length+' devolução(ões). Carregar?')){
+        devolucoes=rascunho.devolucoes;renderDevolucoes();atualizarResumoFechamento();showToast('Rascunho carregado!','success');
+      }
+    }
+  }catch(e){}
+}
+function finalizarFechamento(){
+  var nome=document.getElementById('fechamento-revendedor').value;
+  if(!nome){showToast('Selecione um revendedor','warning');return;}
+  if(!devolucoes.length&&produtosConsignados.length>0){if(!confirm('Nenhuma devolução. Tudo foi vendido. Continuar?'))return;}
+  if(!confirm('Confirmar fechamento?'))return;
+
+  var vendidos=produtosConsignados.filter(function(p){return!devolucoes.find(function(d){return d.rowId===p.rowId;});});
+  var devolvidos=devolucoes.slice();
+  var dataVenda=new Date().toISOString();
+
+    // Devolvidos: pergunta destino via modal
+  if(devolvidos.length>0){
+    _pendingFechamento = {vendidos:vendidos, devolvidos:devolvidos, dataVenda:dataVenda, nome:nome};
+    _abrirModalDestinoDevolvidos(devolvidos.length);
+    return; // continua em _confirmarDestinoDevolvidos()
+  }
+  _executarFechamento(vendidos, devolvidos, 'estoque', dataVenda, nome);
+}
 
 // =====================================================
 // HISTÓRICO
