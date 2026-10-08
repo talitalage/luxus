@@ -3324,30 +3324,38 @@ var _pagamentoAtual = null;
 function _fechamentoJaTemLancamento(f, lancs, rev){
   var fDia = f.data ? new Date(f.data).toDateString() : null;
   if(lancs.find(function(l){ return String(l.fechamentoId)===String(f.id) || String(l.id)===String(f.id); })) return true;
-  if(fDia && lancs.find(function(l){ return !l.fechamentoId && l.data && new Date(l.data).toDateString()===fDia; })) return true;
+  if(fDia && lancs.find(function(l){
+    if(!l.data || new Date(l.data).toDateString()!==fDia) return false;
+    if(l.fechamentoId==='manual') return false;
+    if(!l.fechamentoId) return true;
+    // fechamentoId que não bate com nenhum fechamento conhecido (ex.: id gerado no app x id gravado pela planilha)
+    return !historicFechamentos.find(function(h){ return String(h.id)===String(l.fechamentoId); });
+  })) return true;
   if((rev.dividas||[]).find(function(d){ return String(d.fechamentoId)===String(f.id); })) return true;
   return false;
+}
+
+// Monta a lista de dívidas de uma revendedora (mesma ordem usada na tela, no pagamento e na exclusão).
+function _dividasDe(r){
+  var lancs = (window.historicFinanceiro||[]).filter(function(l){ return l.revendedor === r.Nome; });
+  var fechRev = historicFechamentos.filter(function(f){
+    return f.revendedor === r.Nome && !_fechamentoJaTemLancamento(f, lancs, r);
+  });
+  var divFech = fechRev.map(function(f){
+    var valor = pN(f.lucro) || pN(f.valorVendido);
+    var valorPago = pN(f.valorRecebido);
+    var saldo = Math.max(0, valor - valorPago);
+    return {id:f.id, data:f.data, _sintetizada:true,
+      descricao:'Fechamento — '+(f.maletasFechadas&&f.maletasFechadas.length?f.maletasFechadas.map(function(m){return m.nome;}).join(', '):''),
+      valor:valor, valorPago:valorPago, saldo:saldo, pago:saldo<=0};
+  });
+  return lancs.concat(divFech).concat(r.dividas||[]);
 }
 
 function renderFinanceiro() {
   // Constrói dívidas combinando: lancamentos do Sheets + fechamentos
   var devedores = revendedores.map(function(r) {
-    // Lançamentos do Sheets (aba Financeiro)
-    var lancs = (window.historicFinanceiro||[]).filter(function(l){ return l.revendedor === r.Nome; });
-    // Fechamentos que ainda não têm lançamento no Financeiro do Sheets NEM parcela já lançada em r.dividas
-    // (fechamentos antigos, de antes da função de parcelas, continuam caindo aqui normalmente)
-    var fechRev = historicFechamentos.filter(function(f){
-      return f.revendedor === r.Nome && !_fechamentoJaTemLancamento(f, lancs, r);
-    });
-    var divFech = fechRev.map(function(f){
-      var valor = parseFloat(f.lucro||0) || parseFloat(f.valorVendido||0);
-      var valorPago = parseFloat(f.valorRecebido||0);
-      var saldo = Math.max(0, valor - valorPago);
-      return {id:f.id, data:f.data,
-        descricao:'Fechamento — '+(f.maletasFechadas&&f.maletasFechadas.length?f.maletasFechadas.map(function(m){return m.nome;}).join(', '):''),
-        valor:valor, valorPago:valorPago, saldo:saldo, pago:saldo<=0};
-    });
-    var dividas = lancs.concat(divFech).concat(r.dividas||[]);
+    var dividas = _dividasDe(r);
     var totalDevido = dividas.reduce(function(s,d){return s+(parseFloat(d.valor)||0);},0);
     var totalPago   = dividas.reduce(function(s,d){return s+(parseFloat(d.valorPago)||0);},0);
     var totalAberto = dividas.filter(function(d){return !d.pago;}).reduce(function(s,d){var sl=parseFloat(d.saldo)||0;if(!sl)sl=Math.max(0,(parseFloat(d.valor)||0)-(parseFloat(d.valorPago)||0));return s+sl;},0);
@@ -3474,18 +3482,27 @@ function confirmarDividaManual(){
     tipo: 'manual',
     historicoPagamentos: []
   };
-  if(!rev.dividas) rev.dividas=[];
-  rev.dividas.push(d);
-  syncDrive({action:'editRevendedor', rowId:rev.rowId, dividas:rev.dividas});
+  // Lançamento real na aba Financeiro (persiste ao recarregar). fechamentoId 'manual' = não pertence a nenhum fechamento.
+  d.revendedor = rev.Nome; d.fechamentoId = 'manual';
+  if(!window.historicFinanceiro) window.historicFinanceiro=[];
+  window.historicFinanceiro.unshift(d);
+  syncDrive({action:'addLancamentoFinanceiro', id:d.id, data:d.data, revendedor:rev.Nome, descricao:d.descricao, valor:d.valor, valorPago:0, saldo:d.valor, pago:false, fechamentoId:'manual'});
   fecharModal('modal-divida-manual');
   renderFinanceiro();
   showToast('Valor lançado!','success');
 }
 function excluirDivida(revId, diIdx){
-  if(!confirm('Excluir esta dívida?'))return;
   var rev=revendedores.find(function(r){return String(r.rowId)===String(revId);});
-  if(!rev||!rev.dividas)return;
-  rev.dividas.splice(diIdx,1);
+  if(!rev)return;
+  var d=_dividasDe(rev)[diIdx];
+  if(!d)return;
+  var idx=(rev.dividas||[]).indexOf(d);
+  if(idx===-1){
+    showToast('Esta linha vem da planilha — pra apagar ou corrigir, edite direto na aba '+(d._sintetizada?'Fechamentos (coluna lucro)':'Financeiro'),'warning');
+    return;
+  }
+  if(!confirm('Excluir esta dívida?'))return;
+  rev.dividas.splice(idx,1);
   syncDrive({action:'editRevendedor',rowId:rev.rowId,dividas:rev.dividas});
   renderFinanceiro();
   showToast('Dívida excluída','success');
@@ -3495,18 +3512,7 @@ function abrirPagamento(revId, diIdx) {
   var rev = revendedores.find(function(r){return String(r.rowId)===String(revId);});
   if (!rev) return;
 
-  // Reconstrói a lista de dívidas igual ao renderFinanceiro
-  var lancs = (window.historicFinanceiro||[]).filter(function(l){ return l.revendedor === rev.Nome; });
-  var fechRev = historicFechamentos.filter(function(f){
-    return f.revendedor === rev.Nome && !_fechamentoJaTemLancamento(f, lancs, rev);
-  });
-  var divFech = fechRev.map(function(f){
-    var valor = parseFloat(f.lucro||0)||parseFloat(f.valorVendido||0);
-    var valorPago = parseFloat(f.valorRecebido||0);
-    var saldo = Math.max(0, valor-valorPago);
-    return {id:f.id, data:f.data, descricao:'Fechamento — '+(f.maletasFechadas&&f.maletasFechadas.length?f.maletasFechadas.map(function(m){return m.nome;}).join(', '):''), valor:valor, valorPago:valorPago, saldo:saldo, pago:saldo<=0};
-  });
-  var dividas = lancs.concat(divFech).concat(rev.dividas||[]);
+  var dividas = _dividasDe(rev);
 
   var d = dividas[diIdx];
   if (!d) return;
@@ -5521,11 +5527,14 @@ function _executarFechamento(vendidos, devolvidos, opcaoDevolvidos, dataVenda, n
         historicoPagamentos:[]
       });
     }
-    if(rev){
-      if(!rev.dividas)rev.dividas=[];
-      dividas.forEach(function(d){rev.dividas.push(d);});
-      syncDrive({action:'editRevendedor',rowId:rev.rowId,dividas:rev.dividas});
-    }
+    // Grava cada parcela como lançamento REAL na aba Financeiro (sobrevive a recarregar a página).
+    // Antes ficava só em rev.dividas, que não tem coluna na planilha e se perdia ao reabrir o app.
+    if(!window.historicFinanceiro) window.historicFinanceiro=[];
+    dividas.forEach(function(d){
+      var lanc={id:d.id,data:d.data,revendedor:nome,descricao:d.descricao,valor:d.valor,valorPago:0,saldo:d.valor,pago:false,fechamentoId:fechId,historicoPagamentos:[]};
+      window.historicFinanceiro.unshift(lanc);
+      syncDrive({action:'addLancamentoFinanceiro',id:lanc.id,data:lanc.data,revendedor:nome,descricao:lanc.descricao,valor:lanc.valor,valorPago:0,saldo:lanc.valor,pago:false,fechamentoId:fechId});
+    });
   }
 
   var reg={id:fechId,data:dataVenda,revendedor:nome,percentual:(rev&&rev.Percentual)||30,
@@ -5550,7 +5559,7 @@ function _executarFechamento(vendidos, devolvidos, opcaoDevolvidos, dataVenda, n
   atualizarResumoFechamento();renderConsignados();renderDashboard();renderHistorico();
   showToast('Fechamento concluído!','success');
   try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas}));}catch(e){}
-  syncDrive({action:'addFechamento',revendedor:nome,percentual:(rev&&rev.Percentual)||30,
+  syncDrive({action:'addFechamento',id:fechId,revendedor:nome,percentual:(rev&&rev.Percentual)||30,
     qtdConsignados:reg.qtdConsignados,qtdVendidos:reg.qtdVendidos,qtdDevolvidos:reg.qtdDevolvidos,
     valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,
     nParcelas:nParc,valorParcela:vParc,itensVendidos:reg.itensVendidos,itensDevolvidos:reg.itensDevolvidos});
