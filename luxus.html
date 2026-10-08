@@ -1612,13 +1612,18 @@ function syncDriveComCallback(payload, callback){
     }
 
     // Imagem grande: usa POST no-cors + polling para verificar
+    // (com limite de 45s no envio, pra não ficar pendurado se a rede/Apps Script não responder)
+    var _ctrl=(typeof AbortController!=='undefined')?new AbortController():null;
+    var _tOut=_ctrl?setTimeout(function(){_ctrl.abort();},45000):null;
     fetch(scriptUrl, {
       method:'POST',
       mode:'no-cors',
       headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify(payload)
+      body:JSON.stringify(payload),
+      signal:_ctrl?_ctrl.signal:undefined
     })
     .then(function(){
+      if(_tOut)clearTimeout(_tOut);
       // Polling: verifica até 5x com intervalo de 3s
       var tentativas = 0;
       function verificar(){
@@ -5226,8 +5231,20 @@ function salvarReciboNoDrive(){
   var d=new Date(reg.data);
   var nomeArq=nomeArquivo('recibo',reg.data,reg.revendedor);
 
+  // Trava de segurança: se o Drive não responder (rede lenta, Apps Script travado, imagem pesada),
+  // o botão não pode ficar eternamente em "Salvando..." — volta ao normal depois de 90s.
+  var _terminou=false;
+  var _watchdog=setTimeout(function(){
+    if(_terminou)return;
+    _terminou=true;
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-cloud-upload-alt" style="margin-right:6px;"></i>Salvar no Drive';btn.onclick=salvarReciboNoDrive;}
+    showToast('O Drive demorou demais pra responder — tente salvar de novo','warning');
+  },90000);
+
   function enviarParaDrive(dataUrl){
     syncDriveComCallback({action:'salvarRecibo',nomeArquivo:nomeArq,imagemBase64:dataUrl},function(res){
+      if(_terminou)return; // a trava de 90s já destravou o botão
+      _terminou=true;clearTimeout(_watchdog);
       if(btn){btn.disabled=false;}
       if(res&&res.success&&res.url){
         var idx=historicFechamentos.findIndex(function(f){return f.id===reg.id;});
@@ -5334,6 +5351,8 @@ function gerarReciboCanvas(callback){
       ctx.drawImage(imgAss,16,ay+10,200,50);
       _downloadCanvas(c,reg,callback);
     };
+    // Se a assinatura não carregar, segue sem ela em vez de ficar parado esperando pra sempre
+    imgAss.onerror=function(){ _downloadCanvas(c,reg,callback); };
     imgAss.src=_assinaturaDados;
     return;
   }
@@ -5343,8 +5362,10 @@ function gerarReciboCanvas(callback){
 }
 
 function _downloadCanvas(c,reg,callback){
+  // Pra enviar ao Drive (callback) uso JPEG: o fundo é opaco, então fica igual e o arquivo é bem menor
+  // (menos chance de travar em rede lenta). O download local continua em PNG.
+  if(callback){ callback(c.toDataURL('image/jpeg',0.85)); return; }
   var dataUrl=c.toDataURL('image/png');
-  if(callback){ callback(dataUrl); return; }
   if(reg){
     salvarReciboLocal(reg, dataUrl);
     var d=new Date(reg.data);
