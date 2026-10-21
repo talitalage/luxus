@@ -2403,6 +2403,9 @@ function renderMaletasAtivas(){
       var unifBtn = m.complemento
         ? '<button onclick="abrirUnificarMaleta('+m.id+')" style="background:none;border:1px solid #a5b4fc;border-radius:6px;color:#6366f1;cursor:pointer;padding:4px 10px;font-size:11px;font-weight:600;white-space:nowrap;" title="Unir esta maleta de complemento à maleta principal"><i class="fas fa-compress-alt" style="margin-right:4px;"></i>Unificar</button>'
         : '';
+      var sepBtn = (!m.complemento && m.entregue && !m.fechada)
+        ? '<button onclick="abrirSepararComplemento('+m.id+')" style="background:none;border:1px solid #fcd34d;border-radius:6px;color:#b45309;cursor:pointer;padding:4px 8px;font-size:11px;" title="Separar itens desta maleta como um complemento"><i class="fas fa-code-branch"></i></button>'
+        : '';
       var histBtn = ((m.log&&m.log.length)||(m.unificados&&m.unificados.length))
         ? '<button onclick="abrirHistoricoMaleta('+m.id+')" style="background:none;border:1px solid var(--gray-300);border-radius:6px;color:var(--gray-600);cursor:pointer;padding:4px 8px;font-size:11px;" title="Histórico e recibos"><i class="fas fa-history"></i></button>'
         : '';
@@ -2432,6 +2435,7 @@ function renderMaletasAtivas(){
         +docBtn
         +unifBtn
         +compBtn
+        +sepBtn
         +histBtn
         +'<button onclick="abrirEditarMaleta('+mId+')" style="background:none;border:1px solid #93c5fd;border-radius:6px;color:#2563eb;cursor:pointer;padding:4px 8px;font-size:11px;" title="Editar"><i class="fas fa-pen"></i></button>'
         +'<button onclick="excluirMaletaById('+mId+')" style="background:none;border:1px solid #fca5a5;border-radius:6px;color:#dc2626;cursor:pointer;padding:4px 8px;font-size:11px;" title="Excluir"><i class="fas fa-trash"></i></button>'
@@ -2744,6 +2748,96 @@ function abrirHistoricoMaleta(id){
       }).join('') : '<div style="font-size:12px;color:var(--gray-400);">Sem registros.</div>')
     +'</div>';
   abrirModal('modal-historico-maleta');
+}
+
+// =====================================================
+// SEPARAR COMPLEMENTO — tira N itens (já com a revendedora) de uma maleta e cria um complemento com eles.
+// Não mexe no estoque/inventário (os itens continuam Consignado com a revendedora); só reorganiza as maletas.
+// Útil para recriar um complemento que sumiu, ou para depois unificar de novo.
+// =====================================================
+var _sepMaletaId = null, _sepItens = [];
+
+function abrirSepararComplemento(mid){
+  var m = maletas.find(function(x){ return x.id===mid; });
+  if(!m) return;
+  _sepMaletaId = mid; _sepItens = [];
+  var modal = document.getElementById('modal-separar-comp');
+  if(!modal){ modal = document.createElement('div'); modal.id='modal-separar-comp'; modal.className='modal-overlay'; document.body.appendChild(modal); }
+  var hoje = new Date(); var iso = hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0')+'-'+String(hoje.getDate()).padStart(2,'0');
+  modal.innerHTML = '<div class="modal-content" style="max-width:460px;width:95%;">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">'
+    +'<h3 style="font-size:1rem;font-weight:700;color:var(--gray-800);"><i class="fas fa-code-branch" style="color:#b45309;margin-right:8px;"></i>Separar complemento</h3>'
+    +'<button onclick="fecharModal(\'modal-separar-comp\')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-400);">×</button></div>'
+    +'<p style="font-size:12px;color:var(--gray-600);margin-bottom:.75rem;">Bipe ou digite os códigos dos itens de <b>'+m.revendedor+'</b> que pertencem ao complemento. Eles saem da contagem de <b>'+m.nome+'</b> e viram uma maleta de complemento. O estoque não muda.</p>'
+    +'<input type="text" id="sep-codigo" placeholder="Código do item + Enter" onkeydown="if(event.key===\'Enter\'){event.preventDefault();_sepAdicionar();}" style="font-size:14px;margin-bottom:.5rem;">'
+    +'<div id="sep-lista" style="max-height:220px;overflow-y:auto;margin-bottom:.75rem;"></div>'
+    +'<label style="font-size:12px;font-weight:500;color:var(--gray-600);display:block;margin-bottom:4px;">Não sabe quais são os códigos? Informe só a quantidade <span style="font-weight:400;color:var(--gray-400);">(ignorada se bipar itens)</span></label>'
+    +'<input type="number" id="sep-qtd" min="1" placeholder="Ex.: 7" style="font-size:14px;margin-bottom:.75rem;">'
+    +'<label style="font-size:12px;font-weight:500;color:var(--gray-600);display:block;margin-bottom:4px;">Data de entrega do complemento</label>'
+    +'<input type="date" id="sep-data" value="'+iso+'" style="font-size:14px;margin-bottom:1rem;">'
+    +'<div style="display:flex;gap:.75rem;">'
+    +'<button onclick="fecharModal(\'modal-separar-comp\')" class="btn-secondary" style="flex:1;">Cancelar</button>'
+    +'<button onclick="confirmarSepararComplemento()" class="btn-primary" style="flex:1;"><i class="fas fa-check" style="margin-right:6px;"></i>Criar complemento</button>'
+    +'</div></div>';
+  _sepRender();
+  abrirModal('modal-separar-comp');
+}
+
+function _sepRender(){
+  var el = document.getElementById('sep-lista'); if(!el) return;
+  el.innerHTML = _sepItens.length
+    ? '<div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:4px;">'+_sepItens.length+' item(s) selecionado(s)</div>'
+      + _sepItens.map(function(i,idx){
+          return '<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid var(--gray-200);border-radius:6px;margin-bottom:4px;font-size:12px;">'
+            +'<b>'+i.Codigo+'</b><span style="flex:1;color:var(--gray-500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(i.Descricao||'')+'</span>'
+            +'<button onclick="_sepRemover('+idx+')" style="background:none;border:none;color:#dc2626;cursor:pointer;"><i class="fas fa-times"></i></button></div>';
+        }).join('')
+    : '<div style="font-size:12px;color:var(--gray-400);text-align:center;padding:10px 0;">Nenhum item ainda.</div>';
+}
+function _sepRemover(idx){ _sepItens.splice(idx,1); _sepRender(); }
+
+function _sepAdicionar(){
+  var inp = document.getElementById('sep-codigo'); if(!inp) return;
+  var cod = (inp.value||'').trim(); inp.value=''; inp.focus();
+  if(!cod) return;
+  var m = maletas.find(function(x){ return x.id===_sepMaletaId; }); if(!m) return;
+  var item = inventory.find(function(i){ return String(i.Codigo).trim().toLowerCase()===cod.toLowerCase() && i.Revendedor===m.revendedor && i.Status==='Consignado'; });
+  if(!item){
+    var qualquer = inventory.find(function(i){ return String(i.Codigo).trim().toLowerCase()===cod.toLowerCase(); });
+    showToast(qualquer ? 'O item '+cod+' não está consignado com '+m.revendedor+' (está: '+qualquer.Status+(qualquer.Revendedor?' · '+qualquer.Revendedor:'')+')' : 'Código '+cod+' não encontrado','warning');
+    return;
+  }
+  if(_sepItens.some(function(i){ return String(i.rowId)===String(item.rowId); })){ showToast('Item '+cod+' já está na lista','warning'); return; }
+  _sepItens.push(item); _sepRender();
+}
+
+function confirmarSepararComplemento(){
+  var m = maletas.find(function(x){ return x.id===_sepMaletaId; });
+  if(!m){ showToast('Maleta não encontrada','warning'); return; }
+  var qtdInformada = parseInt((document.getElementById('sep-qtd')||{}).value)||0;
+  if(!_sepItens.length && qtdInformada<1){ showToast('Adicione itens ou informe a quantidade','warning'); return; }
+  var dv = (document.getElementById('sep-data').value||'').split('-');
+  var quando = dv.length===3 ? new Date(Number(dv[0]),Number(dv[1])-1,Number(dv[2]),12,0,0).toISOString() : new Date().toISOString();
+  var n = _sepItens.length || qtdInformada;
+  var nComp = maletas.filter(function(x){ return x.complemento && x.revendedor===m.revendedor; }).length
+    + maletas.reduce(function(s,x){ return s+((x.revendedor===m.revendedor && x.unificados)?x.unificados.length:0); },0) + 1;
+  var agora = new Date().toISOString();
+  var comp = { id: Date.now(), nome:'Complemento '+nComp+' — '+m.revendedor, dataCriacao: quando, dataEntrega: quando,
+    revendedor: m.revendedor, revendedorId: m.revendedorId||'', complemento:true, entregue:true, fechada:false, reciboUrl:null,
+    itens: JSON.parse(JSON.stringify(_sepItens)), _qtdItens:n,
+    log:[{data:agora, evento:'Complemento '+(_sepItens.length?'separado':'restaurado (só pela quantidade, sem códigos)')+' de "'+m.nome+'" ('+n+' item(s)'+(_sepItens.length?': '+_sepItens.map(function(i){return i.Codigo;}).join(', '):'')+') — entrega em '+_dtBR(quando).slice(0,10)}] };
+  // tira da contagem/itens da maleta de origem (sem mexer no estoque)
+  var base = Math.max(parseInt(m._qtdItens)||0, (m.itens||[]).length);
+  var ids = {}; _sepItens.forEach(function(i){ ids[String(i.rowId)]=true; });
+  if(m.itens) m.itens = m.itens.filter(function(i){ return !ids[String(i.rowId)]; });
+  m._qtdItens = Math.max(0, base - n);
+  addLogMaleta(m, n+' item(s) separados como "'+comp.nome+'"');
+  maletas.push(comp);
+  fecharModal('modal-separar-comp');
+  _sepItens = [];
+  salvarMaletas();
+  renderListaMaletas(); renderMaletasAtivas(); renderDashboard();
+  showToast('"'+comp.nome+'" criado com '+n+' item(s)','success');
 }
 
 function copiarLinkRevendedor(link){
