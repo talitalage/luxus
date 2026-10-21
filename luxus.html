@@ -1502,6 +1502,7 @@ function loadData() {
       if(Array.isArray(dc.fechamentos))  historicFechamentos=dc.fechamentos;
       if(Array.isArray(dc.entregas))    historicEntregas=dc.entregas;
       if(Array.isArray(dc.maletas))     maletas=dc.maletas;
+      try{aplicarUnificacoes();}catch(e){}
       carregarRevendedoresSelects();
       carregarRevendedoresFechamento();
       renderRevendedores();
@@ -1541,6 +1542,7 @@ function loadData() {
     if(tabRel && tabRel.classList.contains('active')) renderRelatorio();
     if(Array.isArray(d.entregas))    historicEntregas=d.entregas;
     if(Array.isArray(d.maletas))    maletas=d.maletas;
+    try{aplicarUnificacoes();}catch(e){}
     if(d.titulo)    {localStorage.setItem('luxus_titulo',d.titulo);   document.getElementById('site-title-display').textContent=d.titulo;document.title=d.titulo+' - Sistema de Gestão';}
     if(d.subtitulo) {localStorage.setItem('luxus_subtitulo',d.subtitulo);document.getElementById('site-subtitle-display').textContent=d.subtitulo;}
     if(d.logo)      {localStorage.setItem('luxus_logo',d.logo);var hlogo=document.getElementById('header-logo');if(hlogo){hlogo.src=d.logo;hlogo.style.display='block';}}
@@ -1698,6 +1700,7 @@ function carregarMaletas(){
     .then(function(d){
       if(Array.isArray(d.maletas) && d.maletas.length){
         maletas = d.maletas;
+        try{aplicarUnificacoes();}catch(e){}
         try{localStorage.setItem('luxus_maletas',JSON.stringify(maletas));}catch(e){}
       } else if(!maletas.length){
         // Fallback localStorage
@@ -1946,7 +1949,7 @@ function abrirDocumentoMaleta(){
   var m = maletaAtual;
   // Procura entrega correspondente no histórico
   var doc = historicEntregas.find(function(e){
-    return e.nomeMaleta===m.nome || e.revendedor===m.revendedor;
+    return e.tipo!=='unificacao' && (e.nomeMaleta===m.nome || e.revendedor===m.revendedor);
   });
   if(!doc){
     // Monta doc a partir da maleta
@@ -2234,21 +2237,6 @@ function editarNomeMaletaById(id){
   }
   maletaAtual=m;editarNomeMaleta(id);
 }
-function excluirMaletaById(id){
-  var m=maletas.find(function(x){return x.id===id;});if(!m)return;
-  if(!confirm('Excluir "'+m.nome+'"? Os itens voltam para o estoque.'))return;
-  var batch=[];
-  m.itens.forEach(function(item){
-    var idx=inventory.findIndex(function(i){return String(i.rowId)===String(item.rowId);});
-    if(idx!==-1){inventory[idx].Status='Em Estoque';inventory[idx].Revendedor='';}
-    batch.push({rowId:item.rowId,status:'Em Estoque',revendedor:'',dataVenda:''});
-  });
-  if(batch.length)syncDrive({action:'batchEditInventario',items:batch});
-  maletas=maletas.filter(function(x){return x.id!==id;});
-  if(maletaAtual&&maletaAtual.id===id){maletaAtual=null;document.getElementById('maleta-detalhe').style.display='none';}
-  salvarMaletas();renderListaMaletas();renderDashboard();
-  showToast('Maleta excluída','success');
-}
 function excluirMaletaAtual(){if(maletaAtual)excluirMaletaById(maletaAtual.id);}
 
 // Itens "Em Maleta" sem revendedor e sem maleta que os represente vão para UMA única "Maleta Recuperada".
@@ -2321,7 +2309,7 @@ function renderMaletasAtivas(){
   var el = document.getElementById('lista-maletas-ativas'); if(!el) return;
 
   // Complementos pendentes no topo
-  var complementosPendentes = maletas.filter(function(m){ return m.complemento && !m.entregue; });
+  var complementosPendentes = maletas.filter(function(m){ return m.complemento && !m.entregue && !m.fechada; });
   var htmlComplementos = complementosPendentes.map(function(m){
     return '<div class="card-light" style="padding:1rem;border-left:3px solid #f59e0b;margin-bottom:.75rem;">'
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;">'
@@ -2332,7 +2320,10 @@ function renderMaletasAtivas(){
       +'</div>'
       +'<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:600;">Pendente</span>'
       +'</div>'
-      +'<button onclick="assinarComplemento('+m.id+')" class="btn-primary" style="width:100%;padding:7px;font-size:12px;"><i class="fas fa-pen-nib" style="margin-right:5px;"></i>Assinar documento</button>'
+      +'<div style="display:flex;gap:6px;">'
+      +'<button onclick="assinarComplemento('+m.id+')" class="btn-primary" style="flex:1;padding:7px;font-size:12px;"><i class="fas fa-pen-nib" style="margin-right:5px;"></i>Assinar documento</button>'
+      +'<button onclick="excluirMaletaById('+m.id+')" style="background:none;border:1px solid #fca5a5;border-radius:6px;color:#dc2626;cursor:pointer;padding:7px 12px;font-size:12px;" title="Excluir complemento"><i class="fas fa-trash"></i></button>'
+      +'</div>'
       +'</div>';
   }).join('');
 
@@ -2408,6 +2399,26 @@ function renderMaletasAtivas(){
         docBtn = '<button onclick="assinarMaletaExistente('+m.id+')" style="background:none;border:1px solid #fcd34d;border-radius:6px;color:#f59e0b;cursor:pointer;padding:4px 10px;font-size:11px;font-weight:600;white-space:nowrap;"><i class="fas fa-pen-nib" style="margin-right:4px;"></i>Assinar</button>';
       }
 
+      // Botão unificar (só em complementos já entregues) + histórico + recibos unificados
+      var unifBtn = m.complemento
+        ? '<button onclick="abrirUnificarMaleta('+m.id+')" style="background:none;border:1px solid #a5b4fc;border-radius:6px;color:#6366f1;cursor:pointer;padding:4px 10px;font-size:11px;font-weight:600;white-space:nowrap;" title="Unir esta maleta de complemento à maleta principal"><i class="fas fa-compress-alt" style="margin-right:4px;"></i>Unificar</button>'
+        : '';
+      var histBtn = ((m.log&&m.log.length)||(m.unificados&&m.unificados.length))
+        ? '<button onclick="abrirHistoricoMaleta('+m.id+')" style="background:none;border:1px solid var(--gray-300);border-radius:6px;color:var(--gray-600);cursor:pointer;padding:4px 8px;font-size:11px;" title="Histórico e recibos"><i class="fas fa-history"></i></button>'
+        : '';
+      var unifHtml = '';
+      if(m.unificados && m.unificados.length){
+        unifHtml = '<div style="flex-basis:100%;border-top:1px dashed var(--gray-200);padding-top:6px;">'
+          + m.unificados.map(function(u){
+              return '<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--gray-600);padding:2px 0;flex-wrap:wrap;">'
+                +'<i class="fas fa-compress-alt" style="color:#6366f1;"></i>'
+                +'<span style="flex:1;min-width:140px;">'+u.nome+' · unificado em '+_dtBR(u.dataInsercao)+' · '+(u.qtdItens||0)+' item(s)</span>'
+                +(u.recibo ? '<button data-url="'+encodeURIComponent(u.recibo)+'" onclick="window.open(decodeURIComponent(this.getAttribute(\'data-url\')),\'_blank\')" style="background:none;border:1px solid #86efac;border-radius:6px;color:#10b981;cursor:pointer;padding:2px 8px;font-size:10px;font-weight:600;"><i class="fas fa-eye" style="margin-right:3px;"></i>Recibo</button>' : '')
+                +'</div>';
+            }).join('')
+          + '</div>';
+      }
+
       // Botão complemento
       var compBtn = '<button data-rev="'+encodeURIComponent(nome)+'" onclick="abrirComplementoById(this)" style="background:none;border:1px solid #fcd34d;border-radius:6px;color:#f59e0b;cursor:pointer;padding:4px 10px;font-size:11px;font-weight:600;white-space:nowrap;"><i class="fas fa-plus" style="margin-right:4px;"></i>Complemento</button>';
 
@@ -2419,10 +2430,13 @@ function renderMaletasAtivas(){
         +'</div>'
         +'<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;">'
         +docBtn
+        +unifBtn
         +compBtn
+        +histBtn
         +'<button onclick="abrirEditarMaleta('+mId+')" style="background:none;border:1px solid #93c5fd;border-radius:6px;color:#2563eb;cursor:pointer;padding:4px 8px;font-size:11px;" title="Editar"><i class="fas fa-pen"></i></button>'
         +'<button onclick="excluirMaletaById('+mId+')" style="background:none;border:1px solid #fca5a5;border-radius:6px;color:#dc2626;cursor:pointer;padding:4px 8px;font-size:11px;" title="Excluir"><i class="fas fa-trash"></i></button>'
         +'</div>'
+        +unifHtml
         +'</div>';
     }).join('');
 
@@ -2526,17 +2540,210 @@ function editarNomeMaleta(id){
 function excluirMaletaById(id){
   var m = maletas.find(function(x){return x.id===id;});
   if(!m) return;
-  if(!confirm('Excluir a maleta "'+m.nome+'"? Os itens voltam ao estoque.')) return;
-  // Devolve itens ao estoque
-  (m.itens||[]).forEach(function(item){
-    var inv = inventory.find(function(i){return i.rowId===item.rowId;});
-    if(inv){ inv.Status='Em Estoque'; inv.Revendedor=''; syncDrive({action:'editInventario',rowId:inv.rowId,status:'Em Estoque',revendedor:''}); }
+  var n = (m.itens||[]).length;
+  var msg = n
+    ? 'Excluir a maleta "'+m.nome+'"? Os '+n+' item(s) dela voltam ao estoque.'
+    : 'Excluir a maleta "'+m.nome+'"? Ela não tem itens, então nada muda no estoque.';
+  confirmarAcao(msg, function(){
+    var batch = [];
+    (m.itens||[]).forEach(function(item){
+      var inv = inventory.find(function(i){return String(i.rowId)===String(item.rowId);});
+      if(inv){ inv.Status='Em Estoque'; inv.Revendedor=''; batch.push({rowId:inv.rowId,status:'Em Estoque',revendedor:'',dataVenda:''}); }
+    });
+    if(batch.length) syncDrive({action:'batchEditInventario',items:batch});
+    maletas = maletas.filter(function(x){return x.id!==id;});
+    // se era a principal de complementos unificados, apaga também os registros de unificação dela
+    historicEntregas.filter(function(e){ return e.tipo==='unificacao' && String(e.maletaPrincipalId)===String(id); })
+      .forEach(function(e){ syncDrive({action:'delEntrega',id:String(e.id)}); });
+    historicEntregas = historicEntregas.filter(function(e){ return !(e.tipo==='unificacao' && String(e.maletaPrincipalId)===String(id)); });
+    if(maletaAtual && maletaAtual.id===id){ maletaAtual=null; var det=document.getElementById('maleta-detalhe'); if(det) det.style.display='none'; }
+    salvarMaletas();
+    renderListaMaletas();
+    renderMaletasAtivas();
+    renderDashboard();
+    showToast('Maleta excluída!','success');
   });
-  maletas = maletas.filter(function(x){return x.id!==id;});
+}
+
+// =====================================================
+// UNIFICAR MALETAS — complemento passa a fazer parte da maleta principal
+// Guarda: data de inserção, logs e recibo do complemento (dentro da principal).
+// Persistência: o registro vai como entrega tipo 'unificacao' (o Sheets de Maletas não tem colunas
+// para isso) e é reaplicado sobre as maletas a cada carregamento (aplicarUnificacoes).
+// =====================================================
+function _dtBR(iso){
+  var d = iso ? new Date(iso) : null;
+  if(!d || isNaN(d)) return '—';
+  return d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0')+'/'+d.getFullYear()
+    +' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+}
+
+function _maletasPrincipaisDe(comp){
+  return maletas.filter(function(m){
+    return m.id!==comp.id && !m.complemento && m.revendedor===comp.revendedor && m.entregue && !m.fechada;
+  });
+}
+
+function abrirUnificarMaleta(compId){
+  var comp = maletas.find(function(x){ return x.id===compId; });
+  if(!comp) return;
+  var princ = _maletasPrincipaisDe(comp);
+  if(!princ.length){ showToast('Não há uma maleta principal ativa de '+comp.revendedor+' para receber este complemento.','warning'); return; }
+  var qtd = (comp.itens&&comp.itens.length) || parseInt(comp._qtdItens) || 0;
+  var modal = document.getElementById('modal-unificar');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'modal-unificar';
+    modal.className = 'modal-overlay';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = '<div class="modal-content" style="max-width:440px;width:95%;">'
+    +'<h3 style="font-size:1rem;font-weight:700;color:var(--gray-800);margin-bottom:.5rem;"><i class="fas fa-compress-alt" style="color:#6366f1;margin-right:8px;"></i>Unificar maletas</h3>'
+    +'<p style="font-size:13px;color:var(--gray-600);margin-bottom:1rem;">O complemento <b>'+comp.nome+'</b> ('+qtd+' item(s)) passa a fazer parte da maleta principal. Ele deixa de aparecer como maleta separada; ficam guardados dentro da principal a <b>data de inserção</b> (agora), os <b>logs</b> e o <b>recibo</b> do complemento.</p>'
+    +'<div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:6px;">Unir à maleta:</div>'
+    +'<div id="unificar-opcoes" style="margin-bottom:1rem;">'
+    + princ.map(function(m,i){
+        return '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--gray-200);border-radius:8px;margin-bottom:6px;cursor:pointer;">'
+          +'<input type="radio" name="unificar-destino" value="'+m.id+'" '+(princ.length===1||i===0?'checked':'')+' style="width:auto;">'
+          +'<span style="flex:1;"><span style="font-weight:600;font-size:13px;">'+m.nome+'</span><br><span style="font-size:11px;color:var(--gray-500);">'+(parseInt(m._qtdItens)||(m.itens||[]).length)+' itens · '+_dtBR(m.dataEntrega||m.dataCriacao)+'</span></span>'
+          +'</label>';
+      }).join('')
+    +'</div>'
+    +'<div style="display:flex;gap:.75rem;">'
+    +'<button onclick="fecharModal(\'modal-unificar\')" class="btn-secondary" style="flex:1;">Cancelar</button>'
+    +'<button onclick="confirmarUnificarMaleta('+comp.id+')" class="btn-primary" style="flex:1;"><i class="fas fa-compress-alt" style="margin-right:6px;"></i>Unificar</button>'
+    +'</div></div>';
+  abrirModal('modal-unificar');
+}
+
+function confirmarUnificarMaleta(compId){
+  var sel = document.querySelector('input[name="unificar-destino"]:checked');
+  if(!sel){ showToast('Escolha a maleta principal','warning'); return; }
+  fecharModal('modal-unificar');
+  unificarMaleta(compId, Number(sel.value));
+}
+
+function _chaveLog(l){ return (l.data||'')+'|'+(l.evento||''); }
+
+function unificarMaleta(compId, princId){
+  var comp = maletas.find(function(x){ return x.id===compId; });
+  var main = maletas.find(function(x){ return x.id===princId; });
+  if(!comp || !main || comp===main){ showToast('Maletas não encontradas','warning'); return; }
+  var agora = new Date().toISOString();
+  var itens = comp.itens || [];
+  var qtd = itens.length || parseInt(comp._qtdItens) || 0;
+  var custo = itens.length ? itens.reduce(function(s,i){ return s+(parseFloat(i.Custo)||0); },0) : null;
+  var u = {
+    id: comp.id, nome: comp.nome, dataCriacao: comp.dataCriacao||'', dataEntrega: comp.dataEntrega||'',
+    dataInsercao: agora, recibo: comp.reciboUrl||'', qtdItens: qtd, custo: custo,
+    rowIds: itens.map(function(i){return i.rowId;}).filter(function(x){return x!=null;}),
+    log: (comp.log||[]).slice()
+  };
+
+  // principal: guarda o complemento, soma itens e mescla os logs
+  main.unificados = (main.unificados||[]).filter(function(x){ return String(x.id)!==String(u.id); });
+  main.unificados.push(u);
+  var jaNaPrincipal = (main.itens||[]).length;
+  var baseQtd = Math.max(parseInt(main._qtdItens)||0, jaNaPrincipal);
+  main.itens = main.itens || [];
+  var novos = 0;
+  itens.forEach(function(it){
+    if(!main.itens.some(function(x){ return String(x.rowId)===String(it.rowId); })){ main.itens.push(it); novos++; }
+  });
+  main._qtdItens = baseQtd + (itens.length ? novos : qtd);
+  _mesclarLogsUnificado(main, u);
+  main.log.push({ data: agora, evento: 'Complemento unificado: '+comp.nome+' ('+qtd+' item(s))' });
+
+  // registro persistente
+  var rec = { id: Date.now(), tipo:'unificacao', data: agora, revendedor: main.revendedor, revendedorId: main.revendedorId||'',
+    maletaPrincipalId: main.id, maletaPrincipalNome: main.nome, complemento: u };
+  historicEntregas.unshift(rec);
+  syncDrive({action:'addEntrega', entrega:rec});
+
+  // complemento deixa de existir como maleta
+  maletas = maletas.filter(function(x){ return x.id!==comp.id; });
+  if(maletaAtual && maletaAtual.id===comp.id){ maletaAtual=null; var det=document.getElementById('maleta-detalhe'); if(det) det.style.display='none'; }
+  try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas}));}catch(e){}
   salvarMaletas();
+  renderListaMaletas();
   renderMaletasAtivas();
   renderDashboard();
-  showToast('Maleta excluída!','success');
+  showToast('"'+comp.nome+'" unificado à maleta "'+main.nome+'"','success');
+}
+
+function _mesclarLogsUnificado(main, u){
+  main.log = main.log || [];
+  var tem = {};
+  main.log.forEach(function(l){ tem[_chaveLog(l)] = true; });
+  (u.log||[]).forEach(function(l){
+    var e = { data:l.data, evento:'['+u.nome+'] '+l.evento };
+    if(!tem[_chaveLog(e)]){ main.log.push(e); tem[_chaveLog(e)] = true; }
+  });
+  main.log.sort(function(a,b){ return new Date(a.data||0) - new Date(b.data||0); });
+}
+
+// Reaplica as unificações (guardadas como entregas tipo 'unificacao') sobre a lista de maletas carregada.
+function aplicarUnificacoes(){
+  var recs = (historicEntregas||[]).filter(function(e){ return e && e.tipo==='unificacao' && e.complemento; });
+  if(!recs.length) return;
+  recs.forEach(function(r){
+    var c = r.complemento;
+    // se o complemento ainda estiver na lista (ex.: cópia antiga), tira
+    maletas = maletas.filter(function(m){ return !(m.complemento && String(m.id)===String(c.id)); });
+    var main = maletas.find(function(m){ return String(m.id)===String(r.maletaPrincipalId); });
+    if(!main) return;
+    main.unificados = main.unificados || [];
+    if(!main.unificados.some(function(x){ return String(x.id)===String(c.id); })){
+      var u = {}; Object.keys(c).forEach(function(k){ u[k]=c[k]; });
+      u.dataInsercao = r.data;
+      main.unificados.push(u);
+    }
+    var uu = main.unificados.find(function(x){ return String(x.id)===String(c.id); });
+    _mesclarLogsUnificado(main, uu);
+    var chave = 'Complemento unificado: '+c.nome;
+    if(!main.log.some(function(l){ return l.data===r.data && (l.evento||'').indexOf(chave)===0; })){
+      main.log.push({ data:r.data, evento: chave+' ('+(c.qtdItens||0)+' item(s))' });
+      main.log.sort(function(a,b){ return new Date(a.data||0) - new Date(b.data||0); });
+    }
+  });
+}
+
+function abrirHistoricoMaleta(id){
+  var m = maletas.find(function(x){ return x.id===id; });
+  if(!m) return;
+  var modal = document.getElementById('modal-historico-maleta');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'modal-historico-maleta';
+    modal.className = 'modal-overlay';
+    document.body.appendChild(modal);
+  }
+  var log = (m.log||[]).slice().sort(function(a,b){ return new Date(a.data||0)-new Date(b.data||0); });
+  var recibos = [];
+  if(m.reciboUrl) recibos.push({nome:m.nome, url:m.reciboUrl, quando:m.dataEntrega||m.dataCriacao});
+  (m.unificados||[]).forEach(function(u){ if(u.recibo) recibos.push({nome:u.nome+' (inserido em '+_dtBR(u.dataInsercao)+')', url:u.recibo, quando:u.dataEntrega||u.dataCriacao}); });
+  modal.innerHTML = '<div class="modal-content" style="max-width:480px;width:95%;">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">'
+    +'<h3 style="font-size:1rem;font-weight:700;color:var(--gray-800);"><i class="fas fa-history" style="color:#6366f1;margin-right:8px;"></i>'+m.nome+'</h3>'
+    +'<button onclick="fecharModal(\'modal-historico-maleta\')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-400);">×</button></div>'
+    +((m.unificados&&m.unificados.length)
+      ? '<div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:6px;">Complementos unificados</div>'
+        + m.unificados.map(function(u){
+            return '<div style="font-size:12px;color:var(--gray-700);padding:6px 0;border-bottom:1px solid var(--gray-100);"><b>'+u.nome+'</b> · inserido em '+_dtBR(u.dataInsercao)+' · '+(u.qtdItens||0)+' item(s)'+(u.custo!=null?' · custo '+fmt(u.custo):'')+'</div>';
+          }).join('')
+      : '')
+    +(recibos.length
+      ? '<div style="font-size:12px;font-weight:600;color:var(--gray-500);margin:12px 0 6px;">Recibos</div>'
+        + recibos.map(function(r){
+            return '<div data-url="'+encodeURIComponent(r.url)+'" onclick="window.open(decodeURIComponent(this.getAttribute(\'data-url\')),\'_blank\')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--gray-200);border-radius:8px;margin-bottom:6px;cursor:pointer;font-size:12px;"><i class="fas fa-file-pdf" style="color:#10b981;"></i><span style="flex:1;">'+r.nome+'</span><i class="fas fa-external-link-alt" style="color:var(--gray-400);font-size:11px;"></i></div>';
+          }).join('')
+      : '')
+    +'<div style="font-size:12px;font-weight:600;color:var(--gray-500);margin:12px 0 6px;">Logs</div>'
+    +(log.length ? log.map(function(l){
+        return '<div style="padding:4px 0;"><div style="font-size:12px;color:var(--gray-700);">'+l.evento+'</div><div style="font-size:10px;color:var(--gray-400);">'+_dtBR(l.data)+'</div></div>';
+      }).join('') : '<div style="font-size:12px;color:var(--gray-400);">Sem registros.</div>')
+    +'</div>';
+  abrirModal('modal-historico-maleta');
 }
 
 function copiarLinkRevendedor(link){
@@ -3208,7 +3415,7 @@ function compartilharEntregaWhatsApp() {
 
 function renderUltimasEntregas() {
   var el=document.getElementById('lista-ultimas-entregas'); if(!el)return;
-  var entregas=historicEntregas.slice(0,20);
+  var entregas=historicEntregas.filter(function(e){return e.tipo!=='unificacao';}).slice(0,20);
   if(!entregas.length){el.innerHTML='<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:2rem 0;">Nenhuma entrega registrada.</p>';return;}
   el.innerHTML=entregas.map(function(e){
     return '<div style="display:flex;align-items:center;gap:8px;padding:.75rem;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;">'
@@ -6279,7 +6486,13 @@ function abrirDocumentos(nomeRev){
   // Coleta todas as maletas do revendedor com reciboUrl
   var docs = maletas.filter(function(m){
     return m.revendedor === nomeRev && m.reciboUrl;
-  }).sort(function(a,b){
+  });
+  maletas.filter(function(m){ return m.revendedor===nomeRev && m.unificados; }).forEach(function(m){
+    m.unificados.forEach(function(u){
+      if(u.recibo) docs.push({nome:u.nome+' (unificado em '+m.nome+')', reciboUrl:u.recibo, dataEntrega:u.dataEntrega||u.dataCriacao, complemento:true});
+    });
+  });
+  docs.sort(function(a,b){
     return new Date(a.dataEntrega||a.dataCriacao||0) - new Date(b.dataEntrega||b.dataCriacao||0);
   });
 
