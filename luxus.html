@@ -702,11 +702,15 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
     <h3 style="font-size:16px;font-weight:700;color:var(--gray-800);margin-bottom:.5rem;">Destino dos itens devolvidos</h3>
     <p id="modal-destino-txt" style="font-size:13px;color:var(--gray-500);margin-bottom:1.5rem;"></p>
     <div style="display:flex;flex-direction:column;gap:.75rem;">
-      <button onclick="_confirmarDestinoDevolvidos('estoque')" class="btn-primary" style="padding:.875rem;font-size:14px;">
+      <button onclick="_confirmarDestinoDevolvidos('revendedora')" class="btn-primary" style="padding:.875rem;font-size:14px;">
+        <i class="fas fa-user-check" style="margin-right:8px;"></i><span id="btn-destino-revendedora">Continuar com a revendedora</span>
+        <div style="font-size:11px;font-weight:400;opacity:.85;margin-top:2px;">Os itens ficam com ela numa nova maleta; o fechamento gera o pagamento só do que foi vendido</div>
+      </button>
+      <button onclick="_confirmarDestinoDevolvidos('estoque')" class="btn-secondary" style="padding:.875rem;font-size:14px;">
         <i class="fas fa-warehouse" style="margin-right:8px;"></i>Voltar ao Estoque
       </button>
       <button onclick="_confirmarDestinoDevolvidos('maleta')" class="btn-secondary" style="padding:.875rem;font-size:14px;color:#f59e0b;border-color:#fcd34d;">
-        <i class="fas fa-briefcase" style="margin-right:8px;"></i>Continuar na Maleta
+        <i class="fas fa-briefcase" style="margin-right:8px;"></i>Guardar numa maleta (sem revendedora)
       </button>
       <button onclick="fecharModal('modal-destino-devolvidos')" class="btn-secondary" style="padding:.875rem;font-size:14px;">
         Cancelar
@@ -1327,9 +1331,17 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
           <span style="color:var(--gray-600);">Total dos itens</span>
           <span id="pacote-total" style="font-weight:700;color:var(--gray-800);"></span>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
           <span style="color:var(--gray-600);">Itens</span>
           <span id="pacote-qtd" style="font-weight:600;color:var(--gray-700);"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+          <span style="color:var(--gray-600);">Custo</span>
+          <span id="pacote-custo" style="font-weight:600;color:var(--gray-700);"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;">
+          <span style="color:var(--gray-600);">Lucro (venda − custo)</span>
+          <span id="pacote-lucro" style="font-weight:700;"></span>
         </div>
         <div style="display:flex;gap:8px;margin-bottom:8px;">
           <div style="flex:1;">
@@ -2239,17 +2251,62 @@ function excluirMaletaById(id){
 }
 function excluirMaletaAtual(){if(maletaAtual)excluirMaletaById(maletaAtual.id);}
 
+// Itens "Em Maleta" sem revendedor e sem maleta que os represente vão para UMA única "Maleta Recuperada".
+// (Antes criava uma maleta nova a cada vez que o app abria: o Sheets não guarda quais itens pertencem a uma
+//  maleta sem revendedor, então os itens sempre pareciam "não representados" e a linha se repetia — 7 numa tarde.)
+function _ehMaletaRecuperada(m){
+  return m && m.nome==='Maleta Recuperada' && !m.revendedor && !m.revendedorId && !m.entregue && !m.fechada && !m.complemento;
+}
 function sincronizarMaletasPendentes(){
-  var itensMaleta=inventory.filter(function(i){return i.Status==='Em Maleta'&&!i.Revendedor;});
-  if(!itensMaleta.length) return;
-  var rowIdsCobertos=[];
-  maletas.forEach(function(m){ m.itens.forEach(function(i){ rowIdsCobertos.push(String(i.rowId)); }); });
-  var naoRepresentados=itensMaleta.filter(function(i){ return rowIdsCobertos.indexOf(String(i.rowId))===-1; });
-  if(!naoRepresentados.length) return;
-  var maleta={ id:Date.now(), nome:'Maleta Recuperada', itens:naoRepresentados.slice(), revendedorId:'', revendedor:'', dataCriacao:new Date().toISOString(), entregue:false };
-  maletas.unshift(maleta);
-  salvarMaletas();
-  showToast(naoRepresentados.length+' item(s) recuperados para "Maleta Recuperada"','info');
+  if(!inventory||!inventory.length) return; // dados ainda não carregaram: não decide nada
+  var pendentes=inventory.filter(function(i){return i.Status==='Em Maleta'&&!i.Revendedor;});
+  var idsPendentes={}; pendentes.forEach(function(i){idsPendentes[String(i.rowId)]=true;});
+  var mudou=false;
+
+  // 1) junta todas as "Maleta Recuperada" numa só (mantém a que tiver mais itens, senão a mais antiga)
+  var recs=maletas.filter(_ehMaletaRecuperada);
+  var manter=null;
+  if(recs.length){
+    manter=recs.slice().sort(function(x,y){return ((y.itens||[]).length-(x.itens||[]).length)||((x.id||0)-(y.id||0));})[0];
+  } else if(window._ultimaRecuperada && (Date.now()-window._ultimaRecuperada.id)<120000 && pendentes.length){
+    // corrida entre dois carregamentos seguidos: reaproveita a que acabou de ser criada
+    manter=window._ultimaRecuperada; maletas.unshift(manter);
+  }
+  if(manter){
+    var vistos={}; var itensM=[];
+    recs.forEach(function(m){ (m.itens||[]).forEach(function(i){ var k=String(i.rowId); if(!vistos[k]&&idsPendentes[k]){vistos[k]=true;itensM.push(i);} }); });
+    if(!recs.length) (manter.itens||[]).forEach(function(i){ var k=String(i.rowId); if(!vistos[k]&&idsPendentes[k]){vistos[k]=true;itensM.push(i);} });
+    recs.forEach(function(m){ if(m!==manter){ maletas=maletas.filter(function(x){return x!==m;}); mudou=true; } });
+    if((manter.itens||[]).length!==itensM.length) mudou=true;
+    manter.itens=itensM;
+  }
+
+  // 2) itens pendentes que nenhuma maleta cobre entram na "Maleta Recuperada" (cria só se ainda não existir)
+  var cobertos={};
+  maletas.forEach(function(m){ (m.itens||[]).forEach(function(i){ cobertos[String(i.rowId)]=true; }); });
+  var naoRepresentados=pendentes.filter(function(i){return !cobertos[String(i.rowId)];});
+  if(naoRepresentados.length){
+    var criou=false;
+    if(!manter){
+      criou=true;
+      manter={ id:Date.now(), nome:'Maleta Recuperada', itens:[], revendedorId:'', revendedor:'', dataCriacao:new Date().toISOString(), entregue:false };
+      maletas.unshift(manter);
+      window._ultimaRecuperada=manter;
+    }
+    manter.itens=(manter.itens||[]).concat(naoRepresentados);
+    if(criou){ mudou=true; showToast(naoRepresentados.length+' item(s) recuperados para "Maleta Recuperada"','info'); }
+  }
+  // só regrava na planilha se a quantidade guardada lá for diferente da real (evita salvar a cada abertura)
+  if(manter && Number(manter._qtdItens)!==(manter.itens||[]).length){ manter._qtdItens=(manter.itens||[]).length; mudou=true; }
+
+  // 3) sem nenhum item pendente, "Maleta Recuperada" vazia não serve pra nada: remove
+  if(!pendentes.length){
+    var antes=maletas.length;
+    maletas=maletas.filter(function(m){ return !(_ehMaletaRecuperada(m) && !(m.itens||[]).length); });
+    if(maletas.length!==antes) mudou=true;
+  }
+
+  if(mudou){ salvarMaletas(); if(typeof renderListaMaletas==='function') renderListaMaletas(); if(typeof renderMaletasAtivas==='function') renderMaletasAtivas(); }
 }
 
 function renderUltimasEntregas(){ /* mantido para compatibilidade — lista de entregas está no histórico */ }
@@ -5429,10 +5486,12 @@ function compartilharWhatsApp(){
 
 var _pendingFechamento = null;
 
-function _abrirModalDestinoDevolvidos(n){
+function _abrirModalDestinoDevolvidos(n, nome){
   var el = document.getElementById('modal-destino-devolvidos');
   var txt = document.getElementById('modal-destino-txt');
-  if(txt) txt.textContent = n+' item(s) foram devolvidos. O que fazer com eles?';
+  if(txt) txt.textContent = n+' item(s) não foram vendidos. O que fazer com eles?';
+  var bt = document.getElementById('btn-destino-revendedora');
+  if(bt) bt.textContent = nome ? 'Continuar com '+String(nome).split(' ')[0] : 'Continuar com a revendedora';
   if(el){ el.style.display='flex'; }
 }
 
@@ -5454,11 +5513,12 @@ function _executarFechamento(vendidos, devolvidos, opcaoDevolvidos, dataVenda, n
     }
   });
 
-  // Devolvidos
+  // Devolvidos: voltam ao estoque, ficam "Em Maleta" (sem revendedora) ou CONTINUAM com a revendedora (Consignado)
+  var _novoStatusDev = opcaoDevolvidos==='estoque' ? 'Em Estoque' : (opcaoDevolvidos==='revendedora' ? 'Consignado' : 'Em Maleta');
+  var _novoRevDev = opcaoDevolvidos==='revendedora' ? nome : '';
   devolvidos.forEach(function(item){
-    var novoStatus=opcaoDevolvidos==='estoque'?'Em Estoque':'Em Maleta';
     var idx=inventory.findIndex(function(i){return i.rowId===item.rowId;});
-    if(idx!==-1){inventory[idx].Status=novoStatus;inventory[idx].Revendedor='';inventory[idx].DataVenda='';}
+    if(idx!==-1){inventory[idx].Status=_novoStatusDev;inventory[idx].Revendedor=_novoRevDev;inventory[idx].DataVenda='';}
   });
 
   // Sincroniza todos de uma vez via ação batch
@@ -5468,8 +5528,7 @@ function _executarFechamento(vendidos, devolvidos, opcaoDevolvidos, dataVenda, n
     var _rev1 = inventory.find(function(i){return i.rowId===item.rowId;}); batchItems.push({rowId:item.rowId,status:'Vendido',revendedor:(_rev1&&_rev1.Revendedor)||nome,dataVenda:dataVenda});
   });
   devolvidos.forEach(function(item){
-    var novoStatus=opcaoDevolvidos==='estoque'?'Em Estoque':'Em Maleta';
-    batchItems.push({rowId:item.rowId,status:novoStatus,revendedor:'',dataVenda:''});
+    batchItems.push({rowId:item.rowId,status:_novoStatusDev,revendedor:_novoRevDev,dataVenda:''});
   });
   if(batchItems.length) syncDrive({action:'batchEditInventario',items:batchItems});
 
@@ -5483,6 +5542,18 @@ function _executarFechamento(vendidos, devolvidos, opcaoDevolvidos, dataVenda, n
     maletas.filter(function(m){return m.revendedor===nome && m.entregue;}).forEach(function(m){
       m.entregue=false; m.fechada=true; m.dataFechamento=dataVenda; maletasFechadas.push({id:m.id,nome:m.nome});
     });
+  }
+  // Continuar com a revendedora: as maletas do ciclo ficam fechadas (histórico do pagamento) e os itens que
+  // ela segura passam a viver numa maleta NOVA, já entregue, pra ela — sem passar por "Maleta Recuperada".
+  var _revObj = revendedores.find(function(r){return r.Nome===nome;});
+  var novaMaletaCont = null;
+  if(opcaoDevolvidos==='revendedora' && devolvidos.length>0){
+    var _dd = new Date(dataVenda).toLocaleDateString('pt-BR');
+    novaMaletaCont = { id:Date.now()+7, nome:'Continuação '+_dd+' — '+nome,
+      itens:devolvidos.slice(), revendedor:nome, revendedorId:(_revObj&&_revObj.rowId)||'',
+      dataCriacao:dataVenda, dataEntrega:dataVenda, entregue:true, fechada:false, complemento:false,
+      log:[{data:dataVenda,evento:'Criada no fechamento — '+devolvidos.length+' item(s) continuam com '+nome}] };
+    maletas.unshift(novaMaletaCont);
   }
   salvarMaletas();
 
@@ -5541,7 +5612,7 @@ function _executarFechamento(vendidos, devolvidos, opcaoDevolvidos, dataVenda, n
     maletasFechadas:maletasFechadas,
     qtdConsignados:produtosConsignados.length,qtdVendidos:vendidos.length,qtdDevolvidos:devolvidos.length,
     valorConsignado:vc,valorDevolvido:vd,valorVendido:vv,comissao:com,lucro:luc,
-    nParcelas:nParc,valorParcela:vParc,
+    nParcelas:nParc,valorParcela:vParc,destinoDevolvidos:opcaoDevolvidos,
     itensVendidos:vendidos.map(function(i){return{Codigo:i.Codigo,Descricao:i.Descricao,Venda:i.Venda};}),
     itensDevolvidos:devolvidos.map(function(i){return{Codigo:i.Codigo,Descricao:i.Descricao,Venda:i.Venda};})
   };
@@ -5557,7 +5628,8 @@ function _executarFechamento(vendidos, devolvidos, opcaoDevolvidos, dataVenda, n
   document.getElementById('fechamento-valor-parcela').value='';
   document.getElementById('fechamento-parcelas-preview').style.display='none';
   atualizarResumoFechamento();renderConsignados();renderDashboard();renderHistorico();
-  showToast('Fechamento concluído!','success');
+  showToast(opcaoDevolvidos==='revendedora'&&devolvidos.length?'Fechamento concluído! '+devolvidos.length+' item(s) continuam com '+nome+' (nova maleta)':'Fechamento concluído!','success');
+  if(novaMaletaCont){ try{renderMaletasAtivas();renderListaMaletas();}catch(e){} }
   try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas}));}catch(e){}
   syncDrive({action:'addFechamento',id:fechId,revendedor:nome,percentual:(rev&&rev.Percentual)||30,
     qtdConsignados:reg.qtdConsignados,qtdVendidos:reg.qtdVendidos,qtdDevolvidos:reg.qtdDevolvidos,
@@ -5598,7 +5670,7 @@ function finalizarFechamento(){
     // Devolvidos: pergunta destino via modal
   if(devolvidos.length>0){
     _pendingFechamento = {vendidos:vendidos, devolvidos:devolvidos, dataVenda:dataVenda, nome:nome};
-    _abrirModalDestinoDevolvidos(devolvidos.length);
+    _abrirModalDestinoDevolvidos(devolvidos.length, nome);
     return; // continua em _confirmarDestinoDevolvidos()
   }
   _executarFechamento(vendidos, devolvidos, 'estoque', dataVenda, nome);
@@ -5898,14 +5970,27 @@ function renderListaPacote(){
   atualizarResumoPacote();
 }
 
-function atualizarResumoPacote(){
-  var subtotal = _pacoteItens.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0);
+// Totais do pacote num lugar só (tela e gravação usam a mesma conta):
+// total = soma das vendas − desconto ; lucro = total − custo dos itens (brinde entra com venda 0, então o custo dele abate o lucro)
+function _totaisPacote(){
+  var subtotal = _pacoteItens.reduce(function(s,i){return s+pN(i.Venda);},0);
+  var custo = _pacoteItens.reduce(function(s,i){return s+pN(i.Custo);},0);
   var descontoVal = parseFloat(document.getElementById('pacote-desconto').value)||0;
   var descontoPct = parseFloat(document.getElementById('pacote-desconto-pct').value)||0;
   // Desconto em % tem prioridade se preenchido
   if(descontoPct > 0) descontoVal = Math.round(subtotal * descontoPct / 100 * 100) / 100;
-  var total = Math.max(0, subtotal - descontoVal);
+  var total = Math.max(0, parseFloat((subtotal - descontoVal).toFixed(2)));
+  var lucro = parseFloat((total - custo).toFixed(2));
+  return {subtotal:subtotal, desconto:descontoVal, total:total, custo:parseFloat(custo.toFixed(2)), lucro:lucro};
+}
+
+function atualizarResumoPacote(){
+  var t = _totaisPacote();
+  var total = t.total, descontoVal = t.desconto;
   document.getElementById('pacote-total').textContent = fmt(total) + (descontoVal>0?' (desc. '+fmt(descontoVal)+')':'');
+  var elCusto = document.getElementById('pacote-custo'); if(elCusto) elCusto.textContent = fmt(t.custo);
+  var elLucro = document.getElementById('pacote-lucro');
+  if(elLucro){ elLucro.textContent = fmt(t.lucro); elLucro.style.color = t.lucro>=0 ? '#15803d' : '#dc2626'; }
   var recebido = parseFloat(document.getElementById('pacote-recebido').value)||0;
   var saldo = recebido - total;
   var elSaldo = document.getElementById('pacote-saldo');
@@ -5930,9 +6015,12 @@ function confirmarVendaPacote(){
   if(!comprador){ showToast('Informe o nome do comprador','warning'); return; }
   if(!_pacoteItens.length){ showToast('Adicione pelo menos um item','warning'); return; }
 
-  var total = _pacoteItens.reduce(function(s,i){return s+(parseFloat(i.Venda)||0);},0);
+  var tp = _totaisPacote();
+  var total = tp.total;          // já com desconto
+  var custoPacote = tp.custo;
+  var lucroPacote = tp.lucro;    // venda − custo
   var recebido = parseFloat(document.getElementById('pacote-recebido').value)||0;
-  var saldo = recebido - total;
+  var saldo = parseFloat((recebido - total).toFixed(2));
   var dataVenda = new Date().toISOString();
 
   // Marca cada item como Vendido no inventário
@@ -5960,11 +6048,13 @@ function confirmarVendaPacote(){
     qtdConsignados: _pacoteItens.length,
     qtdVendidos: _pacoteItens.length,
     qtdDevolvidos: 0,
+    valorConsignado: custoPacote,
+    valorDevolvido: 0,
     valorVendido: total,
     valorRecebido: recebido,
     saldo: saldo,
     comissao: 0,
-    lucro: total,
+    lucro: lucroPacote,
     itensVendidos: _pacoteItens.map(function(i){return {Codigo:i.Codigo, Descricao:i.Descricao, Venda:i.Venda};}),
     maletasFechadas: []
   };
@@ -5972,8 +6062,8 @@ function confirmarVendaPacote(){
   syncDrive({action:'addFechamento',
     id:registro.id, data:registro.data, revendedor:comprador, percentual:0,
     qtdConsignados:registro.qtdConsignados, qtdVendidos:registro.qtdVendidos,
-    qtdDevolvidos:0, valorConsignado:total, valorDevolvido:0,
-    valorVendido:total, valorConsignado:_pacoteItens.reduce(function(s,i){return s+pN(i.Custo);},0), comissao:0, lucro:parseFloat((total-_pacoteItens.reduce(function(s,i){return s+pN(i.Custo);},0)).toFixed(2)),
+    qtdDevolvidos:0, valorConsignado:custoPacote, valorDevolvido:0,
+    valorVendido:total, comissao:0, lucro:lucroPacote,
     reciboUrl:'', maletasFechadas:[], itensVendidos:registro.itensVendidos||[]
   });
 
