@@ -1760,9 +1760,16 @@ function renderLogMaleta(){
   }).join('');
 }
 
-function salvarMaletas(){
-  localStorage.setItem('luxus_maletas', JSON.stringify(maletas));
-  if(!scriptUrl) return;
+// ---- PROTEÇÃO (pendência 40): o app nunca apaga linha de maleta da planilha sem exclusão explícita ----
+var _maletasRemovidas = (function(){ try{ return JSON.parse(localStorage.getItem('luxus_maletas_removidas')||'{}')||{}; }catch(e){ return {}; } })();
+function _marcarMaletaRemovida(id){
+  if(id===undefined||id===null||id==='') return;
+  _maletasRemovidas[String(id)] = new Date().toISOString();
+  try{ localStorage.setItem('luxus_maletas_removidas', JSON.stringify(_maletasRemovidas)); }catch(e){}
+}
+var _salvarMaletasTimer = null, _salvarMaletasTentativas = 0, _enviandoMaletas = false;
+
+function _postMaletas(){
   // Envia só metadados das maletas (sem itens[]) para reduzir payload
   var maletasMeta = maletas.map(function(m){
     return {
@@ -1770,7 +1777,7 @@ function salvarMaletas(){
       dataCriacao: m.dataCriacao, dataEntrega: m.dataEntrega, entregue: m.entregue,
       fechada: m.fechada, reciboUrl: m.reciboUrl, complemento: m.complemento,
       dataFechamento: m.dataFechamento, log: m.log,
-      _qtdItens: (m.itens||[]).length  // só conta, não envia os itens
+      _qtdItens: (m.itens||[]).length || Number(m._qtdItens) || 0  // só conta, não envia os itens
     };
   });
   fetch(scriptUrl, {
@@ -1778,6 +1785,65 @@ function salvarMaletas(){
     headers:{'Content-Type':'text/plain'},
     body:JSON.stringify({action:'salvarMaletas', maletas:maletasMeta})
   }).catch(function(){});
+}
+
+// Traz de volta linhas que existem na planilha mas não na lista local (e que ninguém excluiu de propósito)
+function _mesclarMaletasRemotas(remotas){
+  var locais = {}; maletas.forEach(function(m){ locais[String(m.id)] = true; });
+  var trazidas = [];
+  (remotas||[]).forEach(function(r){
+    if(!r || r.id===undefined || r.id===null || r.id==='') return;
+    var k = String(r.id);
+    if(locais[k] || _maletasRemovidas[k]) return;
+    var c = {}; for(var f in r){ c[f] = r[f]; }
+    c.itens = c.itens || [];
+    maletas.push(c); locais[k] = true; trazidas.push(c);
+  });
+  if(trazidas.length){
+    try{ aplicarUnificacoes(); }catch(e){}
+    try{ localStorage.setItem('luxus_maletas', JSON.stringify(maletas)); }catch(e){}
+    try{ renderListaMaletas(); }catch(e){}
+    try{ renderMaletasAtivas(); }catch(e){}
+    try{ showToast(trazidas.length+' maleta(s) que estavam na planilha foram preservadas','info'); }catch(e){}
+  }
+  return trazidas.length;
+}
+
+// Lê a planilha antes de gravar; se não conseguir ler, NÃO grava (tenta de novo depois)
+function _enviarMaletasSeguro(){
+  if(!scriptUrl) return;
+  if(_enviandoMaletas){ _agendarSalvarMaletas(1500); return; }
+  _enviandoMaletas = true;
+  var ctl = (typeof AbortController!=='undefined') ? new AbortController() : null;
+  var to = setTimeout(function(){ if(ctl) ctl.abort(); }, 15000);
+  fetch(scriptUrl+'?action=getTudo',{method:'GET',cache:'no-cache',signal:ctl?ctl.signal:undefined})
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    clearTimeout(to); _enviandoMaletas = false;
+    if(!d || !Array.isArray(d.maletas)) throw new Error('resposta sem maletas');
+    _mesclarMaletasRemotas(d.maletas);
+    _salvarMaletasTentativas = 0;
+    _postMaletas();
+  }).catch(function(){
+    clearTimeout(to); _enviandoMaletas = false;
+    _salvarMaletasTentativas++;
+    if(_salvarMaletasTentativas <= 3){
+      _agendarSalvarMaletas(20000*_salvarMaletasTentativas);
+    } else {
+      _salvarMaletasTentativas = 0;
+      try{ showToast('Não consegui conferir a planilha antes de salvar as maletas — nada foi gravado lá. Salve novamente quando a conexão voltar.','warning'); }catch(e){}
+    }
+  });
+}
+function _agendarSalvarMaletas(ms){
+  if(_salvarMaletasTimer) clearTimeout(_salvarMaletasTimer);
+  _salvarMaletasTimer = setTimeout(function(){ _salvarMaletasTimer = null; _enviarMaletasSeguro(); }, ms);
+}
+
+function salvarMaletas(){
+  localStorage.setItem('luxus_maletas', JSON.stringify(maletas));
+  if(!scriptUrl) return;
+  _agendarSalvarMaletas(400);
 }
 
 function criarMaleta(){
@@ -2264,7 +2330,7 @@ function sincronizarMaletasPendentes(){
     var vistos={}; var itensM=[];
     recs.forEach(function(m){ (m.itens||[]).forEach(function(i){ var k=String(i.rowId); if(!vistos[k]&&idsPendentes[k]){vistos[k]=true;itensM.push(i);} }); });
     if(!recs.length) (manter.itens||[]).forEach(function(i){ var k=String(i.rowId); if(!vistos[k]&&idsPendentes[k]){vistos[k]=true;itensM.push(i);} });
-    recs.forEach(function(m){ if(m!==manter){ maletas=maletas.filter(function(x){return x!==m;}); mudou=true; } });
+    recs.forEach(function(m){ if(m!==manter){ _marcarMaletaRemovida(m.id); maletas=maletas.filter(function(x){return x!==m;}); mudou=true; } });
     if((manter.itens||[]).length!==itensM.length) mudou=true;
     manter.itens=itensM;
   }
@@ -2290,6 +2356,7 @@ function sincronizarMaletasPendentes(){
   // 3) sem nenhum item pendente, "Maleta Recuperada" vazia não serve pra nada: remove
   if(!pendentes.length){
     var antes=maletas.length;
+    maletas.forEach(function(m){ if(_ehMaletaRecuperada(m) && !(m.itens||[]).length) _marcarMaletaRemovida(m.id); });
     maletas=maletas.filter(function(m){ return !(_ehMaletaRecuperada(m) && !(m.itens||[]).length); });
     if(maletas.length!==antes) mudou=true;
   }
@@ -2326,6 +2393,30 @@ function renderMaletasAtivas(){
       +'</div>'
       +'</div>';
   }).join('');
+
+  // Maletas reservadas para uma revendedora e ainda não entregues (aguardando entrega/assinatura)
+  var reservadas = maletas.filter(function(m){ return !m.complemento && !m.entregue && !m.fechada && m.revendedor; });
+  var htmlReservadas = reservadas.length ? (
+    '<div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.04em;margin:.25rem 0 .5rem;"><i class="fas fa-clock" style="margin-right:5px;"></i>Reservadas — aguardando entrega</div>'
+    + reservadas.map(function(m){
+      var q = (m.itens&&m.itens.length) || parseInt(m._qtdItens) || 0;
+      var dt = m.dataEntrega||m.dataCriacao;
+      return '<div class="card-light" style="padding:1rem;border-left:3px solid #f59e0b;margin-bottom:.75rem;">'
+        +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;">'
+        +'<div style="width:38px;height:38px;border-radius:10px;background:#fffbeb;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">📦</div>'
+        +'<div style="flex:1;min-width:0;">'
+        +'<div style="font-weight:700;font-size:14px;color:var(--gray-800);">'+m.nome+'</div>'
+        +'<div style="font-size:11px;color:var(--gray-500);">Reservada para '+m.revendedor+' · '+q+' item(s)'+(dt?' · '+_dtBR(dt):'')+'</div>'
+        +'</div>'
+        +'<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:600;">Aguardando entrega</span>'
+        +'</div>'
+        +'<div style="display:flex;gap:6px;">'
+        +'<button onclick="entregarMaletaReservada('+m.id+')" class="btn-primary" style="flex:1;padding:7px;font-size:12px;"><i class="fas fa-pen-nib" style="margin-right:5px;"></i>Entregar / assinar</button>'
+        +'<button onclick="excluirMaletaById('+m.id+')" style="background:none;border:1px solid #fca5a5;border-radius:6px;color:#dc2626;cursor:pointer;padding:7px 12px;font-size:12px;" title="Excluir maleta"><i class="fas fa-trash"></i></button>'
+        +'</div></div>';
+    }).join('')
+  ) : '';
+  htmlComplementos = htmlComplementos + htmlReservadas;
 
   // Agrupa maletas entregues por revendedor
   var grupos = {};
@@ -2475,6 +2566,30 @@ function renderMaletasAtivas(){
 }
 
 
+function entregarMaletaReservada(id){
+  var m = maletas.find(function(x){ return x.id===id; });
+  if(!m) return;
+  var doc = (historicEntregas||[]).slice().reverse().find(function(e){
+    return e && e.tipo==='entrega' && !e.complemento && (e.maletaId===m.id || e.id===m.id) && e.itens && e.itens.length;
+  });
+  if(!doc && m.itens && m.itens.length){
+    var rev = revendedores.find(function(r){ return r.Nome===m.revendedor; });
+    var pct = rev ? (parseFloat(rev.Percentual)||50) : 50;
+    var totalCusto = m.itens.reduce(function(s,i){ return s+(parseFloat(i.Custo)||0); },0);
+    doc = { id:m.id, tipo:'entrega', data:m.dataEntrega||m.dataCriacao||new Date().toISOString(),
+      revendedor:m.revendedor, revendedorId:m.revendedorId||'', nomeMaleta:m.nome, maletaId:m.id,
+      totalItens:m.itens.length, totalCusto:totalCusto, percentual:pct, comissao:totalCusto*(pct/100),
+      totalAcertar:totalCusto+totalCusto*(pct/100), itens:m.itens };
+  }
+  if(!doc){
+    // sem lista de itens nesta sessão: abre a maleta na aba Maletas para entregar de lá
+    showToast('Os itens desta maleta não estão carregados — abrindo a maleta para você entregar.','info');
+    try{ selecionarMaleta(id); }catch(e){}
+    return;
+  }
+  _entregaDoc = doc;
+  abrirModalEntrega(doc);
+}
 function assinarComplemento(id){
   var m = maletas.find(function(m){ return m.id===id; });
   if(!m) return;
@@ -2555,6 +2670,7 @@ function excluirMaletaById(id){
       if(inv){ inv.Status='Em Estoque'; inv.Revendedor=''; batch.push({rowId:inv.rowId,status:'Em Estoque',revendedor:'',dataVenda:''}); }
     });
     if(batch.length) syncDrive({action:'batchEditInventario',items:batch});
+    _marcarMaletaRemovida(id);
     maletas = maletas.filter(function(x){return x.id!==id;});
     // se era a principal de complementos unificados, apaga também os registros de unificação dela
     historicEntregas.filter(function(e){ return e.tipo==='unificacao' && String(e.maletaPrincipalId)===String(id); })
@@ -2665,6 +2781,7 @@ function unificarMaleta(compId, princId){
   syncDrive({action:'addEntrega', entrega:rec});
 
   // complemento deixa de existir como maleta
+  _marcarMaletaRemovida(comp.id);
   maletas = maletas.filter(function(x){ return x.id!==comp.id; });
   if(maletaAtual && maletaAtual.id===comp.id){ maletaAtual=null; var det=document.getElementById('maleta-detalhe'); if(det) det.style.display='none'; }
   try{localStorage.setItem('luxus_cache',JSON.stringify({inventory:inventory,revendedores:revendedores,categorias:categorias,fechamentos:historicFechamentos,entregas:historicEntregas,maletas:maletas}));}catch(e){}
@@ -2693,6 +2810,7 @@ function aplicarUnificacoes(){
   recs.forEach(function(r){
     var c = r.complemento;
     // se o complemento ainda estiver na lista (ex.: cópia antiga), tira
+    if(maletas.some(function(m){ return m.complemento && String(m.id)===String(c.id); })) _marcarMaletaRemovida(c.id);
     maletas = maletas.filter(function(m){ return !(m.complemento && String(m.id)===String(c.id)); });
     var main = maletas.find(function(m){ return String(m.id)===String(r.maletaPrincipalId); });
     if(!main) return;
