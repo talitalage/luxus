@@ -786,7 +786,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
         <h3 class="section-title"><i class="fas fa-users"></i>Revendedores</h3>
         <div id="lista-revendedores" class="space-y" style="margin-bottom:1rem;max-height:20rem;overflow-y:auto;"></div>
         <input type="text" id="busca-revendedor" placeholder="Buscar revendedor..." oninput="renderRevendedores()" style="margin-bottom:8px;">
-        <button onclick="abrirModalRevendedor()" class="btn-primary" style="width:100%;"><i class="fas fa-plus" style="margin-right:6px;"></i>Novo Revendedor</button>
+        <button onclick="novoRevendedor()" class="btn-primary" style="width:100%;"><i class="fas fa-plus" style="margin-right:6px;"></i>Novo Revendedor</button>
       </div>
       <div class="card-light" style="padding:1.25rem;">
         <h3 class="section-title"><i class="fas fa-sliders-h"></i>Configurar Cards</h3>
@@ -3291,6 +3291,15 @@ function limparAssEntrega() {
   _entregaAss = null;
 }
 
+// Envia atualizações de inventário em lotes pequenos e espaçados (entregas grandes perdiam itens quando tudo ia de uma vez)
+function _syncInventarioEmLotes(itens, tam, pausaMs){
+  tam = tam||40; pausaMs = pausaMs||700;
+  if(!itens || !itens.length) return;
+  var lotes=[]; for(var i=0;i<itens.length;i+=tam) lotes.push(itens.slice(i,i+tam));
+  lotes.forEach(function(l,k){
+    setTimeout(function(){ syncDrive({action:'batchEditInventario',items:l}); }, k*pausaMs);
+  });
+}
 function confirmarEntregaMaleta(){
   var doc=_entregaDoc; if(!doc) return;
   if(!doc.itens || !doc.itens.length){ showToast('Este documento não tem itens — nada para confirmar.','warning'); return; }
@@ -3301,7 +3310,7 @@ function confirmarEntregaMaleta(){
       if(idx!==-1){inventory[idx].Status='Consignado';inventory[idx].Revendedor=doc.revendedor;}
       batchItems.push({rowId:item.rowId,status:'Consignado',revendedor:doc.revendedor,dataVenda:''});
     });
-    if(batchItems.length) syncDrive({action:'batchEditInventario',items:batchItems});
+    var _jaNoLote={}; batchItems.forEach(function(b){ _jaNoLote[String(b.rowId)]=true; });
     var idx=historicEntregas.findIndex(function(e){return e.id===doc.id;});
     if(idx!==-1) historicEntregas[idx].confirmada=true;
     // Busca a maleta pelo ID real (maletaId), depois fallbacks
@@ -3315,12 +3324,13 @@ function confirmarEntregaMaleta(){
       if(!mal.revendedorId && doc.revendedorId) mal.revendedorId = doc.revendedorId;
       // Garante que todos os itens da maleta estão Consignado no inventário
       var nomeRev = mal.revendedor || doc.revendedor || '';
+      // (sem uma chamada por item: itens da maleta que ainda não estavam no lote entram no mesmo envio em lotes)
       (mal.itens||[]).forEach(function(mItem){
         var invItem = inventory.find(function(i){ return String(i.rowId)===String(mItem.rowId); });
         if(invItem){
           invItem.Status = 'Consignado';
           invItem.Revendedor = nomeRev;
-          syncDrive({action:'editInventario', rowId:invItem.rowId, status:'Consignado', revendedor:nomeRev});
+          if(!_jaNoLote[String(invItem.rowId)]){ _jaNoLote[String(invItem.rowId)]=true; batchItems.push({rowId:invItem.rowId,status:'Consignado',revendedor:nomeRev,dataVenda:''}); }
         }
       });
       addLogMaleta(mal,'Entrega confirmada — itens passaram para Consignado');
@@ -3328,6 +3338,7 @@ function confirmarEntregaMaleta(){
     }
     // Se for complemento, marca entregue na maleta de complemento correspondente
     if(doc.complemento){ var mComp=maletas.find(function(m){return m.id===doc.id&&m.complemento;}); if(mComp){mComp.entregue=true;salvarMaletas();} }
+    _syncInventarioEmLotes(batchItems);
     fecharModal('modal-entrega');
     renderDashboard();renderMaletasAtivas();renderListaMaletas();
     showToast('Entrega confirmada! Itens consignados para '+doc.revendedor,'success');
