@@ -2130,14 +2130,9 @@ function adicionarItemMaleta(){
     if(idx!==-1){ inventory[idx].Status=novoStatus; inventory[idx].Revendedor=novoRev; }
     addLogMaleta(maletaAtual, '+1 item adicionado: '+item.Codigo+(item.Descricao?' — '+item.Descricao:''));
     localStorage.setItem('luxus_maletas',JSON.stringify(maletas));
-    // Salva item + maletas numa única chamada GET
-    var p=JSON.stringify({action:'salvarItemMaleta',rowId:item.rowId,status:novoStatus,revendedor:novoRev,maletas:maletas});
-    if(p.length<8000){
-      fetch(scriptUrl+'?payload='+encodeURIComponent(p),{method:'GET',cache:'no-cache'}).catch(function(){});
-    } else {
-      syncDrive({action:'editInventario',rowId:item.rowId,status:novoStatus,revendedor:novoRev});
-      syncDrive({action:'salvarMaletas',maletas:maletas});
-    }
+    // Salva o item e a lista de maletas (esta passa pela conferência da planilha — ver salvarMaletas)
+    syncDrive({action:'editInventario',rowId:item.rowId,status:novoStatus,revendedor:novoRev});
+    salvarMaletas();
     renderDetalhesMaleta();
     document.getElementById('maleta-codigo').focus();
     showToast('✓ '+item.Codigo,'success');
