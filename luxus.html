@@ -2308,7 +2308,7 @@ function entregarMaleta(){
       if(idx!==-1){ inventory[idx].Revendedor=rev.Nome; }
       batchItems.push({rowId:item.rowId,status:'Em Maleta',revendedor:rev.Nome,dataVenda:''});
     });
-    if(batchItems.length) syncDrive({action:'batchEditInventario',items:batchItems});
+    _syncInventarioEmLotes(batchItems,40,700);
 
     maletaAtual.entregue = false; // só marca entregue após assinar
     maletaAtual.revendedorId = sel.value;
@@ -2779,7 +2779,7 @@ function excluirMaletaById(id){
       var inv = inventory.find(function(i){return String(i.rowId)===String(item.rowId);});
       if(inv){ inv.Status='Em Estoque'; inv.Revendedor=''; batch.push({rowId:inv.rowId,status:'Em Estoque',revendedor:'',dataVenda:''}); }
     });
-    if(batch.length) syncDrive({action:'batchEditInventario',items:batch});
+    _syncInventarioEmLotes(batch,40,700);
     _marcarMaletaRemovida(id);
     maletas = maletas.filter(function(x){return x.id!==id;});
     // se era a principal de complementos unificados, apaga também os registros de unificação dela
@@ -3099,7 +3099,7 @@ function excluirMaletaAtiva(nomeRev){
     if(idx!==-1){ inventory[idx].Status='Em Estoque'; inventory[idx].Revendedor=''; }
     batchItems.push({rowId:item.rowId, status:'Em Estoque', revendedor:'', dataVenda:''});
   });
-  if(batchItems.length) syncDrive({action:'batchEditInventario', items:batchItems});
+  _syncInventarioEmLotes(batchItems,40,700);
   // Remove entrega correspondente
   historicEntregas = historicEntregas.filter(function(e){ return e.revendedor!==nomeRev; });
   renderMaletasAtivas();
@@ -4264,7 +4264,7 @@ function aplicarLote(){
     });
   });
 
-  if(batchItems.length) syncDrive({action:'batchEditInventario',items:batchItems});
+  _syncInventarioEmLotes(batchItems,40,700);
 
   document.getElementById('lote-status').value='';
   document.getElementById('lote-revendedor').value='';
@@ -5562,8 +5562,15 @@ function carregarProdutosRevendedor(){var nome=document.getElementById('fechamen
 var maletaSelId = parseInt(document.getElementById('fechamento-maleta').value)||0;
   if(maletaSelId){
     var maletaSel = maletas.find(function(m){return m.id===maletaSelId;});
-    var idsNaMaleta = maletaSel ? new Set(maletaSel.itens.map(function(i){return i.rowId;})) : new Set();
+    var idsNaMaleta = maletaSel ? new Set((maletaSel.itens||[]).map(function(i){return i.rowId;})) : new Set();
+    if(!idsNaMaleta.size){
+      // a planilha guarda só a quantidade de cada maleta, não quais itens estão nela: não dá pra fechar uma maleta isolada
+      showToast('A planilha não guarda quais itens estão em cada maleta. Usando "Todas as maletas".','warning');
+      document.getElementById('fechamento-maleta').value='';
+      produtosConsignados=inventory.filter(function(i){return i.Revendedor===nome&&i.Status!=='Em Estoque';});
+    } else {
     produtosConsignados = inventory.filter(function(i){return i.Revendedor===nome && i.Status!=='Em Estoque' && idsNaMaleta.has(i.rowId);});
+    }
   } else {
     produtosConsignados=inventory.filter(function(i){return i.Revendedor===nome&&i.Status!=='Em Estoque';});
   }devolucoes=[];var vTotal=produtosConsignados.reduce(function(s,i){return s+pN(i.Venda);},0);document.getElementById('info-revendedor').style.display='flex';document.getElementById('percentual-revendedor').textContent=(rev.Percentual||30)+'%';document.getElementById('total-consignado').textContent=produtosConsignados.length;document.getElementById('valor-total-consignado').textContent=fmt(vTotal);if(!produtosConsignados.length)showToast('Este revendedor não possui produtos consignados','warning');atualizarResumoFechamento();renderConsignados();document.getElementById('lista-devolucoes').innerHTML='';document.getElementById('lista-devolucoes-empty').style.display='block';document.getElementById('fechamento-codigo').value='';document.getElementById('fechamento-codigo').focus();carregarRascunhoFechamento(nome);}
@@ -6070,7 +6077,7 @@ function _executarFechamento(vendidos, devolvidos, opcaoDevolvidos, dataVenda, n
   devolvidos.forEach(function(item){
     batchItems.push({rowId:item.rowId,status:_novoStatusDev,revendedor:_novoRevDev,dataVenda:''});
   });
-  if(batchItems.length) syncDrive({action:'batchEditInventario',items:batchItems});
+  _syncInventarioEmLotes(batchItems,40,700);
 
   // Marca a maleta como fechada e guarda referência no fechamento
   var maletaFechId = parseInt(document.getElementById('fechamento-maleta').value)||0;
@@ -6574,7 +6581,7 @@ function confirmarVendaPacote(){
       batchItems.push({rowId:inv.rowId, status:'Vendido', revendedor:'', dataVenda:dataVenda});
     }
   });
-  if(batchItems.length) syncDrive({action:'batchEditInventario', items:batchItems});
+  _syncInventarioEmLotes(batchItems,40,700);
 
   // Registra no histórico financeiro como venda avulsa
   if(!historicFechamentos) historicFechamentos = [];
