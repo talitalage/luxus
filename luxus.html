@@ -1541,7 +1541,7 @@ function loadData() {
     var tabRel=document.getElementById('tab-relatorio');
     if(tabRel && tabRel.classList.contains('active')) renderRelatorio();
     if(Array.isArray(d.entregas))    historicEntregas=d.entregas;
-    if(Array.isArray(d.maletas))    maletas=d.maletas;
+    if(Array.isArray(d.maletas))    _aplicarMaletasRemotas(d.maletas);
     try{aplicarUnificacoes();}catch(e){}
     if(d.titulo)    {localStorage.setItem('luxus_titulo',d.titulo);   document.getElementById('site-title-display').textContent=d.titulo;document.title=d.titulo+' - Sistema de Gestão';}
     if(d.subtitulo) {localStorage.setItem('luxus_subtitulo',d.subtitulo);document.getElementById('site-subtitle-display').textContent=d.subtitulo;}
@@ -1588,7 +1588,95 @@ function showSyncStatus(ok){
   el._t=setTimeout(function(){el.style.color='rgba(255,255,255,0)';},4000);
 }
 
+// ---- Itens cadastrados na hora (pendência 45) ----
+// O app cria o item com um rowId local (Date.now()), mas a planilha gera o próprio rowId ao gravar. Qualquer edição
+// seguinte (status, revendedor) usando o rowId local não acha a linha e se perde em silêncio. Aqui o app descobre o rowId
+// real (lendo a planilha) e troca antes de enviar.
+var _rowIdMap = {};        // rowId local -> rowId real da planilha
+var _novosPendentes = {};  // rowId local -> item cadastrado agora e ainda não conferido com a planilha
+var _reconciliando = null;
+function _normCodigoItem(x){ return String(x==null?'':x).trim().replace(/\.0$/,'').replace(/^0+/,''); }
+function _marcarItemNovo(item){ if(item && item.rowId!==undefined) _novosPendentes[String(item.rowId)] = item; }
+function _mapearRowId(id){ var k=String(id); return Object.prototype.hasOwnProperty.call(_rowIdMap,k) ? _rowIdMap[k] : id; }
+function _aplicarMapaRowId(p){
+  if(!p || typeof p!=='object') return p;
+  var c={}; for(var k in p) c[k]=p[k];
+  if(c.rowId!==undefined) c.rowId=_mapearRowId(c.rowId);
+  if(Array.isArray(c.items)) c.items=c.items.map(function(it){ var d={}; for(var k in it) d[k]=it[k]; if(d.rowId!==undefined) d.rowId=_mapearRowId(d.rowId); return d; });
+  return c;
+}
+function _payloadTemNovo(p){
+  if(!p || !Object.keys(_novosPendentes).length) return false;
+  if(p.rowId!==undefined && _novosPendentes[String(p.rowId)]) return true;
+  return Array.isArray(p.items) && p.items.some(function(it){ return it && it.rowId!==undefined && _novosPendentes[String(it.rowId)]; });
+}
+function _trocarRowIdLocal(velho, novo){
+  var k=String(velho);
+  inventory.forEach(function(i){ if(String(i.rowId)===k) i.rowId=novo; });
+  maletas.forEach(function(m){ (m.itens||[]).forEach(function(i){ if(String(i.rowId)===k) i.rowId=novo; }); });
+  (historicEntregas||[]).forEach(function(e){ (e.itens||[]).forEach(function(i){ if(String(i.rowId)===k) i.rowId=novo; }); });
+  if(_entregaDoc && _entregaDoc.itens) _entregaDoc.itens.forEach(function(i){ if(String(i.rowId)===k) i.rowId=novo; });
+}
+function _casarRowIds(remoto){
+  var rem = remoto.map(function(r){ return {r:r, t:new Date(r.Data||0).getTime()||0}; });
+  var locais = {}; inventory.forEach(function(i){ if(!_novosPendentes[String(i.rowId)]) locais[String(i.rowId)]=true; });
+  var usados = {}; Object.keys(_rowIdMap).forEach(function(k){ usados[String(_rowIdMap[k])]=true; });
+  var ids = Object.keys(_novosPendentes).sort(function(a,b){ return Number(a)-Number(b); });
+  ids.forEach(function(id){
+    var it=_novosPendentes[id];
+    if(!inventory.some(function(i){ return String(i.rowId)===id; })){ delete _novosPendentes[id]; return; } // inventário foi recarregado
+    var tl=new Date(it.Data||0).getTime()||Number(id);
+    var melhor=null, dist=1e15;
+    rem.forEach(function(x){
+      var rid=String(x.r.rowId);
+      if(usados[rid]) return;
+      if(rid===id){ melhor=x; dist=-1; return; }
+      if(locais[rid]) return;
+      if(_normCodigoItem(x.r.Codigo)!==_normCodigoItem(it.Codigo)) return;
+      if(String(x.r.Descricao||'').trim().toUpperCase()!==String(it.Descricao||'').trim().toUpperCase()) return;
+      if(Math.abs((parseFloat(x.r.Custo)||0)-(parseFloat(it.Custo)||0))>0.001) return;
+      if(Math.abs((parseFloat(x.r.Venda)||0)-(parseFloat(it.Venda)||0))>0.001) return;
+      var d=Math.abs(x.t-tl); if(d>300000) return;
+      if(d<dist){ dist=d; melhor=x; }
+    });
+    if(melhor){
+      var novo=melhor.r.rowId; usados[String(novo)]=true;
+      if(String(novo)!==id){ _rowIdMap[id]=novo; _trocarRowIdLocal(it.rowId, novo); }
+      delete _novosPendentes[id];
+    }
+  });
+}
+function _reconciliarRowIdsNovos(){
+  if(_reconciliando) return _reconciliando;
+  if(!scriptUrl || !Object.keys(_novosPendentes).length) return Promise.resolve();
+  _reconciliando = new Promise(function(resolve){
+    var tent=0;
+    function tentar(){
+      tent++;
+      var ctl=(typeof AbortController!=='undefined')?new AbortController():null;
+      var to=setTimeout(function(){ if(ctl) ctl.abort(); },15000);
+      fetch(scriptUrl+'?action=getTudo',{method:'GET',cache:'no-cache',signal:ctl?ctl.signal:undefined})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        clearTimeout(to);
+        if(!d || !Array.isArray(d.inventory)) throw new Error('sem inventario');
+        _casarRowIds(d.inventory);
+        if(Object.keys(_novosPendentes).length && tent<5) setTimeout(tentar,1500); else resolve();
+      }).catch(function(){ clearTimeout(to); if(tent<3) setTimeout(tentar,2000); else resolve(); });
+    }
+    tentar();
+  }).then(function(){ _reconciliando=null; });
+  return _reconciliando;
+}
 function syncDrive(payload){
+  if(!scriptUrl)return;
+  if(_payloadTemNovo(payload)){
+    _reconciliarRowIdsNovos().then(function(){ _syncDriveEnviar(_aplicarMapaRowId(payload)); });
+    return;
+  }
+  _syncDriveEnviar(_aplicarMapaRowId(payload));
+}
+function _syncDriveEnviar(payload){
   if(!scriptUrl)return;
   var el=document.getElementById('sync-status');
   if(el){el.innerHTML='<i class="fas fa-sync-alt animate-spin"></i> sincronizando';el.style.color='rgba(255,255,255,.5)';}
@@ -1699,7 +1787,7 @@ function carregarMaletas(){
     .then(function(r){return r.json();})
     .then(function(d){
       if(Array.isArray(d.maletas) && d.maletas.length){
-        maletas = d.maletas;
+        _aplicarMaletasRemotas(d.maletas);
         try{aplicarUnificacoes();}catch(e){}
         try{localStorage.setItem('luxus_maletas',JSON.stringify(maletas));}catch(e){}
       } else if(!maletas.length){
@@ -1785,6 +1873,30 @@ function _postMaletas(){
     headers:{'Content-Type':'text/plain'},
     body:JSON.stringify({action:'salvarMaletas', maletas:maletasMeta})
   }).catch(function(){});
+}
+
+// Aplica a lista de maletas vinda da planilha SEM perder o que o usuário fez enquanto a leitura demorava
+// (maleta criada agora, itens/log em memória, alterações ainda não gravadas).
+var _sessaoInicio = Date.now();
+function _aplicarMaletasRemotas(remotas){
+  var salvando = !!_salvarMaletasTimer || _enviandoMaletas;
+  var locais = {}; maletas.forEach(function(m){ locais[String(m.id)] = m; });
+  var ids = {};
+  var nova = remotas.map(function(r){
+    ids[String(r.id)] = true;
+    var l = locais[String(r.id)];
+    if(!l) return r;
+    if(salvando) return l;                                  // alteração local ainda não gravada: vale a local
+    var c = {}; for(var k in r) c[k] = r[k];
+    if(l.itens && l.itens.length) c.itens = l.itens;        // a planilha só guarda a contagem; os itens ficam em memória
+    if(l.log && l.log.length) c.log = l.log;
+    return c;
+  });
+  maletas.forEach(function(m){                              // criada nesta sessão e ainda não está na planilha
+    if(!ids[String(m.id)] && Number(m.id) >= _sessaoInicio && !_maletasRemovidas[String(m.id)]) nova.push(m);
+  });
+  maletas = nova;
+  if(maletaAtual){ var ma = maletas.find(function(m){ return String(m.id)===String(maletaAtual.id); }); if(ma) maletaAtual = ma; }
 }
 
 // Traz de volta linhas que existem na planilha mas não na lista local (e que ninguém excluiu de propósito)
@@ -2097,6 +2209,7 @@ function confirmarCadastroRapido(){
     Foto: '', Data: new Date().toISOString()
   };
   inventory.push(item);
+  _marcarItemNovo(item);
   syncDrive({action:'addInventario', codigo:item.Codigo, descricao:item.Descricao, tipo:item.Tipo,
     categoria:item.Categoria, custo:item.Custo, venda:item.Venda, status:item.Status,
     revendedor:item.Revendedor, foto:''});
@@ -2537,6 +2650,8 @@ function renderMaletasAtivas(){
       +'<div style="flex:1;min-width:0;">'
       +'<div style="font-weight:700;font-size:14px;color:var(--gray-800);">'+nome+'</div>'
       +'<div style="font-size:11px;color:var(--gray-500);">'+maletasRev.length+' maleta(s) · '+totalItens+' itens · '+fmt(totalCusto)+'</div>'
+      +(function(){ var somaM=maletasRev.reduce(function(s,x){return s+(parseInt(x._qtdItens)||0);},0); var dif=somaM-totalItens;
+          return (dif!==0&&totalItens>0) ? '<div style="font-size:11px;color:#b45309;margin-top:2px;"><i class="fas fa-triangle-exclamation"></i> As maletas somam '+somaM+' itens, mas o inventário tem '+totalItens+' consignados (diferença de '+Math.abs(dif)+'). O total do inventário é o que vale.</div>' : ''; })()
       +'</div>'
       +'<i class="fas fa-chevron-down" id="icon-'+collapseId+'" style="color:var(--gray-400);font-size:14px;"></i>'
       +'</div>'
@@ -5408,7 +5523,7 @@ function renderDashTable(){
 // ENTRADA
 // =====================================================
 function onChangeTipoEntrada(){var tipo=document.getElementById('entrada-tipo').value;var container=document.getElementById('entrada-categoria-container');var select=document.getElementById('entrada-categoria');if(tipo&&categorias[tipo]){container.style.display='block';var opts='<option value="">Selecione...</option>';categorias[tipo].forEach(function(c){opts+='<option value="'+c+'">'+c+'</option>';});select.innerHTML=opts;}else{container.style.display='none';}}
-function registrarEntrada(){var codigo=document.getElementById('entrada-codigo').value.trim();var descricao=(document.getElementById('entrada-descricao').value.trim()).toUpperCase();var tipo=document.getElementById('entrada-tipo').value;var categoria=document.getElementById('entrada-categoria').value;var custo=pN(document.getElementById('entrada-custo').value);var venda=pN(document.getElementById('entrada-venda').value);var revendedor=document.getElementById('entrada-revendedor').value;if(!codigo){showToast('Informe o código do produto','warning');document.getElementById('entrada-codigo').focus();return;}var status=revendedor?'Consignado':'Em Estoque';var novoItem={rowId:Date.now(),Codigo:codigo,Descricao:descricao,Tipo:tipo,Categoria:categoria,Custo:custo,Venda:venda,Status:status,Revendedor:revendedor,Foto:'',Data:new Date().toISOString()};inventory.push(novoItem);limparFormEntrada();renderUltimasEntradas();renderDashboard();showToast('Produto registrado!','success');syncDrive({action:'addInventario',codigo:codigo,descricao:descricao,tipo:tipo,categoria:categoria,custo:custo,venda:venda,status:status,revendedor:revendedor||'',foto:''});}
+function registrarEntrada(){var codigo=document.getElementById('entrada-codigo').value.trim();var descricao=(document.getElementById('entrada-descricao').value.trim()).toUpperCase();var tipo=document.getElementById('entrada-tipo').value;var categoria=document.getElementById('entrada-categoria').value;var custo=pN(document.getElementById('entrada-custo').value);var venda=pN(document.getElementById('entrada-venda').value);var revendedor=document.getElementById('entrada-revendedor').value;if(!codigo){showToast('Informe o código do produto','warning');document.getElementById('entrada-codigo').focus();return;}var status=revendedor?'Consignado':'Em Estoque';var novoItem={rowId:Date.now(),Codigo:codigo,Descricao:descricao,Tipo:tipo,Categoria:categoria,Custo:custo,Venda:venda,Status:status,Revendedor:revendedor,Foto:'',Data:new Date().toISOString()};inventory.push(novoItem);_marcarItemNovo(novoItem);limparFormEntrada();renderUltimasEntradas();renderDashboard();showToast('Produto registrado!','success');syncDrive({action:'addInventario',codigo:codigo,descricao:descricao,tipo:tipo,categoria:categoria,custo:custo,venda:venda,status:status,revendedor:revendedor||'',foto:''});}
 function limparFormEntrada(){['entrada-codigo','entrada-tipo','entrada-categoria','entrada-descricao','entrada-custo','entrada-venda','entrada-revendedor'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});var cc=document.getElementById('entrada-categoria-container');if(cc)cc.style.display='none';var ce=document.getElementById('entrada-codigo');if(ce)ce.focus();}
 function renderUltimasEntradas(){var ultimas=inventory.slice().sort(function(a,b){var da=b.Data?new Date(b.Data):0;var db=a.Data?new Date(a.Data):0;return (da||b.rowId||0)-(db||a.rowId||0);}).slice(0,10);var html='';ultimas.forEach(function(item){html+='<div style="background:var(--gray-50);padding:.75rem;border-radius:8px;border:1px solid var(--gray-200);"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-family:monospace;color:#92400e;font-weight:700;">'+item.Codigo+'</span><span class="category-badge">'+(item.Categoria||item.Tipo||'—')+'</span></div><div style="font-size:13px;color:var(--gray-700);">'+(item.Descricao||'—')+'</div><div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:var(--gray-600);"><span>'+fmt(item.Venda)+'</span><span>'+(item.Revendedor||'Estoque')+'</span></div></div>';});var el=document.getElementById('ultimas-entradas');if(el)el.innerHTML=html||'<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:1rem;">Nenhuma entrada registrada</p>';}
 
