@@ -1043,7 +1043,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
 </div>
 
 <!-- MODAL CADASTRO RÁPIDO (item bipado que ainda não existe no estoque) -->
-<div id="modal-cadastro-rapido" class="modal-overlay">
+<div id="modal-cadastro-rapido" class="modal-overlay" style="z-index:1100;">
   <div class="modal-content" style="max-width:420px;width:95%;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem;">
       <h3 style="font-size:1rem;font-weight:700;color:var(--gray-800);"><i class="fas fa-barcode" style="color:var(--primary);margin-right:8px;"></i>Item não cadastrado</h3>
@@ -1070,7 +1070,7 @@ body.device-tablet .nav-tab i{display:inline;}  /* mantém ícones — resoluç�
 
 <!-- MODAL CONFIRMAÇÃO GENÉRICA — substitui os confirm() nativos do navegador,
      que ficam bloqueados/silenciosos depois de várias caixas seguidas na mesma aba -->
-<div id="modal-confirmar-acao" class="modal-overlay">
+<div id="modal-confirmar-acao" class="modal-overlay" style="z-index:1200;">
   <div class="modal-content" style="max-width:380px;width:95%;">
     <h3 style="font-size:1rem;font-weight:700;color:var(--gray-800);margin-bottom:.75rem;"><i class="fas fa-question-circle" style="color:var(--primary);margin-right:8px;"></i>Confirmar</h3>
     <p id="confirmar-acao-msg" style="font-size:13px;color:var(--gray-600);white-space:pre-line;margin-bottom:1.25rem;"></p>
@@ -3737,13 +3737,13 @@ function compartilharEntregaWhatsApp() {
     return;
   }
   var rev=revendedores.find(function(r){return r.Nome===doc.revendedor;});
-  var contato=rev&&rev.Contato?rev.Contato.replace(/\D/g,''):'';
+  var numero=_waNumero(rev);
   var primeiroNome=doc.revendedor.split(' ')[0];
   var msg='Olá '+primeiroNome+'! 👋\n\n'
     +'Segue o documento de entrega da sua maleta LUXUS:\n\n'
     +reciboUrl+'\n\n'
     +'_'+new Date(doc.data).toLocaleDateString('pt-BR')+' · '+doc.itens.length+' itens_';
-  window.open('https://wa.me/'+(contato?'55'+contato:'')+'?text='+encodeURIComponent(msg),'_blank');
+  window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
 }
 
 function renderUltimasEntregas() {
@@ -3943,7 +3943,7 @@ function _dividasDe(r){
     var valorPago = pN(f.valorRecebido);
     var saldo = Math.max(0, valor - valorPago);
     return {id:f.id, data:f.data, _sintetizada:true,
-      descricao:'Fechamento — '+(f.maletasFechadas&&f.maletasFechadas.length?f.maletasFechadas.map(function(m){return m.nome;}).join(', '):''),
+      descricao:'Fechamento — '+(f.maletasFechadas&&f.maletasFechadas.length?f.maletasFechadas.map(function(m){return m.nome;}).join(', '):(f.data?new Date(f.data).toLocaleDateString('pt-BR'):'')),
       valor:valor, valorPago:valorPago, saldo:saldo, pago:saldo<=0};
   });
   return lancs.concat(divFech).concat(r.dividas||[]);
@@ -4134,25 +4134,41 @@ function confirmarPagamento() {
   var valor = parseFloat(document.getElementById('pagamento-valor').value)||0;
   if (!valor) { showToast('Informe o valor recebido','warning'); return; }
   var d = _pagamentoAtual.divida;
+  var rev = revendedores.find(function(r){return String(r.rowId)===String(_pagamentoAtual.revId);});
+  var obs = (document.getElementById('pagamento-obs').value||'').trim();
   var saldoAtual = parseFloat(d.saldo||0)||Math.max(0, parseFloat(d.valor||0)-parseFloat(d.valorPago||0));
   var novoSaldo = Math.max(0, parseFloat((saldoAtual - valor).toFixed(2)));
   var novoValorPago = parseFloat(((parseFloat(d.valorPago)||0) + valor).toFixed(2));
+  var pg = {data:new Date().toISOString(), valor:valor, obs:obs};
+  if(!window.historicFinanceiro) window.historicFinanceiro=[];
 
-  // Atualiza no Sheets (aba Financeiro)
-  syncDrive({
-    action: 'registrarPagamento',
-    id: String(d.id),
-    pagamento: valor
-  });
+  var lanc = window.historicFinanceiro.find(function(l){ return l===d || String(l.id)===String(d.id); });
+  var idxDiv = rev ? (rev.dividas||[]).indexOf(d) : -1;
 
-  // Atualiza em memória
-  d.valorPago = novoValorPago;
-  d.saldo = novoSaldo;
-  d.pago = novoSaldo <= 0;
-
-  // Atualiza historicFinanceiro em memória
-  var lanc = (window.historicFinanceiro||[]).find(function(l){ return String(l.id)===String(d.id); });
-  if(lanc){ lanc.valorPago=novoValorPago; lanc.saldo=novoSaldo; lanc.pago=novoSaldo<=0; }
+  if(lanc){
+    // Lançamento que já existe na aba Financeiro: só registra o pagamento
+    syncDrive({ action:'registrarPagamento', id:String(lanc.id), pagamento:valor });
+    lanc.valorPago=novoValorPago; lanc.saldo=novoSaldo; lanc.pago=novoSaldo<=0;
+    lanc.historicoPagamentos=(lanc.historicoPagamentos||[]).concat([pg]);
+  } else {
+    // Linha "montada" na tela (fechamento antigo ou dívida só na memória) que ainda NÃO existe na planilha:
+    // cria o lançamento real já com o valor pago — senão o pagamento se perdia ao redesenhar/recarregar.
+    var fechId = d._sintetizada ? d.id : (d.fechamentoId || d.id);
+    lanc = {
+      id:d.id, data:d.data, revendedor:rev?rev.Nome:'', descricao:d.descricao,
+      valor:parseFloat(d.valor)||0, valorPago:novoValorPago, saldo:novoSaldo, pago:novoSaldo<=0,
+      fechamentoId:fechId, historicoPagamentos:(d.historicoPagamentos||[]).concat([pg])
+    };
+    window.historicFinanceiro.unshift(lanc);
+    syncDrive({ action:'addLancamentoFinanceiro', id:lanc.id, data:lanc.data, revendedor:lanc.revendedor,
+      descricao:lanc.descricao, valor:lanc.valor, valorPago:lanc.valorPago, saldo:lanc.saldo, pago:lanc.pago, fechamentoId:String(fechId) });
+    if(idxDiv!==-1){
+      // a dívida só da memória passa a existir como lançamento — tira a cópia pra não contar duas vezes
+      rev.dividas.splice(idxDiv,1);
+      syncDrive({action:'editRevendedor',rowId:rev.rowId,dividas:rev.dividas});
+    }
+  }
+  d.valorPago = novoValorPago; d.saldo = novoSaldo; d.pago = novoSaldo <= 0;
 
   fecharModal('modal-pagamento');
   renderFinanceiro();
@@ -5773,10 +5789,10 @@ function abrirModalAssinatura(reg){
   document.getElementById('recibo-consignados').textContent=reg.qtdConsignados;
   document.getElementById('recibo-vendidos').textContent=reg.qtdVendidos;
   document.getElementById('recibo-devolvidos').textContent=reg.qtdDevolvidos;
-  document.getElementById('recibo-total').textContent=fmt(reg.valorVendido);
+  document.getElementById('recibo-total').textContent=_fmtBR(reg.valorVendido);
   document.getElementById('recibo-pct').textContent=reg.percentual;
-  document.getElementById('recibo-comissao').textContent=fmt(reg.comissao);
-  document.getElementById('recibo-lucro').textContent=fmt(reg.lucro);
+  document.getElementById('recibo-comissao').textContent=_fmtBR(reg.comissao);
+  document.getElementById('recibo-lucro').textContent=_fmtBR(reg.lucro);
   document.getElementById('recibo-nome-ass').textContent=reg.revendedor;
   var revRec=revendedores.find(function(r){return r.Nome===reg.revendedor;});
   var cpfEl=document.getElementById('recibo-cpf-ass');
@@ -5934,10 +5950,10 @@ function gerarReciboCanvas(callback){
     ctx.fillStyle='#64748b';ctx.font='13px sans-serif';ctx.fillText(label,28,y);
     ctx.fillStyle=color||'#1f2937';ctx.font='bold 13px sans-serif';ctx.textAlign='right';ctx.fillText(valor,W-28,y);ctx.textAlign='left';
   }
-  linha('Total vendido',fmt(reg.valorVendido),'#1f2937',vy+22);
-  linha('Comissão ('+reg.percentual+'%)',fmt(reg.comissao),'#f59e0b',vy+44);
+  linha('Total vendido',_fmtBR(reg.valorVendido),'#1f2937',vy+22);
+  linha('Comissão ('+reg.percentual+'%)',_fmtBR(reg.comissao),'#f59e0b',vy+44);
   ctx.strokeStyle='#e2e8f0';ctx.beginPath();ctx.moveTo(28,vy+54);ctx.lineTo(W-28,vy+54);ctx.stroke();
-  linha('A receber (Venda − Comissão)',fmt(reg.lucro),'#10b981',vy+76);
+  linha('A receber (Venda − Comissão)',_fmtBR(reg.lucro),'#10b981',vy+76);
 
   // itens vendidos
   ctx.fillStyle='#64748b';ctx.font='bold 10px sans-serif';ctx.fillText('ITENS VENDIDOS',16,292);
@@ -6012,23 +6028,34 @@ function roundRect(ctx,x,y,w,h,r){
   ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
 }
 
+function _waNumero(rev){
+  var d=String((rev&&rev.Contato)||'').replace(/\D/g,'').replace(/^0+/,'');
+  if(d.length<10) return '';
+  if(d.length>=12 && d.indexOf('55')===0) return d;
+  return '55'+d;
+}
+function _fmtBR(v){ return 'R$ '+pN(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function compartilharWhatsApp(){
   var reg=_reciboFechamento;
   if(!reg)return;
   var rev=revendedores.find(function(r){return r.Nome===reg.revendedor;});
-  var contato=rev&&rev.Contato?rev.Contato.replace(/\D/g,''):'';
+  var numero=_waNumero(rev);
+  var hf=(typeof historicFechamentos!=='undefined'&&reg.id!=null)?historicFechamentos.find(function(h){return h.id===reg.id;}):null;
+  if(!reg.reciboUrl && hf && hf.reciboUrl) reg.reciboUrl=hf.reciboUrl;
   var msg='*Recibo de Fechamento — '+(localStorage.getItem('luxus_titulo')||'LUXUS')+'*\n\n'
     +'Revendedor: '+reg.revendedor+'\n'
     +'Data: '+new Date(reg.data).toLocaleDateString('pt-BR')+'\n\n'
     +'Consignados: '+reg.qtdConsignados+'\n'
     +'Vendidos: '+reg.qtdVendidos+'\n'
     +'Devolvidos: '+reg.qtdDevolvidos+'\n\n'
-    +'Total vendido: '+fmt(reg.valorVendido)+'\n'
-    +'Comissão ('+reg.percentual+'%): '+fmt(reg.comissao)+'\n'
-    +'*A receber: '+fmt(reg.lucro)+'*';
+    +'Total vendido: '+_fmtBR(reg.valorVendido)+'\n'
+    +'Comissão ('+reg.percentual+'%): '+_fmtBR(reg.comissao)+'\n'
+    +'*A receber: '+_fmtBR(reg.lucro)+'*';
   if(reg.reciboUrl) msg+='\n\n📄 *Recibo assinado:*\n'+reg.reciboUrl;
-  var url='https://wa.me/'+(contato?'55'+contato:'')+'?text='+encodeURIComponent(msg);
+  var url='https://wa.me/'+numero+'?text='+encodeURIComponent(msg);
   window.open(url,'_blank');
+  if(!numero) showToast('Revendedor sem WhatsApp válido cadastrado — escolha o contato no WhatsApp.','warning');
+  else if(!reg.reciboUrl) showToast('Dica: clique em "Salvar no Drive" antes para incluir o link do recibo assinado na mensagem.','info');
 }
 
 var _pendingFechamento = null;
@@ -6916,6 +6943,7 @@ function abrirComplemento(nomeRev){
       +'<div style="display:flex;gap:8px;margin-bottom:1rem;">'
       +'<input id="comp-scan" type="text" placeholder="Bipe ou digite o código..." style="flex:1;padding:8px 12px;border:1.5px solid #3b82f6;border-radius:8px;font-size:14px;font-family:monospace;" autocomplete="off" />'
       +'<button onclick="adicionarItemComplemento()" class="btn-primary" style="padding:8px 14px;font-size:13px;">Adicionar</button>'
+      +'<button onclick="novoItemComplemento()" class="btn-secondary" style="padding:8px 12px;font-size:13px;white-space:nowrap;" title="Cadastrar um item novo com este código (mesmo que já exista outro igual)"><i class="fas fa-plus" style="margin-right:4px;"></i>Novo item</button>'
       +'</div>'
       // Lista itens
       +'<div id="comp-lista" style="margin-bottom:1rem;min-height:60px;"></div>'
@@ -6944,20 +6972,55 @@ function abrirComplemento(nomeRev){
 function adicionarItemComplemento(){
   var codigo = (document.getElementById('comp-scan').value||'').trim().toUpperCase();
   if(!codigo){ showToast('Digite um código','warning'); return; }
-  // Busca no inventário — Em Estoque primeiro
-  var item = inventory.find(function(i){
-    return (String(i.Codigo).toUpperCase()===codigo || String(i.rowId)===codigo)
-      && i.Status==='Em Estoque';
-  });
-  if(!item){
-    showToast('Código "'+codigo+'" não encontrado em estoque','warning');
-    document.getElementById('comp-scan').select();
-    return;
+  var cn = _normCodigoItem(codigo);
+  function mesmoCodigo(i){ return String(i.Codigo).toUpperCase()===codigo || String(i.rowId)===codigo || (cn!=='' && _normCodigoItem(i.Codigo)===cn); }
+  function jaNaLista(i){ return _complementoItens.some(function(x){ return String(x.rowId)===String(i.rowId); }); }
+  function incluir(item){
+    _complementoItens.push(item);
+    document.getElementById('comp-scan').value='';
+    document.getElementById('comp-scan').focus();
+    renderComplementoLista();
   }
-  _complementoItens.push(item);
+  // Busca no inventário — Em Estoque, ainda não incluído neste complemento
+  var item = inventory.find(function(i){ return mesmoCodigo(i) && i.Status==='Em Estoque' && !jaNaLista(i); });
+  if(item){ incluir(item); return; }
+  var existentes = inventory.filter(mesmoCodigo);
+  if(!existentes.length){ _cadastrarNovoNoComplemento(codigo); return; }   // código inédito
+  // Código já existe, mas nenhuma unidade disponível em estoque — pode ser outro item igual
+  var ref = existentes[0];
+  var msg = jaNaLista(ref)||existentes.some(jaNaLista)
+    ? 'O código "'+codigo+'" já está neste complemento e não há outra unidade em estoque.'
+    : 'O código "'+codigo+'" existe, mas está como "'+ref.Status+(ref.Revendedor?' ('+ref.Revendedor+')':'')+'" — não há unidade em estoque.';
+  confirmarAcao(msg+'\nCadastrar um novo item com este código?', function(){ _cadastrarNovoNoComplemento(codigo); });
+  document.getElementById('comp-scan').select();
+}
+
+// Botão "Novo item": cadastra um item novo com o código digitado, mesmo que já exista outro igual
+function novoItemComplemento(){
+  var codigo = (document.getElementById('comp-scan').value||'').trim().toUpperCase();
+  if(!codigo){ showToast('Digite o código do novo item','warning'); document.getElementById('comp-scan').focus(); return; }
+  _cadastrarNovoNoComplemento(codigo);
+}
+
+function _cadastrarNovoNoComplemento(codigo){
+  var cn = _normCodigoItem(codigo);
+  var igual = inventory.find(function(i){ return String(i.Codigo).toUpperCase()===codigo || (cn!=='' && _normCodigoItem(i.Codigo)===cn); });
   document.getElementById('comp-scan').value='';
-  document.getElementById('comp-scan').focus();
-  renderComplementoLista();
+  abrirCadastroRapido(codigo, 'Em Estoque', '', function(novo){
+    _complementoItens.push(novo);
+    renderComplementoLista();
+    var sc=document.getElementById('comp-scan'); if(sc) sc.focus();
+    showToast('Item '+novo.Codigo+' cadastrado e incluído no complemento','success');
+  });
+  // Já existe um item com esse código? Aproveita os dados dele para agilizar (pode editar)
+  if(igual){
+    document.getElementById('cr-descricao').value = String(igual.Descricao||'').toUpperCase();
+    document.getElementById('cr-tipo').value = igual.Tipo||'Semi Joia';
+    onChangeTipoCadastroRapido();
+    if(igual.Categoria) document.getElementById('cr-categoria').value = igual.Categoria;
+    document.getElementById('cr-custo').value = igual.Custo!==undefined && igual.Custo!=='' ? igual.Custo : '';
+    document.getElementById('cr-venda').value = igual.Venda!==undefined && igual.Venda!=='' ? igual.Venda : '';
+  }
 }
 
 function removerItemComplemento(idx){
